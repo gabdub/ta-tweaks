@@ -1,5 +1,7 @@
 # ta-tweaks
-___my textadept tweaks___:
+___This is a collection of my Textadept tweaks___:
+
+___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform text editor: http://foicica.com/textadept/
 
   __goto_nearest.lua__ (based on http://foicica.com/wiki/goto-nearest-occurrence): this module adds the following bindings:
   
@@ -10,8 +12,9 @@ ___my textadept tweaks___:
     * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
       
 __Features:__
-* Quick search for selected text (if not text is selected, repeat last search)
+* Quick search of the selected text (if not text is selected, repeat last search)
 * All the buffers use the same 'last searched text' and search options
+* Based on Ultra-Edit editor F3 search key
 * Four search options:
  * 'Word:no + Ignore case (soft match)'
  * 'Word:no + Match case'
