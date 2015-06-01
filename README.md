@@ -26,3 +26,9 @@ Copy  _goto_nearest.lua_ to your __~/.textadept/__ folder and add the following 
 ```lua
 require('goto_nearest')
 ```
+_Optional:_
+```lua
+--replace CTRL+F with SHIFT+F3
+keys.cf =  keys.sf3
+```
+
