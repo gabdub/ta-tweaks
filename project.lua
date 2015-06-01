@@ -14,7 +14,7 @@ local M = {}
 --
 --  M.proj_updating   = number of updates in process (ignore some events if > 0)
 --
---  
+--
 -----------------------------------------------------------------------
 M.proj_updating = 0
 -----------------------------------------------------------------------
@@ -36,7 +36,7 @@ M.proj_updating = 0
 --
 -----------------------------------------------------------------------
 
---project is in SELECTION mode with focus--   
+--project is in SELECTION mode with focus--
 local function proj_show_sel_w_focus()
   --hide line numbers
   buffer.margin_width_n[0] = 0
@@ -80,41 +80,32 @@ local function proj_check_file()
 end
 
 events_connect(events.LEXER_LOADED, function(lang)
-    --if we are updating, ignore this event
-    if M.proj_updating > 0 then return end
+  --if we are updating, ignore this event
+  if M.proj_updating > 0 then return end
+  
+  if lang == 'myproj' then
+    --project in SELECTION mode--
+    proj_show_sel_w_focus()
     
-    if lang == 'vala' then
-      buffer.tab_width = 4
-      buffer.use_tabs = false
-      
-    elseif lang == 'lua' then
-      buffer.tab_width = 2
-      buffer.use_tabs = false
-      
-    elseif lang == 'myproj' then
-      --project in SELECTION mode--
-      proj_show_sel_w_focus()
-      
-    elseif lang == 'text' then
-      --normal file or project--
-      if not buffer._project_checked then
-        buffer._project_checked= true
-        --first check: if it is a project set SELECTION mode
-        proj_check_file()
-      end
-      if buffer._is_a_project ~= nil then
-        --is a project--
-        if buffer._is_a_project then
-          --project in SELECTION mode--
-          proj_show_sel_w_focus()
-        else
-          --project in EDIT mode--
-          proj_show_default()
-        end
+  elseif lang == 'text' then
+    --normal file or project--
+    if not buffer._project_checked then
+      buffer._project_checked= true
+      --first check: if it is a project set SELECTION mode
+      proj_check_file()
+    end
+    if buffer._is_a_project ~= nil then
+      --is a project--
+      if buffer._is_a_project then
+        --project in SELECTION mode--
+        proj_show_sel_w_focus()
+      else
+        --project in EDIT mode--
+        proj_show_default()
       end
     end
   end
-)
+end)
 
 --init desired project context menu
 local function proj_context_menu_init(num)
@@ -245,21 +236,29 @@ local function proj_update_after_switch()
       proj_set_files_view()
       ui.statusbar_text = 'proj in view='..M.proj_view
       
-    elseif M.proj_view ~= n then
-      --we are not in the project view, try to fix this
-      --first check is there is a project in M.proj_view
-      if _VIEWS[M.proj_view].buffer._is_a_project == nil then
-        --not a project, swap the buffers
-        ui.statusbar_text = 'swap needed'
-      else
-        --is a project too, check if we are in two views
-        ui.statusbar_text = 'in two views'
-        if #_BUFFERS == 1 then
-          M.proj_go_file('')
-        end
-      end
     else
-      ui.statusbar_text = 'proj in view ok= '..n
+      if M.proj_view > #_VIEWS then
+        M.proj_view = 1
+      end
+      if M.proj_view ~= n then
+        --we are not in the project view, try to fix this
+        --first check is there is a project in M.proj_view
+        if _VIEWS[M.proj_view].buffer == nil or _VIEWS[M.proj_view].buffer._is_a_project == nil then
+          --not a project, swap the buffers
+          ui.statusbar_text = 'swap needed'
+        else
+          --is a project too, check if we are in two views
+          ui.statusbar_text = 'in two views'
+          if #_BUFFERS == 1 then
+            --open an "untitled" file
+            M.proj_go_file('')
+          else
+            --TODO: select another file
+          end
+        end
+      else
+        ui.statusbar_text = 'proj in view ok= '..n
+      end
     end  
   end
 end
@@ -429,7 +428,7 @@ function M.proj_open_sel_file()
         informative_text = 'Do you want to open them?',
         icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
       } == 1
-      if not confirm then 
+      if not confirm then
         return
       end
       if n == 1 then
@@ -465,13 +464,13 @@ function M.proj_work_buffer()
   for _, buffer in ipairs(_BUFFERS) do
     if buffer._is_working_project then
       --found
-      return buffer 
+      return buffer
     end
   end
   -- not found, choose a new one
   -- 1) choose the project buffer in the LOWER view
   for i= 1, #_VIEWS do
-    if _VIEWS[i].buffer._is_a_project ~= nil then 
+    if _VIEWS[i].buffer._is_a_project ~= nil then
       --mark this as the working project
       _VIEWS[i].buffer._is_working_project = true
       return _VIEWS[i].buffer
@@ -479,7 +478,7 @@ function M.proj_work_buffer()
   end
   -- 2) check all buffers, use the first found
   for _, buffer in ipairs(_BUFFERS) do
-    if buffer._is_a_project ~= nil then 
+    if buffer._is_a_project ~= nil then
       --mark this as the working project
       buffer._is_working_project = true
       return buffer
@@ -518,7 +517,7 @@ end
 function M.proj_sel_this_file()
   --if we are updating, ignore this call
   if M.proj_updating > 0 then return end
-    
+
   local p_buffer = M.proj_work_buffer()
   if p_buffer and p_buffer._is_a_project then
     --found the working project and is in SELECTION mode
@@ -567,11 +566,12 @@ end)
 --------------------------------------------------------------
 --create a new project fije
 function M.proj_new_project()
-  --TODO: complete
+  --TODO: finish
 end
 
 --open an existing project file
---TODO: bug: opening a project with no other file open: open TWO "untitled" file
+--TODO: bug: opening a project with no other file open: left TWO "untitled" files
+--TODO: bug: opening a 2nd project dosen't work
 --TODO: close "untitled" file when another file is opened (if not modified)
 function M.proj_open_project()
   prjfile= ui.dialogs.fileselect{
@@ -602,7 +602,7 @@ end
 
 --open a project from the recent list
 function M.proj_open_recent_project()
-  --TODO: complete
+  --TODO: finish
 end
 
 --close current project / view
