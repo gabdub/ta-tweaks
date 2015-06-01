@@ -24,17 +24,16 @@ M.proj_updating = 0
 --              true = project in SELECTION mode
 --             false = project in EDIT mode
 --
---  _project_checked = the buffer header has been verified
---               nil = first time seen
---              true = checked
---
 --  _is_working_project = this is the working project (in case more than one is open)
 --              true = this is the one
 --
---  proj_files[]     = array with the filename in each row
---
+--  proj_files[]     = array with the filename in each row or ''
+--  proj_fold_row[]  = array with the row numbers to fold on open
+--  proj_grp_path[]  = array with the path of each group or nil
 --
 -----------------------------------------------------------------------
+--project data: model, parser, etc
+require('proj_data')
 
 --project is in SELECTION mode with focus--
 local function proj_show_sel_w_focus()
@@ -67,44 +66,8 @@ local function proj_show_default()
 end
 
 --if the current file is a project, enter SELECTION mode--
---check if the first file line has the form " name '::' (path) '::' "
-local function proj_check_file()
-  if buffer._is_a_project == nil then
-    line= buffer:get_line(0)
-    local col1, col2 = string.match(line,'^%s*(.-)%s*::(.+)::%s*$')
-    if col1 ~= nil and col2 ~= nil then
-      M.proj_set_sel_mode(true)
-      ui.statusbar_text= 'Project file =' .. buffer.filename
-    end
-  end
-end
-
-events_connect(events.LEXER_LOADED, function(lang)
-  --if we are updating, ignore this event
-  if M.proj_updating > 0 then return end
-  
-  if lang == 'myproj' then
-    --project in SELECTION mode--
-    proj_show_sel_w_focus()
-    
-  elseif lang == 'text' then
-    --normal file or project--
-    if not buffer._project_checked then
-      buffer._project_checked= true
-      --first check: if it is a project set SELECTION mode
-      proj_check_file()
-    end
-    if buffer._is_a_project ~= nil then
-      --is a project--
-      if buffer._is_a_project then
-        --project in SELECTION mode--
-        proj_show_sel_w_focus()
-      else
-        --project in EDIT mode--
-        proj_show_default()
-      end
-    end
-  end
+events_connect(events.FILE_OPENED, function()
+  proj_check_and_select()
 end)
 
 --init desired project context menu
@@ -202,7 +165,7 @@ end
 local function proj_update_after_switch()
   --if we are updating, ignore this event
   if M.proj_updating > 0 then return end
-  
+  M.proj_updating= 1
   if buffer._is_a_project == nil then
     --normal file: restore current line default settings
     proj_show_default()
@@ -211,14 +174,12 @@ local function proj_update_after_switch()
     --try to select the current file in the project
     M.proj_sel_this_file()
 
-    ui.statusbar_text = ''
-    
   else
     --project buffer--
     if buffer._is_a_project then
       -- project in SELECTION mode: set "myprog" lexer --
       buffer:set_lexer('myproj')
-      --highlight current line
+      --project in SELECTION mode--
       proj_show_sel_w_focus()
       --set SELECTION mode context menu
       proj_contextm_sel()
@@ -234,54 +195,34 @@ local function proj_update_after_switch()
     if M.proj_view == nil then
       --set default files view
       proj_set_files_view()
-      ui.statusbar_text = 'proj in view='..M.proj_view
       
     else
       if M.proj_view > #_VIEWS then
         M.proj_view = 1
       end
-      if M.proj_view ~= n then
-        --we are not in the project view, try to fix this
-        --first check is there is a project in M.proj_view
-        if _VIEWS[M.proj_view].buffer == nil or _VIEWS[M.proj_view].buffer._is_a_project == nil then
-          --not a project, swap the buffers
-          ui.statusbar_text = 'swap needed'
-        else
-          --is a project too, check if we are in two views
-          ui.statusbar_text = 'in two views'
-          if #_BUFFERS == 1 then
-            --open an "untitled" file
-            M.proj_go_file('')
-          else
-            --TODO: select another file
-          end
-        end
-      else
-        ui.statusbar_text = 'proj in view ok= '..n
-      end
+--      if M.proj_view ~= n then
+--        --we are not in the project view, try to fix this
+--        --first check is there is a project in M.proj_view
+--        if _VIEWS[M.proj_view].buffer == nil or _VIEWS[M.proj_view].buffer._is_a_project == nil then
+--          --TODO: not a project, swap the buffers          
+--        else
+--          --is a project too, check if we are in two views
+--          if #_BUFFERS == 1 then
+--Warning: THIS generates a loop when closing all files
+--            --open an "untitled" file 
+--            M.proj_go_file('')
+--          else
+--            --TODO: select another file
+--          end
+--        end
+--      end
     end  
   end
+  M.proj_updating= 0
 end
 events_connect(events.BUFFER_AFTER_SWITCH,  proj_update_after_switch)
 events_connect(events.VIEW_AFTER_SWITCH,    proj_update_after_switch)
 
-local function splitfilename(strfilename)
-  -- Returns the Path, Filename, and Extension as 3 values
-  return string.match(strfilename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
-end
-
-----------------------------------------------------------------------
---TODO: check/simplify this
--- valid project file lines
--- <blanks>                        ignore
--- <blanks>     .n.   ##-##        ignore
--- <blanks>     .n.   ##.p.\##     ignore + path definition 'p'
--- <blanks>     .n.   ##.p./##     ignore + path definition 'p'
--- <blanks>     .n.   ##.f..##     open file 'f'
--- <blanks>           ##.f..##     open file 'f'
--- <blanks>     .n.                open file 'p'+'n' 
---                                 (first previous 'p' o project path)
-----------------------------------------------------------------------
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
 function M.proj_set_sel_mode(selmode)
@@ -300,58 +241,45 @@ function M.proj_set_sel_mode(selmode)
   proj_set_files_view()
   
   if selmode then
+    --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
+    proj_parse_buffer()
     --set lexer to highlight groups and hidden control info ":: ... ::"
     buffer:set_lexer('myproj')
+    --project in SELECTION mode--
+    proj_show_sel_w_focus()    
     --set SELECTION mode context menu
     proj_contextm_sel()
-        
-    --fill filenames array "buffer.proj_files[]"
-    ui.statusbar_text= 'Parsing project file...'
-    buffer.proj_files= {}
-    --get project file path (default)
-    path,fn,ext = splitfilename(buffer.filename)
-    --parse project file line by line
-    for r = 0, buffer.line_count do
-      fname= ""
-      line= buffer:get_line(r)
-      local col1, col2 = string.match(line,'^%s*(.-)%s*::(.+)::%s*$')
-      if col1 == nil then
-        col2 = string.match(line,'^%s*::(.+)::%s*$')
-        if col2 == nil then
-          col1= string.match(line,'^%s*(.-)%s*$')
-        end
-      end
-      if col2 ~= nil and col2 ~= "" and col2 ~= "-" then
-        --<blanks>     .n.   ##.p./##     ignore + path definition 'p'
-        p,f,e= splitfilename(col2)
-        if f == "" and p ~= "" then
-          path = p
-        else
-        -- <blanks>     .n.   ##.f..##     open file 'f
-          fname= col2
-        end
-        
-      elseif col1 ~= nil and col1 ~= "" and col2 == nil then
-        -- <blanks>     .n.                open file 'p'+'n'
-        fname = path .. col1
-      end
-      buffer.proj_files[r]= fname
-      buffer.vc_home()
+    
+    --fold the requested folders
+    for i= #buffer.proj_fold_row, 1, -1 do
+      buffer.toggle_fold(buffer.proj_fold_row[i])
     end
-    ui.statusbar_text= 'Open project: '.. buffer.filename
+    
   else
     --edit project as a text file (show control info)
     buffer:set_lexer('text')    
     --set EDIT mode context menu
     proj_contextm_edit()
+    --project in EDIT mode--
+    proj_show_default()
+  end
+end
+
+--if the current file is a project, enter SELECTION mode--
+function proj_check_and_select()
+  if proj_check_file() then
+    M.proj_set_sel_mode(true)
+    if buffer.filename ~= nil then
+      ui.statusbar_text= 'Project file =' .. buffer.filename
+    end
   end
 end
 
 --toggle project between selection and EDIT modes
 function M.proj_toggle_sel_mode()
   if buffer._is_a_project == nil then
-    --if this file is a valid project, enter SELECTION mode
-    proj_check_file()
+    --if the current file is a project, enter SELECTION mode--
+    proj_check_and_select()
     if buffer._is_a_project == nil then
       ui.statusbar_text='This file is not a valid project'
     end
@@ -359,6 +287,7 @@ function M.proj_toggle_sel_mode()
     --toggle mode
     M.proj_set_sel_mode(not buffer._is_a_project)
   end
+  buffer.home()
 end
 
 --open files in the preferred view
@@ -488,6 +417,20 @@ function M.proj_work_buffer()
   return nil
 end
 
+--return the file position (ROW) in the given buffer file list
+function M.proj_locate_file(p_buffer, file)
+  --check the given buffer has a list of files
+  if p_buffer and p_buffer.proj_files ~= nil and file then
+    for row= 0, #p_buffer.proj_files do
+      if file == p_buffer.proj_files[row] then
+        return row
+      end
+    end
+  end
+  --not found
+  return nil
+end
+
 function M.proj_add_this_file()
   -- add the current file to the project
   local p_buffer = M.proj_work_buffer()
@@ -495,18 +438,49 @@ function M.proj_add_this_file()
     --get file path
     file= buffer.filename
     if file then
-      --if the project is in readonly, change it
-      save_ro= p_buffer.read_only
-      p_buffer.read_only= false
-      path,fn,ext = splitfilename(file)
-      p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
-      --add the new line to the proj. file list
-      if p_buffer.proj_files ~= nil then
-        p_buffer.proj_files[#p_buffer.proj_files+1]= file
+      --if the file is already in the project, ask for confirmation
+      local confirm = (M.proj_locate_file(p_buffer, file) == nil) or ui.dialogs.msgbox{
+        title = 'Add confirmation',
+        text = 'The file ' .. file .. ' is already in the project',
+        informative_text = 'Do you want to add it again?',
+        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+      } == 1
+      if confirm then
+        --prevent some events to fire for ever
+        M.proj_updating= M.proj_updating+1
+
+        if M.proj_view == nil then
+          M.proj_view= 1
+        end
+        --this file is in the project view
+        if _VIEWS[view] == M.proj_view then
+          --choose another view for the file
+          M.proj_files_view= nul
+        end
+        ui.goto_view(M.proj_view)
+        
+        --if the project is in readonly, change it
+        save_ro= p_buffer.read_only
+        p_buffer.read_only= false
+        path,fn,ext = splitfilename(file)
+        p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
+        --add the new line to the proj. file list
+        row= #p_buffer.proj_files
+        p_buffer.proj_files[row]= file
+        p_buffer.proj_files[row+1]= ''
+        p_buffer.read_only= save_ro
+        --move the selection bar
+        p_buffer:goto_line(row)
+        --proj_show_lost_focus()
+        -- project in SELECTION mode without focus--
+        p_buffer.caret_line_back = 0xf0e5d5
+        p_buffer.home()
+        --return to this file (it could be in a different view)
+        M.proj_go_file(file)
+        ui.statusbar_text= 'File added to project: ' .. file
+        
+        M.proj_updating= M.proj_updating-1
       end
-      p_buffer.read_only= save_ro
-      M.proj_sel_this_file()
-      ui.statusbar_text= 'File added to project: ' .. file
     end
   else
     ui.statusbar_text='Project not found'
@@ -515,45 +489,37 @@ end
 
 --try to select the current file in the working project
 function M.proj_sel_this_file()
-  --if we are updating, ignore this call
-  if M.proj_updating > 0 then return end
-
+  --prevent some events to fire for ever
+  M.proj_updating= M.proj_updating+1
+  
   local p_buffer = M.proj_work_buffer()
   if p_buffer and p_buffer._is_a_project then
     --found the working project and is in SELECTION mode
     --get file path
     local file= buffer.filename
-    if file then
-      for i= 0, #p_buffer.proj_files do
-        if file == p_buffer.proj_files[i] then
-          --row found
-          --prevent some events to fire for ever
-          M.proj_updating=  M.proj_updating+1
-          if M.proj_view == nil then
-            M.proj_view= 1
-          end
-          --this file is in the project view
-          if _VIEWS[view] == M.proj_view then
-            --choose another view for the file
-            M.proj_files_view= nul
-          end
-          ui.goto_view(M.proj_view)
-          --move the selection bar
-          p_buffer:goto_line(i)
-          --return to this file (in another view if needed)
-          M.proj_go_file(file)
-          --update complete
-          M.proj_updating=  M.proj_updating-1
-          return
-        end
+    row= M.proj_locate_file(p_buffer, file)
+    if row ~= nil then
+      --row found
+      if M.proj_view == nil then
+        M.proj_view= 1
       end
-      --file not found in project
+      --this file is in the project view
+      if _VIEWS[view] == M.proj_view then
+        --choose another view for the file
+        M.proj_files_view= nul
+      end
+      ui.goto_view(M.proj_view)
+      --move the selection bar
+      p_buffer:goto_line(row)
+      --return to this file (it could be in a different view)
+      M.proj_go_file(file)
     end
   end
+  M.proj_updating= M.proj_updating-1
 end
 
 events_connect(events.KEYPRESS, function(code)
-  --TODO: check "enter from num-pad" not working
+  --TODO: "enter from num-pad" not working in Ubuntu
   if keys.KEYSYMS[code] == '\n' and buffer._is_a_project then
     M.proj_open_sel_file()
     return true
@@ -566,11 +532,10 @@ end)
 --------------------------------------------------------------
 --create a new project fije
 function M.proj_new_project()
-  --TODO: finish
+  --TODO: finish this
 end
 
 --open an existing project file
---TODO: bug: opening a project with no other file open: left TWO "untitled" files
 --TODO: bug: opening a 2nd project dosen't work
 --TODO: close "untitled" file when another file is opened (if not modified)
 function M.proj_open_project()
@@ -602,7 +567,7 @@ end
 
 --open a project from the recent list
 function M.proj_open_recent_project()
-  --TODO: finish
+  --TODO: finish this
 end
 
 --close current project / view
@@ -640,3 +605,11 @@ end
 -- F4       toggle project between selection and EDIT modes
 keys.f4 = M.proj_toggle_sel_mode
 --------------------------------------------------------------
+-- F5       Refresh syntax highlighting + project folding
+keys.f5 = function()
+  if buffer._is_a_project ~= nil then
+    M.proj_toggle_sel_mode()
+    M.proj_toggle_sel_mode()
+  end
+  buffer.colourise(buffer, 0, -1)
+end
