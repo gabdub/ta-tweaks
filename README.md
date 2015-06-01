@@ -8,7 +8,7 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
     * F3              goto nearest occurrence FORWARD
     * CTRL+F3:        goto nearest occurrence BACKWARD
     * ALT+F3:         goto nearest occurrence CHOOSE SEARCH OPTIONS
-    * SHIFT+F3:       ASK + goto nearest occurrence FORWARD (could be used as a 'CTRL+F' replacement)
+    * SHIFT+F3:       ASK + goto nearest occurrence FORWARD
     * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
       
 __Features:__
