@@ -13,25 +13,9 @@ local M = {}
 --  M.proj_cmenu_idx  = 'Project' submenu position in the context menu
 --
 --  M.proj_updating   = number of updates in process (ignore some events if > 0)
---
---
 -----------------------------------------------------------------------
 M.proj_updating = 0
------------------------------------------------------------------------
--- Vars added to buffer:
---  _is_a_project    = mark this buffer as a valid project file
---               nil = regular file
---              true = project in SELECTION mode
---             false = project in EDIT mode
---
---  _is_working_project = this is the working project (in case more than one is open)
---              true = this is the one
---
---  proj_files[]     = array with the filename in each row or ''
---  proj_fold_row[]  = array with the row numbers to fold on open
---  proj_grp_path[]  = array with the path of each group or nil
---
------------------------------------------------------------------------
+
 --project data: model, parser, etc
 require('proj_data')
 
@@ -41,14 +25,15 @@ local function proj_show_sel_w_focus()
   buffer.margin_width_n[0] = 0
   --highlight current line as selected
   buffer.caret_width= 0
-  buffer.caret_line_back = 0xF0D0A0
+  buffer.caret_line_back = 0xf0d0a0
 end
 
 --lost focus: if project is in SELECTION mode change current line
-local function proj_show_lost_focus()
-  if M.proj_updating == 0 and buffer._is_a_project then
+local function proj_show_lost_focus(p_buffer)
+  if M.proj_updating == 0 and buffer._is_a_project or (p_buffer ~= nil) then
+    if p_buffer == nil then p_buffer= buffer end
     -- project in SELECTION mode without focus--
-    buffer.caret_line_back = 0xf0e5d5
+    p_buffer.caret_line_back = 0xf0e5d5
   end
 end
 events_connect(events.BUFFER_BEFORE_SWITCH, proj_show_lost_focus)
@@ -86,7 +71,7 @@ local function proj_context_menu_init(num)
     textadept.menu.menubar[n+1]= textadept.menu.menubar[n]
     textadept.menu.menubar[n]= {
       title='Project', 
---      {_L['_New'],            M.proj_new_project},
+      {_L['_New'],            M.proj_new_project},
       {_L['_Open'],           M.proj_open_project},
 --      {_L['Open _Recent...'], M.proj_open_recent_project},
       {''},
@@ -190,33 +175,23 @@ local function proj_update_after_switch()
       proj_contextm_edit()
     end
     
-    --check we are in the proper view
-    n = _VIEWS[view]
+    --check project view / set default files view
     if M.proj_view == nil then
-      --set default files view
+      proj_set_files_view()
+    end
+    if #_BUFFERS == 1 then --and #_VIEWS > 1 then
+--doesn't work as spected when a file is closed. TODO: move somewhere...
+--      --only the project is open, close all views
+--      --(looks better than the project in two views)
+--      while view:unsplit() do end
+      M.proj_view = 1
       proj_set_files_view()
       
-    else
-      if M.proj_view > #_VIEWS then
-        M.proj_view = 1
-      end
---      if M.proj_view ~= n then
---        --we are not in the project view, try to fix this
---        --first check is there is a project in M.proj_view
---        if _VIEWS[M.proj_view].buffer == nil or _VIEWS[M.proj_view].buffer._is_a_project == nil then
---          --TODO: not a project, swap the buffers          
---        else
---          --is a project too, check if we are in two views
---          if #_BUFFERS == 1 then
---Warning: THIS generates a loop when closing all files
---            --open an "untitled" file 
---            M.proj_go_file('')
---          else
---            --TODO: select another file
---          end
---        end
---      end
-    end  
+    elseif M.proj_view > #_VIEWS then
+      --correct invalid project view
+      M.proj_view = 1
+      proj_set_files_view()
+    end
   end
   M.proj_updating= 0
 end
@@ -296,8 +271,10 @@ function M.proj_go_file(file)
     view:split(true)  --split verticaly
     --left project in view #1
     ui.goto_view(1)    
-    --set default project width= 20% of screen (actual = 50%)
-    view.size= math.floor(view.size/2.5)
+    if view.size ~= nil then
+      --set default project width= 20% of screen (actual = 50%)
+      view.size= math.floor(view.size/2.5)
+    end
     --set default files view
     proj_set_files_view()
   end
@@ -332,8 +309,8 @@ function M.proj_open_sel_file()
     return
   end
   --read selected line range
-  r1= buffer.line_from_position(buffer.selection_start)
-  r2= buffer.line_from_position(buffer.selection_end)
+  r1= buffer.line_from_position(buffer.selection_start)+1
+  r2= buffer.line_from_position(buffer.selection_end)+1
   --clear selection
   buffer.selection_start= buffer.selection_end
   if r1 < r2 then
@@ -342,13 +319,13 @@ function M.proj_open_sel_file()
     n= 0
     for r= r1, r2 do
       if buffer.proj_files[r] ~= "" then
-        flist[n]= buffer.proj_files[r]
         n= n+1
+        flist[n]= buffer.proj_files[r]
       end
     end
     if n == 0 then
       --no files in range, use current line; action=fold
-      r1= buffer.line_from_position(buffer.current_pos)
+      r1= buffer.line_from_position(buffer.current_pos)+1
     else
       --if there is more than one file in range, ask for confirmation
       local confirm = (n == 1) or ui.dialogs.msgbox{
@@ -361,12 +338,12 @@ function M.proj_open_sel_file()
         return
       end
       if n == 1 then
-        ui.statusbar_text= 'Open: ' .. flist[0]
+        ui.statusbar_text= 'Open: ' .. flist[1]
       else
         ui.statusbar_text= 'Open: ' .. n .. ' files'
       end
       --open all
-      for r= 0, n-1 do
+      for r= 1, n do
         M.proj_go_file(flist[r])
       end
       --try to select the current file in the working project
@@ -417,11 +394,11 @@ function M.proj_work_buffer()
   return nil
 end
 
---return the file position (ROW) in the given buffer file list
+--return the file position (ROW: 1..) in the given buffer file list
 function M.proj_locate_file(p_buffer, file)
   --check the given buffer has a list of files
   if p_buffer and p_buffer.proj_files ~= nil and file then
-    for row= 0, #p_buffer.proj_files do
+    for row= 1, #p_buffer.proj_files do
       if file == p_buffer.proj_files[row] then
         return row
       end
@@ -463,21 +440,21 @@ function M.proj_add_this_file()
         save_ro= p_buffer.read_only
         p_buffer.read_only= false
         path,fn,ext = splitfilename(file)
+        --TODO: reduce the path is possible using project root
         p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
         --add the new line to the proj. file list
-        row= #p_buffer.proj_files
+        row= #p_buffer.proj_files+1
         p_buffer.proj_files[row]= file
-        p_buffer.proj_files[row+1]= ''
         p_buffer.read_only= save_ro
         --move the selection bar
-        p_buffer:goto_line(row)
+        p_buffer:goto_line(row-1)
         --proj_show_lost_focus()
         -- project in SELECTION mode without focus--
-        p_buffer.caret_line_back = 0xf0e5d5
+        proj_show_lost_focus(p_buffer)
         p_buffer.home()
         --return to this file (it could be in a different view)
         M.proj_go_file(file)
-        ui.statusbar_text= 'File added to project: ' .. file
+        ui.statusbar_text= 'File added to project: ' .. file .. ' in row ' .. row
         
         M.proj_updating= M.proj_updating-1
       end
@@ -510,7 +487,7 @@ function M.proj_sel_this_file()
       end
       ui.goto_view(M.proj_view)
       --move the selection bar
-      p_buffer:goto_line(row)
+      p_buffer:goto_line(row-1)
       --return to this file (it could be in a different view)
       M.proj_go_file(file)
     end
@@ -532,11 +509,34 @@ end)
 --------------------------------------------------------------
 --create a new project fije
 function M.proj_new_project()
-  --TODO: finish this
+  --ask for a project name
+  local dir = lfs.currentdir()
+  local name = 'project.proj'
+  filename = ui.dialogs.filesave{
+    title = 'New project', with_directory = dir,
+    with_file = name:iconv('UTF-8', _CHARSET),
+    width = CURSES and ui.size[1] - 2 or nil
+  }
+  if not filename then return end  
+  --first close the current project (keep views)
+  if not M.proj_close_project(true) then
+    ui.statusbar_text= 'Open cancelled'
+    return
+  end
+  ui.goto_view(1)
+  local buffer = buffer.new()
+  buffer.filename = filename
+  path,fn,ext = splitfilename(filename)
+  if ext ~= '' then
+    --remove extension
+    fn= fn:match('^(.+)%.')
+  end
+  --TODO:select the root of the project (suggest path)
+  buffer:append_text('[' .. fn .. ']::' .. path .. '::')
+  proj_check_and_select()
 end
 
 --open an existing project file
---TODO: bug: opening a 2nd project dosen't work
 --TODO: close "untitled" file when another file is opened (if not modified)
 function M.proj_open_project()
   prjfile= ui.dialogs.fileselect{
@@ -545,23 +545,26 @@ function M.proj_open_project()
       width = CURSES and ui.size[1] - 2 or nil,
       with_extension = {'proj'}, select_multiple = false }
   if prjfile ~= nil then
-    if not M.proj_close_project() then
+    --first close the current project (keep views)
+    if not M.proj_close_project(true) then
       ui.statusbar_text= 'Open cancelled'
       return
     end
+    ui.goto_view(1)
     ui.statusbar_text= 'Open project: '.. prjfile
-    
-    proj_keep_file= ''  --open a new file after project open
+    --keep current file after project open
+    proj_keep_file= nil
     if buffer ~= nil and buffer.filename ~= nil then
-      proj_keep_file= buffer.filename --keep this file after project open
+      proj_keep_file= buffer.filename
     end
     --open the project
     io.open_file(prjfile)
     --project ui
     proj_update_after_switch()
     --restore the file that was current before opening the project
-    --or open a blank one
-    M.proj_go_file(proj_keep_file)
+    if proj_keep_file then
+      M.proj_go_file(proj_keep_file)
+    end
   end
 end
 
@@ -571,7 +574,7 @@ function M.proj_open_recent_project()
 end
 
 --close current project / view
-function M.proj_close_project()
+function M.proj_close_project(keepviews)
   local p_buffer = M.proj_work_buffer()
   if p_buffer ~= nil then
     if #_VIEWS > 1 then
@@ -583,13 +586,15 @@ function M.proj_close_project()
     end
     view.goto_buffer(view, _BUFFERS[p_buffer], false)
     if io.close_buffer() then
-      if #_VIEWS > 1 then
-        view.unsplit(view)
+      if not keepviews then
+        if #_VIEWS > 1 then
+          view.unsplit(view)
+        end
+        --reset project view
+        M.proj_view= 1
+        --split the view for files
+        M.proj_files_view= null
       end
-      --reset project view
-      M.proj_view= 1
-      --split the view for files
-      M.proj_files_view= null
     else
       --close was cancelled
       return false

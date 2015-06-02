@@ -21,6 +21,21 @@
 --  The first project line MUST BE an "option 1)"
 ----------------------------------------------------------------------
 local M = {}
+-----------------------------------------------------------------------
+-- Vars added to buffer:
+--  _is_a_project    = mark this buffer as a valid project file
+--               nil = regular file
+--              true = project in SELECTION mode
+--             false = project in EDIT mode
+--
+--  _is_working_project = this is the working project (in case more than one is open)
+--              true = this is the one
+--
+--  proj_files[]     = array with the filename in each row (1...) or ''
+--  proj_fold_row[]  = array with the row numbers to fold on open
+--  proj_grp_path[]  = array with the path of each group or nil
+-----------------------------------------------------------------------
+
 
 function splitfilename(strfilename)
   -- Returns the Path, Filename, and Extension as 3 values
@@ -48,9 +63,9 @@ function proj_parse_buffer()
   
   --parse project file line by line
   p_buffer= buffer
-  for r = 0, p_buffer.line_count do
+  for r = 1, p_buffer.line_count do
     fname= ''
-    line= p_buffer:get_line(r)
+    line= p_buffer:get_line(r-1)
     
     --try option 1)
     local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
@@ -102,6 +117,7 @@ end
 --The first file line MUST BE a valid "option 1)": ...##...##...
 function proj_check_file()
   if buffer._is_a_project == nil then
+    --row 1
     line= buffer:get_line(0)
     --try option 1)
     local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.+)::(.-)%s*$')
@@ -119,7 +135,7 @@ function M.proj_show_doc()
   if buffer._is_a_project ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
     if buffer.proj_files ~= nil then
-      r= buffer.line_from_position(buffer.current_pos)
+      r= buffer.line_from_position(buffer.current_pos)+1
       info = buffer.proj_files[ r ]
       if info == '' and buffer.proj_grp_path[r] ~= nil then
         info= buffer.proj_grp_path[r]
