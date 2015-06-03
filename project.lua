@@ -536,6 +536,8 @@ function M.proj_new_project()
   }
   if not rootdir then
     rootdir=''  --relative
+  else
+    rootdir= rootdir .. (WIN32 and '\\' or '/')
   end
 
   local buffer = buffer.new()
