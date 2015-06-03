@@ -120,7 +120,7 @@ function proj_check_file()
     --row 1
     line= buffer:get_line(0)
     --try option 1)
-    local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.+)::(.-)%s*$')
+    local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
     if n ~= nil then
       return true
     end

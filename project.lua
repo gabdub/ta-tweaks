@@ -1,6 +1,7 @@
 ----------------------------- PROJECT ---------------------------------
 local events, events_connect = events, events.connect
 local M = {}
+local _L = _L
 -----------------------------------------------------------------------
 -- Vars added to M:
 --  M.proj_view       = preferred view for the project
@@ -523,16 +524,23 @@ function M.proj_new_project()
     ui.statusbar_text= 'Open cancelled'
     return
   end
-  ui.goto_view(1)
-  local buffer = buffer.new()
-  buffer.filename = filename
   path,fn,ext = splitfilename(filename)
   if ext ~= '' then
     --remove extension
     fn= fn:match('^(.+)%.')
   end
-  --TODO:select the root of the project (suggest path)
-  buffer:append_text('[' .. fn .. ']::' .. path .. '::')
+  --select the root of the project (suggest project path)
+  rootdir = ui.dialogs.fileselect{
+    title = 'Select project root (Cancel = relative to project file)',
+    select_only_directories = true, with_directory = path
+  }
+  if not rootdir then
+    rootdir=''  --relative
+  end
+
+  local buffer = buffer.new()
+  buffer.filename = filename
+  buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
   proj_check_and_select()
 end
 
