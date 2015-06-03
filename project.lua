@@ -31,7 +31,7 @@ end
 
 --lost focus: if project is in SELECTION mode change current line
 local function proj_show_lost_focus(p_buffer)
-  if M.proj_updating == 0 and buffer._is_a_project or (p_buffer ~= nil) then
+  if (M.proj_updating == 0 and buffer._is_a_project) or (p_buffer ~= nil) then
     if p_buffer == nil then p_buffer= buffer end
     -- project in SELECTION mode without focus--
     p_buffer.caret_line_back = 0xf0e5d5
@@ -175,6 +175,12 @@ local function proj_update_after_switch()
       --set EDIT mode context menu
       proj_contextm_edit()
     end
+    --refresh (when view are closed this is losr)
+    --in SELECTION mode the current line is always visible
+    buffer.caret_line_visible_always= buffer._is_a_project
+    --and the scrollbars hidden
+    buffer.h_scroll_bar= not buffer._is_a_project
+    buffer.v_scroll_bar= buffer.h_scroll_bar
     
     --check project view / set default files view
     if M.proj_view == nil then
@@ -271,7 +277,7 @@ function M.proj_go_file(file)
   if #_VIEWS == 1 then
     view:split(true)  --split verticaly
     --left project in view #1
-    ui.goto_view(1)    
+    ui.goto_view(1)
     if view.size ~= nil then
       --set default project width= 20% of screen (actual = 50%)
       view.size= math.floor(view.size/2.5)
@@ -409,8 +415,8 @@ function M.proj_locate_file(p_buffer, file)
   return nil
 end
 
+-- add the current file to the project
 function M.proj_add_this_file()
-  -- add the current file to the project
   local p_buffer = M.proj_work_buffer()
   if p_buffer then
     --get file path
@@ -449,7 +455,6 @@ function M.proj_add_this_file()
         p_buffer.read_only= save_ro
         --move the selection bar
         p_buffer:goto_line(row-1)
-        --proj_show_lost_focus()
         -- project in SELECTION mode without focus--
         proj_show_lost_focus(p_buffer)
         p_buffer.home()
@@ -475,22 +480,27 @@ function M.proj_sel_this_file()
     --found the working project and is in SELECTION mode
     --get file path
     local file= buffer.filename
-    row= M.proj_locate_file(p_buffer, file)
-    if row ~= nil then
-      --row found
-      if M.proj_view == nil then
-        M.proj_view= 1
+    if file ~= nil then
+      row= M.proj_locate_file(p_buffer, file)
+      if row ~= nil then
+        --row found
+        if M.proj_view == nil then
+          M.proj_view= 1
+        end
+        --this file is in the project view
+        if _VIEWS[view] == M.proj_view then
+          --choose another view for the file
+          M.proj_files_view= nul
+        end
+        ui.goto_view(M.proj_view)
+        --move the selection bar
+        p_buffer:goto_line(row-1)
+         -- project in SELECTION mode without focus--
+        proj_show_lost_focus(p_buffer)
+        --return to this file (it could be in a different view)
+        ui.statusbar_text= 'sel row='..row..' view='..M.proj_view
+        M.proj_go_file(file)
       end
-      --this file is in the project view
-      if _VIEWS[view] == M.proj_view then
-        --choose another view for the file
-        M.proj_files_view= nul
-      end
-      ui.goto_view(M.proj_view)
-      --move the selection bar
-      p_buffer:goto_line(row-1)
-      --return to this file (it could be in a different view)
-      M.proj_go_file(file)
     end
   end
   M.proj_updating= M.proj_updating-1
