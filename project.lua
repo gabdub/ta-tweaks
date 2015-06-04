@@ -4,8 +4,8 @@ local M = {}
 local _L = _L
 -----------------------------------------------------------------------
 -- Vars added to M:
---  M.proj_view       = preferred view for the project
---  M.proj_files_view = preferred view for opening files
+--  M.proj_view_n     = number of the preferred view for the project
+--  M.proj_files_vn   = number of preferred view for opening files
 --
 --  M.proj_cmenu_num  = number of the current context menu
 --                  1 = project in SELECTION mode
@@ -117,35 +117,34 @@ function proj_contextm_file()
   end
 end
 
+--set project view = this view
 --auto-choose a view where to open the project files
 local function proj_set_files_view()
 --check: the current buffer is a project
   if buffer._is_a_project ~= nil then
+    n= _VIEWS[view]
+    --set project view = this view
+    M.proj_view_n= n
     if #_VIEWS > 1 then
-      --show files in the "next"/"prev" view
-      n= _VIEWS[view]
-      --set project view
-      M.proj_view= n
-      if M.proj_files_view == nil then
-        --there isn't a file view already set, choose one
+      --don't use the same view for the project and the files
+      if M.proj_files_vn == nil or M.proj_files_vn == n or M.proj_files_vn > #_VIEWS then
+        --show files in the "next"/"prev" view
         if n < #_VIEWS then
-          M.proj_files_view= _VIEWS[n+1]
+          M.proj_files_vn= n+1
         else
-          M.proj_files_view= _VIEWS[n-1]
+          M.proj_files_vn= n-1
         end
       end
     else
-      --only one view, reset project view
-      M.proj_view= 1
-      --split the view for files
-      M.proj_files_view= null
+      --only one view, split the view for files
+      M.proj_files_vn= null
     end
   end
 end
 
 --open all project files in the current view
 function M.proj_set_open_panel()
-  M.proj_files_view= view
+  M.proj_files_vn= _VIEWS[view]
 end
 
 local function proj_update_after_switch()
@@ -158,7 +157,14 @@ local function proj_update_after_switch()
     --set regular file context menu
     proj_contextm_file()
     --try to select the current file in the project
-    M.proj_sel_this_file()
+    M.proj_track_this_file()
+
+    --refresh some options (when views are closed this is mixed)
+    --the current line is not always visible
+    buffer.caret_line_visible_always= false
+    --and the scrollbars shown
+    buffer.h_scroll_bar= true
+    buffer.v_scroll_bar= true
 
   else
     --project buffer--
@@ -175,7 +181,7 @@ local function proj_update_after_switch()
       --set EDIT mode context menu
       proj_contextm_edit()
     end
-    --refresh (when view are closed this is losr)
+    --refresh some options (when views are closed this is mixed)
     --in SELECTION mode the current line is always visible
     buffer.caret_line_visible_always= buffer._is_a_project
     --and the scrollbars hidden
@@ -183,7 +189,7 @@ local function proj_update_after_switch()
     buffer.v_scroll_bar= buffer.h_scroll_bar
     
     --check project view / set default files view
-    if M.proj_view == nil then
+    if M.proj_view_n == nil then
       proj_set_files_view()
     end
     if #_BUFFERS == 1 then --and #_VIEWS > 1 then
@@ -191,15 +197,16 @@ local function proj_update_after_switch()
 --      --only the project is open, close all views
 --      --(looks better than the project in two views)
 --      while view:unsplit() do end
-      M.proj_view = 1
+      M.proj_view_n = 1
       proj_set_files_view()
       
-    elseif M.proj_view > #_VIEWS then
+    elseif M.proj_view_n > #_VIEWS then
       --correct invalid project view
-      M.proj_view = 1
+      M.proj_view_n = 1
       proj_set_files_view()
     end
   end
+  buffer.home()
   M.proj_updating= 0
 end
 events_connect(events.BUFFER_AFTER_SWITCH,  proj_update_after_switch)
@@ -295,8 +302,8 @@ function M.proj_go_file(file)
         break
       end
     end
-    if M.proj_files_view ~= nil then
-      ui.goto_view(_VIEWS[M.proj_files_view])
+    if M.proj_files_vn ~= nil then
+      ui.goto_view(M.proj_files_vn)
     end
     if n == nil then
       buffer.new()
@@ -304,7 +311,7 @@ function M.proj_go_file(file)
     end
     view.goto_buffer(view, n, false)
   else
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'), true, M.proj_files_view)
+    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'), true, _VIEWS[M.proj_files_vn])
   end
 end
 
@@ -315,6 +322,10 @@ function M.proj_open_sel_file()
   if buffer.proj_files == nil then
     return
   end
+
+  --set project view = this view
+  proj_set_files_view()
+
   --read selected line range
   r1= buffer.line_from_position(buffer.selection_start)+1
   r2= buffer.line_from_position(buffer.selection_end)+1
@@ -354,7 +365,7 @@ function M.proj_open_sel_file()
         M.proj_go_file(flist[r])
       end
       --try to select the current file in the working project
-      M.proj_sel_this_file()
+      M.proj_track_this_file(true)
       return
     end
   end
@@ -364,7 +375,7 @@ function M.proj_open_sel_file()
     ui.statusbar_text= 'Open: ' .. file
     M.proj_go_file(file)
     --try to select the current file in the working project
-    M.proj_sel_this_file()
+    M.proj_track_this_file(true)
   else
     --there is no file for this row, fold instead
     buffer.toggle_fold(r1)
@@ -433,15 +444,16 @@ function M.proj_add_this_file()
         --prevent some events to fire for ever
         M.proj_updating= M.proj_updating+1
 
-        if M.proj_view == nil then
-          M.proj_view= 1
+        if M.proj_view_n == nil then
+          M.proj_view_n= 1
         end
         --this file is in the project view
-        if _VIEWS[view] == M.proj_view then
+        if _VIEWS[view] == M.proj_view_n then
           --choose another view for the file
-          M.proj_files_view= nul
+          M.proj_files_vn= nul
+        else
+          ui.goto_view(M.proj_view_n)
         end
-        ui.goto_view(M.proj_view)
         
         --if the project is in readonly, change it
         save_ro= p_buffer.read_only
@@ -471,39 +483,51 @@ function M.proj_add_this_file()
 end
 
 --try to select the current file in the working project
-function M.proj_sel_this_file()
-  --prevent some events to fire for ever
-  M.proj_updating= M.proj_updating+1
-  
+--(only if the project is currently visible)
+function M.proj_track_this_file( proj_in_view )
   local p_buffer = M.proj_work_buffer()
   if p_buffer and p_buffer._is_a_project then
-    --found the working project and is in SELECTION mode
-    --get file path
-    local file= buffer.filename
-    if file ~= nil then
-      row= M.proj_locate_file(p_buffer, file)
-      if row ~= nil then
-        --row found
-        if M.proj_view == nil then
-          M.proj_view= 1
+    --ok, the working project is in SELECTION mode
+    if not proj_in_view then
+      --not sure if the project is in view...
+      --update project view
+      M.proj_view_n= nil
+      for i=1, #_VIEWS do
+        if _VIEWS[i].buffer == p_buffer then
+          M.proj_view_n= i
+          --if the project is in the files view, reset files view
+          if M.proj_files_vn == i then
+            M.proj_files_vn= nil
+          end
+          break
         end
-        --this file is in the project view
-        if _VIEWS[view] == M.proj_view then
-          --choose another view for the file
-          M.proj_files_view= nul
+      end
+    end
+
+    --only track the file if the project is visible
+    if M.proj_view_n ~= nil then
+      --get file path
+      local file= buffer.filename
+      if file ~= nil then
+        row= M.proj_locate_file(p_buffer, file)
+        if row ~= nil then
+          --row found
+          --prevent some events to fire for ever
+          M.proj_updating= M.proj_updating+1
+
+          ui.goto_view(M.proj_view_n)
+          --move the selection bar
+          p_buffer:goto_line(row-1)
+           -- project in SELECTION mode without focus--
+          proj_show_lost_focus(p_buffer)
+          --return to this file (it could be in a different view)
+          M.proj_go_file(file)
+
+          M.proj_updating= M.proj_updating-1
         end
-        ui.goto_view(M.proj_view)
-        --move the selection bar
-        p_buffer:goto_line(row-1)
-         -- project in SELECTION mode without focus--
-        proj_show_lost_focus(p_buffer)
-        --return to this file (it could be in a different view)
-        ui.statusbar_text= 'sel row='..row..' view='..M.proj_view
-        M.proj_go_file(file)
       end
     end
   end
-  M.proj_updating= M.proj_updating-1
 end
 
 events_connect(events.KEYPRESS, function(code)
@@ -598,8 +622,8 @@ function M.proj_close_project(keepviews)
   local p_buffer = M.proj_work_buffer()
   if p_buffer ~= nil then
     if #_VIEWS > 1 then
-      if M.proj_view ~= nil then
-        ui.goto_view(M.proj_view)
+      if M.proj_view_n ~= nil then
+        ui.goto_view(M.proj_view_n)
       else
         ui.goto_view(1)
       end
@@ -611,9 +635,9 @@ function M.proj_close_project(keepviews)
           view.unsplit(view)
         end
         --reset project view
-        M.proj_view= 1
+        M.proj_view_n= 1
         --split the view for files
-        M.proj_files_view= null
+        M.proj_files_vn= null
       end
     else
       --close was cancelled
