@@ -65,9 +65,9 @@ local function proj_contextm_sel()
   if proj_context_menu_init(1) then
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
-      {_L['_Open'] .. ' file   [Enter]', Proj.open_sel_file},
+      {_L['_Open'] .. ' file  [Enter]', Proj.open_sel_file},
       {''},
-      {_L['_Edit'] .. ' project',   Proj.toggle_sel_mode}
+      {_L['_Edit'] .. ' project',       Proj.toggle_sel_mode}
     }
   end
 end
@@ -87,9 +87,10 @@ local function proj_contextm_file()
   if proj_context_menu_init(3) then
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
-      {'_Add this file to project',   Proj.add_this_file},
+      {'_Add this file',           Proj.add_this_file},
+      {'Add all open _Files',      Proj.add_all_files},
       {''},
-      {'_Open project files here',    Proj.set_open_panel}
+      {'_Open project files here', Proj.set_open_panel}
     }
   end
 end

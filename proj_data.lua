@@ -21,7 +21,7 @@
 --  The first project line MUST BE an "option 1)"
 ----------------------------------------------------------------------
 -- Vars added to buffer:
---  _project_select    = mark this buffer as a valid project file
+--  _project_select  = mark this buffer as a valid project file
 --               nil = regular file
 --              true = project in SELECTION mode
 --             false = project in EDIT mode
