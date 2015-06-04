@@ -20,10 +20,8 @@
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
 ----------------------------------------------------------------------
-local M = {}
------------------------------------------------------------------------
 -- Vars added to buffer:
---  _is_a_project    = mark this buffer as a valid project file
+--  _project_select    = mark this buffer as a valid project file
 --               nil = regular file
 --              true = project in SELECTION mode
 --             false = project in EDIT mode
@@ -35,38 +33,38 @@ local M = {}
 --  proj_fold_row[]  = array with the row numbers to fold on open
 --  proj_grp_path[]  = array with the path of each group or nil
 -----------------------------------------------------------------------
+local Proj = Proj
 
-
-function splitfilename(strfilename)
+function Proj.splitfilename(strfilename)
   -- Returns the Path, Filename, and Extension as 3 values
   return string.match(strfilename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
 end
 
 --fill filenames array "buffer.proj_files[]"
-function proj_parse_buffer()
+function Proj.parse_buffer()
   ui.statusbar_text= 'Parsing project file...'
-  
+
   buffer.proj_files= {}
   buffer.proj_fold_row = {}
   buffer.proj_grp_path = {}
-  
+
   --get project file path (default)
   projname= buffer.filename
   if projname ~= nil then
-    abspath,fn,ext = splitfilename(projname)
+    abspath,fn,ext = Proj.splitfilename(projname)
   else
     --new project, use current dir
     projname= ''
     abspath= lfs.currentdir()
   end
   path = abspath
-  
+
   --parse project file line by line
   p_buffer= buffer
   for r = 1, p_buffer.line_count do
     fname= ''
     line= p_buffer:get_line(r-1)
-    
+
     --try option 1)
     local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
     if n == nil then
@@ -74,9 +72,9 @@ function proj_parse_buffer()
       fn= string.match(line,'^%s*(.-)%s*$')
     end
     --ui._print('Parser', 'n='..((n==nil) and 'nil' or n)..' f='..((f==nil) and 'nil' or f)..' opt='..((opt==nil) and 'nil' or opt) )
-    
+
     if fn ~= nil and fn ~= '' then
-      p,f,e= splitfilename(fn)
+      p,f,e= Proj.splitfilename(fn)
       if f == '' and p ~= '' then
         --only the path is given
         dots, pathrest= string.match(p,'^(%.*[\\/])(.*)$')
@@ -89,7 +87,7 @@ function proj_parse_buffer()
           path = abspath
         end
         buffer.proj_grp_path[r]= path
-        
+
       elseif f ~= '' then
         if p == '' then
           --relative file, add current path
@@ -115,8 +113,8 @@ end
 
 --check if the current file is a valid project
 --The first file line MUST BE a valid "option 1)": ...##...##...
-function proj_check_file()
-  if buffer._is_a_project == nil then
+function Proj.check_file()
+  if buffer._project_select == nil then
     --row 1
     line= buffer:get_line(0)
     --try option 1)
@@ -126,11 +124,55 @@ function proj_check_file()
   return true
 end
 
+--return the working project buffer
+function Proj.get_work_buffer()
+  -- search for the working project
+  for _, buffer in ipairs(_BUFFERS) do
+    if buffer._is_working_project then
+      --found
+      return buffer
+    end
+  end
+  -- not found, choose a new one
+  -- 1) choose the project buffer in the LOWER view
+  for i= 1, #_VIEWS do
+    if _VIEWS[i].buffer._project_select ~= nil then
+      --mark this as the working project
+      _VIEWS[i].buffer._is_working_project = true
+      return _VIEWS[i].buffer
+    end
+  end
+  -- 2) check all buffers, use the first found
+  for _, buffer in ipairs(_BUFFERS) do
+    if buffer._project_select ~= nil then
+      --mark this as the working project
+      buffer._is_working_project = true
+      return buffer
+    end
+  end
+  --no project file found
+  return nil
+end
+
+--return the file position (ROW: 1..) in the given buffer file list
+function Proj.locate_file(p_buffer, file)
+  --check the given buffer has a list of files
+  if p_buffer and p_buffer.proj_files ~= nil and file then
+    for row= 1, #p_buffer.proj_files do
+      if file == p_buffer.proj_files[row] then
+        return row
+      end
+    end
+  end
+  --not found
+  return nil
+end
+
 --------------------------------------------------------------
 -- show project current row properties
-function M.proj_show_doc()
+function Proj.show_doc()
   --call_tip_show
-  if buffer._is_a_project ~= nil then
+  if buffer._project_select ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
     if buffer.proj_files ~= nil then
       r= buffer.line_from_position(buffer.current_pos)+1
@@ -146,8 +188,3 @@ function M.proj_show_doc()
     textadept.editing.show_documentation()
   end
 end
-
---------------------------------------------------------------
--- CTRL+H  show current row properties or textadept's doc.
-keys.ch = M.proj_show_doc
---------------------------------------------------------------
