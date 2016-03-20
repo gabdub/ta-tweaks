@@ -51,7 +51,9 @@ require('ctrl_tab_mru')
 
   __project.lua__ : this module adds the following bindings:
   
-    * F4:        toggle project file mode (edit / select)
+    * F4:        (in project view) Toggle project file mode (edit / select)
+    * F5:        (in project view) Refresh syntax highlighting + project folding
+    * CTRL+H:    (in project view) Show the complete path of the file in the selected row
       
 __Features:__
 * Allow to group files in projects
@@ -67,7 +69,8 @@ Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_ and _proj_data.lua_ to your _
 ```lua
 require('project')
 ```
-
+**SELECT Mode**
 ![select mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_sel.png "Project in select mode")
 
+**EDIT Mode**
 ![edit mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_edit.png "Project in edit mode")
