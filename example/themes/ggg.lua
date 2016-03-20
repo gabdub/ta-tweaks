@@ -7,23 +7,23 @@
 local buffer = buffer
 local property, property_int = buffer.property, buffer.property_int
 
-property['color.base00'] = 0x362b00
+property['color.base00'] = 0x362b00 --caret / back calltips
 property['color.base01'] = 0x423607
-property['color.base02'] = 0x202000 --texto
-property['color.base03'] = 0x837b65
-property['color.base04'] = 0x6D6D3E --comentarios
-property['color.base05'] = 0xa1a193
-property['color.base06'] = 0xc5e8ee --fondo linea actual
-property['color.base07'] = 0xeeeeee --fondo
-property['color.base08'] = 0x2f32dc --(red)
-property['color.base09'] = 0x164bcb --ctes
-property['color.base0A'] = 0x0089b5
-property['color.base0B'] = 0x006030 --strings (green)
-property['color.base0C'] = 0x98a12a
-property['color.base0D'] = 0xd28b26
-property['color.base0E'] = 0x800000 --keywords
-property['color.base0F'] = 0x8236d3
-property['color.base10'] = 0xFFFFFF --linenumber
+property['color.base02'] = 0x101000 --texto / operadores / select-back
+property['color.base03'] = 0x837b65 --indent-guide
+property['color.base04'] = 0x6D6D3E --comentarios / back marks
+property['color.base05'] = 0x0a70ff --fore numeros de linea / back marks selected / calltips
+property['color.base06'] = 0xf5f9ff --fondo linea actual y lineas largas y embedded
+property['color.base07'] = 0xd6e7ff --fondo y fore para reverse: hue=25 sat=99% light=+42%
+property['color.base08'] = 0x2f32dc --variables, error, red
+property['color.base09'] = 0x164bcb --ctes, numeros y tipos
+property['color.base0A'] = 0x0089b5 --class, label, pre-proc
+property['color.base0B'] = 0x006030 --strings, green
+property['color.base0C'] = 0x98a12a --regext, [] ok
+property['color.base0D'] = 0x015aee --bookmark
+property['color.base0E'] = 0x800000 --funciones y keywords
+property['color.base0F'] = 0x8236d3 --fore embedded
+property['color.base10'] = 0xb8dcff --back linenumber
 
 -- Default font.
 --property['font'], property['fontsize'] = 'Bitstream Vera Sans Mono', 11

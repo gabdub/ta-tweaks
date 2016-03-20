@@ -9,7 +9,7 @@ local function proj_show_sel_w_focus()
   buffer.margin_width_n[0] = 0
   --highlight current line as selected
   buffer.caret_width= 0
-  buffer.caret_line_back = 0xf0d0a0
+  buffer.caret_line_back = 0x88acdf --property['color.base10'] -0x202020
 end
 
 --lost focus: if project is in SELECTION mode change current line
@@ -17,7 +17,7 @@ function Proj.show_lost_focus(p_buffer)
   if (Proj.updating_ui == 0 and buffer._project_select) or (p_buffer ~= nil) then
     if p_buffer == nil then p_buffer= buffer end
     -- project in SELECTION mode without focus--
-    p_buffer.caret_line_back = 0xf0e5d5
+    p_buffer.caret_line_back = 0xa8ccff --property['color.base10']
   end
 end
 
@@ -29,7 +29,7 @@ local function proj_show_default()
   buffer.margin_width_n[0] = width + (not CURSES and 4 or 0)
   --return to default
   buffer.caret_width= 2
-  buffer.caret_line_back = 0xc5e8ee
+  buffer.caret_line_back = 0xf5f9ff --property['color.base06']
 end
 
 -----------------MENU/CONTEXT MENU-------------------
@@ -112,7 +112,7 @@ function Proj.toggle_sel_mode()
     --if the current file is a project, enter SELECTION mode--
     Proj.check_and_select()
     if buffer._project_select == nil then
-      ui.statusbar_text='This file is not a valid project'
+      ui.statusbar_text='This file is not a project'
     end
   else
     --toggle mode
@@ -361,7 +361,17 @@ events_connect(events.KEYPRESS, function(code)
 end)
 --------------------------------------------------------------
 -- F4       toggle project between selection and EDIT modes
-keys.f4 = Proj.toggle_sel_mode
+keys.f4 = function()
+  Proj.toggle_sel_mode()
+  if buffer._project_select ~= nil and view.size ~= nil then
+    if buffer._project_select then
+      view.size= math.floor(view.size/3.0)
+    else
+      view.size= math.floor(view.size*3.0)
+    end
+  end
+end
+  
 --------------------------------------------------------------
 -- F5       Refresh syntax highlighting + project folding
 keys.f5 = function()
@@ -374,3 +384,19 @@ end
 --------------------------------------------------------------
 -- CTRL+H  show current row properties or textadept's doc.
 keys.ch = Proj.show_doc
+
+------------------- tab-clicked event ---------------
+events.connect(events.TAB_CLICKED, function(ntab)
+  --tab clicked (0...) check if a view change is needed
+  if #_VIEWS > 1 and _BUFFERS[ntab]._project_select == nil then
+    --normal file: check we are not in project view
+    if Proj.files_vn ~= nil then
+      ui.goto_view(Proj.files_vn)
+    end
+  else
+    --project buffer: force project view
+    if Proj.view_n ~= nil then
+      ui.goto_view(Proj.view_n)
+    end
+  end
+end)

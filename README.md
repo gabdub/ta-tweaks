@@ -32,3 +32,39 @@ _Optional:_
 keys.cf =  keys.sf3
 ```
 
+  __ctrl_tab_mru.lua__ : this module adds the following bindings:
+  
+    * CTRL+TAB:        goto next buffer using a MRU list
+    * CTRL+SHIFT+TAB:  goto previous buffer
+      
+__Features:__
+* Implements a more standard way to handle CTRL+TAB and CTRL+SHIFT+TAB
+* It travels the buffers in Most Recent Use order
+* Allows to choose any file by holding the control key down and pressing the TAB or shift+TAB keys several times before releasing the control key
+* Ignores project files (_project.lua_)
+
+__Usage:__
+Copy  _ctrl_tab_mru.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
+```lua
+require('ctrl_tab_mru')
+```
+
+  __project.lua__ : this module adds the following bindings:
+  
+    * F4:        toggle project file mode (edit / select)
+      
+__Features:__
+* Allow to group files in projects
+* Use a simple text format (see _proj_data.lua_)
+* One view is used to show the project files as a vertical list (read only)
+* Double click opens the file
+* The current file is hilited
+* Main and context submenu
+* F4 enter/exit the edit mode
+
+__Usage:__
+Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_ and _proj_data.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
+```lua
+require('project')
+```
+

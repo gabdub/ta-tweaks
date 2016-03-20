@@ -9,6 +9,9 @@ keys.cf =  keys.sf3
 --F4 toggle project mode
 require('project')
 
+--ctrl+tab / ctrl+shift+tab: with MRU list
+require('ctrl_tab_mru')
+
 events.connect(events.LEXER_LOADED, function(lang)
   if lang == 'vala' then
     buffer.tab_width = 4
