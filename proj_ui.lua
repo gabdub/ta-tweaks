@@ -386,17 +386,29 @@ end
 keys.ch = Proj.show_doc
 
 ------------------- tab-clicked event ---------------
-events.connect(events.TAB_CLICKED, function(ntab)
-  --tab clicked (0...) check if a view change is needed
-  if #_VIEWS > 1 and _BUFFERS[ntab]._project_select == nil then
-    --normal file: check we are not in project view
-    if Proj.files_vn ~= nil then
-      ui.goto_view(Proj.files_vn)
-    end
-  else
-    --project buffer: force project view
-    if Proj.view_n ~= nil then
-      ui.goto_view(Proj.view_n)
-    end
-  end
-end)
+--change the view, if needed, when a tab is clicked
+--requires:
+--  * add the following line to the function "t_tabchange()" in "textadept.c" @1828
+--    lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
+--
+--  * recompile textadept
+--
+--  * add the following line to "ta_events = {}" in "events.lua" (to register the new event) @369
+--    'tab_clicked',
+--
+--  *uncomment the following event handler
+--
+--events.connect(events.TAB_CLICKED, function(ntab)
+--  --tab clicked (0...) check if a view change is needed
+--  if #_VIEWS > 1 and _BUFFERS[ntab]._project_select == nil then
+--    --normal file: check we are not in project view
+--    if Proj.files_vn ~= nil then
+--      ui.goto_view(Proj.files_vn)
+--    end
+--  else
+--    --project buffer: force project view
+--    if Proj.view_n ~= nil then
+--      ui.goto_view(Proj.view_n)
+--    end
+--  end
+--end)
