@@ -68,3 +68,6 @@ Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_ and _proj_data.lua_ to your _
 require('project')
 ```
 
+![select mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_sel.png "Project in select mode")
+
+![edit mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_edit.png "Project in edit mode")
