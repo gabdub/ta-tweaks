@@ -1,19 +1,19 @@
 ----------------------------------------------------------------------
 -------- Project file format --------
 -- Valid project lines:
--- 1)  [b] [n] '##' [fn] '##' [opt]
+-- 1)  [b] [n] '::' [fn] '::' [opt]
 -- 2)  [b] [fn]
 -- 3)  [b]
 --
 -- [b] = optional blanks to visualy group files (folding groups)
 -- [n] = optional file/group name or description
---        '['n']', '('n')', '<'n'>' are colo/bold hightlighted
+--        '['n']', '('n')', '<'n'>' are color/bold hightlighted
 -- [fn] = path/filename to open
---        'p\'    absolute path definition 'P'
---        'p/'    absolute path definition 'P'
---        '.\p\'  relative path definition 'p' (added to last absolute 'P')
---        './p/'  relative path definition 'p' (added to last absolute 'P')
---        'f'     open file 'fn' (absolute) or 'P'+'fn' (relative)
+--        'path\'    absolute path definition 'P'
+--        'path/'    absolute path definition 'P'
+--        '.\path\'  relative path definition 'p' (added to last absolute 'P')
+--        './path/'  relative path definition 'p' (added to last absolute 'P')
+--        'filename' open file 'fn' (absolute) or 'P'+'fn' (relative)
 -- [opt] = optional control options
 --        '-'     fold this group on project load
 --

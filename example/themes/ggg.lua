@@ -29,7 +29,7 @@ property['color.base10'] = 0xb8dcff --back linenumber
 --property['font'], property['fontsize'] = 'Bitstream Vera Sans Mono', 11
 property['font'], property['fontsize'] = 'Ubuntu Mono', 13
 if WIN32 then
-  property['font'] = 'Courier New'
+  property['font'] = 'DejaVu Sans Mono'
 elseif OSX then
   property['font'], property['fontsize'] = 'Monaco', 12
 end
