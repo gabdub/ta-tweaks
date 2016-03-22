@@ -134,7 +134,6 @@ events.connect(events.KEYPRESS, function(code, shift, control, alt, meta)
   if code == 0xFFE3 or code == 0xFFE4 then --control key pressed? (left=65507=FFE3, right=65508=FFE4)
     ctrl_key_down = true
   end
-  ui.statusbar_text= 'k='..code
 end )
 
 events.connect(events.BUFFER_AFTER_SWITCH, function()
