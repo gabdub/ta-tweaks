@@ -188,3 +188,46 @@ function Proj.show_doc()
     textadept.editing.show_documentation()
   end
 end
+
+--------------------------------------------------------------
+-- find text in project's files
+-- code adapted from module: find.lua
+function Proj.find_in_files(p_buffer,text,match_case,whole_word)
+--  if buffer._type ~= _L['[Files Found Buffer]'] then preferred_view = view end
+
+  ui.SILENT_PRINT = false
+  ui._print(_L['[Files Found Buffer]'], _L['Find:']..' '..text)
+  buffer.indicator_current = ui.find.INDIC_FIND
+
+  if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end -- TODO: wordchars
+
+  local nfiles= 0
+  local nfound= 0
+  --check the given buffer has a list of files
+  if p_buffer and p_buffer.proj_files ~= nil then
+    for row= 1, #p_buffer.proj_files do
+      file= p_buffer.proj_files[row]
+      if file and file ~= '' then
+        local line_num = 1
+        nfiles = nfiles + 1
+        --buffer:append_text(('file:%s\n'):format(file))
+        for line in io.lines(file) do
+          local s, e = (match_case and line or line:lower()):find(text)
+          if s and e then
+            file = file:iconv('UTF-8', _CHARSET)
+            buffer:append_text(('%s:%d:%s\n'):format(file, line_num, line))
+            local pos = buffer:position_from_line(buffer.line_count - 2) +
+                        #file + #tostring(line_num) + 2
+            buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+            nfound = nfound + 1
+          end
+          line_num = line_num + 1
+        end
+      end
+    end
+  end
+  
+  if nfound == 0 then buffer:append_text(_L['No results found']) end
+  ui._print(_L['[Files Found Buffer]'], '') -- goto end, set save pos, etc.
+  ui.statusbar_text= 'Found '..nfound..' matches in '..nfiles..' files'
+end

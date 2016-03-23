@@ -119,3 +119,51 @@ keys.sf3 =  {goto_nearest_occurrence, false, true}
 -- CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS
 keys.csf3 = {goto_nearest_config, false}
 --------------------------------------------------------------
+
+-------find text in project's files----
+local function find_text_in_project(ask)
+  local buffer = buffer
+  local suggest= ''
+  local word = ''
+  
+  local p_buffer = Proj.get_work_buffer()
+  if p_buffer == nil then
+    ui.statusbar_text= 'No project found'
+    return
+  end
+  
+  goto_nearest_default()
+  local s, e = buffer.selection_start, buffer.selection_end
+  if s == e or ask then
+    --no selection, use last_search or ask for the first time search
+    if not ask and M.last_search ~= nil and M.last_search ~= "" then
+      --keep last_search
+      word = M.last_search
+    else
+      if s == e then
+        --suggest current word
+        s, e = buffer:word_start_position(s), buffer:word_end_position(s)
+      end
+      suggest= str_trim(buffer:text_range(s, e))  --remove trailing \n
+      --ask what to search, suggest current word o last-search
+      local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') .. 
+                 (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') .. 
+                 '\n(change options: alt+F3 / ctrl+shift+F3)'
+      r,word= ui.dialogs.inputbox{title = 'Search', informative_text = tit, width = 400, text = suggest}
+      if type(word) == 'table' then
+        word= table.concat(word, '\n') 
+      end
+    end
+  else
+    --use selection
+    word = str_trim(buffer:text_range(s, e))
+  end
+  
+  if word == '' then return end
+  M.last_search = word       --save last search
+  
+  Proj.find_in_files(p_buffer,word,M.goto_nearest_match_case,M.goto_nearest_whole_word)
+  
+end
+
+keys.aF = {find_text_in_project, true}
