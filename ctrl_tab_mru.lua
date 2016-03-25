@@ -16,9 +16,10 @@ local mru_buff= {}
 
 --DEBUG: show the MRU list in the status bar
 local function mru_status()
-  txt= 'MRU'
-  i= 1
+  local txt= 'MRU'
+  local i= 1
   while i <= #mru_buff and i < 15 do
+    local p,f,e
     if mru_buff[i].filename == nil then
       f='*'
     else
@@ -35,7 +36,7 @@ end
 
 local function mru_getbuffpos(b)
   --locate buffer 'b' in the MRU list
-  i= 1
+  local i= 1
   while i <= #mru_buff do
     if mru_buff[i] == b then
       return i  --return buffer position: 1...
@@ -48,7 +49,7 @@ end
 local function mru_buftotop(b)
   --move/add buffer 'b' to the TOP of the MRU list
   if b ~= nil then
-    i= mru_getbuffpos(b)
+    local i= mru_getbuffpos(b)
     if i == 0 then
       --not on the list, add it
       i=#mru_buff+1
@@ -86,6 +87,7 @@ local function mru_ctrl_tab_handler(shift)
     ctrl_key_down = false
   end
   
+  local swap
   repeat
     if shift then
       --ctrl+shift+ tab + .. + tab: swap 'backwards'
@@ -105,8 +107,8 @@ local function mru_ctrl_tab_handler(shift)
         tab_mru_idx= 1
         swap=0
         --ROTATE UP (send top to bottom)
-        b= mru_buff[1]
-        i= 1
+        local b= mru_buff[1]
+        local i= 1
         while i < #mru_buff do
           mru_buff[i]= mru_buff[i+1]
           i=i+1
@@ -118,7 +120,7 @@ local function mru_ctrl_tab_handler(shift)
     if swap > 0 then
       --SWAP 'swap' and top (pos=1)
       --to prevent buffer pushing in BUFFER_AFTER_SWITCH
-      b= mru_buff[1]
+      local b= mru_buff[1]
       mru_buff[1]= mru_buff[swap]
       mru_buff[swap]= b
     end
@@ -155,12 +157,12 @@ events.connect(events.BUFFER_DELETED, function()
   --remove the closed buffer from the MRU list
   --this event is called AFTER the buffer was deleted (the deleted buffer is NOT in the top of the MRU list)
   --is safer to check ALL the buffers and remove from the MRU list the ones that don't exist any more
-  i= 1
+  local i= 1
   while i <= #mru_buff do
     if mru_buff[i] ~= nil then
       if _BUFFERS[mru_buff[i]] == nil then
         --this buffer was deleted, remove it from the list
-        j= i
+        local j= i
         while j < #mru_buff do
           mru_buff[j]= mru_buff[j+1]
           j=j+1
@@ -175,8 +177,8 @@ end)
 
 --load existing buffers in the MRU list
 if #_BUFFERS > 0 then
-  nb= #_BUFFERS
-  i= 1
+  local nb= #_BUFFERS
+  local i= 1
   while nb > 0 do
     mru_buff[i]= _BUFFERS[nb]
     nb=nb-1
