@@ -190,18 +190,45 @@ function Proj.show_doc()
 end
 
 --------------------------------------------------------------
+--activate/create search view
+function Proj.goto_search_view()
+  local buffer_type= '[Project search]'
+  local search_buffer
+  for _, buffer in ipairs(_BUFFERS) do
+    if buffer._type == buffer_type then search_buffer = buffer break end
+  end
+  if not search_buffer then
+    --split view to show search results
+    view:split()
+    --set default search height= 75% of screen (actual = 50%)
+    view.size= math.floor(view.size*1.5)
+    search_buffer = buffer.new()
+    search_buffer._type = buffer_type
+    events.emit(events.FILE_OPENED)
+  else
+    --goto search results view
+    local index = _BUFFERS[search_buffer]
+    for i, view in ipairs(_VIEWS) do
+      if view.buffer._type == buffer_type then ui.goto_view(i) break end
+    end
+    if view.buffer._type ~= buffer_type then view:goto_buffer(index) end
+  end
+end
+
 -- find text in project's files
 -- code adapted from module: find.lua
 function Proj.find_in_files(p_buffer,text,match_case,whole_word)
---  if buffer._type ~= _L['[Files Found Buffer]'] then preferred_view = view end
+  --activate/create search view
+  Proj.goto_search_view()
+  Proj.search_vn= _VIEWS[view]
 
-  ui.SILENT_PRINT = false
-  ui._print(_L['[Files Found Buffer]'], _L['Find:']..' '..text)
+  buffer:append_text('['..text..']\n')
+  buffer:goto_pos(buffer.length)
   buffer.indicator_current = ui.find.INDIC_FIND
-
-  if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end -- TODO: wordchars
+  if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end
 
   local nfiles= 0
+  local totfiles= 0
   local nfound= 0
   --check the given buffer has a list of files
   if p_buffer and p_buffer.proj_files ~= nil then
@@ -209,15 +236,26 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
       file= p_buffer.proj_files[row]
       if file and file ~= '' then
         local line_num = 1
-        nfiles = nfiles + 1
-        --buffer:append_text(('file:%s\n'):format(file))
+        totfiles = totfiles + 1        
+        local prt_fname= true        
         for line in io.lines(file) do
           local s, e = (match_case and line or line:lower()):find(text)
           if s and e then
             file = file:iconv('UTF-8', _CHARSET)
-            buffer:append_text(('%s:%d:%s\n'):format(file, line_num, line))
-            local pos = buffer:position_from_line(buffer.line_count - 2) +
-                        #file + #tostring(line_num) + 2
+            if prt_fname then
+              prt_fname= false
+              local p,f,e= Proj.splitfilename(file)
+              if f == '' then
+                f= file
+              end
+              buffer:append_text((' %s::%s::\n'):format(f, file))
+              nfiles = nfiles + 1
+              if nfiles == 1 then buffer:goto_pos(buffer.length) end
+            end
+            local snum= ('%4d'):format(line_num)
+            buffer:append_text(('  @%s:%s\n'):format(snum, line))
+            
+            local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
             buffer:indicator_fill_range(pos + s - 1, e - s + 1)
             nfound = nfound + 1
           end
@@ -227,7 +265,55 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
     end
   end
   
-  if nfound == 0 then buffer:append_text(_L['No results found']) end
-  ui._print(_L['[Files Found Buffer]'], '') -- goto end, set save pos, etc.
-  ui.statusbar_text= 'Found '..nfound..' matches in '..nfiles..' files'
+  if nfound == 0 then buffer:append_text(' '.._L['No results found']..'\n') end
+  buffer:append_text('\n')
+  buffer:set_save_point()
+  
+  ui.statusbar_text= ''..nfound..' matches found in '..nfiles..' of '..totfiles..' files'
+  buffer:set_lexer('myproj')
+end
+
+--open the selected file
+function Proj.open_search_file()
+  --clear selection
+  buffer.selection_start= buffer.selection_end
+  --get line number, format: " @ nnn:....."
+  local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
+  local file
+  if line_num then 
+    --get file name from previous lines
+    for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
+      file = buffer:get_line(i):match('^.*::(.+)::.+$')
+      if file then break end
+    end    
+  else
+    --just open the file
+    file= buffer:get_cur_line():match('^.*::(.+)::.+$')
+  end
+  if file then
+    textadept.bookmarks.clear()
+    textadept.bookmarks.toggle()
+    --textadept.editing.select_line()
+    --change to files view
+    if Proj.files_vn ~= nil and Proj.files_vn ~= _VIEWS[view] and Proj.files_vn <= #_VIEWS then
+      ui.goto_view(Proj.files_vn)
+    end
+    --goto file / line_num
+    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),false,_VIEWS[Proj.files_vn])
+    if line_num then textadept.editing.goto_line(line_num) end
+  end
+end
+
+function Proj.close_search_view()
+  if Proj.search_vn then
+    --activate search view
+    Proj.goto_search_view()
+    Proj.search_vn = nil
+    --close buffer / view
+    view.unsplit(view)
+    buffer:set_save_point()
+    io.close_buffer()
+    return true
+  end
+  return false
 end

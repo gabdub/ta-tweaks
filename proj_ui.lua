@@ -269,7 +269,7 @@ end
 function Proj.set_files_view()
 --check: the current buffer is a project
   if buffer._project_select ~= nil then
-    n= _VIEWS[view]
+    local n= _VIEWS[view]
     --set project view = this view
     Proj.view_n= n
     if #_VIEWS > 1 then
@@ -350,13 +350,25 @@ events_connect(events.FILE_OPENED, function()
 end)
 
 events_connect(events.DOUBLE_CLICK, function(_, line)
-  if buffer._project_select then Proj.open_sel_file() end
+  if buffer._project_select then
+    Proj.open_sel_file()
+  elseif buffer._type == '[Project search]' then
+    Proj.open_search_file()
+  end
 end)
 events_connect(events.KEYPRESS, function(code)
-  --TODO: "enter from num-pad" not working in Ubuntu
-  if keys.KEYSYMS[code] == '\n' and buffer._project_select then
-    Proj.open_sel_file()
-    return true
+  local ks= keys.KEYSYMS[code]
+  if ks == '\n' or ks == 'kpenter' then  --"Enter" or "Return"
+    if buffer._project_select then
+      Proj.open_sel_file()
+      return true
+    end
+    if buffer._type == '[Project search]' then
+      Proj.open_search_file()
+      return true
+    end
+  elseif ks == 'esc' then --"Escape"
+    return Proj.close_search_view()
   end
 end)
 --------------------------------------------------------------
@@ -386,29 +398,24 @@ end
 keys.ch = Proj.show_doc
 
 ------------------- tab-clicked event ---------------
---change the view, if needed, when a tab is clicked
---requires:
---  * add the following line to the function "t_tabchange()" in "textadept.c" @1828
---    lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
---
---  * recompile textadept
---
---  * add the following line to "ta_events = {}" in "events.lua" (to register the new event) @369
---    'tab_clicked',
---
---  *uncomment the following event handler
---
---events.connect(events.TAB_CLICKED, function(ntab)
---  --tab clicked (0...) check if a view change is needed
---  if #_VIEWS > 1 and _BUFFERS[ntab]._project_select == nil then
---    --normal file: check we are not in project view
---    if Proj.files_vn ~= nil then
---      ui.goto_view(Proj.files_vn)
---    end
---  else
---    --project buffer: force project view
---    if Proj.view_n ~= nil then
---      ui.goto_view(Proj.view_n)
---    end
---  end
---end)
+events.connect(events.TAB_CLICKED, function(ntab)
+  --tab clicked (0...) check if a view change is needed
+  if #_VIEWS > 1 then
+    if _BUFFERS[ntab]._project_select ~= nil then
+      --project buffer: force project view
+      if Proj.view_n ~= nil then
+        ui.goto_view(Proj.view_n)
+      end
+    elseif _BUFFERS[ntab]._type == '[Project search]' then
+      --project search
+      if Proj.search_vn ~= nil then
+        ui.goto_view(Proj.search_vn)
+      end
+    else
+      --normal file: check we are not in project view
+      if Proj.files_vn ~= nil then
+        ui.goto_view(Proj.files_vn)
+      end
+    end
+  end
+end)

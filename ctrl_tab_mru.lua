@@ -72,7 +72,7 @@ local function mru_ctrl_tab_handler(shift)
     return --not enought buffers
   end
   
-  if buffer._project_select ~= nil then
+  if buffer._project_select ~= nil or buffer._type ~= nil then
     --goto files view before handling control+tab
     if Proj.files_vn ~= nil then
       ui.goto_view(Proj.files_vn)
@@ -124,7 +124,7 @@ local function mru_ctrl_tab_handler(shift)
       mru_buff[1]= mru_buff[swap]
       mru_buff[swap]= b
     end
-  until mru_buff[1]._project_select == nil
+  until mru_buff[1]._project_select == nil and mru_buff[1]._type == nil
   
   --activate the buffer in the TOP of the MRU list
   view:goto_buffer(_BUFFERS[mru_buff[1]])

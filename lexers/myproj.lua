@@ -24,13 +24,19 @@ local style_group3 = 'fore:#000080,bold'
 local extension = token('extension', '.' * l.word^0 )
 local style_extension = 'fore:#005050,italics'
 
+--search view
+local search_line = token('search_line', '@' * l.space^0 * l.digit^1 * ':' * l.nonnewline^0)
+local style_search_line = 'fore:#606060'
+
+
 M._rules = {
-  {'whitespace', ws},
-  {'hidden',     hidden},
+  {'whitespace',  ws},
+  {'hidden',      hidden},
   {'group1',      group1},
   {'group2',      group2},
   {'group3',      group3},
   {'extension',   extension},
+  {'search_line', search_line},
 }
 
 M._tokenstyles = {
@@ -39,8 +45,10 @@ M._tokenstyles = {
    group2   = style_group2,
    group3   = style_group3,
    extension= style_extension,
+   search_line= style_search_line,
 }
 
 M._FOLDBYINDENTATION = true
+M._LEXBYLINE = true
 
 return M

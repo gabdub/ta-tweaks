@@ -54,6 +54,7 @@ require('ctrl_tab_mru')
     * F4:        (in project view) Toggle project file mode (edit / select)
     * F5:        (in project view) Refresh syntax highlighting + project folding
     * CTRL+H:    (in project view) Show the complete path of the file in the selected row
+    * SHIFT+ALT+F     Search for text in all project files
       
 __Features:__
 * Allow to group files in projects
@@ -63,6 +64,7 @@ __Features:__
 * The current file is hilited
 * Main and context submenu
 * F4 enter/exit the edit mode
+* Search in project files
 
 __Usage:__
 Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_ and _proj_data.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
@@ -74,3 +76,6 @@ require('project')
 
 **EDIT Mode**
 ![edit mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_edit.png "Project in edit mode")
+
+**Project File Search**
+![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
