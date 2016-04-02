@@ -398,6 +398,18 @@ end
 keys.ch = Proj.show_doc
 
 ------------------- tab-clicked event ---------------
+---change the view, if needed, when a tab is clicked
+---requires:
+---  * add the following line to the function "t_tabchange()" in "textadept.c" @1828
+---    lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
+---
+---  * recompile textadept
+---
+---  * add the following line to "ta_events = {}" in "events.lua" (to register the new event) @369
+---    'tab_clicked',
+---
+---  * COMMENT the following event handler if not used
+---
 events.connect(events.TAB_CLICKED, function(ntab)
   --tab clicked (0...) check if a view change is needed
   if #_VIEWS > 1 then
