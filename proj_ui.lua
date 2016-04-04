@@ -260,7 +260,7 @@ function Proj.update_after_switch()
       Proj.set_files_view()
     end
   end
-  buffer.home()
+--  buffer.home()
   Proj.updating_ui= 0
 end
 
@@ -311,8 +311,8 @@ function Proj.track_this_file( proj_in_view )
       end
     end
 
-    --only track the file if the project is visible
-    if Proj.view_n ~= nil then
+    --only track the file if the project is visible and is not an special buffer
+    if Proj.view_n ~= nil and buffer._type == nil then
       --get file path
       local file= buffer.filename
       if file ~= nil then
