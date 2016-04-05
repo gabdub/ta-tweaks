@@ -233,7 +233,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   --check the given buffer has a list of files
   if p_buffer and p_buffer.proj_files ~= nil then
     for row= 1, #p_buffer.proj_files do
-      file= p_buffer.proj_files[row]
+      local file= p_buffer.proj_files[row]
       if file and file ~= '' then
         local line_num = 1
         totfiles = totfiles + 1        
@@ -316,4 +316,33 @@ function Proj.close_search_view()
     return true
   end
   return false
+end
+
+----------------------------------------
+--snapopen project files based on io.snapopen @ file_io.lua 
+function Proj.snapopen()
+  local p_buffer = Proj.get_work_buffer()
+  if p_buffer == nil then
+    ui.statusbar_text= 'No project found'
+    return
+  end
+  if p_buffer.proj_files ~= nil then
+    local utf8_list = {}
+    for row= 1, #p_buffer.proj_files do
+      local file= p_buffer.proj_files[row]
+      if file and file ~= '' then
+        file = file:gsub('^%.[/\\]', ''):iconv('UTF-8', _CHARSET)
+        utf8_list[#utf8_list + 1] = file        
+      end
+    end
+    local options = {
+      title = _L['Open'], columns = _L['File'], items = utf8_list,
+      button1 = _L['_OK'], button2 = _L['_Cancel'], select_multiple = true,
+      string_output = true, width = CURSES and ui.size[1] - 2 or nil
+    }
+    local button, files = ui.dialogs.filteredlist(options)
+    if button ~= _L['_OK'] or not files then return end
+    for i = 1, #files do files[i] = files[i]:iconv(_CHARSET, 'UTF-8') end
+    io.open_file(files)
+  end
 end

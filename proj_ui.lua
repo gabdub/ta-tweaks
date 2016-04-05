@@ -431,3 +431,6 @@ events.connect(events.TAB_CLICKED, function(ntab)
     end
   end
 end)
+
+--ctrl-shift-o = project snap open
+keys.cO = Proj.snapopen

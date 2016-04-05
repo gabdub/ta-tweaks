@@ -10,6 +10,7 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
     * ALT+F3:         goto nearest occurrence CHOOSE SEARCH OPTIONS
     * SHIFT+F3:       ASK + goto nearest occurrence FORWARD
     * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
+    * SHIFT+ALT+F     Search for text in all project files (see _project.lua_)
       
 __Features:__
 * Quick search of the selected text (if not text is selected, repeat last search)
@@ -54,7 +55,7 @@ require('ctrl_tab_mru')
     * F4:        (in project view) Toggle project file mode (edit / select)
     * F5:        (in project view) Refresh syntax highlighting + project folding
     * CTRL+H:    (in project view) Show the complete path of the file in the selected row
-    * SHIFT+ALT+F     Search for text in all project files
+    * CTRL+SHIFT+O:  Snapopen project files
       
 __Features:__
 * Allow to group files in projects
