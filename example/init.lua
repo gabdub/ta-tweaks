@@ -16,10 +16,12 @@ events.connect(events.LEXER_LOADED, function(lang)
   if lang == 'vala' then
     buffer.tab_width = 4
     buffer.use_tabs = false
-    
   elseif lang == 'lua' then
     buffer.tab_width = 2
     buffer.use_tabs = false
+  else
+    buffer.tab_width = 4
+    buffer.use_tabs = true
   end
 end)
 

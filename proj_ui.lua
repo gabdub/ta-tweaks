@@ -66,6 +66,7 @@ local function proj_contextm_sel()
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
       {_L['_Open'] .. ' file  [Enter]', Proj.open_sel_file},
+      {'_Snapopen',                     Proj.snapopen},
       {''},
       {_L['_Edit'] .. ' project',       Proj.toggle_sel_mode}
     }
