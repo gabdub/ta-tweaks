@@ -327,6 +327,9 @@ function Proj.snapopen()
     return
   end
   if p_buffer.proj_files ~= nil then
+    if Proj.files_vn ~= nil then
+      ui.goto_view(Proj.files_vn)
+    end
     local utf8_list = {}
     for row= 1, #p_buffer.proj_files do
       local file= p_buffer.proj_files[row]
