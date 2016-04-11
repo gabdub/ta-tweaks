@@ -325,6 +325,7 @@ function Proj.track_this_file( proj_in_view )
 
           ui.goto_view(Proj.view_n)
           --move the selection bar
+          p_buffer:ensure_visible_enforce_policy(row- 1)
           p_buffer:goto_line(row-1)
            -- project in SELECTION mode without focus--
           Proj.show_lost_focus(p_buffer)

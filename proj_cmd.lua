@@ -113,6 +113,7 @@ function Proj.add_this_file()
         p_buffer.proj_files[row]= file
         p_buffer.read_only= save_ro
         --move the selection bar
+        p_buffer:ensure_visible_enforce_policy(row- 1)
         p_buffer:goto_line(row-1)
         -- project in SELECTION mode without focus--
         Proj.show_lost_focus(p_buffer)
@@ -209,6 +210,7 @@ function Proj.add_all_files()
         p_buffer.read_only= save_ro
         if row then
           --move the selection bar
+          p_buffer:ensure_visible_enforce_policy(row- 1)
           p_buffer:goto_line(row-1)
         end
         -- project in SELECTION mode without focus--

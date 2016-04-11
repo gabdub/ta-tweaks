@@ -347,5 +347,6 @@ function Proj.snapopen()
     if button ~= _L['_OK'] or not files then return end
     for i = 1, #files do files[i] = files[i]:iconv(_CHARSET, 'UTF-8') end
     io.open_file(files)
+    Proj.update_after_switch()
   end
 end
