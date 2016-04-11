@@ -68,7 +68,7 @@ local function proj_contextm_sel()
       {_L['_Open'] .. ' file  [Enter]', Proj.open_sel_file},
       {'_Snapopen',                     Proj.snapopen},
       {''},
-      {_L['_Edit'] .. ' project',       Proj.toggle_sel_mode}
+      {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode}
     }
   end
 end
@@ -78,7 +78,7 @@ local function proj_contextm_edit()
   if proj_context_menu_init(2) then
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
-      {'_End edit',   Proj.toggle_sel_mode}
+      {'_End edit',   Proj.toggle_selectionmode}
     }
   end
 end
@@ -98,33 +98,34 @@ end
 
 ------------------PROJECT CONTROL-------------------
 --if the current file is a project, enter SELECTION mode--
-function Proj.check_and_select()
-  if Proj.check_file() then
-    Proj.set_sel_mode(true)
-    if buffer.filename ~= nil then
+function Proj.ifproj_setselectionmode()
+  if Proj.get_buffertype() >= Proj.PRJB_PROJ_NEW then
+    Proj.set_selectionmode(true)
+    if buffer.filename then
       ui.statusbar_text= 'Project file =' .. buffer.filename
     end
+    return true
   end
+  return false
 end
 
 --toggle project between SELECTION and EDIT modes
-function Proj.toggle_sel_mode()
-  if buffer._project_select == nil then
+function Proj.toggle_selectionmode()
+  local mode= Proj.get_buffertype()
+  if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then    
+    Proj.set_selectionmode(mode == Proj.PRJB_PROJ_EDIT) --toggle current mode
+  else
     --if the current file is a project, enter SELECTION mode--
-    Proj.check_and_select()
-    if buffer._project_select == nil then
+    if not Proj.ifproj_setselectionmode() then
       ui.statusbar_text='This file is not a project'
     end
-  else
-    --toggle mode
-    Proj.set_sel_mode(not buffer._project_select)
   end
   buffer.home()
 end
 
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
-function Proj.set_sel_mode(selmode)
+function Proj.set_selectionmode(selmode)
   local editmode= not selmode
   --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
   buffer._project_select= selmode
@@ -141,7 +142,7 @@ function Proj.set_sel_mode(selmode)
 
   if selmode then
     --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-    Proj.parse_buffer()
+    Proj.parse_projectbuffer()
     --set lexer to highlight groups and hidden control info ":: ... ::"
     buffer:set_lexer('myproj')
     --project in SELECTION mode--
@@ -293,7 +294,7 @@ end
 --try to select the current file in the working project
 --(only if the project is currently visible)
 function Proj.track_this_file( proj_in_view )
-  local p_buffer = Proj.get_work_buffer()
+  local p_buffer = Proj.get_projectbuffer()
   if p_buffer and p_buffer._project_select then
     --ok, the working project is in SELECTION mode
     if not proj_in_view then
@@ -348,13 +349,13 @@ events_connect(events.VIEW_AFTER_SWITCH,    Proj.update_after_switch)
 
 --if the current file is a project, enter SELECTION mode--
 events_connect(events.FILE_OPENED, function()
-  Proj.check_and_select()
+  Proj.ifproj_setselectionmode()
 end)
 
 events_connect(events.DOUBLE_CLICK, function(_, line)
   if buffer._project_select then
     Proj.open_sel_file()
-  elseif buffer._type == '[Project search]' then
+  elseif buffer._type == Proj.PRJT_SEARCH then
     Proj.open_search_file()
   end
 end)
@@ -365,7 +366,7 @@ events_connect(events.KEYPRESS, function(code)
       Proj.open_sel_file()
       return true
     end
-    if buffer._type == '[Project search]' then
+    if buffer._type == Proj.PRJT_SEARCH then
       Proj.open_search_file()
       return true
     end
@@ -376,7 +377,7 @@ end)
 --------------------------------------------------------------
 -- F4       toggle project between selection and EDIT modes
 keys.f4 = function()
-  Proj.toggle_sel_mode()
+  Proj.toggle_selectionmode()
   if buffer._project_select ~= nil and view.size ~= nil then
     if buffer._project_select then
       view.size= math.floor(view.size/3.0)
@@ -390,8 +391,8 @@ end
 -- F5       Refresh syntax highlighting + project folding
 keys.f5 = function()
   if buffer._project_select ~= nil then
-    Proj.toggle_sel_mode()
-    Proj.toggle_sel_mode()
+    Proj.toggle_selectionmode()
+    Proj.toggle_selectionmode()
   end
   buffer.colourise(buffer, 0, -1)
 end
@@ -420,7 +421,7 @@ events.connect(events.TAB_CLICKED, function(ntab)
       if Proj.view_n ~= nil then
         ui.goto_view(Proj.view_n)
       end
-    elseif _BUFFERS[ntab]._type == '[Project search]' then
+    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
       --project search
       if Proj.search_vn ~= nil then
         ui.goto_view(Proj.search_vn)

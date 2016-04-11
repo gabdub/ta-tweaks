@@ -126,7 +126,7 @@ local function find_text_in_project(ask)
   local suggest= ''
   local word = ''
   
-  local p_buffer = Proj.get_work_buffer()
+  local p_buffer = Proj.get_projectbuffer()
   if p_buffer == nil then
     ui.statusbar_text= 'No project found'
     return

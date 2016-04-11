@@ -35,13 +35,60 @@
 -----------------------------------------------------------------------
 local Proj = Proj
 
+--buffer type
+Proj.PRJB_NORMAL =      0   -- a regular file
+Proj.PRJB_FSEARCH =    -1   -- a "search in project files" results buffer
+Proj.PRJB_PROJ_NEW =    1   -- a project file not marked as such yet
+Proj.PRJB_PROJ_IDLE =   2   -- a project file (but not the working one)
+Proj.PRJB_PROJ_SELECT = 3   -- a project file in "selection mode"
+Proj.PRJB_PROJ_EDIT =   4   -- a project file in "edit mode"
+
+--buffer "_type"
+Proj.PRJT_SEARCH= '[Project search]'  --search results
+
+--view type
+Proj.PRJV_DEFAULT =     0   -- default view
+Proj.PRJV_PROJECT =     1   -- project view
+Proj.PRJV_FILES =       2   -- project files view
+Proj.PRJV_SEARCH =      3   -- search results view
+
+
+--determines the buffer type
+function Proj.get_buffertype(p_buffer)
+  if not p_buffer then p_buffer = buffer end  --use current buffer?
+  
+  if p_buffer._project_select ~= nil then  --marked as a project file?
+    if not p_buffer._is_working_project then
+      return Proj.PRJB_PROJ_IDLE      --project (but not the working one)
+    end
+    if p_buffer._project_select then
+      return Proj.PRJB_PROJ_SELECT    --project in "selection mode"
+    end
+    return Proj.PRJB_PROJ_EDIT        --project in "edit mode"
+  end
+  
+  if p_buffer._type == Proj.PRJT_SEARCH then
+    return Proj.PRJB_FSEARCH          --search results
+  end
+
+  --check if the current file is a valid project
+  --The first file line MUST BE a valid "option 1)": ...##...##...
+  local line= buffer:get_line(0)
+  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
+  if n ~= nil then
+    return Proj.PRJB_PROJ_NEW         --project file not marked as such yet
+  end
+
+  return Proj.PRJB_NORMAL             --regular file
+end
+
 function Proj.splitfilename(strfilename)
   -- Returns the Path, Filename, and Extension as 3 values
   return string.match(strfilename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
 end
 
 --fill filenames array "buffer.proj_files[]"
-function Proj.parse_buffer()
+function Proj.parse_projectbuffer()
   ui.statusbar_text= 'Parsing project file...'
 
   buffer.proj_files= {}
@@ -49,7 +96,7 @@ function Proj.parse_buffer()
   buffer.proj_grp_path = {}
 
   --get project file path (default)
-  projname= buffer.filename
+  local projname= buffer.filename
   if projname ~= nil then
     abspath,fn,ext = Proj.splitfilename(projname)
   else
@@ -60,10 +107,9 @@ function Proj.parse_buffer()
   path = abspath
 
   --parse project file line by line
-  p_buffer= buffer
-  for r = 1, p_buffer.line_count do
+  for r = 1, buffer.line_count do
     fname= ''
-    line= p_buffer:get_line(r-1)
+    line= buffer:get_line(r-1)
 
     --try option 1)
     local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
@@ -108,24 +154,11 @@ function Proj.parse_buffer()
       end
     end
   end
-  ui.statusbar_text= 'Open project: '.. projname
+  ui.statusbar_text= 'Project: '.. projname
 end
 
---check if the current file is a valid project
---The first file line MUST BE a valid "option 1)": ...##...##...
-function Proj.check_file()
-  if buffer._project_select == nil then
-    --row 1
-    line= buffer:get_line(0)
-    --try option 1)
-    local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
-    return (n ~= nil)
-  end
-  return true
-end
-
---return the working project buffer
-function Proj.get_work_buffer()
+--return the project buffer (the working one)
+function Proj.get_projectbuffer()
   -- search for the working project
   for _, buffer in ipairs(_BUFFERS) do
     if buffer._is_working_project then
@@ -150,7 +183,7 @@ function Proj.get_work_buffer()
       return buffer
     end
   end
-  --no project file found
+  --no project found
   return nil
 end
 
@@ -185,41 +218,39 @@ function Proj.show_doc()
       end
     end
   else
+    --call default show doc function
     textadept.editing.show_documentation()
   end
 end
 
 --------------------------------------------------------------
 --activate/create search view
-function Proj.goto_search_view()
-  local buffer_type= '[Project search]'
-  local search_buffer
-  for _, buffer in ipairs(_BUFFERS) do
-    if buffer._type == buffer_type then search_buffer = buffer break end
-  end
-  if not search_buffer then
-    --split view to show search results
-    view:split()
-    --set default search height= 75% of screen (actual = 50%)
-    view.size= math.floor(view.size*1.5)
-    search_buffer = buffer.new()
-    search_buffer._type = buffer_type
-    events.emit(events.FILE_OPENED)
-  else
-    --goto search results view
-    local index = _BUFFERS[search_buffer]
-    for i, view in ipairs(_VIEWS) do
-      if view.buffer._type == buffer_type then ui.goto_view(i) break end
+function Proj.goto_searchview()
+  for _, sbuffer in ipairs(_BUFFERS) do
+    if sbuffer._type == Proj.PRJT_SEARCH then
+      --goto search results view
+      local index = _BUFFERS[sbuffer]
+      for i, view in ipairs(_VIEWS) do
+        if view.buffer._type == Proj.PRJT_SEARCH then ui.goto_view(i) break end
+      end
+      if view.buffer._type ~= Proj.PRJT_SEARCH then view:goto_buffer(index) end
+      return
     end
-    if view.buffer._type ~= buffer_type then view:goto_buffer(index) end
   end
+  --split view to show search results
+  view:split()
+  --set default search height= 75% of screen (actual = 50%)
+  view.size= math.floor(view.size*1.5)
+  local search_buffer = buffer.new()
+  search_buffer._type = Proj.PRJT_SEARCH
+  events.emit(events.FILE_OPENED)
 end
 
 -- find text in project's files
 -- code adapted from module: find.lua
 function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   --activate/create search view
-  Proj.goto_search_view()
+  Proj.goto_searchview()
   Proj.search_vn= _VIEWS[view]
 
   buffer:append_text('['..text..']\n')
@@ -307,7 +338,7 @@ end
 function Proj.close_search_view()
   if Proj.search_vn then
     --activate search view
-    Proj.goto_search_view()
+    Proj.goto_searchview()
     Proj.search_vn = nil
     --close buffer / view
     view.unsplit(view)
@@ -321,7 +352,7 @@ end
 ----------------------------------------
 --snapopen project files based on io.snapopen @ file_io.lua 
 function Proj.snapopen()
-  local p_buffer = Proj.get_work_buffer()
+  local p_buffer = Proj.get_projectbuffer()
   if p_buffer == nil then
     ui.statusbar_text= 'No project found'
     return
