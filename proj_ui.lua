@@ -99,7 +99,7 @@ end
 ------------------PROJECT CONTROL-------------------
 --if the current file is a project, enter SELECTION mode--
 function Proj.ifproj_setselectionmode()
-  if Proj.get_buffertype() >= Proj.PRJB_PROJ_NEW then
+  if Proj.get_buffertype() >= Proj.PRJB_PROJ_MIN then
     Proj.set_selectionmode(true)
     if buffer.filename then
       ui.statusbar_text= 'Project file =' .. buffer.filename
@@ -328,6 +328,7 @@ function Proj.track_this_file( proj_in_view )
           --move the selection bar
           p_buffer:ensure_visible_enforce_policy(row- 1)
           p_buffer:goto_line(row-1)
+          p_buffer:home()
            -- project in SELECTION mode without focus--
           Proj.show_lost_focus(p_buffer)
           --return to this file (it could be in a different view)

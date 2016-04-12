@@ -35,52 +35,101 @@
 -----------------------------------------------------------------------
 local Proj = Proj
 
---buffer type
-Proj.PRJB_NORMAL =      0   -- a regular file
-Proj.PRJB_FSEARCH =    -1   -- a "search in project files" results buffer
-Proj.PRJB_PROJ_NEW =    1   -- a project file not marked as such yet
-Proj.PRJB_PROJ_IDLE =   2   -- a project file (but not the working one)
-Proj.PRJB_PROJ_SELECT = 3   -- a project file in "selection mode"
-Proj.PRJB_PROJ_EDIT =   4   -- a project file in "edit mode"
-
---buffer "_type"
-Proj.PRJT_SEARCH= '[Project search]'  --search results
-
---view type
-Proj.PRJV_DEFAULT =     0   -- default view
-Proj.PRJV_PROJECT =     1   -- project view
-Proj.PRJV_FILES =       2   -- project files view
-Proj.PRJV_SEARCH =      3   -- search results view
-
-
---determines the buffer type
+--determines the buffer type: Proj.PRJT_...
 function Proj.get_buffertype(p_buffer)
   if not p_buffer then p_buffer = buffer end  --use current buffer?
   
   if p_buffer._project_select ~= nil then  --marked as a project file?
-    if not p_buffer._is_working_project then
-      return Proj.PRJB_PROJ_IDLE      --project (but not the working one)
+    if p_buffer._is_working_project then
+      if p_buffer._project_select then
+        return Proj.PRJB_PROJ_SELECT  --is a project in "selection mode"
+      end
+      return Proj.PRJB_PROJ_EDIT      --is a project in "edit mode"
     end
-    if p_buffer._project_select then
-      return Proj.PRJB_PROJ_SELECT    --project in "selection mode"
-    end
-    return Proj.PRJB_PROJ_EDIT        --project in "edit mode"
+    return Proj.PRJB_PROJ_IDLE        --is a project (but not the working one)
   end
-  
   if p_buffer._type == Proj.PRJT_SEARCH then
-    return Proj.PRJB_FSEARCH          --search results
+    return Proj.PRJB_FSEARCH          --is a search results buffer
   end
-
   --check if the current file is a valid project
   --The first file line MUST BE a valid "option 1)": ...##...##...
   local line= buffer:get_line(0)
   local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
   if n ~= nil then
-    return Proj.PRJB_PROJ_NEW         --project file not marked as such yet
+    return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
   end
-
-  return Proj.PRJB_NORMAL             --regular file
+  return Proj.PRJB_NORMAL             --is a regular file
 end
+
+--return the project buffer (the working one)
+--enforce: project in preferred view, mark it as the "working one"
+function Proj.get_projectbuffer(force_view)
+  -- search for the working project
+  local pbuff, nview
+  local prefv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view
+  for _, buffer in ipairs(_BUFFERS) do
+    if buffer._is_working_project then
+      --working project found
+      if not force_view or _VIEWS[prefv].buffer == buffer then
+        return buffer --ok (is in the right view)
+      end
+      --need to change the view
+      pbuff = buffer
+      break
+    end
+  end
+  if pbuff == nil then
+    -- not found, choose a new one
+    -- 1) check the preferred project view
+    if _VIEWS[prefv].buffer._project_select ~= nil then
+      _VIEWS[prefv].buffer._is_working_project = true
+      return _VIEWS[prefv].buffer --ok (marked and in the right view)
+    end
+    -- 2) check projects in all views
+    for i= 1, #_VIEWS do
+      if _VIEWS[i].buffer._project_select ~= nil then
+        pbuff = _VIEWS[i].buffer
+        nview = i
+        break
+      end
+    end
+    if pbuff == nil then
+      -- 3) check all buffers, use the first found
+      for _, buffer in ipairs(_BUFFERS) do
+        if buffer._project_select ~= nil then
+          pbuff = buffer
+          break
+        end
+      end
+    end
+  end
+  
+  if pbuff then
+    --force: marked as the working project
+    pbuff._is_working_project = true
+    if force_view then
+      --force: project in the preferred view
+      if nview == nil then
+        --locate actual view
+        for i= 1, #_VIEWS do
+          if _VIEWS[i].buffer == pbuff then
+            nview = i
+            break
+          end
+        end
+      end
+      if nview ~= prefv then
+        --show project in the preferred view
+        local nv= _VIEWS[view]
+        ui.goto_view(prefv)
+        view:goto_buffer(_BUFFERS[pbuff])
+        ui.goto_view(nv)
+      end
+    end
+  end
+  return pbuff
+end
+
 
 function Proj.splitfilename(strfilename)
   -- Returns the Path, Filename, and Extension as 3 values
@@ -155,36 +204,6 @@ function Proj.parse_projectbuffer()
     end
   end
   ui.statusbar_text= 'Project: '.. projname
-end
-
---return the project buffer (the working one)
-function Proj.get_projectbuffer()
-  -- search for the working project
-  for _, buffer in ipairs(_BUFFERS) do
-    if buffer._is_working_project then
-      --found
-      return buffer
-    end
-  end
-  -- not found, choose a new one
-  -- 1) choose the project buffer in the LOWER view
-  for i= 1, #_VIEWS do
-    if _VIEWS[i].buffer._project_select ~= nil then
-      --mark this as the working project
-      _VIEWS[i].buffer._is_working_project = true
-      return _VIEWS[i].buffer
-    end
-  end
-  -- 2) check all buffers, use the first found
-  for _, buffer in ipairs(_BUFFERS) do
-    if buffer._project_select ~= nil then
-      --mark this as the working project
-      buffer._is_working_project = true
-      return buffer
-    end
-  end
-  --no project found
-  return nil
 end
 
 --return the file position (ROW: 1..) in the given buffer file list
@@ -352,7 +371,7 @@ end
 ----------------------------------------
 --snapopen project files based on io.snapopen @ file_io.lua 
 function Proj.snapopen()
-  local p_buffer = Proj.get_projectbuffer()
+  local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer == nil then
     ui.statusbar_text= 'No project found'
     return
