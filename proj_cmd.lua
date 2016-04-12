@@ -75,7 +75,7 @@ end
 
 -- add the current file to the project
 function Proj.add_this_file()
-  local p_buffer = Proj.get_projectbuffer()
+  local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
     --get file path
     file= buffer.filename
@@ -132,7 +132,7 @@ end
 
 -- add all open files to the project
 function Proj.add_all_files()
-  local p_buffer = Proj.get_projectbuffer()
+  local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
     flist= {}
     finprj= {}
@@ -306,7 +306,7 @@ end
 
 --close current project / view
 function Proj.close_project(keepviews)
-  local p_buffer = Proj.get_projectbuffer()
+  local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer ~= nil then
     if #_VIEWS > 1 then
       if Proj.view_n ~= nil then

@@ -294,7 +294,7 @@ end
 --try to select the current file in the working project
 --(only if the project is currently visible)
 function Proj.track_this_file( proj_in_view )
-  local p_buffer = Proj.get_projectbuffer()
+  local p_buffer = Proj.get_projectbuffer(false)
   if p_buffer and p_buffer._project_select then
     --ok, the working project is in SELECTION mode
     if not proj_in_view then
