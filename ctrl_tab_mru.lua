@@ -74,10 +74,8 @@ local function mru_ctrl_tab_handler(shift)
   
   if buffer._project_select ~= nil or buffer._type ~= nil then
     --goto files view before handling control+tab
-    if Proj.files_vn ~= nil then
-      ui.goto_view(Proj.files_vn)
-      return
-    end
+    Proj.goto_filesview() --change to files view if needed
+    return
   end
   
   if ctrl_key_down then

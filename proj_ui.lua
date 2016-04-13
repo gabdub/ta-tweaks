@@ -90,8 +90,6 @@ local function proj_contextm_file()
       title='Project',
       {'_Add this file',           Proj.add_this_file},
       {'Add all open _Files',      Proj.add_all_files},
-      {''},
-      {'_Open project files here', Proj.set_open_panel}
     }
   end
 end
@@ -137,9 +135,6 @@ function Proj.set_selectionmode(selmode)
   buffer.h_scroll_bar= editmode
   buffer.v_scroll_bar= editmode
 
-  --set default files view
-  Proj.set_files_view()
-
   if selmode then
     --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
     Proj.parse_projectbuffer()
@@ -176,8 +171,6 @@ function Proj.go_file(file)
       --set default project width= 20% of screen (actual = 50%)
       view.size= math.floor(view.size/2.5)
     end
-    --set default files view
-    Proj.set_files_view()
   end
   if file == nil or file == '' then
     --new file (only one)
@@ -189,16 +182,14 @@ function Proj.go_file(file)
         break
       end
     end
-    if Proj.files_vn ~= nil then
-      ui.goto_view(Proj.files_vn)
-    end
+    Proj.goto_filesview() --change to files view if needed
     if n == nil then
       buffer.new()
       n= _BUFFERS[buffer]
     end
     view.goto_buffer(view, n, false)
   else
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'), true, _VIEWS[Proj.files_vn])
+    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'), true, _VIEWS[Proj.prefview[Proj.PRJV_FILES]])
   end
 end
 
@@ -244,51 +235,14 @@ function Proj.update_after_switch()
     buffer.h_scroll_bar= not buffer._project_select
     buffer.v_scroll_bar= buffer.h_scroll_bar
 
-    --check project view / set default files view
-    if Proj.view_n == nil then
-      Proj.set_files_view()
-    end
     if #_BUFFERS == 1 then --and #_VIEWS > 1 then
 --doesn't work as spected when a file is closed. TODO: move somewhere...
 --      --only the project is open, close all views
 --      --(looks better than the project in two views)
 --      while view:unsplit() do end
-      Proj.view_n = 1
-      Proj.set_files_view()
-
-    elseif Proj.view_n > #_VIEWS then
-      --correct invalid project view
-      Proj.view_n = 1
-      Proj.set_files_view()
     end
   end
---  buffer.home()
   Proj.updating_ui= 0
-end
-
---set project view = this view
---auto-choose a view where to open the project files
-function Proj.set_files_view()
---check: the current buffer is a project
-  if buffer._project_select ~= nil then
-    local n= _VIEWS[view]
-    --set project view = this view
-    Proj.view_n= n
-    if #_VIEWS > 1 then
-      --don't use the same view for the project and the files
-      if Proj.files_vn == nil or Proj.files_vn == n or Proj.files_vn > #_VIEWS then
-        --show files in the "next"/"prev" view
-        if n < #_VIEWS then
-          Proj.files_vn= n+1
-        else
-          Proj.files_vn= n-1
-        end
-      end
-    else
-      --only one view, split the view for files
-      Proj.files_vn= null
-    end
-  end
 end
 
 --try to select the current file in the working project
@@ -297,24 +251,9 @@ function Proj.track_this_file( proj_in_view )
   local p_buffer = Proj.get_projectbuffer(false)
   if p_buffer and p_buffer._project_select then
     --ok, the working project is in SELECTION mode
-    if not proj_in_view then
-      --not sure if the project is in view...
-      --update project view
-      Proj.view_n= nil
-      for i=1, #_VIEWS do
-        if _VIEWS[i].buffer == p_buffer then
-          Proj.view_n= i
-          --if the project is in the files view, reset files view
-          if Proj.files_vn == i then
-            Proj.files_vn= nil
-          end
-          break
-        end
-      end
-    end
 
     --only track the file if the project is visible and is not an special buffer
-    if Proj.view_n ~= nil and buffer._type == nil then
+    if buffer._type == nil then
       --get file path
       local file= buffer.filename
       if file ~= nil then
@@ -324,7 +263,8 @@ function Proj.track_this_file( proj_in_view )
           --prevent some events to fire for ever
           Proj.updating_ui= Proj.updating_ui+1
 
-          ui.goto_view(Proj.view_n)
+          local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+          ui.goto_view(projv)
           --move the selection bar
           p_buffer:ensure_visible_enforce_policy(row- 1)
           p_buffer:goto_line(row-1)
@@ -350,7 +290,7 @@ events_connect(events.VIEW_AFTER_SWITCH,    Proj.update_after_switch)
 
 --if the current file is a project, enter SELECTION mode--
 events_connect(events.FILE_OPENED, function()
-  Proj.ifproj_setselectionmode()
+  if Proj.init_ready then Proj.ifproj_setselectionmode() end
 end)
 
 events_connect(events.DOUBLE_CLICK, function(_, line)
@@ -378,14 +318,15 @@ end)
 --------------------------------------------------------------
 -- F4       toggle project between selection and EDIT modes
 keys.f4 = function()
-  Proj.toggle_selectionmode()
   if buffer._project_select ~= nil and view.size ~= nil then
     if buffer._project_select then
-      view.size= math.floor(view.size/3.0)
-    else
       view.size= math.floor(view.size*3.0)
+    else
+      view.size= math.floor(view.size/3.0)
     end
   end
+  Proj.toggle_selectionmode()
+  buffer.colourise(buffer, 0, -1)
 end
   
 --------------------------------------------------------------
@@ -419,9 +360,8 @@ events.connect(events.TAB_CLICKED, function(ntab)
   if #_VIEWS > 1 then
     if _BUFFERS[ntab]._project_select ~= nil then
       --project buffer: force project view
-      if Proj.view_n ~= nil then
-        ui.goto_view(Proj.view_n)
-      end
+      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+      ui.goto_view(projv)
     elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
       --project search
       if Proj.search_vn ~= nil then
@@ -429,9 +369,7 @@ events.connect(events.TAB_CLICKED, function(ntab)
       end
     else
       --normal file: check we are not in project view
-      if Proj.files_vn ~= nil then
-        ui.goto_view(Proj.files_vn)
-      end
+      Proj.goto_filesview() --change to files view if needed
     end
   end
 end)

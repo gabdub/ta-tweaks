@@ -1,11 +1,6 @@
 local Proj = Proj
 local _L = _L
 
---open all project files in the current view
-function Proj.set_open_panel()
-  Proj.files_vn= _VIEWS[view]
-end
-
 --open the selected file/s
 --when more than one line is selected, ask for confirmation
 function Proj.open_sel_file()
@@ -13,9 +8,6 @@ function Proj.open_sel_file()
   if buffer.proj_files == nil then
     return
   end
-
-  --set project view = this view
-  Proj.set_files_view()
 
   --read selected line range
   r1= buffer.line_from_position(buffer.selection_start)+1
@@ -91,15 +83,10 @@ function Proj.add_this_file()
         --prevent some events to fire for ever
         Proj.updating_ui= Proj.updating_ui+1
 
-        if Proj.view_n == nil then
-          Proj.view_n= 1
-        end
-        --this file is in the project view
-        if _VIEWS[view] == Proj.view_n then
-          --choose another view for the file
-          Proj.files_vn= nul
-        else
-          ui.goto_view(Proj.view_n)
+        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+          --this file is in the project view
+        if _VIEWS[view] ~= projv then
+          ui.goto_view(projv)
         end
 
         --if the project is in readonly, change it
@@ -181,15 +168,10 @@ function Proj.add_all_files()
         --prevent some events to fire for ever
         Proj.updating_ui= Proj.updating_ui+1
 
-        if Proj.view_n == nil then
-          Proj.view_n= 1
-        end
+        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
         --this file is in the project view
-        if _VIEWS[view] == Proj.view_n then
-          --choose another view for the file
-          Proj.files_vn= nul
-        else
-          ui.goto_view(Proj.view_n)
+        if _VIEWS[view] ~= projv then
+          ui.goto_view(projv)
         end
 
         --if the project is in readonly, change it
@@ -308,23 +290,16 @@ end
 function Proj.close_project(keepviews)
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer ~= nil then
-    if #_VIEWS > 1 then
-      if Proj.view_n ~= nil then
-        ui.goto_view(Proj.view_n)
-      else
-        ui.goto_view(1)
-      end
+    local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+    if #_VIEWS >= projv then
+      ui.goto_view(projv)
     end
     view.goto_buffer(view, _BUFFERS[p_buffer], false)
     if io.close_buffer() then
       if not keepviews then
         if #_VIEWS > 1 then
-          view.unsplit(view)
+          view.unsplit(view)  --TODO: close all views
         end
-        --reset project view
-        Proj.view_n= 1
-        --split the view for files
-        Proj.files_vn= null
       end
     else
       --close was cancelled

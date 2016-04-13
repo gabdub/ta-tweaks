@@ -35,6 +35,27 @@
 -----------------------------------------------------------------------
 local Proj = Proj
 
+Proj.init_ready = false
+
+events.connect(events.INITIALIZED, function()
+  --after session load ends, verify all the buffers
+  --(this prevents view creation conflicts)
+  Proj.init_ready = true
+  
+  for _, buff in ipairs(_BUFFERS) do
+    --check buffer type
+    if Proj.get_buffertype(buff) == Proj.PRJB_PROJ_NEW then
+      --activate project in the proper view
+      Proj.goto_projview(Proj.PRJV_PROJECT)
+      view:goto_buffer(_BUFFERS[buff])
+      Proj.ifproj_setselectionmode(buff)
+      --start in files view
+      Proj.goto_filesview()
+      break
+    end
+  end  
+end)
+
 --determines the buffer type: Proj.PRJT_...
 function Proj.get_buffertype(p_buffer)
   if not p_buffer then p_buffer = buffer end  --use current buffer?
@@ -53,7 +74,7 @@ function Proj.get_buffertype(p_buffer)
   end
   --check if the current file is a valid project
   --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= buffer:get_line(0)
+  local line= p_buffer:get_line(0)
   local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
   if n ~= nil then
     return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
@@ -66,11 +87,11 @@ end
 function Proj.get_projectbuffer(force_view)
   -- search for the working project
   local pbuff, nview
-  local prefv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view
+  local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
   for _, buffer in ipairs(_BUFFERS) do
     if buffer._is_working_project then
       --working project found
-      if not force_view or _VIEWS[prefv].buffer == buffer then
+      if not force_view or _VIEWS[projv].buffer == buffer then
         return buffer --ok (is in the right view)
       end
       --need to change the view
@@ -81,9 +102,9 @@ function Proj.get_projectbuffer(force_view)
   if pbuff == nil then
     -- not found, choose a new one
     -- 1) check the preferred project view
-    if _VIEWS[prefv].buffer._project_select ~= nil then
-      _VIEWS[prefv].buffer._is_working_project = true
-      return _VIEWS[prefv].buffer --ok (marked and in the right view)
+    if projv <= #_VIEWS and _VIEWS[projv].buffer._project_select ~= nil then
+      _VIEWS[projv].buffer._is_working_project = true
+      return _VIEWS[projv].buffer --ok (marked and in the right view)
     end
     -- 2) check projects in all views
     for i= 1, #_VIEWS do
@@ -110,7 +131,7 @@ function Proj.get_projectbuffer(force_view)
     if force_view then
       --force: project in the preferred view
       if nview == nil then
-        --locate actual view
+        --locate the buffer view
         for i= 1, #_VIEWS do
           if _VIEWS[i].buffer == pbuff then
             nview = i
@@ -118,12 +139,12 @@ function Proj.get_projectbuffer(force_view)
           end
         end
       end
-      if nview ~= prefv then
+      if nview ~= projv then
         --show project in the preferred view
-        local nv= _VIEWS[view]
-        ui.goto_view(prefv)
+        local nv= _VIEWS[view]  --save actual view
+        ui.goto_view(projv)     --goto project view
         view:goto_buffer(_BUFFERS[pbuff])
-        ui.goto_view(nv)
+        ui.goto_view(nv)        --restore actual view
       end
     end
   end
@@ -245,21 +266,24 @@ end
 --------------------------------------------------------------
 --activate/create search view
 function Proj.goto_searchview()
+  --goto the view for search results, split views if needed
+  Proj.goto_projview(Proj.PRJV_SEARCH)
+  
   for _, sbuffer in ipairs(_BUFFERS) do
     if sbuffer._type == Proj.PRJT_SEARCH then
       --goto search results view
       local index = _BUFFERS[sbuffer]
-      for i, view in ipairs(_VIEWS) do
-        if view.buffer._type == Proj.PRJT_SEARCH then ui.goto_view(i) break end
-      end
+      --for i, view in ipairs(_VIEWS) do
+        --if view.buffer._type == Proj.PRJT_SEARCH then ui.goto_view(i) break end
+      --end
       if view.buffer._type ~= Proj.PRJT_SEARCH then view:goto_buffer(index) end
       return
     end
   end
   --split view to show search results
-  view:split()
+  --view:split()
   --set default search height= 75% of screen (actual = 50%)
-  view.size= math.floor(view.size*1.5)
+  --view.size= math.floor(view.size*1.5)
   local search_buffer = buffer.new()
   search_buffer._type = Proj.PRJT_SEARCH
   events.emit(events.FILE_OPENED)
@@ -323,6 +347,33 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   buffer:set_lexer('myproj')
 end
 
+--goto the view for the requested project buffer type
+--split views if needed
+function Proj.goto_projview(prjv)
+  local pref= Proj.prefview[prjv] --preferred view for this buffer type
+  if pref == _VIEWS[view] then
+    return  --already in the right view
+  end
+  local nv= #_VIEWS
+  while pref > nv do
+    --more views are needed: split the last one
+    ui.goto_view(nv)
+    local porcent  = Proj.prefsplit[nv][1]
+    local vertical = Proj.prefsplit[nv][2]
+    --split view to show search results
+    view:split(vertical)
+    --adjust view size (actual = 50%)
+    view.size= math.floor(view.size*porcent*2)
+    nv= nv +1
+  end
+  ui.goto_view(pref)
+end
+
+function Proj.goto_filesview()
+  --goto the view for editing files, split views if needed
+  Proj.goto_projview(Proj.PRJV_FILES)
+end
+
 --open the selected file
 function Proj.open_search_file()
   --clear selection
@@ -344,12 +395,9 @@ function Proj.open_search_file()
     textadept.bookmarks.clear()
     textadept.bookmarks.toggle()
     --textadept.editing.select_line()
-    --change to files view
-    if Proj.files_vn ~= nil and Proj.files_vn ~= _VIEWS[view] and Proj.files_vn <= #_VIEWS then
-      ui.goto_view(Proj.files_vn)
-    end
+    Proj.goto_filesview() --change to files view if needed
     --goto file / line_num
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),false,_VIEWS[Proj.files_vn])
+    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),false,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
     if line_num then textadept.editing.goto_line(line_num) end
   end
 end
@@ -377,9 +425,7 @@ function Proj.snapopen()
     return
   end
   if p_buffer.proj_files ~= nil then
-    if Proj.files_vn ~= nil then
-      ui.goto_view(Proj.files_vn)
-    end
+    Proj.goto_filesview() --change to files view if needed
     local utf8_list = {}
     for row= 1, #p_buffer.proj_files do
       local file= p_buffer.proj_files[row]

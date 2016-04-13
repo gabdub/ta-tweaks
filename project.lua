@@ -1,8 +1,5 @@
 ------- PROJECT -------
 -- Project vars:
---  Proj.view_n     = number of the preferred view for the project
---  Proj.files_vn   = number of the preferred view for opening files
---
 --  Proj.cmenu_num  = number of the current context menu
 --                1 = project in SELECTION mode
 --                2 = project in EDIT mode
