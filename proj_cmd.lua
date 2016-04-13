@@ -198,8 +198,6 @@ function Proj.add_all_files()
         -- project in SELECTION mode without focus--
         Proj.show_lost_focus(p_buffer)
         p_buffer.home()
-        --return to this file (it could be in a different view)
-        --Proj.go_file(file)
         ui.statusbar_text= '' .. nadd .. ' file/s added to project'
 
         Proj.updating_ui= Proj.updating_ui-1

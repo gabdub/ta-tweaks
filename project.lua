@@ -9,7 +9,6 @@
 --  Proj.updating_ui= number of ui updates in progress (ignore some events if > 0)
 ------------------------
 Proj = {}
-Proj.updating_ui = 0
 
 --buffer type
 Proj.PRJB_NORMAL =      0   -- a regular file

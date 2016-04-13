@@ -35,12 +35,14 @@
 -----------------------------------------------------------------------
 local Proj = Proj
 
-Proj.init_ready = false
+--Proj.init_ready = false
+Proj.updating_ui= 1
 
 events.connect(events.INITIALIZED, function()
   --after session load ends, verify all the buffers
   --(this prevents view creation conflicts)
-  Proj.init_ready = true
+  --Proj.init_ready = true
+  Proj.updating_ui= 0
   
   for _, buff in ipairs(_BUFFERS) do
     --check buffer type
@@ -382,6 +384,7 @@ function Proj.open_search_file()
   local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
   local file
   if line_num then 
+    ui.statusbar_text= 'linenum='..line_num
     --get file name from previous lines
     for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
       file = buffer:get_line(i):match('^.*::(.+)::.+$')
@@ -397,7 +400,7 @@ function Proj.open_search_file()
     --textadept.editing.select_line()
     Proj.goto_filesview() --change to files view if needed
     --goto file / line_num
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),false,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
+    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),true,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
     if line_num then textadept.editing.goto_line(line_num) end
   end
 end

@@ -163,15 +163,7 @@ end
 ------------------HELPERS-------------------
 --open files in the preferred view
 function Proj.go_file(file)
-  if #_VIEWS == 1 then
-    view:split(true)  --split verticaly
-    --left project in view #1
-    ui.goto_view(1)
-    if view.size ~= nil then
-      --set default project width= 20% of screen (actual = 50%)
-      view.size= math.floor(view.size/2.5)
-    end
-  end
+  Proj.goto_filesview() --change to files view if needed
   if file == nil or file == '' then
     --new file (only one)
     local n= nil
@@ -182,14 +174,13 @@ function Proj.go_file(file)
         break
       end
     end
-    Proj.goto_filesview() --change to files view if needed
     if n == nil then
       buffer.new()
       n= _BUFFERS[buffer]
     end
     view.goto_buffer(view, n, false)
   else
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'), true, _VIEWS[Proj.prefview[Proj.PRJV_FILES]])
+    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),true,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
   end
 end
 
@@ -235,12 +226,12 @@ function Proj.update_after_switch()
     buffer.h_scroll_bar= not buffer._project_select
     buffer.v_scroll_bar= buffer.h_scroll_bar
 
-    if #_BUFFERS == 1 then --and #_VIEWS > 1 then
+--    if #_BUFFERS == 1 then --and #_VIEWS > 1 then
 --doesn't work as spected when a file is closed. TODO: move somewhere...
 --      --only the project is open, close all views
 --      --(looks better than the project in two views)
 --      while view:unsplit() do end
-    end
+--    end
   end
   Proj.updating_ui= 0
 end
@@ -290,7 +281,9 @@ events_connect(events.VIEW_AFTER_SWITCH,    Proj.update_after_switch)
 
 --if the current file is a project, enter SELECTION mode--
 events_connect(events.FILE_OPENED, function()
-  if Proj.init_ready then Proj.ifproj_setselectionmode() end
+  --ignore session load
+  --if Proj.init_ready then Proj.ifproj_setselectionmode() end
+  if Proj.updating_ui == 0 then Proj.ifproj_setselectionmode() end
 end)
 
 events_connect(events.DOUBLE_CLICK, function(_, line)
@@ -318,15 +311,23 @@ end)
 --------------------------------------------------------------
 -- F4       toggle project between selection and EDIT modes
 keys.f4 = function()
-  if buffer._project_select ~= nil and view.size ~= nil then
-    if buffer._project_select then
-      view.size= math.floor(view.size*3.0)
-    else
-      view.size= math.floor(view.size/3.0)
+  if buffer._project_select ~= nil then
+    --project: toggle mode
+    if view.size ~= nil then
+      if buffer._project_select then
+        view.size= math.floor(view.size*3.0)
+      else
+        view.size= math.floor(view.size/3.0)
+      end
+    end
+    Proj.toggle_selectionmode()
+    buffer.colourise(buffer, 0, -1)
+  else
+    --file: goto project view
+    if Proj.get_projectbuffer(true) then
+      Proj.goto_projview(Proj.PRJV_PROJECT)
     end
   end
-  Proj.toggle_selectionmode()
-  buffer.colourise(buffer, 0, -1)
 end
   
 --------------------------------------------------------------
