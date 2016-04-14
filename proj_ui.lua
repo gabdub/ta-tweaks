@@ -162,10 +162,11 @@ end
 
 ------------------HELPERS-------------------
 --open files in the preferred view
-function Proj.go_file(file)
+--optinal: goto line_num
+function Proj.go_file(file, line_num)
   Proj.goto_filesview() --change to files view if needed
   if file == nil or file == '' then
-    --new file (only one)
+    --new file (add only one)
     local n= nil
     for i=1, #_BUFFERS do
       if _BUFFERS[i].filename == nil then
@@ -180,7 +181,20 @@ function Proj.go_file(file)
     end
     view.goto_buffer(view, n, false)
   else
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),true,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
+    --goto file / line_num
+    local fn = file:iconv(_CHARSET, 'UTF-8')
+    for i, buf in ipairs(_BUFFERS) do
+      if buf.filename == fn then
+        --already open
+        view:goto_buffer(i)
+        fn = nil
+        break
+      end
+    end
+    if fn then io.open_file(fn) end
+    
+    if line_num then textadept.editing.goto_line(line_num) end
+    Proj.update_after_switch()
   end
 end
 

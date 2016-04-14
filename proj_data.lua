@@ -415,21 +415,7 @@ function Proj.open_search_file()
     textadept.bookmarks.clear()
     textadept.bookmarks.toggle()
     
-    Proj.goto_filesview() --change to files view if needed
-    --goto file / line_num
-    local fn = file:iconv(_CHARSET, 'UTF-8')
-    for i, buf in ipairs(_BUFFERS) do
-      if buf.filename == fn then
-        --already open
-        view:goto_buffer(i)
-        fn = nil
-        break
-      end
-    end
-    if fn then io.open_file(fn) end
-    
-    if line_num then textadept.editing.goto_line(line_num) end
-    Proj.update_after_switch()
+    Proj.go_file(file, line_num)
   end
 end
 
