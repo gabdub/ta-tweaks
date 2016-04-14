@@ -16,6 +16,7 @@
 --        'filename' open file 'fn' (absolute) or 'P'+'fn' (relative)
 -- [opt] = optional control options
 --        '-'     fold this group on project load
+--        'C'     CTAGS file
 --
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
@@ -164,6 +165,7 @@ function Proj.parse_projectbuffer()
   ui.statusbar_text= 'Parsing project file...'
 
   buffer.proj_files= {}
+  buffer.proj_filestype= {}   --Proj.PRJF_...
   buffer.proj_fold_row = {}
   buffer.proj_grp_path = {}
 
@@ -191,6 +193,7 @@ function Proj.parse_projectbuffer()
     end
     --ui._print('Parser', 'n='..((n==nil) and 'nil' or n)..' f='..((f==nil) and 'nil' or f)..' opt='..((opt==nil) and 'nil' or opt) )
 
+    local ftype = Proj.PRJF_EMPTY
     if fn ~= nil and fn ~= '' then
       p,f,e= Proj.splitfilename(fn)
       if f == '' and p ~= '' then
@@ -205,6 +208,7 @@ function Proj.parse_projectbuffer()
           path = abspath
         end
         buffer.proj_grp_path[r]= path
+        ftype = Proj.PRJF_PATH
 
       elseif f ~= '' then
         if p == '' then
@@ -214,17 +218,21 @@ function Proj.parse_projectbuffer()
           --absolute file
           fname= fn
         end
+        ftype = Proj.PRJF_FILE
       end
     end
-    --set the filename asigned to each row
-    buffer.proj_files[r]= fname
     if opt ~= nil and opt ~= '' then
-      --TODO: improve this / add more control flags / goto-line
       if opt == '-' then
         --  '-': fold this group on project load
         buffer.proj_fold_row[ #buffer.proj_fold_row+1 ]= r
+      elseif opt == 'C' then
+        --  'C': CTAGS file
+        if ftype == Proj.PRJF_FILE then ftype = Proj.PRJF_CTAG end
       end
     end
+    --set the filename/type asigned to each row
+    buffer.proj_files[r]= fname
+    buffer.proj_filestype[r]= ftype
   end
   ui.statusbar_text= 'Project: '.. projname
 end
@@ -250,8 +258,10 @@ function Proj.show_doc()
   if buffer._project_select ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
     if buffer.proj_files ~= nil then
-      r= buffer.line_from_position(buffer.current_pos)+1
-      info = buffer.proj_files[ r ]
+      local r= buffer.line_from_position(buffer.current_pos)+1
+      local info = buffer.proj_files[r]
+      local ftype= buffer.proj_filestype[r]
+      if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info end
       if info == '' and buffer.proj_grp_path[r] ~= nil then
         info= buffer.proj_grp_path[r]
       end
@@ -309,33 +319,36 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   --check the given buffer has a list of files
   if p_buffer and p_buffer.proj_files ~= nil then
     for row= 1, #p_buffer.proj_files do
-      local file= p_buffer.proj_files[row]
-      if file and file ~= '' then
-        local line_num = 1
-        totfiles = totfiles + 1        
-        local prt_fname= true        
-        for line in io.lines(file) do
-          local s, e = (match_case and line or line:lower()):find(text)
-          if s and e then
-            file = file:iconv('UTF-8', _CHARSET)
-            if prt_fname then
-              prt_fname= false
-              local p,f,e= Proj.splitfilename(file)
-              if f == '' then
-                f= file
+      local ftype= p_buffer.proj_filestype[row]
+      if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
+        local file= p_buffer.proj_files[row]
+        if file and file ~= '' then
+          local line_num = 1
+          totfiles = totfiles + 1        
+          local prt_fname= true        
+          for line in io.lines(file) do
+            local s, e = (match_case and line or line:lower()):find(text)
+            if s and e then
+              file = file:iconv('UTF-8', _CHARSET)
+              if prt_fname then
+                prt_fname= false
+                local p,f,e= Proj.splitfilename(file)
+                if f == '' then
+                  f= file
+                end
+                buffer:append_text((' %s::%s::\n'):format(f, file))
+                nfiles = nfiles + 1
+                if nfiles == 1 then buffer:goto_pos(buffer.length) end
               end
-              buffer:append_text((' %s::%s::\n'):format(f, file))
-              nfiles = nfiles + 1
-              if nfiles == 1 then buffer:goto_pos(buffer.length) end
+              local snum= ('%4d'):format(line_num)
+              buffer:append_text(('  @%s:%s\n'):format(snum, line))
+              
+              local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+              buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+              nfound = nfound + 1
             end
-            local snum= ('%4d'):format(line_num)
-            buffer:append_text(('  @%s:%s\n'):format(snum, line))
-            
-            local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
-            buffer:indicator_fill_range(pos + s - 1, e - s + 1)
-            nfound = nfound + 1
+            line_num = line_num + 1
           end
-          line_num = line_num + 1
         end
       end
     end
@@ -398,12 +411,11 @@ function Proj.open_search_file()
     textadept.bookmarks.toggle()
     
     Proj.goto_filesview() --change to files view if needed
-
     --goto file / line_num
-    --ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),false,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
     local fn = file:iconv(_CHARSET, 'UTF-8')
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
+        --already open
         view:goto_buffer(i)
         fn = nil
         break

@@ -41,6 +41,13 @@ Proj.prefsplit = {
   [2] = { 0.75, false },  -- search results in view #3 (view #2 size = 75%, HORIZONTAL)
 }
 
+--project file type
+Proj.PRJF_EMPTY =       0   -- not a file (could be an empty row or a file group)
+Proj.PRJF_PATH  =       1   -- a path
+Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
+Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
+
 require('proj_data')
 require('proj_cmd')
 require('proj_ui')
+require('proj_ctags')
