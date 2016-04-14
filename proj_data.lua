@@ -384,24 +384,35 @@ function Proj.open_search_file()
   local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
   local file
   if line_num then 
-    ui.statusbar_text= 'linenum='..line_num
     --get file name from previous lines
     for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
-      file = buffer:get_line(i):match('^.*::(.+)::.+$')
+      file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
       if file then break end
     end    
   else
     --just open the file
-    file= buffer:get_cur_line():match('^.*::(.+)::.+$')
+    file= buffer:get_cur_line():match('^[^@]-::(.+)::.+$')
   end
   if file then
     textadept.bookmarks.clear()
     textadept.bookmarks.toggle()
-    --textadept.editing.select_line()
+    
     Proj.goto_filesview() --change to files view if needed
+
     --goto file / line_num
-    ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),true,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
+    --ui.goto_file(file:iconv(_CHARSET, 'UTF-8'),false,_VIEWS[Proj.prefview[Proj.PRJV_FILES]])
+    local fn = file:iconv(_CHARSET, 'UTF-8')
+    for i, buf in ipairs(_BUFFERS) do
+      if buf.filename == fn then
+        view:goto_buffer(i)
+        fn = nil
+        break
+      end
+    end
+    if fn then io.open_file(fn) end
+    
     if line_num then textadept.editing.goto_line(line_num) end
+    Proj.update_after_switch()
   end
 end
 
