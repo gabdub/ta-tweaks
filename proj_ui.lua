@@ -184,6 +184,14 @@ function Proj.go_file(file)
   end
 end
 
+--RUN a command
+--%{projfiles} is replaced for a temporary files with the list of project files
+function Proj.run_command(cmd)
+  --local tmpfile = os.tmpname()
+  --spawn(cmd):wait()
+  --if tmpfile then os.remove(tmpfile) end
+end
+
 --set/restore lexer/ui after a buffer/view switch
 function Proj.update_after_switch()
   --if we are updating, ignore this event
@@ -286,24 +294,21 @@ events_connect(events.FILE_OPENED, function()
   if Proj.updating_ui == 0 then Proj.ifproj_setselectionmode() end
 end)
 
-events_connect(events.DOUBLE_CLICK, function(_, line)
+local function open_proj_currrow()
   if buffer._project_select then
     Proj.open_sel_file()
   elseif buffer._type == Proj.PRJT_SEARCH then
     Proj.open_search_file()
   end
+end
+
+events_connect(events.DOUBLE_CLICK, function(_, line)
+  open_proj_currrow()
 end)
 events_connect(events.KEYPRESS, function(code)
   local ks= keys.KEYSYMS[code]
   if ks == '\n' or ks == 'kpenter' then  --"Enter" or "Return"
-    if buffer._project_select then
-      Proj.open_sel_file()
-      return true
-    end
-    if buffer._type == Proj.PRJT_SEARCH then
-      Proj.open_search_file()
-      return true
-    end
+    open_proj_currrow()
   elseif ks == 'esc' then --"Escape"
     return Proj.close_search_view()
   end
@@ -356,24 +361,24 @@ keys.ch = Proj.show_doc
 ---
 ---  * COMMENT the following event handler if not used
 ---
-events.connect(events.TAB_CLICKED, function(ntab)
-  --tab clicked (0...) check if a view change is needed
-  if #_VIEWS > 1 then
-    if _BUFFERS[ntab]._project_select ~= nil then
-      --project buffer: force project view
-      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-      ui.goto_view(projv)
-    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
-      --project search
-      if Proj.search_vn ~= nil then
-        ui.goto_view(Proj.search_vn)
-      end
-    else
-      --normal file: check we are not in project view
-      Proj.goto_filesview() --change to files view if needed
-    end
-  end
-end)
+--events.connect(events.TAB_CLICKED, function(ntab)
+--  --tab clicked (0...) check if a view change is needed
+--  if #_VIEWS > 1 then
+--    if _BUFFERS[ntab]._project_select ~= nil then
+--      --project buffer: force project view
+--      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+--      ui.goto_view(projv)
+--    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
+--      --project search
+--      if Proj.search_vn ~= nil then
+--        ui.goto_view(Proj.search_vn)
+--      end
+--    else
+--      --normal file: check we are not in project view
+--      Proj.goto_filesview() --change to files view if needed
+--    end
+--  end
+--end)
 
 --ctrl-shift-o = project snap open
 keys.cO = Proj.snapopen

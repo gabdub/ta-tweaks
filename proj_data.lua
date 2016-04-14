@@ -17,6 +17,7 @@
 -- [opt] = optional control options
 --        '-'     fold this group on project load
 --        'C'     CTAGS file
+--        'R'     RUN a command, %{projfiles} is replaced for a temporary files with the list of project files
 --
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
@@ -227,7 +228,10 @@ function Proj.parse_projectbuffer()
         buffer.proj_fold_row[ #buffer.proj_fold_row+1 ]= r
       elseif opt == 'C' then
         --  'C': CTAGS file
-        if ftype == Proj.PRJF_FILE then ftype = Proj.PRJF_CTAG end
+        if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_CTAG else ftype=Proj.PRJF_EMPTY end
+      elseif opt == 'R' then
+        --  'R': RUN a command
+        if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_RUN else ftype=Proj.PRJF_EMPTY end
       end
     end
     --set the filename/type asigned to each row
@@ -261,7 +265,8 @@ function Proj.show_doc()
       local r= buffer.line_from_position(buffer.current_pos)+1
       local info = buffer.proj_files[r]
       local ftype= buffer.proj_filestype[r]
-      if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info end
+      if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
+      elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
       if info == '' and buffer.proj_grp_path[r] ~= nil then
         info= buffer.proj_grp_path[r]
       end

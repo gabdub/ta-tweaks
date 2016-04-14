@@ -10,59 +10,81 @@ function Proj.open_sel_file()
   end
 
   --read selected line range
-  r1= buffer.line_from_position(buffer.selection_start)+1
-  r2= buffer.line_from_position(buffer.selection_end)+1
+  local r1= buffer.line_from_position(buffer.selection_start)+1
+  local r2= buffer.line_from_position(buffer.selection_end)+1
   --clear selection
   buffer.selection_start= buffer.selection_end
-  if r1 < r2 then
-    --more than one line, count files in range
-    local flist= {}
-    n= 0
-    for r= r1, r2 do
-      if buffer.proj_files[r] ~= "" then
-        n= n+1
-        flist[n]= buffer.proj_files[r]
+
+  --count files/run in range
+  local flist= {}
+  local rlist= {}
+  for r= r1, r2 do
+    if buffer.proj_files[r] ~= "" then
+      local ft= buffer.proj_filestype[r]
+      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
+        flist[ #flist+1 ]= buffer.proj_files[r]
+      elseif ft == Proj.PRJF_RUN then
+        rlist[ #rlist+1 ]= buffer.proj_files[r]
       end
     end
-    if n == 0 then
-      --no files in range, use current line; action=fold
-      r1= buffer.line_from_position(buffer.current_pos)+1
-    else
-      --if there is more than one file in range, ask for confirmation
-      local confirm = (n == 1) or ui.dialogs.msgbox{
-        title = 'Open confirmation',
-        text = 'There are ' .. n .. ' files selected',
-        informative_text = 'Do you want to open them?',
-        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-      } == 1
-      if not confirm then
-        return
+  end
+  if #flist == 0 and #rlist == 0 then
+    --no files/run in range, use current line; action=fold
+    r1= buffer.line_from_position(buffer.current_pos)+1
+    if buffer.proj_files[r] ~= "" then
+      local ft= buffer.proj_filestype[r]
+      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
+        flist[ #flist+1 ]= buffer.proj_files[r]
+      elseif ft == Proj.PRJF_RUN then
+        rlist[ #rlist+1 ]= buffer.proj_files[r]
       end
-      if n == 1 then
-        ui.statusbar_text= 'Open: ' .. flist[1]
-      else
-        ui.statusbar_text= 'Open: ' .. n .. ' files'
-      end
-      --open all
-      for r= 1, n do
-        Proj.go_file(flist[r])
-      end
-      --try to select the current file in the working project
-      Proj.track_this_file(true)
+    end
+  end
+  
+  --don't mix open/run (if both are selected: open)
+  local list = {}
+  local action
+  if #flist > 0 then
+    list= flist
+    action= 'Open'
+  elseif #rlist > 0 then
+    list= rlist
+    action= 'Run'
+  end
+  
+  if action then
+    --if there is more than one file in range, ask for confirmation
+    local confirm = (#list == 1) or ui.dialogs.msgbox{
+      title = action..' confirmation',
+      text = 'There are ' .. #list .. ' files selected',
+      informative_text = 'Do you want to open them?',
+      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+    } == 1
+    if not confirm then
       return
     end
-  end
-  --one line selected
-  file = buffer.proj_files[r1]
-  if file ~= "" then
-    ui.statusbar_text= 'Open: ' .. file
-    Proj.go_file(file)
+    if #list == 1 then
+      ui.statusbar_text= action..': ' .. list[1]
+    else
+      ui.statusbar_text= action..': ' .. #list .. ' files'
+    end
+    if action == 'Open' then
+      --open all
+      for r= 1, #list do
+        Proj.go_file(list[r])
+      end
+    elseif action == 'Run' then
+      --run all
+      for r= 1, #list do
+        Proj.run_command(list[r])
+      end
+    end
     --try to select the current file in the working project
     Proj.track_this_file(true)
-  else
-    --there is no file for this row, fold instead
-    buffer.toggle_fold(r1)
+    return
   end
+  --there is no file for this row, fold instead
+  buffer.toggle_fold(r1)
 end
 
 -- add the current file to the project

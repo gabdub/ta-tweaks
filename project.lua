@@ -46,6 +46,7 @@ Proj.PRJF_EMPTY =       0   -- not a file (could be an empty row or a file group
 Proj.PRJF_PATH  =       1   -- a path
 Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
 Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
+Proj.PRJF_RUN   =       4   -- run command
 
 require('proj_data')
 require('proj_cmd')
