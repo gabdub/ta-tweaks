@@ -199,11 +199,45 @@ function Proj.go_file(file, line_num)
 end
 
 --RUN a command
---%{projfiles} is replaced for a temporary files with the list of project files
+--%{projfiles} is replaced for a temporary file with the list of project files
 function Proj.run_command(cmd)
-  --local tmpfile = os.tmpname()
-  --spawn(cmd):wait()
-  --if tmpfile then os.remove(tmpfile) end
+  if cmd ~= nil and cmd ~= '' then
+    local tmpfile
+    --replace special vars
+    local s, e = cmd:find('%{projfiles}')
+    if s and e then
+      --replace %{projfiles} is with a temporary file with the list of project files
+      local p_buffer = Proj.get_projectbuffer(true)
+      if p_buffer == nil or p_buffer.proj_files == nil then
+        ui.statusbar_text= 'No project found'
+        return
+      end
+      
+      --get a list of project files
+      local flist= {}
+      for row= 1, #p_buffer.proj_files do
+        local ftype= p_buffer.proj_filestype[row]
+        if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
+          flist[ #flist+1 ]= p_buffer.proj_files[row]
+        end
+      end
+      if #flist == 0 then
+        ui.statusbar_text= 'File not found in project'
+        return
+      end
+      --write the project files list in a temp file
+      tmpfile = p_buffer.filename..'_tmp'
+      local f = io.open(tmpfile, 'wb')
+      if f then
+        f:write(table.concat(flist, '\n'))
+        f:close()
+      end
+      cmd= string.sub(cmd,1,s-2)..tmpfile..string.sub(cmd,e+1)
+    end
+    spawn(cmd):wait()
+    if tmpfile then os.remove(tmpfile) end
+    ui.statusbar_text= 'Run complete: '..cmd
+  end
 end
 
 --set/restore lexer/ui after a buffer/view switch
