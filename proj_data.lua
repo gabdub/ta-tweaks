@@ -18,6 +18,7 @@
 --        '-'     fold this group on project load
 --        'C'     CTAGS file
 --        'R'     RUN a command, %{projfiles} is replaced for a temporary files with the list of project files
+--                               %{projfiles.ext1.ext2...} only project files with this extensions are included
 --
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"

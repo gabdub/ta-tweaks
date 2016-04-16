@@ -1,7 +1,7 @@
 local Proj = Proj
 
---------------------------------------------------------------
---CTAGS files (Windows example):
+--=============================================================================--
+--CTAG file format (Windows example):
 --!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 --!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 --!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
@@ -13,7 +13,24 @@ local Proj = Proj
 --...
 --ADDR_MAX_COUNT	C:\xxx\trunk\sip\sip_resolve.c	37;"	d	file:
 --ADDR_MAX_COUNT	C:\xxx\trunk\util\srv_resolver.c	33;"	d	file:
---------------------------------------------------------------
+--=============================================================================--
+--CTAG file format (Linux example):
+--    ctags::/home/gabriel/.textadept/ctags::C
+--    [Update CTAGS]::ctags -n -L %{projfiles.lua.c} -f /home/gabriel/.textadept/ctags::R
+--
+--!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+--!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+--!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+--!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+--!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+--!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+--FindButton	/home/xxx/textadept_8.6.x86_64/src/textadept.c	147;"	t	file:
+--FindButton	/home/xxx/textadept_8.6.x86_64/src/textadept.c	195;"	t	typeref:enum:__anon2	file:
+--...
+--M.stop	/home/xxx/textadept_8.6.x86_64/modules/textadept/run.lua	260;"	f
+--M.syntax_commands 	/home/xxx/textadept_8.6.x86_64/modules/textadept/run.lua	362;"	f
+--=============================================================================--
+
 local function str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end

@@ -199,12 +199,26 @@ function Proj.go_file(file, line_num)
 end
 
 --RUN a command
---%{projfiles} is replaced for a temporary file with the list of project files
+--%{projfiles} is replaced for a temporary file with the complete list of project files
+--%{projfiles.ext1.ext2...} only project files with this extensions are included
 function Proj.run_command(cmd)
   if cmd ~= nil and cmd ~= '' then
-    local tmpfile
+    local tmpfile, ext
     --replace special vars
     local s, e = cmd:find('%{projfiles}')
+    if not s then
+      s, e = cmd:find('%{projfiles%..*}')
+      if s and e then
+        --get extensions
+        local se= cmd:match('%{projfiles%.(.*)}')
+        if se then
+          ext={}
+          for i in string.gmatch(se, "[^%.]+") do
+            ext[i] = true
+          end
+        end
+      end
+    end    
     if s and e then
       --replace %{projfiles} is with a temporary file with the list of project files
       local p_buffer = Proj.get_projectbuffer(true)
@@ -218,7 +232,11 @@ function Proj.run_command(cmd)
       for row= 1, #p_buffer.proj_files do
         local ftype= p_buffer.proj_filestype[row]
         if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
-          flist[ #flist+1 ]= p_buffer.proj_files[row]
+          local file= p_buffer.proj_files[row]
+          if not ext or ext[file:match('[^%.]+$')] then
+            --all files / listed extension
+            flist[ #flist+1 ]= file
+          end
         end
       end
       if #flist == 0 then
