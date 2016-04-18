@@ -2,6 +2,9 @@ local Proj = Proj
 
 --=============================================================================--
 --CTAG file format (Windows example):
+--    ctagmitto.ctag::C:\textadept\ctags-ta.ctag::C
+--    [Update CTAGS]::C:\GNU\ctags.exe -n -L %{projfiles.lua.c} -f C:\textadept\ctags-ta.ctag::R
+--
 --!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 --!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 --!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
@@ -35,7 +38,15 @@ local function str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-local function goto_tag(ask)
+-- ====[ code from CTAGS Textadept module ]====
+-- List of jump positions comprising a jump history.
+-- Has a `pos` field that points to the current jump position.
+-- @class table
+-- @name jump_list
+local jump_list = {pos = 0}
+
+
+function Proj.goto_tag(ask)
   --find CTAGS file in project
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer == nil then
@@ -127,6 +138,17 @@ local function goto_tag(ask)
     tag = tags[1]
     ui.statusbar_text = 'TAG: '..word..' (1 match)'
   end
+
+  -- Store the current position in the jump history if applicable, clearing any
+  -- jump history positions beyond the current one.
+  if jump_list.pos < #jump_list then
+    for i = jump_list.pos + 1, #jump_list do jump_list[i] = nil end
+  end
+  if jump_list.pos == 0 or jump_list[#jump_list][1] ~= buffer.filename or
+     jump_list[#jump_list][2] ~= buffer.current_pos then
+    jump_list[#jump_list + 1] = {buffer.filename, buffer.current_pos}
+  end
+  
   -- Jump to the tag.
   io.open_file(tag[2])
   if not tonumber(tag[3]) then
@@ -139,9 +161,35 @@ local function goto_tag(ask)
   else
     textadept.editing.goto_line(tonumber(tag[3]))
   end
+
+  -- Store the new position in the jump history.
+  jump_list[#jump_list + 1] = {buffer.filename, buffer.current_pos}
+  jump_list.pos = #jump_list
 end
 
+function Proj.goto_prev_next(prev)
+  -- Navigate within the jump history.
+  if prev then
+    if jump_list.pos <= 1 then
+      ui.statusbar_text= 'No previous position'
+      return
+    end
+    jump_list.pos = jump_list.pos -1
+  else
+    if jump_list.pos == #jump_list then
+      ui.statusbar_text= 'No next position'
+      return
+    end
+    jump_list.pos = jump_list.pos +1
+  end
+  io.open_file(jump_list[jump_list.pos][1])
+  buffer:goto_pos(jump_list[jump_list.pos][2])
+end
 
 --------------------------------------------------------------
--- F11     Goto Tag
-keys.f11 = {goto_tag, false}
+-- F11          Goto Tag
+-- SHIFT+F11    Goto previous position
+-- CONTROL+F11  Goto next position
+keys.f11 = {Proj.goto_tag, false}
+keys.sf11 = {Proj.goto_prev_next, true}
+keys.cf11 = {Proj.goto_prev_next, false}
