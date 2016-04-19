@@ -56,9 +56,10 @@ events.connect(events.INITIALIZED, function()
       Proj.ifproj_setselectionmode(buff)
       --start in files view
       Proj.goto_filesview()
-      break
+      return
     end
-  end  
+  end
+  Proj.update_after_switch()
 end)
 
 --determines the buffer type: Proj.PRJT_...

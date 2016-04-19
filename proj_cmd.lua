@@ -270,7 +270,6 @@ function Proj.new_project()
 end
 
 --open an existing project file
---TODO: close "untitled" file when another file is opened (if not modified)
 function Proj.open_project()
   prjfile= ui.dialogs.fileselect{
     title = 'Open Project File',
@@ -283,23 +282,43 @@ function Proj.open_project()
       ui.statusbar_text= 'Open cancelled'
       return
     end
-    ui.goto_view(1)
-    ui.statusbar_text= 'Open project: '.. prjfile
     --keep current file after project open
-    proj_keep_file= nil
+    local proj_keep_file
     if buffer ~= nil and buffer.filename ~= nil then
       proj_keep_file= buffer.filename
     end
+    Proj.goto_projview(Proj.PRJV_PROJECT)
     --open the project
     io.open_file(prjfile)
+    Proj.updating_ui= 1
+    Proj.goto_filesview() --change to files
+    Proj.updating_ui= 0
+    -- project in SELECTION mode without focus--
+    local p_buffer = Proj.get_projectbuffer(true)
+    Proj.show_lost_focus(p_buffer)
+
     --project ui
-    Proj.update_after_switch()
-    --restore the file that was current before opening the project
-    if proj_keep_file then
-      Proj.go_file(proj_keep_file)
-    end
+    Proj.ifproj_setselectionmode()
+    --restore the file that was current before opening the project or open an empty one
+    Proj.go_file(proj_keep_file)
   end
 end
+
+-- Closes the initial "Untitled" buffer (project version)
+events.connect(events.FILE_OPENED, function()
+  if #_BUFFERS == 3 then
+    local buf = _BUFFERS[1]
+    local nbuf = 1
+    if buf._project_select ~= nil then
+      buf = _BUFFERS[2]
+      nbuf = 2
+    end
+    if not (buf.filename or buf._type or buf.modify) then
+      view:goto_buffer(nbuf)
+      io.close_buffer()
+    end
+  end
+end)
 
 --open a project from the recent list
 function Proj.open_recent_project()

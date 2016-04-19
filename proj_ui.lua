@@ -280,32 +280,30 @@ function Proj.update_after_switch()
 
   else
     --project buffer--
-    if buffer._project_select then
-      -- project in SELECTION mode: set "myprog" lexer --
-      buffer:set_lexer('myproj')
-      --project in SELECTION mode--
-      proj_show_sel_w_focus()
-      --set SELECTION mode context menu
-      proj_contextm_sel()
-    else
-      -- project in EDIT mode: restore current line default settings --
-      proj_show_default()
-      --set EDIT mode context menu
-      proj_contextm_edit()
+    --only process if in the project preferred view
+    --(this prevents some issues when the project is shown in two views at the same time)
+    local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+    if _VIEWS[view] == projv then
+      if buffer._project_select then
+        -- project in SELECTION mode: set "myprog" lexer --
+        buffer:set_lexer('myproj')
+        --project in SELECTION mode--
+        proj_show_sel_w_focus()
+        --set SELECTION mode context menu
+        proj_contextm_sel()
+      else
+        -- project in EDIT mode: restore current line default settings --
+        proj_show_default()
+        --set EDIT mode context menu
+        proj_contextm_edit()
+      end
+      --refresh some options (when views are closed this is mixed)
+      --in SELECTION mode the current line is always visible
+      buffer.caret_line_visible_always= buffer._project_select
+      --and the scrollbars hidden
+      buffer.h_scroll_bar= not buffer._project_select
+      buffer.v_scroll_bar= buffer.h_scroll_bar
     end
-    --refresh some options (when views are closed this is mixed)
-    --in SELECTION mode the current line is always visible
-    buffer.caret_line_visible_always= buffer._project_select
-    --and the scrollbars hidden
-    buffer.h_scroll_bar= not buffer._project_select
-    buffer.v_scroll_bar= buffer.h_scroll_bar
-
---    if #_BUFFERS == 1 then --and #_VIEWS > 1 then
---doesn't work as spected when a file is closed. TODO: move somewhere...
---      --only the project is open, close all views
---      --(looks better than the project in two views)
---      while view:unsplit() do end
---    end
   end
   Proj.updating_ui= 0
 end
