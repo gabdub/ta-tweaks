@@ -262,11 +262,32 @@ function Proj.new_project()
   else
     rootdir= rootdir .. (WIN32 and '\\' or '/')
   end
-
+  
+  --keep current file after project open
+  local proj_keep_file
+  if buffer ~= nil and buffer.filename ~= nil then
+    proj_keep_file= buffer.filename
+  end
+  Proj.goto_projview(Proj.PRJV_PROJECT)
+  --create the project buffer
   local buffer = buffer.new()
   buffer.filename = filename
   buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
+  -- project in SELECTION mode without focus--
+  Proj.set_selectionmode(true)
+  Proj.show_lost_focus(buffer)
+  --update ui
+  Proj.updating_ui= 1
+  Proj.goto_filesview() --change to files
+  Proj.updating_ui= 0
+  -- project in SELECTION mode without focus--
+  --local p_buffer = Proj.get_projectbuffer(true)
+  --Proj.show_lost_focus(p_buffer)
+
+  --project ui
   Proj.ifproj_setselectionmode()
+  --restore the file that was current before opening the project or open an empty one
+  Proj.go_file(proj_keep_file)
 end
 
 --open an existing project file
@@ -290,6 +311,7 @@ function Proj.open_project()
     Proj.goto_projview(Proj.PRJV_PROJECT)
     --open the project
     io.open_file(prjfile)
+    --update ui
     Proj.updating_ui= 1
     Proj.goto_filesview() --change to files
     Proj.updating_ui= 0
