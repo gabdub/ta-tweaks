@@ -51,7 +51,7 @@ local function proj_context_menu_init(num)
       title='Project',
       {_L['_New'],            Proj.new_project},
       {_L['_Open'],           Proj.open_project},
---      {_L['Open _Recent...'], Proj.open_recent_project},
+      {_L['Open _Recent...'], Proj.open_recent_project},
       {''},
       {_L['_Close'],          Proj.close_project},
     }

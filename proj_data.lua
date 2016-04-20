@@ -36,16 +36,76 @@
 --  proj_fold_row[]  = array with the row numbers to fold on open
 --  proj_grp_path[]  = array with the path of each group or nil
 -----------------------------------------------------------------------
+local M = {}
 local Proj = Proj
 
 --Proj.init_ready = false
 Proj.updating_ui= 1
+
+M.PROJECTS_FILE = _USERHOME..'/projects'
+M.SAVE_ON_QUIT = true
+M.MAX_RECENT_FILES = 10
+M.list_change = false
+
+--recent Projects list
+Proj.recent_projects= {}
+
+function M.load_projects(filename)
+  local f = io.open(filename, 'rb')
+  if f then
+    for line in f:lines() do
+      if line:find('^recent:') then
+        local file = line:match('^recent: (.+)$')
+        local recent, exists = Proj.recent_projects, false
+        for i = 1, #recent do
+          if file == recent[i] then exists = true break end
+        end
+        if not exists then Proj.recent_projects[#Proj.recent_projects + 1] = file end
+      end
+    end
+    f:close()
+  end
+  M.list_change = false
+end
+
+function M.save_projects(filename)
+  if M.list_change then
+    local f = io.open(filename, 'wb')
+    if f then
+      local savedata = {}
+      for i = 1, #Proj.recent_projects do
+        if i > M.MAX_RECENT_FILES then break end
+        savedata[#savedata + 1] = ("recent: %s"):format(Proj.recent_projects[i])
+      end
+      f:write(table.concat(savedata, '\n'))
+      f:close()
+    end
+    M.list_change = false
+  end
+end
+
+function Proj.add_recentproject(prjfile)
+  -- Add file to recent project files list, eliminating duplicates.
+  for j, file in ipairs(Proj.recent_projects) do
+    if file == prjfile then table.remove(Proj.recent_projects, j) break end
+  end
+  table.insert(Proj.recent_projects, 1, prjfile)
+  --and remove file from recent "regular files" list
+  for j, file in ipairs(io.recent_files) do
+    if file == prjfile then table.remove(io.recent_files, j) break end
+  end
+  --save new list on exit
+  M.list_change =  true
+end
 
 events.connect(events.INITIALIZED, function()
   --after session load ends, verify all the buffers
   --(this prevents view creation conflicts)
   --Proj.init_ready = true
   Proj.updating_ui= 0
+
+  --load recent projects list
+  if M.SAVE_ON_QUIT then M.load_projects(M.PROJECTS_FILE) end
   
   for _, buff in ipairs(_BUFFERS) do
     --check buffer type
@@ -61,6 +121,12 @@ events.connect(events.INITIALIZED, function()
   end
   Proj.update_after_switch()
 end)
+
+-- Saves recent projects list on quit.
+events.connect(events.QUIT, function()
+  if M.SAVE_ON_QUIT then M.save_projects(M.PROJECTS_FILE) end
+end, 1)
+
 
 --determines the buffer type: Proj.PRJT_...
 function Proj.get_buffertype(p_buffer)

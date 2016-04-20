@@ -291,18 +291,24 @@ function Proj.new_project()
 end
 
 --open an existing project file
-function Proj.open_project()
-  prjfile= ui.dialogs.fileselect{
+function Proj.open_project(filename)
+  prjfile= filename or ui.dialogs.fileselect{
     title = 'Open Project File',
-      with_directory = (buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir(),
-      width = CURSES and ui.size[1] - 2 or nil,
-      with_extension = {'proj'}, select_multiple = false }
+    with_directory = (buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir(),
+    width = CURSES and ui.size[1] - 2 or nil,
+    with_extension = {'proj'}, select_multiple = false }
   if prjfile ~= nil then
     --first close the current project (keep views)
     if not Proj.close_project(true) then
       ui.statusbar_text= 'Open cancelled'
       return
     end
+    
+    --TODO: check if there are buffers open (except a project and/or Untitled not modified buffer)
+    --and ask to close all buffers before open the project
+    --io.close_all_buffers()
+    --TODO: add "project-sessions" to keep track of project open files
+    
     --keep current file after project open
     local proj_keep_file
     if buffer ~= nil and buffer.filename ~= nil then
@@ -311,6 +317,7 @@ function Proj.open_project()
     Proj.goto_projview(Proj.PRJV_PROJECT)
     --open the project
     io.open_file(prjfile)
+
     --update ui
     Proj.updating_ui= 1
     Proj.goto_filesview() --change to files
@@ -318,6 +325,10 @@ function Proj.open_project()
     -- project in SELECTION mode without focus--
     local p_buffer = Proj.get_projectbuffer(true)
     Proj.show_lost_focus(p_buffer)
+    if p_buffer then
+      --remember project file in recent list
+      Proj.add_recentproject(prjfile)
+    end
 
     --project ui
     Proj.ifproj_setselectionmode()
@@ -344,7 +355,17 @@ end)
 
 --open a project from the recent list
 function Proj.open_recent_project()
-  --TODO: finish this
+  local utf8_filenames = {}
+  for _, filename in ipairs(Proj.recent_projects) do
+    utf8_filenames[#utf8_filenames + 1] = filename:iconv('UTF-8', _CHARSET)
+  end
+  local button, i = ui.dialogs.filteredlist{
+    title = 'Open Project File',
+    columns = _L['File'],
+    items = utf8_filenames,
+    width = CURSES and ui.size[1] - 2 or nil
+  }
+  if button == 1 and i then Proj.open_project(Proj.recent_projects[i]) end
 end
 
 --close current project / view
