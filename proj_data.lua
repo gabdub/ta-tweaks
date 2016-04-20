@@ -240,19 +240,21 @@ function Proj.parse_projectbuffer()
 
   --get project file path (default)
   local projname= buffer.filename
+  local abspath
   if projname ~= nil then
-    abspath,fn,ext = Proj.splitfilename(projname)
+    local p,f,e = Proj.splitfilename(projname)
+    abspath= p
   else
     --new project, use current dir
     projname= ''
     abspath= lfs.currentdir()
   end
-  path = abspath
+  local path = abspath
 
   --parse project file line by line
   for r = 1, buffer.line_count do
-    fname= ''
-    line= buffer:get_line(r-1)
+    local fname= ''
+    local line= buffer:get_line(r-1)
 
     --try option 1)
     local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
@@ -264,10 +266,10 @@ function Proj.parse_projectbuffer()
 
     local ftype = Proj.PRJF_EMPTY
     if fn ~= nil and fn ~= '' then
-      p,f,e= Proj.splitfilename(fn)
+      local p,f,e= Proj.splitfilename(fn)
       if f == '' and p ~= '' then
         --only the path is given
-        dots, pathrest= string.match(p,'^(%.*[\\/])(.*)$')
+        local dots, pathrest= string.match(p,'^(%.*[\\/])(.*)$')
         if dots == '.\\' or dots == './' then
           --relative path (only one dot is supported by now)
           path= abspath .. pathrest
@@ -284,8 +286,14 @@ function Proj.parse_projectbuffer()
           --relative file, add current path
           fname= path .. fn
         else
-          --absolute file
-          fname= fn
+          local dots, pathrest= string.match(p,'^(%.*[\\/])(.*)$')
+          if dots == '.\\' or dots == './' then
+            --relative file (only one dot is supported by now)
+            fname= abspath .. string.sub(fn,3)
+          else
+            --absolute file
+            fname= fn
+          end
         end
         ftype = Proj.PRJF_FILE
       end
