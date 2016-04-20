@@ -10,7 +10,7 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
     * ALT+F3:         goto nearest occurrence CHOOSE SEARCH OPTIONS
     * SHIFT+F3:       ASK + goto nearest occurrence FORWARD
     * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
-    * SHIFT+ALT+F     Search for text in all project files (see _project.lua_)
+    * SHIFT+ALT+F     Search for text in all project files (see project.lua)
       
 __Features:__
 * Quick search of the selected text (if not text is selected, repeat last search)
@@ -53,9 +53,13 @@ require('ctrl_tab_mru')
   __project.lua__ : this module adds the following bindings:
   
     * F4:        (in project view) Toggle project file mode (edit / select)
+                 (in a regular file) Go to project view
     * F5:        (in project view) Refresh syntax highlighting + project folding
     * CTRL+H:    (in project view) Show the complete path of the file in the selected row
     * CTRL+SHIFT+O:  Snapopen project files
+    * F11:       search for a word in the project CTAG file (save current position)
+    * SHIFT+F11: navigate to previous position
+    * CONTROL+F11: navigate to next position
       
 __Features:__
 * Allow to group files in projects
@@ -65,10 +69,17 @@ __Features:__
 * The current file is hilited
 * Main and context submenu
 * F4 enter/exit the edit mode
-* Search in project files
+* Search in project files (the results are shown in another view with hilite)
+* Recent project list
+* Menues to create new projects and add files to the project (the current file, all open files or all files from a directory)
+* CTAG file search (add a text file to the project and mark it as a CTAG file) (use the RUN command to update the file)
+* RUN commands from the project (add a command to the project an run it with a double clic or enter)
+* RUN command parameter __%{projfiles}__ is replaced with a temporary filename tha includes the list of all project files
+* RUN command parameter __%{projfiles.ext1.ext2...}__ only project files with the given extensions are included
+* Select more than one file or command to open/run several at once
 
 __Usage:__
-Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_ and _proj_data.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
+Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_, _proj_ctags.lua_, _proj_data.lua_ and the folders _themes_ and _lexers_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file (or use the provided _init.lua_ file as an example):
 ```lua
 require('project')
 ```
