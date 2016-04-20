@@ -273,6 +273,11 @@ function Proj.new_project()
   local buffer = buffer.new()
   buffer.filename = filename
   buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
+  --save project file
+  io.save_file()
+  --remember project file in recent list
+  Proj.add_recentproject(filename)
+      
   -- project in SELECTION mode without focus--
   Proj.set_selectionmode(true)
   Proj.show_lost_focus(buffer)
