@@ -68,7 +68,9 @@ local function proj_contextm_sel()
       {_L['_Open'] .. ' file  [Enter]', Proj.open_sel_file},
       {'_Snapopen',                     Proj.snapopen},
       {''},
-      {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode}
+      {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode},
+      {''},
+      {'Add files from a _Dir',         Proj.add_dir_files},
     }
   end
 end
@@ -83,13 +85,14 @@ local function proj_contextm_edit()
   end
 end
 
--- set project context menu in a regular file --
+-- set project context menu for a regular file --
 local function proj_contextm_file()
   if proj_context_menu_init(3) then
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
       {'_Add this file',           Proj.add_this_file},
       {'Add all open _Files',      Proj.add_all_files},
+      {'Add files from a _Dir',    Proj.add_dir_files},
     }
   end
 end
@@ -137,7 +140,7 @@ function Proj.set_selectionmode(selmode)
 
   if selmode then
     --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-    Proj.parse_projectbuffer()
+    Proj.parse_projectbuffer(buffer)
     --set lexer to highlight groups and hidden control info ":: ... ::"
     buffer:set_lexer('myproj')
     --project in SELECTION mode--

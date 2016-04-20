@@ -230,16 +230,16 @@ function Proj.splitfilename(strfilename)
 end
 
 --fill filenames array "buffer.proj_files[]"
-function Proj.parse_projectbuffer()
+function Proj.parse_projectbuffer(p_buffer)
   ui.statusbar_text= 'Parsing project file...'
 
-  buffer.proj_files= {}
-  buffer.proj_filestype= {}   --Proj.PRJF_...
-  buffer.proj_fold_row = {}
-  buffer.proj_grp_path = {}
+  p_buffer.proj_files= {}
+  p_buffer.proj_filestype= {}   --Proj.PRJF_...
+  p_buffer.proj_fold_row = {}
+  p_buffer.proj_grp_path = {}
 
   --get project file path (default)
-  local projname= buffer.filename
+  local projname= p_buffer.filename
   local abspath
   if projname ~= nil then
     local p,f,e = Proj.splitfilename(projname)
@@ -252,9 +252,9 @@ function Proj.parse_projectbuffer()
   local path = abspath
 
   --parse project file line by line
-  for r = 1, buffer.line_count do
+  for r = 1, p_buffer.line_count do
     local fname= ''
-    local line= buffer:get_line(r-1)
+    local line= p_buffer:get_line(r-1)
 
     --try option 1)
     local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
@@ -278,7 +278,7 @@ function Proj.parse_projectbuffer()
           abspath = p
           path = abspath
         end
-        buffer.proj_grp_path[r]= path
+        p_buffer.proj_grp_path[r]= path
         ftype = Proj.PRJF_PATH
 
       elseif f ~= '' then
@@ -301,7 +301,7 @@ function Proj.parse_projectbuffer()
     if opt ~= nil and opt ~= '' then
       if opt == '-' then
         --  '-': fold this group on project load
-        buffer.proj_fold_row[ #buffer.proj_fold_row+1 ]= r
+        p_buffer.proj_fold_row[ #p_buffer.proj_fold_row+1 ]= r
       elseif opt == 'C' then
         --  'C': CTAGS file
         if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_CTAG else ftype=Proj.PRJF_EMPTY end
@@ -311,8 +311,8 @@ function Proj.parse_projectbuffer()
       end
     end
     --set the filename/type asigned to each row
-    buffer.proj_files[r]= fname
-    buffer.proj_filestype[r]= ftype
+    p_buffer.proj_files[r]= fname
+    p_buffer.proj_filestype[r]= ftype
   end
   ui.statusbar_text= 'Project: '.. projname
 end

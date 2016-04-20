@@ -143,90 +143,123 @@ end
 function Proj.add_all_files()
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
+    --put all buffer.filename in a list (ignore the project and special buffers)
     flist= {}
-    finprj= {}
-    n_inprj= 0
     for _, b in ipairs(_BUFFERS) do
-      file= b.filename
-      if file ~= nil and b._project_select == nil then
+      local file= b.filename
+      if file ~= nil and b._project_select == nil and b._type == nil then
         flist[ #flist+1 ]= file
-        --check if already in the project
-        in_prj= (Proj.locate_file(p_buffer, file) ~= nil)
-        finprj[ #finprj+1]= in_prj
-        if in_prj then n_inprj= n_inprj+1 end
       end
     end
-    if #flist > 0 then
-      --if some files are already in the project, ask for confirmation
-      if n_inprj == 1 then
-        info= '1 file is'
-      else
-        info= '' .. n_inprj .. ' files are'
-      end
-      all= true
-      nadd= #flist
-      local confirm = (n_inprj == 0) or ui.dialogs.msgbox{
-        title = 'Add confirmation',
-        text = info..' already in the project',
-        informative_text = 'Do you want to add it/them again?',
-        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-      } == 1
-      if (not confirm) and (#flist > n_inprj) then
-        all= false
-        nadd= #flist - n_inprj
-        if nadd == 1 then
-          info= '1 file is'
-        else
-          info= '' .. nadd .. ' files are'
-        end
-        confirm = (n_inprj == 0) or ui.dialogs.msgbox{
-          title = 'Add confirmation',
-          text = info..' not in the project',
-          informative_text = 'Do you want to add it/them?',
-          icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-        } == 1
-      end
-      if confirm then
-        --prevent some events to fire for ever
-        Proj.updating_ui= Proj.updating_ui+1
-
-        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-        --this file is in the project view
-        if _VIEWS[view] ~= projv then
-          ui.goto_view(projv)
-        end
-
-        --if the project is in readonly, change it
-        save_ro= p_buffer.read_only
-        p_buffer.read_only= false
-        row= nil
-        for i= 1, #flist do
-          if all or finprj[i] == false then
-            file= flist[i]
-            path,fn,ext = Proj.splitfilename(file)
-            --TODO: reduce the path is possible using project root
-            p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
-            --add the new line to the proj. file list
-            row= #p_buffer.proj_files+1
-            p_buffer.proj_files[row]= file
-          end
-        end
-        p_buffer.read_only= save_ro
-        if row then
-          --move the selection bar
-          p_buffer:ensure_visible_enforce_policy(row- 1)
-          p_buffer:goto_line(row-1)
-        end
-        -- project in SELECTION mode without focus--
-        Proj.show_lost_focus(p_buffer)
-        p_buffer.home()
-        ui.statusbar_text= '' .. nadd .. ' file/s added to project'
-
-        Proj.updating_ui= Proj.updating_ui-1
-      end
-    end
+    Proj.add_files(p_buffer, flist)
   else
     ui.statusbar_text='Project not found'
+  end
+end
+
+-- add files from a directory to the project
+function Proj.add_dir_files(dir)
+  local p_buffer = Proj.get_projectbuffer(true)
+  if p_buffer then
+    dir = dir or ui.dialogs.fileselect{
+      title = 'Add all files from a Directory', select_only_directories = true,
+      with_directory = (buffer.filename or ''):match('^.+[/\\]') or
+                       lfs.currentdir()
+    }
+    if not dir then return end
+
+    flist= {}
+    lfs.dir_foreach(dir, function(file)
+      flist[ #flist+1 ]= file
+      end, lfs.FILTER, true)
+
+    Proj.add_files(p_buffer, flist)
+  else
+    ui.statusbar_text='Project not found'
+  end
+end
+
+--add a list of files to the project (check for duplicates)
+function Proj.add_files(p_buffer, flist)
+  local finprj= {}
+  local n_inprj= 0
+  for _,file in ipairs(flist) do
+    --check if already in the project
+    local in_prj= (Proj.locate_file(p_buffer, file) ~= nil)
+    finprj[ #finprj+1]= in_prj
+    if in_prj then n_inprj= n_inprj+1 end
+  end
+  if #flist > 0 then
+    --if some files are already in the project, ask for confirmation
+    if n_inprj == 1 then
+      info= '1 file is'
+    else
+      info= '' .. n_inprj .. ' files are'
+    end
+    all= true
+    nadd= #flist
+    local confirm = (n_inprj == 0) or ui.dialogs.msgbox{
+      title = 'Add confirmation',
+      text = info..' already in the project',
+      informative_text = 'Do you want to add it/them again?',
+      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+    } == 1
+    if (not confirm) and (#flist > n_inprj) then
+      all= false
+      nadd= #flist - n_inprj
+      if nadd == 1 then
+        info= '1 file is'
+      else
+        info= '' .. nadd .. ' files are'
+      end
+      confirm = (n_inprj == 0) or ui.dialogs.msgbox{
+        title = 'Add confirmation',
+        text = info..' not in the project',
+        informative_text = 'Do you want to add it/them?',
+        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+      } == 1
+    end
+    if confirm then
+      --prevent some events to fire for ever
+      Proj.updating_ui= Proj.updating_ui+1
+
+      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+      --this file is in the project view
+      if _VIEWS[view] ~= projv then
+        ui.goto_view(projv)
+      end
+
+      --if the project is in readonly, change it
+      save_ro= p_buffer.read_only
+      p_buffer.read_only= false
+      row= nil
+      for i= 1, #flist do
+        if all or finprj[i] == false then
+          file= flist[i]
+          path,fn,ext = Proj.splitfilename(file)
+          --TODO: reduce the path if possible using project root
+          p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
+          --add the new line to the proj. file list
+          row= #p_buffer.proj_files+1
+          p_buffer.proj_files[row]= file
+        end
+      end
+      p_buffer.read_only= save_ro
+      --update buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
+      Proj.parse_projectbuffer(p_buffer)
+      
+      if row then
+        --move the selection bar
+        p_buffer:ensure_visible_enforce_policy(row- 1)
+        p_buffer:goto_line(row-1)
+      end
+      -- project in SELECTION mode without focus--
+      Proj.show_lost_focus(p_buffer)
+      p_buffer.home()
+      ui.statusbar_text= '' .. nadd .. ' file/s added to project'
+
+      Proj.updating_ui= Proj.updating_ui-1
+    end
   end
 end
 
