@@ -12,6 +12,8 @@ require('project')
 --ctrl+tab / ctrl+shift+tab: with MRU list
 require('ctrl_tab_mru')
 
+textadept.file_types.extensions.mas = 'mas'
+
 events.connect(events.LEXER_LOADED, function(lang)
   if lang == 'vala' then
     buffer.tab_width = 4
