@@ -109,15 +109,15 @@ end
 
 --------------------------------------------------------------
 -- F3         goto nearest occurrence FORWARD
-keys.f3 =   {goto_nearest_occurrence, false}
+keys.f3 =   function() goto_nearest_occurrence(false) end
 -- CTRL+F3:   goto nearest occurrence BACKWARD
-keys.cf3 =  {goto_nearest_occurrence, true}
+keys.cf3 =  function() goto_nearest_occurrence(true) end
 -- ALT+F3:    goto nearest occurrence CHOOSE SEARCH OPTIONS
-keys.af3 =  {goto_nearest_config, true}
+keys.af3 =  function() goto_nearest_config(true) end
 -- SHIFT+F3:  ASK + goto nearest occurrence FORWARD
-keys.sf3 =  {goto_nearest_occurrence, false, true}
+keys.sf3 =  function() goto_nearest_occurrence(false, true) end
 -- CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS
-keys.csf3 = {goto_nearest_config, false}
+keys.csf3 = function() goto_nearest_config(false) end
 --------------------------------------------------------------
 
 -------find text in project's files----
@@ -163,7 +163,6 @@ local function find_text_in_project(ask)
   M.last_search = word       --save last search
   
   Proj.find_in_files(p_buffer,word,M.goto_nearest_match_case,M.goto_nearest_whole_word)
-  
 end
 
-keys.aF = {find_text_in_project, true}
+keys.aF = function() find_text_in_project(true) end

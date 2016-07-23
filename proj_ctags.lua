@@ -154,12 +154,12 @@ function Proj.goto_tag(ask)
   if not tonumber(tag[3]) then
     for i = 0, buffer.line_count - 1 do
       if buffer:get_line(i):find(tag[3], 1, true) then
-        textadept.editing.goto_line(i + 1)
+        my_goto_line(buffer, i)
         break
       end
     end
   else
-    textadept.editing.goto_line(tonumber(tag[3]))
+    my_goto_line(buffer, tonumber(tag[3])-1)
   end
 
   -- Store the new position in the jump history.
@@ -190,6 +190,6 @@ end
 -- F11          Goto Tag
 -- SHIFT+F11    Goto previous position
 -- CONTROL+F11  Goto next position
-keys.f11 = {Proj.goto_tag, false}
-keys.sf11 = {Proj.goto_prev_next, true}
-keys.cf11 = {Proj.goto_prev_next, false}
+keys.f11 = function() Proj.goto_tag(false) end
+keys.sf11 = function() Proj.goto_prev_next(true) end
+keys.cf11 = function() Proj.goto_prev_next(false) end

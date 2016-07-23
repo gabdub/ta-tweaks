@@ -1,6 +1,22 @@
 --if not CURSES then ui.set_theme('base16-tomorrow-dark') end
 if not CURSES then ui.set_theme('ggg') end
 
+TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
+
+function my_goto_view(view)
+  if TA_MAYOR_VER < 9 then
+    ui.goto_view(view)
+  else
+    ui.goto_view(_VIEWS[view])
+  end
+end
+
+--goto line= 0...
+function my_goto_line(p_buffer,line)
+  p_buffer:ensure_visible_enforce_policy(line)
+  p_buffer:goto_line(line)
+end
+
 --F3 find
 require('goto_nearest')
 --replace CTRL+F with SHIFT+F3

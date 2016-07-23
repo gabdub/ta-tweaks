@@ -108,7 +108,7 @@ function Proj.add_this_file()
         local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
           --this file is in the project view
         if _VIEWS[view] ~= projv then
-          ui.goto_view(projv)
+          my_goto_view(projv)
         end
 
         --if the project is in readonly, change it
@@ -169,10 +169,15 @@ function Proj.add_dir_files(dir)
     if not dir then return end
 
     flist= {}
-    lfs.dir_foreach(dir, function(file)
-      flist[ #flist+1 ]= file
-      end, lfs.FILTER, true)
-
+    if TA_MAYOR_VER < 9 then
+      lfs.dir_foreach(dir, function(file)
+        flist[ #flist+1 ]= file
+        end, lfs.FILTER, true)
+    else
+      lfs.dir_foreach(dir, function(file)
+        flist[ #flist+1 ]= file
+        end, lfs.FILTER, nil, true)
+    end
     Proj.add_files(p_buffer, flist)
   else
     ui.statusbar_text='Project not found'
@@ -226,7 +231,7 @@ function Proj.add_files(p_buffer, flist)
       local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
       --this file is in the project view
       if _VIEWS[view] ~= projv then
-        ui.goto_view(projv)
+        my_goto_view(projv)
       end
 
       --if the project is in readonly, change it
@@ -385,7 +390,11 @@ events.connect(events.FILE_OPENED, function()
       nbuf = 2
     end
     if not (buf.filename or buf._type or buf.modify) then
-      view:goto_buffer(nbuf)
+      if TA_MAYOR_VER < 9 then
+        view:goto_buffer(nbuf)
+      else
+        view:goto_buffer(buf)
+      end
       io.close_buffer()
     end
   end
@@ -412,9 +421,15 @@ function Proj.close_project(keepviews)
   if p_buffer ~= nil then
     local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
     if #_VIEWS >= projv then
-      ui.goto_view(projv)
+      my_goto_view(projv)
     end
-    view.goto_buffer(view, _BUFFERS[p_buffer], false)
+    
+    if TA_MAYOR_VER < 9 then
+      view.goto_buffer(view, _BUFFERS[p_buffer], false)
+    else
+      view.goto_buffer(view, p_buffer)
+    end
+    
     if io.close_buffer() then
       if not keepviews then
         if #_VIEWS > 1 then

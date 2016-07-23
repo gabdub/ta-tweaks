@@ -125,7 +125,11 @@ local function mru_ctrl_tab_handler(shift)
   until mru_buff[1]._project_select == nil and mru_buff[1]._type == nil
   
   --activate the buffer in the TOP of the MRU list
-  view:goto_buffer(_BUFFERS[mru_buff[1]])
+  if TA_MAYOR_VER < 9 then
+    view:goto_buffer(_BUFFERS[mru_buff[1]])
+  else
+    view:goto_buffer(mru_buff[1])
+  end
 end
 keys['c\t'] = function() mru_ctrl_tab_handler(false) end
 keys['cs\t']= function() mru_ctrl_tab_handler(true)  end

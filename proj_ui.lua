@@ -182,21 +182,29 @@ function Proj.go_file(file, line_num)
       buffer.new()
       n= _BUFFERS[buffer]
     end
-    view.goto_buffer(view, n, false)
+    if TA_MAYOR_VER < 9 then
+      view.goto_buffer(view, n, false)
+    else
+      view.goto_buffer(view, _BUFFERS[n])
+    end
   else
     --goto file / line_num
     local fn = file:iconv(_CHARSET, 'UTF-8')
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
         --already open
-        view:goto_buffer(i)
+        if TA_MAYOR_VER < 9 then
+          view:goto_buffer(i)
+        else
+          view:goto_buffer(buf)
+        end
         fn = nil
         break
       end
     end
     if fn then io.open_file(fn) end
     
-    if line_num then textadept.editing.goto_line(line_num) end
+    if line_num then my_goto_line(buffer, line_num-1) end
     Proj.update_after_switch()
   end
 end
@@ -330,7 +338,7 @@ function Proj.track_this_file( proj_in_view )
           Proj.updating_ui= Proj.updating_ui+1
 
           local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-          ui.goto_view(projv)
+          my_goto_view(projv)
           --move the selection bar
           p_buffer:ensure_visible_enforce_policy(row- 1)
           p_buffer:goto_line(row-1)
@@ -434,11 +442,11 @@ keys.ch = Proj.show_doc
 --    if _BUFFERS[ntab]._project_select ~= nil then
 --      --project buffer: force project view
 --      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
---      ui.goto_view(projv)
+--      my_goto_view(projv)
 --    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
 --      --project search
 --      if Proj.search_vn ~= nil then
---        ui.goto_view(Proj.search_vn)
+--        my_goto_view(Proj.search_vn)
 --      end
 --    else
 --      --normal file: check we are not in project view

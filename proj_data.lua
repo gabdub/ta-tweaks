@@ -112,7 +112,11 @@ events.connect(events.INITIALIZED, function()
     if Proj.get_buffertype(buff) == Proj.PRJB_PROJ_NEW then
       --activate project in the proper view
       Proj.goto_projview(Proj.PRJV_PROJECT)
-      view:goto_buffer(_BUFFERS[buff])
+      if TA_MAYOR_VER < 9 then
+        view:goto_buffer(_BUFFERS[buff])
+      else
+        view:goto_buffer(buff)
+      end
       Proj.ifproj_setselectionmode(buff)
       --start in files view
       Proj.goto_filesview()
@@ -214,9 +218,13 @@ function Proj.get_projectbuffer(force_view)
       if nview ~= projv then
         --show project in the preferred view
         local nv= _VIEWS[view]  --save actual view
-        ui.goto_view(projv)     --goto project view
-        view:goto_buffer(_BUFFERS[pbuff])
-        ui.goto_view(nv)        --restore actual view
+        my_goto_view(projv)     --goto project view
+        if TA_MAYOR_VER < 9 then
+          view:goto_buffer(_BUFFERS[pbuff])
+        else
+          view:goto_buffer(pbuff)
+        end
+        my_goto_view(nv)        --restore actual view
       end
     end
   end
@@ -365,11 +373,13 @@ function Proj.goto_searchview()
   for _, sbuffer in ipairs(_BUFFERS) do
     if sbuffer._type == Proj.PRJT_SEARCH then
       --goto search results view
-      local index = _BUFFERS[sbuffer]
-      --for i, view in ipairs(_VIEWS) do
-        --if view.buffer._type == Proj.PRJT_SEARCH then ui.goto_view(i) break end
-      --end
-      if view.buffer._type ~= Proj.PRJT_SEARCH then view:goto_buffer(index) end
+      if view.buffer._type ~= Proj.PRJT_SEARCH then
+        if TA_MAYOR_VER < 9 then
+          view:goto_buffer(_BUFFERS[sbuffer])
+        else
+          view:goto_buffer(sbuffer)
+        end
+      end
       return
     end
   end
@@ -453,7 +463,7 @@ function Proj.goto_projview(prjv)
   local nv= #_VIEWS
   while pref > nv do
     --more views are needed: split the last one
-    ui.goto_view(nv)
+    my_goto_view(nv)
     local porcent  = Proj.prefsplit[nv][1]
     local vertical = Proj.prefsplit[nv][2]
     --split view to show search results
@@ -462,7 +472,7 @@ function Proj.goto_projview(prjv)
     view.size= math.floor(view.size*porcent*2)
     nv= nv +1
   end
-  ui.goto_view(pref)
+  my_goto_view(pref)
 end
 
 function Proj.goto_filesview()

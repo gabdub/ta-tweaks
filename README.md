@@ -62,6 +62,7 @@ require('ctrl_tab_mru')
     * CONTROL+F11: navigate to next position
       
 __Features:__
+* Textadept version 8 and 9 compatible
 * Allow to group files in projects
 * Use a simple text format (see _proj_data.lua_)
 * One view is used to show the project files as a vertical list (read only)
