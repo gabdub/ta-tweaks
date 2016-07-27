@@ -33,7 +33,7 @@ Proj.prefview = {
   [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
   [Proj.PRJV_PROJECT] = 1,  -- project in view #1
   [Proj.PRJV_FILES]   = 2,  -- project files in view #2  (view #1 size = 20%, VERTICAL)
-  [Proj.PRJV_SEARCH]  = 3,  -- search results in view #1 (view #2 size = 80%, HORIZONTAL)
+  [Proj.PRJV_SEARCH]  = 3,  -- search results in view #1 (view #2 size = 75%, HORIZONTAL)
 }
 --split control { adjust previous view size [%], vertical split }
 Proj.prefsplit = {
@@ -46,7 +46,7 @@ Proj.PRJF_EMPTY =       0   -- not a file (could be an empty row or a file group
 Proj.PRJF_PATH  =       1   -- a path
 Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
 Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
-Proj.PRJF_RUN   =       4   -- run command
+Proj.PRJF_RUN   =       4   -- a run command
 
 require('proj_data')
 require('proj_cmd')
