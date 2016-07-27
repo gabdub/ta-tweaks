@@ -424,36 +424,34 @@ end
 keys.ch = Proj.show_doc
 
 ------------------- tab-clicked event ---------------
----change the view, if needed, when a tab is clicked
----requires:
----  * add the following line to the function "t_tabchange()" in "textadept.c" @1828
----    lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
----
----  * recompile textadept
----
----  * add the following line to "ta_events = {}" in "events.lua" (to register the new event) @369
----    'tab_clicked',
----
----  * COMMENT the following event handler if not used
----
---events.connect(events.TAB_CLICKED, function(ntab)
---  --tab clicked (0...) check if a view change is needed
---  if #_VIEWS > 1 then
---    if _BUFFERS[ntab]._project_select ~= nil then
---      --project buffer: force project view
---      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
---      my_goto_view(projv)
---    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
---      --project search
---      if Proj.search_vn ~= nil then
---        my_goto_view(Proj.search_vn)
---      end
---    else
---      --normal file: check we are not in project view
---      Proj.goto_filesview() --change to files view if needed
---    end
---  end
---end)
+--- when a tab is clicked, change the view if needed
+--- (Textadept version >= 9)
+---  
+---  * For Textadept version 8:
+---    * add the following line to the function "t_tabchange()" in "textadept.c" @1828
+---      lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
+---    * recompile textadept
+---    * add "'tab_clicked'," to "ta_events = {}" in "events.lua" (to register the new event) @369
+if TA_MAYOR_VER >= 9 then
+  events.connect(events.TAB_CLICKED, function(ntab)
+    --tab clicked (0...) check if a view change is needed
+    if #_VIEWS > 1 then
+      if _BUFFERS[ntab]._project_select ~= nil then
+        --project buffer: force project view
+        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+        my_goto_view(projv)
+      elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
+        --project search
+        if Proj.search_vn ~= nil then
+          my_goto_view(Proj.search_vn)
+        end
+      else
+        --normal file: check we are not in project view
+        Proj.goto_filesview() --change to files view if needed
+      end
+    end
+  end, 1)
+end
 
 --ctrl-shift-o = project snap open
 keys.cO = Proj.snapopen
