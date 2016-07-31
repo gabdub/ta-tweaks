@@ -399,6 +399,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   Proj.goto_searchview()
   Proj.search_vn= _VIEWS[view]
 
+  buffer.read_only= false
   buffer:append_text('['..text..']\n')
   buffer:goto_pos(buffer.length)
   buffer.indicator_current = ui.find.INDIC_FIND
@@ -451,6 +452,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   
   ui.statusbar_text= ''..nfound..' matches found in '..nfiles..' of '..totfiles..' files'
   buffer:set_lexer('myproj')
+  buffer.read_only= true
 end
 
 --goto the view for the requested project buffer type
@@ -511,10 +513,35 @@ function Proj.close_search_view()
     Proj.goto_searchview()
     Proj.search_vn = nil
     --close buffer / view
-    view.unsplit(view)
     buffer:set_save_point()
     io.close_buffer()
+    if Proj.prefview[Proj.PRJV_SEARCH] > 0 then
+      my_goto_view( Proj.prefview[Proj.PRJV_SEARCH] -1 )
+    end
+    view.unsplit(view)
     return true
+  end
+  --no search results, try to close the search buffer and view
+  for _, sbuffer in ipairs(_BUFFERS) do
+    if sbuffer._type == Proj.PRJT_SEARCH then
+      --goto search results view
+      if view.buffer._type ~= Proj.PRJT_SEARCH then
+        if TA_MAYOR_VER < 9 then
+          view:goto_buffer(_BUFFERS[sbuffer])
+        else
+          view:goto_buffer(sbuffer)
+        end
+      end
+      io.close_buffer()
+      break
+    end
+  end
+  if #_VIEWS == Proj.prefview[Proj.PRJV_SEARCH] then
+    if Proj.prefview[Proj.PRJV_SEARCH] > 0 then
+      my_goto_view( Proj.prefview[Proj.PRJV_SEARCH] -1 )
+      view.unsplit(view)
+      return true
+    end
   end
   return false
 end

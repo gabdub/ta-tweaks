@@ -32,8 +32,8 @@ Proj.PRJV_SEARCH =      3   -- search results view
 Proj.prefview = {
   [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
   [Proj.PRJV_PROJECT] = 1,  -- project in view #1
-  [Proj.PRJV_FILES]   = 2,  -- project files in view #2  (view #1 size = 20%, VERTICAL)
-  [Proj.PRJV_SEARCH]  = 3,  -- search results in view #1 (view #2 size = 75%, HORIZONTAL)
+  [Proj.PRJV_FILES]   = 2,  -- project files in view #2
+  [Proj.PRJV_SEARCH]  = 3,  -- search results in view #3
 }
 --split control { adjust previous view size [%], vertical split }
 Proj.prefsplit = {

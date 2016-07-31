@@ -71,6 +71,7 @@ local function proj_contextm_sel()
       {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode},
       {''},
       {'Add files from a _Dir',         Proj.add_dir_files},
+      {'Project Search',                keys.aF },  --find_text_in_project(true)
     }
   end
 end
