@@ -10,9 +10,10 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
     * ALT+F3:         goto nearest occurrence CHOOSE SEARCH OPTIONS
     * SHIFT+F3:       ASK + goto nearest occurrence FORWARD
     * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
-    * SHIFT+ALT+F     Search for text in all project files (see project.lua)
+    * SHIFT+ALT+F     Search for text in all project files (requires project.lua)
       
 __Features:__
+* Textadept version 8 and 9 compatible
 * Quick search of the selected text (if not text is selected, repeat last search)
 * All the buffers use the same 'last searched text' and search options
 * Based on Ultra-Edit editor F3 search key
@@ -39,10 +40,11 @@ keys.cf =  keys.sf3
     * CTRL+SHIFT+TAB:  goto previous buffer
       
 __Features:__
+* Textadept version 8 and 9 compatible
 * Implements a more standard way to handle CTRL+TAB and CTRL+SHIFT+TAB
 * It travels the buffers in Most Recent Use order
 * Allows to choose any file by holding the control key down and pressing the TAB or shift+TAB keys several times before releasing the control key
-* Ignores project files (_project.lua_)
+* Ignores project file and search results (_project.lua_)
 
 __Usage:__
 Copy  _ctrl_tab_mru.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
@@ -52,14 +54,16 @@ require('ctrl_tab_mru')
 
   __project.lua__ : this module adds the following bindings:
   
-    * F4:        (in project view) Toggle project file mode (edit / select)
-                 (in a regular file) Go to project view
-    * F5:        (in project view) Refresh syntax highlighting + project folding
-    * CTRL+H:    (in project view) Show the complete path of the file in the selected row
-    * CTRL+SHIFT+O:  Snapopen project files
-    * F11:       search for a word in the project CTAG file (save current position)
-    * SHIFT+F11: navigate to previous position
-    * CONTROL+F11: navigate to next position
+    * F4:     (in project view)   Toggle project file mode (edit / select)
+              (in a regular file) Go to project view
+    * F5:     (in project view)   Refresh syntax highlighting + project folding
+    * CTRL+H: (in project view)   Show the complete path of the file in the selected row
+    * CTRL+SHIFT+O: Snapopen project files
+    * F11:       	Search for a word in the project CTAG file (save current position)
+    * SHIFT+F11:    Navigate to previous position
+    * CONTROL+F11:  Navigate to next position
+	* SHIFT+ALT+F:  Search for text in all project files (requires project.lua)
+	* ESC:		    Close search view, then, moves between project and files view
       
 __Features:__
 * Textadept version 8 and 9 compatible
@@ -75,7 +79,7 @@ __Features:__
 * Menues to create new projects and add files to the project (the current file, all open files or all files from a directory)
 * CTAG file search (add a text file to the project and mark it as a CTAG file) (use the RUN command to update the file)
 * RUN commands from the project (add a command to the project an run it with a double clic or enter)
-* RUN command parameter __%{projfiles}__ is replaced with a temporary filename tha includes the list of all project files
+* RUN command parameter __%{projfiles}__ is replaced with a temporary filename that includes the list of all project files
 * RUN command parameter __%{projfiles.ext1.ext2...}__ only project files with the given extensions are included
 * Select more than one file or command to open/run several at once
 

@@ -386,7 +386,14 @@ events_connect(events.KEYPRESS, function(code)
   if ks == '\n' or ks == 'kpenter' then  --"Enter" or "Return"
     open_proj_currrow()
   elseif ks == 'esc' then --"Escape"
-    return Proj.close_search_view()
+    if not Proj.close_search_view() then
+      --change view
+      if #_VIEWS > 1 then
+        local nv= _VIEWS[view] +1
+        if nv > #_VIEWS then nv=1 end
+        my_goto_view(nv)
+      end
+    end
   end
 end)
 --------------------------------------------------------------
