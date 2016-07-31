@@ -62,7 +62,7 @@ require('ctrl_tab_mru')
     * F11:       	Search for a word in the project CTAG file (save current position)
     * SHIFT+F11:    Navigate to previous position
     * CONTROL+F11:  Navigate to next position
-	* SHIFT+ALT+F:  Search for text in all project files (requires project.lua)
+	* SHIFT+ALT+F:  Search for text in all project files
 	* ESC:		    Close search view, then, moves between project and files view
       
 __Features:__
