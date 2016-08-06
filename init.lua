@@ -28,6 +28,12 @@ require('project')
 --ctrl+tab / ctrl+shift+tab: with MRU list
 require('ctrl_tab_mru')
 
+--macro recording / playback from: https://github.com/shitpoet/ta-macro
+--local macro = require('ta-macro')
+--keys.cr = macro.record
+--keys.cR = macro.finish
+--keys.ar = macro.replay
+
 textadept.file_types.extensions.mas = 'mas'
 
 events.connect(events.LEXER_LOADED, function(lang)
@@ -88,4 +94,4 @@ keys.sf4 = ver_keys
 keys.cf4 = reset
 
 ------------------- tab-double-click close buffer ---------------
---events.connect(events.TAB_DOUBLE_CLICK, function() io.close_buffer() end)
+--events.connect(events.TAB_DOUBLE_CLICK, function() Proj.close_buffer() end)

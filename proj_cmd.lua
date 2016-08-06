@@ -381,21 +381,20 @@ function Proj.open_project(filename)
 end
 
 -- Closes the initial "Untitled" buffer (project version)
+-- #3: project + untitled + file
+-- #4: project + search results + untitled + file
 events.connect(events.FILE_OPENED, function()
-  if #_BUFFERS == 3 then
-    local buf = _BUFFERS[1]
-    local nbuf = 1
-    if buf._project_select ~= nil then
-      buf = _BUFFERS[2]
-      nbuf = 2
-    end
-    if not (buf.filename or buf._type or buf.modify) then
-      if TA_MAYOR_VER < 9 then
-        view:goto_buffer(nbuf)
-      else
-        view:goto_buffer(buf)
+  if #_BUFFERS == 3 or #_BUFFERS == 4 then
+    for nbuf,buf in ipairs(_BUFFERS) do
+      if not (buf.filename or buf._type or buf.modify) then
+        if TA_MAYOR_VER < 9 then
+          view:goto_buffer(nbuf)
+        else
+          view:goto_buffer(buf)
+        end
+        io.close_buffer()
+        break
       end
-      io.close_buffer()
     end
   end
 end)
@@ -431,9 +430,11 @@ function Proj.close_project(keepviews)
     end
     
     if io.close_buffer() then
+      ui.statusbar_text= 'Project closed'
       if not keepviews then
+        Proj.close_search_view()
         if #_VIEWS > 1 then
-          view.unsplit(view)  --TODO: close all views
+          view.unsplit(view)
         end
       end
     else

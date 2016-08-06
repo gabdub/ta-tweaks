@@ -104,6 +104,11 @@ events.connect(events.INITIALIZED, function()
   --Proj.init_ready = true
   Proj.updating_ui= 0
 
+  --use Proj.close_buffer in menues
+  textadept.menu.menubar[_L['_File']][_L['_Close']][2]= Proj.close_buffer
+  textadept.menu.menubar[_L['_File']][_L['Close All']][2]= Proj.close_all_buffers
+  textadept.menu.tab_context_menu[_L['_Close']][2]= Proj.close_buffer
+  
   --load recent projects list
   if M.SAVE_ON_QUIT then M.load_projects(M.PROJECTS_FILE) end
   
@@ -575,4 +580,54 @@ function Proj.snapopen()
     io.open_file(files)
     Proj.update_after_switch()
   end
+end
+
+local function isRegularBuf(pbuffer)
+  if (pbuffer._project_select) or (pbuffer._type == Proj.PRJT_SEARCH) then
+    return false  --is a project or search results
+  end
+  return true
+end
+
+function Proj.close_buffer()
+  if buffer._project_select then
+    --close project file and views
+    Proj.close_project(false)
+    
+  elseif buffer._type == Proj.PRJT_SEARCH then
+    --close search results
+    Proj.close_search_view()
+    
+  else
+    --close a regular file
+    if io.close_buffer() then
+      --check at least one regular buffer remains
+      local rbuf = nil
+      for _, buf in ipairs(_BUFFERS) do
+        if isRegularBuf(buf) then
+          rbuf= buf
+          break
+        end
+      end
+      if rbuf == nil then
+        --no regular buffer found
+        Proj.go_file() --open a blank file
+        
+      elseif not isRegularBuf(buffer) then
+        --replace current buffer with a regular one
+        if TA_MAYOR_VER < 9 then
+          view:goto_buffer(_BUFFERS[rbuf])
+        else
+          view:goto_buffer(rbuf)
+        end
+      end
+    end
+  end
+end
+
+function Proj.close_all_buffers()
+  --close project file and views
+  Proj.close_project(false)
+  --close all buffers
+  io.close_all_buffers()
 end

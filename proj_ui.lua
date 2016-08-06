@@ -173,7 +173,7 @@ function Proj.go_file(file, line_num)
     --new file (add only one)
     local n= nil
     for i=1, #_BUFFERS do
-      if _BUFFERS[i].filename == nil then
+      if (_BUFFERS[i].filename == nil) and (_BUFFERS[i]._type ~= Proj.PRJT_SEARCH) then
         --there is one new file, select this instead of adding a new one
         n= i
         break
@@ -463,3 +463,8 @@ end
 
 --ctrl-shift-o = project snap open
 keys.cO = Proj.snapopen
+
+--ctrl-W= close buffer
+keys.cw = Proj.close_buffer
+--ctrl-shift-W= close all buffers
+keys.cW = Proj.close_all_buffers
