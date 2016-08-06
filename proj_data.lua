@@ -36,21 +36,20 @@
 --  proj_fold_row[]  = array with the row numbers to fold on open
 --  proj_grp_path[]  = array with the path of each group or nil
 -----------------------------------------------------------------------
-local M = {}
 local Proj = Proj
 
 --Proj.init_ready = false
 Proj.updating_ui= 1
 
-M.PROJECTS_FILE = _USERHOME..'/projects'
-M.SAVE_ON_QUIT = true
-M.MAX_RECENT_FILES = 10
-M.list_change = false
+Proj.PROJECTS_FILE = _USERHOME..'/projects'
+Proj.SAVE_ON_QUIT = true
+Proj.MAX_RECENT_FILES = 10
+Proj.list_change = false
 
 --recent Projects list
 Proj.recent_projects= {}
 
-function M.load_projects(filename)
+function Proj.load_projects(filename)
   local f = io.open(filename, 'rb')
   if f then
     for line in f:lines() do
@@ -65,22 +64,22 @@ function M.load_projects(filename)
     end
     f:close()
   end
-  M.list_change = false
+  Proj.list_change = false
 end
 
-function M.save_projects(filename)
-  if M.list_change then
+function Proj.save_projects(filename)
+  if Proj.list_change then
     local f = io.open(filename, 'wb')
     if f then
       local savedata = {}
       for i = 1, #Proj.recent_projects do
-        if i > M.MAX_RECENT_FILES then break end
+        if i > Proj.MAX_RECENT_FILES then break end
         savedata[#savedata + 1] = ("recent: %s"):format(Proj.recent_projects[i])
       end
       f:write(table.concat(savedata, '\n'))
       f:close()
     end
-    M.list_change = false
+    Proj.list_change = false
   end
 end
 
@@ -95,7 +94,7 @@ function Proj.add_recentproject(prjfile)
     if file == prjfile then table.remove(io.recent_files, j) break end
   end
   --save new list on exit
-  M.list_change =  true
+  Proj.list_change =  true
 end
 
 events.connect(events.INITIALIZED, function()
@@ -110,8 +109,20 @@ events.connect(events.INITIALIZED, function()
   textadept.menu.tab_context_menu[_L['_Close']][2]= Proj.close_buffer
   
   --load recent projects list
-  if M.SAVE_ON_QUIT then M.load_projects(M.PROJECTS_FILE) end
+  if Proj.SAVE_ON_QUIT then Proj.load_projects(Proj.PROJECTS_FILE) end
   
+  --check if search results is open
+  for _, buff in ipairs(_BUFFERS) do
+    if buff._type == Proj.PRJT_SEARCH then
+      --activate search view
+      Proj.goto_searchview()
+      Proj.search_vn= _VIEWS[view]
+      buff.read_only= true
+      break
+    end
+  end
+  
+  --check if a project file is open
   for _, buff in ipairs(_BUFFERS) do
     --check buffer type
     if Proj.get_buffertype(buff) == Proj.PRJB_PROJ_NEW then
@@ -125,15 +136,23 @@ events.connect(events.INITIALIZED, function()
       Proj.ifproj_setselectionmode(buff)
       --start in files view
       Proj.goto_filesview()
+      --check that at least there's one regular buffer
+      local rbuf = Proj.getFirstRegularBuf()
+      if rbuf == nil then
+        --no regular buffer found
+        Proj.go_file() --open a blank file
+      end
       return
     end
   end
+
+  --no project file found
   Proj.update_after_switch()
 end)
 
 -- Saves recent projects list on quit.
 events.connect(events.QUIT, function()
-  if M.SAVE_ON_QUIT then M.save_projects(M.PROJECTS_FILE) end
+  if Proj.SAVE_ON_QUIT then Proj.save_projects(Proj.PROJECTS_FILE) end
 end, 1)
 
 
@@ -583,14 +602,24 @@ function Proj.snapopen()
 end
 
 local function isRegularBuf(pbuffer)
-  if (pbuffer._project_select) or (pbuffer._type == Proj.PRJT_SEARCH) then
+  if (pbuffer._project_select ~= nil) or (pbuffer._type == Proj.PRJT_SEARCH) then
     return false  --is a project or search results
   end
   return true
 end
 
+--find the first regular buffer
+function Proj.getFirstRegularBuf()
+  for _, buf in ipairs(_BUFFERS) do
+    if isRegularBuf(buf) then
+      return buf
+    end
+  end
+  return nil
+end
+
 function Proj.close_buffer()
-  if buffer._project_select then
+  if buffer._project_select ~= nil then
     --close project file and views
     Proj.close_project(false)
     
@@ -601,14 +630,8 @@ function Proj.close_buffer()
   else
     --close a regular file
     if io.close_buffer() then
-      --check at least one regular buffer remains
-      local rbuf = nil
-      for _, buf in ipairs(_BUFFERS) do
-        if isRegularBuf(buf) then
-          rbuf= buf
-          break
-        end
-      end
+      --check that at least one regular buffer remains after closing
+      local rbuf = Proj.getFirstRegularBuf()
       if rbuf == nil then
         --no regular buffer found
         Proj.go_file() --open a blank file
