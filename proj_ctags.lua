@@ -150,6 +150,7 @@ function Proj.goto_tag(ask)
   end
   
   -- Jump to the tag.
+  Proj.goto_filesview()
   io.open_file(tag[2])
   if not tonumber(tag[3]) then
     for i = 0, buffer.line_count - 1 do
@@ -182,6 +183,7 @@ function Proj.goto_prev_next(prev)
     end
     jump_list.pos = jump_list.pos +1
   end
+  Proj.goto_filesview()
   io.open_file(jump_list[jump_list.pos][1])
   buffer:goto_pos(jump_list[jump_list.pos][2])
 end
