@@ -381,12 +381,13 @@ function Proj.open_project(filename)
 end
 
 -- Closes the initial "Untitled" buffer (project version)
+-- only when a regular file is opened
 -- #3: project + untitled + file
 -- #4: project + search results + untitled + file
 events.connect(events.FILE_OPENED, function()
-  if #_BUFFERS == 3 or #_BUFFERS == 4 then
+  if buffer.filename and (buffer._project_select == nil) and (#_BUFFERS == 3 or #_BUFFERS == 4) then
     for nbuf,buf in ipairs(_BUFFERS) do
-      if not (buf.filename or buf._type or buf.modify) then
+      if not (buf.filename or buf._type or buf.modify or buf._project_select ~= nil) then
         if TA_MAYOR_VER < 9 then
           view:goto_buffer(nbuf)
         else

@@ -391,29 +391,21 @@ end
 --------------------------------------------------------------
 --activate/create search view
 function Proj.goto_searchview()
-  --goto the view for search results, split views if needed
+  --goto the view for search results, split views and create empty buffers if needed
   Proj.goto_projview(Proj.PRJV_SEARCH)
-  
-  for _, sbuffer in ipairs(_BUFFERS) do
-    if sbuffer._type == Proj.PRJT_SEARCH then
-      --goto search results view
-      if view.buffer._type ~= Proj.PRJT_SEARCH then
+  --goto search results view
+  if buffer._type ~= Proj.PRJT_SEARCH then
+    for nbuf, sbuf in ipairs(_BUFFERS) do
+      if sbuf._type == Proj.PRJT_SEARCH then
         if TA_MAYOR_VER < 9 then
-          view:goto_buffer(_BUFFERS[sbuffer])
+          view:goto_buffer(nbuf)
         else
-          view:goto_buffer(sbuffer)
+          view:goto_buffer(sbuf)
         end
+        return
       end
-      return
     end
   end
-  --split view to show search results
-  --view:split()
-  --set default search height= 75% of screen (actual = 50%)
-  --view.size= math.floor(view.size*1.5)
-  local search_buffer = buffer.new()
-  search_buffer._type = Proj.PRJT_SEARCH
-  events.emit(events.FILE_OPENED)
 end
 
 -- find text in project's files
@@ -497,6 +489,18 @@ function Proj.goto_projview(prjv)
     --adjust view size (actual = 50%)
     view.size= math.floor(view.size*porcent*2)
     nv= nv +1
+    if nv == Proj.prefview[Proj.PRJV_FILES] then
+      --create an empty file
+      my_goto_view(nv)
+      buffer.new()
+      events.emit(events.FILE_OPENED)
+    elseif nv == Proj.prefview[Proj.PRJV_SEARCH] then
+      --create an empty search results buffer
+      my_goto_view(nv)
+      local search_buffer = buffer.new()
+      search_buffer._type = Proj.PRJT_SEARCH
+      events.emit(events.FILE_OPENED)
+    end
   end
   my_goto_view(pref)
 end
