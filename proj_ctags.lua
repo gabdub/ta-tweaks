@@ -141,13 +141,7 @@ function Proj.goto_tag(ask)
 
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
-  if jump_list.pos < #jump_list then
-    for i = jump_list.pos + 1, #jump_list do jump_list[i] = nil end
-  end
-  if jump_list.pos == 0 or jump_list[#jump_list][1] ~= buffer.filename or
-     jump_list[#jump_list][2] ~= buffer.current_pos then
-    jump_list[#jump_list + 1] = {buffer.filename, buffer.current_pos}
-  end
+  Proj.store_pos_beforejump()
   
   -- Jump to the tag.
   Proj.goto_filesview()
@@ -164,28 +158,79 @@ function Proj.goto_tag(ask)
   end
 
   -- Store the new position in the jump history.
-  jump_list[#jump_list + 1] = {buffer.filename, buffer.current_pos}
+  Proj.store_current_pos()
+end
+
+function Proj.goto_current_pos()
+  local bname= jump_list[jump_list.pos][1]
+  if bname == Proj.PRJT_SEARCH then
+    Proj.goto_searchview()
+  else
+    Proj.goto_filesview()
+    io.open_file(bname)
+  end
+  buffer:goto_pos(jump_list[jump_list.pos][2])
+end
+
+function Proj.goto_prev_pos()
+  -- Navigate within the jump history.
+  if jump_list.pos <= 1 then
+    ui.statusbar_text= 'No previous position'
+    return
+  end
+  jump_list.pos = jump_list.pos -1
+  Proj.goto_current_pos()
+end
+
+function Proj.goto_next_pos()
+  -- Navigate within the jump history.
+  if jump_list.pos >= #jump_list then
+    ui.statusbar_text= 'No next position'
+    return
+  end
+  jump_list.pos = jump_list.pos +1
+  Proj.goto_current_pos()
+end
+
+function Proj.store_pos_beforejump()
+  -- Store the current position in the jump history if applicable, clearing any
+  -- jump history positions beyond the current one.
+  local bname= buffer.filename
+  if not bname then
+    if buffer._type == Proj.PRJT_SEARCH then
+      bname= Proj.PRJT_SEARCH
+    else
+      return
+    end
+  end
+  if jump_list.pos < #jump_list then
+    for i = jump_list.pos + 1, #jump_list do jump_list[i] = nil end
+  end
+  if jump_list.pos == 0 or jump_list[#jump_list][1] ~= bname or
+     jump_list[#jump_list][2] ~= buffer.current_pos then
+    jump_list[#jump_list + 1] = {bname, buffer.current_pos}
+  end
+end
+
+function Proj.store_current_pos()
+  -- Store the new position in the jump history.
+  local bname= buffer.filename
+  if not bname then
+    if buffer._type == Proj.PRJT_SEARCH then
+      bname= Proj.PRJT_SEARCH
+    else
+      return
+    end
+  end
+  jump_list[#jump_list + 1] = {bname, buffer.current_pos}
   jump_list.pos = #jump_list
 end
 
-function Proj.goto_prev_next(prev)
-  -- Navigate within the jump history.
-  if prev then
-    if jump_list.pos <= 1 then
-      ui.statusbar_text= 'No previous position'
-      return
-    end
-    jump_list.pos = jump_list.pos -1
-  else
-    if jump_list.pos == #jump_list then
-      ui.statusbar_text= 'No next position'
-      return
-    end
-    jump_list.pos = jump_list.pos +1
+function Proj.clear_pos_table()
+  if #jump_list > 0 then
+    for i = 0, #jump_list do jump_list[i] = nil end
   end
-  Proj.goto_filesview()
-  io.open_file(jump_list[jump_list.pos][1])
-  buffer:goto_pos(jump_list[jump_list.pos][2])
+  jump_list.pos= 0
 end
 
 --------------------------------------------------------------
@@ -193,5 +238,5 @@ end
 -- SHIFT+F11    Goto previous position
 -- CONTROL+F11  Goto next position
 keys.f11 = function() Proj.goto_tag(false) end
-keys.sf11 = function() Proj.goto_prev_next(true) end
-keys.cf11 = function() Proj.goto_prev_next(false) end
+keys.sf11 = Proj.goto_prev_pos
+keys.sf12 = Proj.goto_next_pos

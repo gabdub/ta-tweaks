@@ -531,11 +531,20 @@ function Proj.open_search_file()
     textadept.bookmarks.clear()
     textadept.bookmarks.toggle()
     
+    -- Store the current position in the jump history if applicable, clearing any
+    -- jump history positions beyond the current one.
+    Proj.store_pos_beforejump()
+    
     Proj.go_file(file, line_num)
+    
+    -- Store the new position in the jump history.
+    Proj.store_current_pos()
   end
 end
 
 function Proj.close_search_view()
+  --clear position table
+  Proj.clear_pos_table()
   if Proj.search_vn then
     --activate search view
     Proj.goto_searchview()
