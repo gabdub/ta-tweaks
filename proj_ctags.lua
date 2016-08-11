@@ -213,7 +213,7 @@ function Proj.store_pos_beforejump()
 end
 
 function Proj.store_current_pos()
-  -- Store the new position in the jump history.
+  -- Store (append) the new position in the jump history.
   local bname= buffer.filename
   if not bname then
     if buffer._type == Proj.PRJT_SEARCH then
@@ -222,6 +222,7 @@ function Proj.store_current_pos()
       return
     end
   end
+  if buffer._project_select ~= nil then return end
   jump_list[#jump_list + 1] = {bname, buffer.current_pos}
   jump_list.pos = #jump_list
 end
@@ -236,7 +237,9 @@ end
 --------------------------------------------------------------
 -- F11          Goto Tag
 -- SHIFT+F11    Goto previous position
--- CONTROL+F11  Goto next position
+-- SHIFT+F12    Goto next position
+-- CONTROL+F11  Store current position
 keys.f11 = function() Proj.goto_tag(false) end
 keys.sf11 = Proj.goto_prev_pos
 keys.sf12 = Proj.goto_next_pos
+keys.cf11 = Proj.store_current_pos

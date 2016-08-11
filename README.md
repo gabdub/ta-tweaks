@@ -61,9 +61,10 @@ require('ctrl_tab_mru')
     * CTRL+SHIFT+O: Snapopen project files
     * F11:       	Search for a word in the project CTAG file (save current position)
     * SHIFT+F11:    Navigate to previous position
-    * CONTROL+F11:  Navigate to next position
+    * SHIFT+F12:    Navigate to next position
+	* CONTROL+F11:  Store current position
 	* SHIFT+ALT+F:  Search for text in all project files
-	* ESC:		    Close search view, then, moves between project and files view
+	* ESC:		    Close search view, then, moves between project and files view. Clear positions.
       
 __Features:__
 * Textadept version 8 and 9 compatible
