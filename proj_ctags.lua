@@ -142,7 +142,6 @@ function Proj.goto_tag(ask)
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
   Proj.store_pos_beforejump()
-  
   -- Jump to the tag.
   Proj.goto_filesview()
   io.open_file(tag[2])
@@ -156,9 +155,8 @@ function Proj.goto_tag(ask)
   else
     my_goto_line(buffer, tonumber(tag[3])-1)
   end
-
-  -- Store the new position in the jump history.
-  Proj.store_current_pos()
+  -- Store the current position at the end of the jump history.
+  Proj.append_current_pos()
 end
 
 function Proj.goto_current_pos()
@@ -174,11 +172,13 @@ end
 
 function Proj.goto_prev_pos()
   -- Navigate within the jump history.
-  if jump_list.pos <= 1 then
+  if jump_list.pos < 1 then
     ui.statusbar_text= 'No previous position'
     return
   end
-  jump_list.pos = jump_list.pos -1
+  if jump_list.pos > 1 then
+    jump_list.pos = jump_list.pos -1
+  end
   Proj.goto_current_pos()
 end
 
@@ -195,25 +195,15 @@ end
 function Proj.store_pos_beforejump()
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
-  local bname= buffer.filename
-  if not bname then
-    if buffer._type == Proj.PRJT_SEARCH then
-      bname= Proj.PRJT_SEARCH
-    else
-      return
-    end
-  end
   if jump_list.pos < #jump_list then
     for i = jump_list.pos + 1, #jump_list do jump_list[i] = nil end
   end
-  if jump_list.pos == 0 or jump_list[#jump_list][1] ~= bname or
-     jump_list[#jump_list][2] ~= buffer.current_pos then
-    jump_list[#jump_list + 1] = {bname, buffer.current_pos}
-  end
+  -- Store the current position at the end of the jump history.
+  Proj.append_current_pos()
 end
 
-function Proj.store_current_pos()
-  -- Store (append) the new position in the jump history.
+function Proj.append_current_pos()
+  -- Store the current position at the end of the jump history.
   local bname= buffer.filename
   if not bname then
     if buffer._type == Proj.PRJT_SEARCH then
@@ -223,8 +213,10 @@ function Proj.store_current_pos()
     end
   end
   if buffer._project_select ~= nil then return end
-  jump_list[#jump_list + 1] = {bname, buffer.current_pos}
-  jump_list.pos = #jump_list
+  if #jump_list == 0 or jump_list[#jump_list][1] ~= bname or jump_list[#jump_list][2] ~= buffer.current_pos then
+    jump_list[#jump_list + 1] = {bname, buffer.current_pos}
+    jump_list.pos = #jump_list
+  end
 end
 
 function Proj.clear_pos_table()
@@ -242,4 +234,4 @@ end
 keys.f11 = function() Proj.goto_tag(false) end
 keys.sf11 = Proj.goto_prev_pos
 keys.sf12 = Proj.goto_next_pos
-keys.cf11 = Proj.store_current_pos
+keys.cf11 = Proj.append_current_pos
