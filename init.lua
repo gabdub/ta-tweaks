@@ -21,6 +21,8 @@ end
 require('goto_nearest')
 --replace CTRL+F with SHIFT+F3
 keys.cf =  keys.sf3
+--replace CTRL+G = goto-line
+keys.cg = textadept.editing.goto_line
 
 --F4 toggle project mode
 require('project')

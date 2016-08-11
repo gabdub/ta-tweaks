@@ -176,7 +176,9 @@ function Proj.goto_prev_pos()
     ui.statusbar_text= 'No previous position'
     return
   end
-  if jump_list.pos > 1 then
+  if jump_list.pos == 1 then
+    ui.statusbar_text= 'First position'
+  else
     jump_list.pos = jump_list.pos -1
   end
   Proj.goto_current_pos()
@@ -231,7 +233,7 @@ end
 -- SHIFT+F11    Goto previous position
 -- SHIFT+F12    Goto next position
 -- CONTROL+F11  Store current position
-keys.f11 = function() Proj.goto_tag(false) end
+keys.f11 = Proj.goto_tag
 keys.sf11 = Proj.goto_prev_pos
 keys.sf12 = Proj.goto_next_pos
 keys.cf11 = Proj.append_current_pos

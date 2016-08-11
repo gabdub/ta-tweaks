@@ -52,8 +52,13 @@ local function proj_context_menu_init(num)
       {_L['_New'],            Proj.new_project},
       {_L['_Open'],           Proj.open_project},
       {_L['Open _Recent...'], Proj.open_recent_project},
-      {''},
       {_L['_Close'],          Proj.close_project},
+      {''},
+      {'Project _Search',     keys.aF },  --find_text_in_project(true)
+      {'Goto _Tag',           Proj.goto_tag},
+      {'_Add _position',      Proj.append_current_pos},
+      {'_Prev position',      Proj.goto_prev_pos},
+      {'Ne_xt position',      Proj.goto_next_pos},
     }
   end
   --ok, change the context menu
@@ -71,7 +76,7 @@ local function proj_contextm_sel()
       {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode},
       {''},
       {'Add files from a _Dir',         Proj.add_dir_files},
-      {'Project Search',                keys.aF },  --find_text_in_project(true)
+      {'_Project Search',               keys.aF },  --find_text_in_project(true)
     }
   end
 end
@@ -94,6 +99,12 @@ local function proj_contextm_file()
       {'_Add this file',           Proj.add_this_file},
       {'Add all open _Files',      Proj.add_all_files},
       {'Add files from a _Dir',    Proj.add_dir_files},
+      {''},
+      {'Project _Search',     keys.aF },  --find_text_in_project(true)
+      {'Goto _Tag',           Proj.goto_tag},
+      {'_Add _position',      Proj.append_current_pos},
+      {'_Prev position',      Proj.goto_prev_pos},
+      {'Ne_xt position',      Proj.goto_next_pos},
     }
   end
 end

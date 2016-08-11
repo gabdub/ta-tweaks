@@ -537,8 +537,8 @@ function Proj.open_search_file()
     
     Proj.go_file(file, line_num)
     
-    -- Store the new position in the jump history.
-    Proj.store_current_pos()
+    -- Store the current position at the end of the jump history.
+    Proj.append_current_pos()
   end
 end
 
