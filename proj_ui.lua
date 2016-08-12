@@ -275,9 +275,19 @@ function Proj.run_command(cmd)
       end
       cmd= string.sub(cmd,1,s-2)..tmpfile..string.sub(cmd,e+1)
     end
-    spawn(cmd):wait()
-    if tmpfile then os.remove(tmpfile) end
-    ui.statusbar_text= 'Run complete: '..cmd
+    Proj.last_run_command= cmd
+    Proj.last_run_tmpfile= tmpfile
+    if string.len(Proj.last_run_command) > 40 then
+      Proj.last_run_command= string.sub(Proj.last_run_command,1,40)..'...'
+    end
+    local proc= spawn(cmd,nil,nil,nil,function(status)
+        ui.statusbar_text= 'RUN '..Proj.last_run_command..' ended with status '..status
+        if Proj.last_run_tmpfile then
+          os.remove(Proj.last_run_tmpfile)
+          Proj.last_run_tmpfile= nil
+        end
+      end)
+    ui.statusbar_text= 'RUNNING: '..Proj.last_run_command
   end
 end
 
