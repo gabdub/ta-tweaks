@@ -66,6 +66,8 @@ require('ctrl_tab_mru')
 	* CONTROL+F12:  Clear all positions
 	* SHIFT+ALT+F:  Search for text in all project files
 	* ESC:		    Close search view, then, moves between project and files view
+	* CONTROL+PgUp: Previous buffer
+	* CONTROL+PgDn: Next buffer
       
 __Features:__
 * Textadept version 8 and 9 compatible

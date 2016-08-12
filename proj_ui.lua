@@ -489,6 +489,9 @@ end
 -- Control+Shift+O =  project snap open
 -- F4 =               toggle project between selection and EDIT modes
 -- F5 =               refresh syntax highlighting + project folding
+-- Control+B=         switch buffer
+-- Control+PgUp=      previous buffer
+-- Control+PgDn=      next buffer
 keys.cw = Proj.close_buffer
 keys.cW = Proj.close_all_buffers
 keys.ch = Proj.show_doc
