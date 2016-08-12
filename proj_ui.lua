@@ -495,16 +495,13 @@ function Proj.trim_trailing_spaces()
   buffer:begin_undo_action()
   local n=0
   for line = 0, buffer.line_count - 1 do
-    local trail = buffer:get_line(line):match('^.-(%s+)$')
+    local trail = buffer:get_line(line):match('^.-(%s-)[\n\r]*$')
     if trail and trail ~= '' then
-      trail= string.gsub(trail,'[\n\r]','')
-      if trail and trail ~= '' then
-        local e = buffer.line_end_position[line]
-        local s = e - string.len(trail)
-        buffer:set_target_range(s, e)
-        buffer:replace_target('')
-        n=n+1
-      end
+      local e = buffer.line_end_position[line]
+      local s = e - string.len(trail)
+      buffer:set_target_range(s, e)
+      buffer:replace_target('')
+      n=n+1
     end
   end
   buffer:end_undo_action()
