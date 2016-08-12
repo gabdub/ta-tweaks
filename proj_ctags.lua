@@ -159,14 +159,16 @@ function Proj.goto_tag(ask)
 end
 
 function Proj.goto_current_pos()
-  local bname= jump_list[jump_list.pos][1]
-  if bname == Proj.PRJT_SEARCH then
-    Proj.goto_searchview()
-  else
-    Proj.goto_filesview()
-    io.open_file(bname)
+  if jump_list.pos <= #jump_list and jump_list[jump_list.pos] then
+    local bname= jump_list[jump_list.pos][1]
+    if bname == Proj.PRJT_SEARCH then
+      Proj.goto_searchview()
+    else
+      Proj.goto_filesview()
+      io.open_file(bname)
+    end
+    buffer:goto_pos(jump_list[jump_list.pos][2])
   end
-  buffer:goto_pos(jump_list[jump_list.pos][2])
 end
 
 function Proj.goto_prev_pos()
@@ -185,7 +187,7 @@ end
 
 function Proj.goto_next_pos()
   -- Navigate within the jump history.
-  if jump_list.pos >= #jump_list then
+  if jump_list.pos > #jump_list or not jump_list[jump_list.pos+1] then
     ui.statusbar_text= 'No next position'
     return
   end
@@ -242,20 +244,17 @@ function Proj.remove_search_from_pos_table()
         j=j+1
       end
     end
-    while j < #jump_list do
-      jump_list[j] = nil
-      j=j+1
-    end
+    for i = j, #jump_list do jump_list[i] = nil end
   end
 end
 
 --------------------------------------------------------------
--- F11          Goto Tag
--- SHIFT+F11    Goto previous position
--- SHIFT+F12    Goto next position
--- CONTROL+F11  Store current position
--- CONTROL+F12  Clear all positions
-keys.f11 = Proj.goto_tag
+-- F11          goto Tag
+-- Shift+F11    goto previous position
+-- Shift+F12    goto next position
+-- Control+F11  store current position
+-- Control+F12  clear all positions
+keys.f11  = Proj.goto_tag
 keys.sf11 = Proj.goto_prev_pos
 keys.sf12 = Proj.goto_next_pos
 keys.cf11 = Proj.store_current_pos

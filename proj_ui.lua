@@ -54,7 +54,7 @@ local function proj_context_menu_init(num)
       {_L['Open _Recent...'], Proj.open_recent_project},
       {_L['_Close'],          Proj.close_project},
       {''},
-      {'Project _Search',     keys.aF },  --find_text_in_project(true)
+      {'Project _Search',     Proj.search_in_files },
       {'Goto _Tag',           Proj.goto_tag},
       {'_Add _position',      Proj.append_current_pos},
       {'_Prev position',      Proj.goto_prev_pos},
@@ -76,7 +76,7 @@ local function proj_contextm_sel()
       {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode},
       {''},
       {'Add files from a _Dir',         Proj.add_dir_files},
-      {'_Project Search',               keys.aF },  --find_text_in_project(true)
+      {'_Project Search',               Proj.search_in_files },
     }
   end
 end
@@ -100,7 +100,7 @@ local function proj_contextm_file()
       {'Add all open _Files',      Proj.add_all_files},
       {'Add files from a _Dir',    Proj.add_dir_files},
       {''},
-      {'Project _Search',     keys.aF },  --find_text_in_project(true)
+      {'Project _Search',     Proj.search_in_files },
       {'Goto _Tag',           Proj.goto_tag},
       {'_Add _position',      Proj.append_current_pos},
       {'_Prev position',      Proj.goto_prev_pos},
@@ -417,9 +417,9 @@ events_connect(events.KEYPRESS, function(code)
     end
   end
 end)
---------------------------------------------------------------
--- F4       toggle project between selection and EDIT modes
-keys.f4 = function()
+
+--toggle project between selection and EDIT modes
+local function change_proj_ed_mode()
   if buffer._project_select ~= nil then
     --project: toggle mode
     if view.size ~= nil then
@@ -439,18 +439,14 @@ keys.f4 = function()
   end
 end
   
---------------------------------------------------------------
--- F5       Refresh syntax highlighting + project folding
-keys.f5 = function()
+-- refresh syntax highlighting + project folding
+local function refresh_proj_hilight()
   if buffer._project_select ~= nil then
     Proj.toggle_selectionmode()
     Proj.toggle_selectionmode()
   end
   buffer.colourise(buffer, 0, -1)
 end
---------------------------------------------------------------
--- CTRL+H  show current row properties or textadept's doc.
-keys.ch = Proj.show_doc
 
 ------------------- tab-clicked event ---------------
 --- when a tab is clicked, change the view if needed
@@ -486,10 +482,16 @@ if TA_MAYOR_VER >= 9 then
   end, 1)
 end
 
---ctrl-shift-o = project snap open
-keys.cO = Proj.snapopen
-
---ctrl-W= close buffer
+--------------------------------------------------------------
+-- Control+W=         close buffer
+-- Control+Shift+W=   close all buffers
+-- Control+H=         show project current row properties
+-- Control+Shift+O =  project snap open
+-- F4 =               toggle project between selection and EDIT modes
+-- F5 =               refresh syntax highlighting + project folding
 keys.cw = Proj.close_buffer
---ctrl-shift-W= close all buffers
 keys.cW = Proj.close_all_buffers
+keys.ch = Proj.show_doc
+keys.cO = Proj.snapopen
+keys.f4 = change_proj_ed_mode
+keys.f5 = refresh_proj_hilight

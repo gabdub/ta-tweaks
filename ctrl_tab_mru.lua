@@ -131,11 +131,10 @@ local function mru_ctrl_tab_handler(shift)
     view:goto_buffer(mru_buff[1])
   end
 end
-keys['c\t'] = function() mru_ctrl_tab_handler(false) end
-keys['cs\t']= function() mru_ctrl_tab_handler(true)  end
 
 events.connect(events.KEYPRESS, function(code, shift, control, alt, meta)
-  if code == 0xFFE3 or code == 0xFFE4 then --control key pressed? (left=65507=FFE3, right=65508=FFE4)
+  --control key pressed? (left=65507=FFE3, right=65508=FFE4)
+  if code == 0xFFE3 or code == 0xFFE4 then
     ctrl_key_down = true
   end
 end )
@@ -157,8 +156,10 @@ end)
 
 events.connect(events.BUFFER_DELETED, function()
   --remove the closed buffer from the MRU list
-  --this event is called AFTER the buffer was deleted (the deleted buffer is NOT in the top of the MRU list)
-  --is safer to check ALL the buffers and remove from the MRU list the ones that don't exist any more
+  --this event is called AFTER the buffer was deleted 
+  --(the deleted buffer is NOT in the top of the MRU list)
+  --is safer to check ALL the buffers and remove from the MRU list
+  --the ones that don't exist any more
   local i= 1
   while i <= #mru_buff do
     if mru_buff[i] ~= nil then
@@ -190,3 +191,8 @@ if #_BUFFERS > 0 then
   mru_buftotop(buffer)
 end
 
+--------------------------------------------------------------
+-- Control+TAB            goto next MRU buffer
+-- Control+Shift+TAB      goto prev MRU buffer
+keys['c\t'] = function() mru_ctrl_tab_handler(false) end
+keys['cs\t']= function() mru_ctrl_tab_handler(true)  end
