@@ -597,7 +597,8 @@ function Proj.snapopen()
     local utf8_list = {}
     for row= 1, #p_buffer.proj_files do
       local file= p_buffer.proj_files[row]
-      if file and file ~= '' then
+      local ftype= p_buffer.proj_filestype[row]
+      if file and file ~= '' and (ftype == Proj.PRJF_FILE or ftype == Proj.PRJF_CTAG) then
         file = file:gsub('^%.[/\\]', ''):iconv('UTF-8', _CHARSET)
         utf8_list[#utf8_list + 1] = file        
       end
