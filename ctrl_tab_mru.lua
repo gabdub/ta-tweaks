@@ -9,7 +9,7 @@
 -- 3   3-  2   2   2^  3
 -- 4   4   4-  3   3^  4
 -- 5   5   5   5-  4^  5
--- 
+--
 local ctrl_key_down = false
 local tab_mru_idx= 0
 local mru_buff= {}
@@ -71,27 +71,27 @@ local function mru_ctrl_tab_handler(shift)
   if #mru_buff < 2 then
     return --not enought buffers
   end
-  
+
   if buffer._project_select ~= nil or buffer._type ~= nil then
     --goto files view before handling control+tab
     Proj.goto_filesview() --change to files view if needed
     return
   end
-  
+
   if ctrl_key_down then
     --CONTROL key was pressed before 'this' TAB
     --START A NEW SWAP CYCLE
     tab_mru_idx= 1
     ctrl_key_down = false
   end
-  
+
   local swap
   repeat
     if shift then
       --ctrl+shift+ tab + .. + tab: swap 'backwards'
       swap= tab_mru_idx
       tab_mru_idx= tab_mru_idx-1
-      if swap < 2 then      
+      if swap < 2 then
         tab_mru_idx= #mru_buff
         swap=0
         --ROTATE DOWN (bring bottom to top)
@@ -123,7 +123,7 @@ local function mru_ctrl_tab_handler(shift)
       mru_buff[swap]= b
     end
   until mru_buff[1]._project_select == nil and mru_buff[1]._type == nil
-  
+
   --activate the buffer in the TOP of the MRU list
   if TA_MAYOR_VER < 9 then
     view:goto_buffer(_BUFFERS[mru_buff[1]])
@@ -151,12 +151,12 @@ events.connect(events.BUFFER_NEW, function()
   if #_BUFFERS > #mru_buff then
     mru_buftotop(buffer)
     --mru_status()
-  end  
+  end
 end)
 
 events.connect(events.BUFFER_DELETED, function()
   --remove the closed buffer from the MRU list
-  --this event is called AFTER the buffer was deleted 
+  --this event is called AFTER the buffer was deleted
   --(the deleted buffer is NOT in the top of the MRU list)
   --is safer to check ALL the buffers and remove from the MRU list
   --the ones that don't exist any more

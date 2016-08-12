@@ -60,6 +60,11 @@ local function proj_context_menu_init(num)
       {'_Prev position',      Proj.goto_prev_pos},
       {'Ne_xt position',      Proj.goto_next_pos},
     }
+
+    --modify edit menu
+    local med=textadept.menu.menubar[_L['_Edit']]
+    med[#med+1]= {''}
+    med[#med+1]= {'Trim trailing spaces', Proj.trim_trailing_spaces}
   end
   --ok, change the context menu
   return true
@@ -105,6 +110,8 @@ local function proj_contextm_file()
       {'_Add _position',      Proj.append_current_pos},
       {'_Prev position',      Proj.goto_prev_pos},
       {'Ne_xt position',      Proj.goto_next_pos},
+      {''},
+      {'Trim trailing spaces', Proj.trim_trailing_spaces},
     }
   end
 end
@@ -125,7 +132,7 @@ end
 --toggle project between SELECTION and EDIT modes
 function Proj.toggle_selectionmode()
   local mode= Proj.get_buffertype()
-  if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then    
+  if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then
     Proj.set_selectionmode(mode == Proj.PRJB_PROJ_EDIT) --toggle current mode
   else
     --if the current file is a project, enter SELECTION mode--
@@ -215,7 +222,7 @@ function Proj.go_file(file, line_num)
       end
     end
     if fn then io.open_file(fn) end
-    
+
     if line_num then my_goto_line(buffer, line_num-1) end
     Proj.update_after_switch()
   end
@@ -241,7 +248,7 @@ function Proj.run_command(cmd)
           end
         end
       end
-    end    
+    end
     if s and e then
       --replace %{projfiles} is with a temporary file with the list of project files
       local p_buffer = Proj.get_projectbuffer(true)
@@ -249,7 +256,7 @@ function Proj.run_command(cmd)
         ui.statusbar_text= 'No project found'
         return
       end
-      
+
       --get a list of project files
       local flist= {}
       for row= 1, #p_buffer.proj_files do
@@ -438,7 +445,7 @@ local function change_proj_ed_mode()
     end
   end
 end
-  
+
 -- refresh syntax highlighting + project folding
 local function refresh_proj_hilight()
   if buffer._project_select ~= nil then
@@ -451,7 +458,7 @@ end
 ------------------- tab-clicked event ---------------
 --- when a tab is clicked, change the view if needed
 --- (Textadept version >= 9)
----  
+---
 ---  * For Textadept version 8:
 ---    * add the following line to the function "t_tabchange()" in "textadept.c" @1828
 ---      lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
@@ -480,6 +487,32 @@ if TA_MAYOR_VER >= 9 then
       end
     end
   end, 1)
+end
+
+--delete all trailing blanks chars
+function Proj.trim_trailing_spaces()
+  local buffer = buffer
+  buffer:begin_undo_action()
+  local n=0
+  for line = 0, buffer.line_count - 1 do
+    local trail = buffer:get_line(line):match('^.-(%s+)$')
+    if trail and trail ~= '' then
+      trail= string.gsub(trail,'[\n\r]','')
+      if trail and trail ~= '' then
+        local e = buffer.line_end_position[line]
+        local s = e - string.len(trail)
+        buffer:set_target_range(s, e)
+        buffer:replace_target('')
+        n=n+1
+      end
+    end
+  end
+  buffer:end_undo_action()
+  if n > 0 then
+    ui.statusbar_text= 'Trimmed lines: '..n
+  else
+    ui.statusbar_text= 'No trailing spaces found'
+  end
 end
 
 --------------------------------------------------------------

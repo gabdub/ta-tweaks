@@ -54,7 +54,7 @@ function Proj.goto_tag(ask)
     return
   end
 
-  local tag_files = {}  
+  local tag_files = {}
   if p_buffer.proj_files ~= nil then
     for row= 1, #p_buffer.proj_files do
       local ftype= p_buffer.proj_filestype[row]
@@ -67,7 +67,7 @@ function Proj.goto_tag(ask)
     ui.statusbar_text= 'No CTAGS files found in project'
     return
   end
-  
+
   local word = ''
   local s, e = buffer.selection_start, buffer.selection_end
   if s == e or ask then
@@ -80,7 +80,7 @@ function Proj.goto_tag(ask)
       --ask what to search, suggest current word o last-search
       r,word= ui.dialogs.inputbox{title = 'Tag search', width = 400, text = suggest}
       if type(word) == 'table' then
-        word= table.concat(word, '\n') 
+        word= table.concat(word, '\n')
       end
     else
       word= suggest
@@ -90,11 +90,11 @@ function Proj.goto_tag(ask)
     word = str_trim(buffer:text_range(s, e))
   end
   if word == '' then return end
-  
+
   --code from CTAGS Textadept module
   local tags = {}
   local patt = '^('..word..'%S*)\t(%S+)\t(.-);"\t?(.*)$'
-  
+
   for i = 1, #tag_files do
     local dir, found = tag_files[i]:match('^.+[/\\]'), false
     local f = io.open(tag_files[i])
@@ -111,9 +111,9 @@ function Proj.goto_tag(ask)
     end
     f:close()
   end
-  if #tags == 0 then 
+  if #tags == 0 then
     ui.statusbar_text = 'TAG: '..word..' not found'
-    return 
+    return
   end
   -- Prompt the user to select a tag from multiple candidates or automatically
   -- pick the only one.

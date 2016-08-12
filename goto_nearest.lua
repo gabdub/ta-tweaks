@@ -1,5 +1,5 @@
 ------------------ goto nearest occurrence --------------------------
--- for local mode: 
+-- for local mode:
 --  replace M.last_search with buffer.last_search
 --  replace M.goto_nearest_whole_word with buffer.goto_nearest_whole_word
 --  replace M.goto_nearest_match_case with buffer.goto_nearest_match_case
@@ -39,24 +39,24 @@ local function goto_nearest_occurrence(reverse,ask)
       end
       suggest= str_trim(buffer:text_range(s, e))  --remove trailing \n
       --ask what to search, suggest current word o last-search
-      local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') .. 
-                 (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') .. 
+      local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') ..
+                 (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') ..
                  (reverse and 'Backward' or 'Forward') ..
                  '\n(change options: alt+F3 / ctrl+shift+F3)'
       r,word= ui.dialogs.inputbox{title = 'Search', informative_text = tit, width = 400, text = suggest}
       if type(word) == 'table' then
-        word= table.concat(word, '\n') 
+        word= table.concat(word, '\n')
       end
     end
   else
     --use selection
     word = str_trim(buffer:text_range(s, e))
   end
-  
+
   if word == '' then return end
   M.last_search = word       --save last search
-  
-  buffer.search_flags = (M.goto_nearest_whole_word and buffer.FIND_WHOLEWORD or 0) + 
+
+  buffer.search_flags = (M.goto_nearest_whole_word and buffer.FIND_WHOLEWORD or 0) +
                         (M.goto_nearest_match_case and buffer.FIND_MATCHCASE or 0)
   if reverse then
     buffer.target_start = s - 1
@@ -73,9 +73,9 @@ local function goto_nearest_occurrence(reverse,ask)
       buffer.target_start = 0
       buffer.target_end = s - 1
     end
-    if buffer:search_in_target(word) == -1 then 
+    if buffer:search_in_target(word) == -1 then
       ui.statusbar_text= str_one_line(M.last_search) .. ': not found'
-      return 
+      return
     end
   end
   buffer:set_sel(buffer.target_start, buffer.target_end)
@@ -93,7 +93,7 @@ local function goto_nearest_config(choose)
     r=1
     sel= (curr > 1 and 1 or 4)   --toggle: strict  <--> soft match
   end
-  
+
   if r > 0 and sel then
     M.goto_nearest_whole_word= (sel > 2)
     M.goto_nearest_match_case= (sel==2) or (sel==4)
@@ -112,13 +112,13 @@ local function find_text_in_project(ask)
   local buffer = buffer
   local suggest= ''
   local word = ''
-  
+
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer == nil then
     ui.statusbar_text= 'No project found'
     return
   end
-  
+
   goto_nearest_default()
   local s, e = buffer.selection_start, buffer.selection_end
   if s == e or ask then
@@ -133,22 +133,22 @@ local function find_text_in_project(ask)
       end
       suggest= str_trim(buffer:text_range(s, e))  --remove trailing \n
       --ask what to search, suggest current word o last-search
-      local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') .. 
-                 (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') .. 
+      local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') ..
+                 (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') ..
                  '\n(change options: alt+F3 / ctrl+shift+F3)'
       r,word= ui.dialogs.inputbox{title = 'Search', informative_text = tit, width = 400, text = suggest}
       if type(word) == 'table' then
-        word= table.concat(word, '\n') 
+        word= table.concat(word, '\n')
       end
     end
   else
     --use selection
     word = str_trim(buffer:text_range(s, e))
   end
-  
+
   if word == '' then return end
   M.last_search = word       --save last search
-  
+
   Proj.find_in_files(p_buffer,word,M.goto_nearest_match_case,M.goto_nearest_whole_word)
 end
 

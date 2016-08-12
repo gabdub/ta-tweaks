@@ -114,7 +114,7 @@ events.connect(events.INITIALIZED, function()
 
   --load recent projects list
   if Proj.SAVE_ON_QUIT then Proj.load_projects(Proj.PROJECTS_FILE) end
-  
+
   --check if search results is open
   for _, buff in ipairs(_BUFFERS) do
     if buff._type == Proj.PRJT_SEARCH then
@@ -125,7 +125,7 @@ events.connect(events.INITIALIZED, function()
       break
     end
   end
-  
+
   --check if a project file is open
   for _, buff in ipairs(_BUFFERS) do
     --check buffer type
@@ -163,7 +163,7 @@ end, 1)
 --determines the buffer type: Proj.PRJT_...
 function Proj.get_buffertype(p_buffer)
   if not p_buffer then p_buffer = buffer end  --use current buffer?
-  
+
   if p_buffer._project_select ~= nil then  --marked as a project file?
     if p_buffer._is_working_project then
       if p_buffer._project_select then
@@ -228,7 +228,7 @@ function Proj.get_projectbuffer(force_view)
       end
     end
   end
-  
+
   if pbuff then
     --force: marked as the working project
     pbuff._is_working_project = true
@@ -436,8 +436,8 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
         local file= p_buffer.proj_files[row]
         if file and file ~= '' then
           local line_num = 1
-          totfiles = totfiles + 1        
-          local prt_fname= true        
+          totfiles = totfiles + 1
+          local prt_fname= true
           for line in io.lines(file) do
             local s, e = (match_case and line or line:lower()):find(text)
             if s and e then
@@ -454,7 +454,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
               end
               local snum= ('%4d'):format(line_num)
               buffer:append_text(('  @%s:%s\n'):format(snum, line))
-              
+
               local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
               buffer:indicator_fill_range(pos + s - 1, e - s + 1)
               nfound = nfound + 1
@@ -465,11 +465,11 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
       end
     end
   end
-  
+
   if nfound == 0 then buffer:append_text(' '.._L['No results found']..'\n') end
   buffer:append_text('\n')
   buffer:set_save_point()
-  
+
   ui.statusbar_text= ''..nfound..' matches found in '..nfiles..' of '..totfiles..' files'
   buffer:set_lexer('myproj')
   buffer.read_only= true
@@ -521,12 +521,12 @@ function Proj.open_search_file()
   --get line number, format: " @ nnn:....."
   local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
   local file
-  if line_num then 
+  if line_num then
     --get file name from previous lines
     for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
       file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
       if file then break end
-    end    
+    end
   else
     --just open the file
     file= buffer:get_cur_line():match('^[^@]-::(.+)::.+$')
@@ -585,7 +585,7 @@ function Proj.close_search_view()
 end
 
 ----------------------------------------
---snapopen project files based on io.snapopen @ file_io.lua 
+--snapopen project files based on io.snapopen @ file_io.lua
 function Proj.snapopen()
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer == nil then
@@ -600,7 +600,7 @@ function Proj.snapopen()
       local ftype= p_buffer.proj_filestype[row]
       if file and file ~= '' and (ftype == Proj.PRJF_FILE or ftype == Proj.PRJF_CTAG) then
         file = file:gsub('^%.[/\\]', ''):iconv('UTF-8', _CHARSET)
-        utf8_list[#utf8_list + 1] = file        
+        utf8_list[#utf8_list + 1] = file
       end
     end
     local options = {
@@ -637,11 +637,11 @@ function Proj.close_buffer()
   if buffer._project_select ~= nil then
     --close project file and views
     Proj.close_project(false)
-    
+
   elseif buffer._type == Proj.PRJT_SEARCH then
     --close search results
     Proj.close_search_view()
-    
+
   else
     --close a regular file
     if io.close_buffer() then
@@ -650,7 +650,7 @@ function Proj.close_buffer()
       if rbuf == nil then
         --no regular buffer found
         Proj.go_file() --open a blank file
-        
+
       elseif not isRegularBuf(buffer) then
         --replace current buffer with a regular one
         if TA_MAYOR_VER < 9 then

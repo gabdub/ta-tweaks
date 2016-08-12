@@ -86,6 +86,7 @@ __Features:__
 * RUN command parameter __%{projfiles}__ is replaced with a temporary filename that includes the list of all project files
 * RUN command parameter __%{projfiles.ext1.ext2...}__ only project files with the given extensions are included
 * Select more than one file or command to open/run several at once
+* Edit menu: Trim trailing spaces
 
 __Usage:__
 Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_, _proj_ctags.lua_, _proj_data.lua_ and the folders _themes_ and _lexers_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file (or use the provided _init.lua_ file as an example):

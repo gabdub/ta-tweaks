@@ -40,7 +40,7 @@ function Proj.open_sel_file()
       end
     end
   end
-  
+
   --don't mix open/run (if both are selected: open)
   local list = {}
   local action
@@ -51,7 +51,7 @@ function Proj.open_sel_file()
     list= rlist
     action= 'Run'
   end
-  
+
   if action then
     --if there is more than one file in range, ask for confirmation
     local confirm = (#list == 1) or ui.dialogs.msgbox{
@@ -252,7 +252,7 @@ function Proj.add_files(p_buffer, flist)
       p_buffer.read_only= save_ro
       --update buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
       Proj.parse_projectbuffer(p_buffer)
-      
+
       if row then
         --move the selection bar
         p_buffer:ensure_visible_enforce_policy(row- 1)
@@ -300,7 +300,7 @@ function Proj.new_project()
   else
     rootdir= rootdir .. (WIN32 and '\\' or '/')
   end
-  
+
   --keep current file after project open
   local proj_keep_file
   if buffer ~= nil and buffer.filename ~= nil then
@@ -315,7 +315,7 @@ function Proj.new_project()
   io.save_file()
   --remember project file in recent list
   Proj.add_recentproject(filename)
-      
+
   -- project in SELECTION mode without focus--
   Proj.set_selectionmode(true)
   Proj.show_lost_focus(buffer)
@@ -346,12 +346,12 @@ function Proj.open_project(filename)
       ui.statusbar_text= 'Open cancelled'
       return
     end
-    
+
     --TODO: check if there are buffers open (except a project and/or Untitled not modified buffer)
     --and ask to close all buffers before open the project
     --io.close_all_buffers()
     --TODO: add "project-sessions" to keep track of project open files
-    
+
     --keep current file after project open
     local proj_keep_file
     if buffer ~= nil and buffer.filename ~= nil then
@@ -423,13 +423,13 @@ function Proj.close_project(keepviews)
     if #_VIEWS >= projv then
       my_goto_view(projv)
     end
-    
+
     if TA_MAYOR_VER < 9 then
       view.goto_buffer(view, _BUFFERS[p_buffer], false)
     else
       view.goto_buffer(view, p_buffer)
     end
-    
+
     if io.close_buffer() then
       ui.statusbar_text= 'Project closed'
       if not keepviews then
