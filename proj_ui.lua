@@ -495,3 +495,6 @@ keys.ch = Proj.show_doc
 keys.cO = Proj.snapopen
 keys.f4 = change_proj_ed_mode
 keys.f5 = refresh_proj_hilight
+keys.cb = Proj.switch_buffer
+keys['cpgup'] = Proj.prev_buffer
+keys['cpgdn'] = Proj.next_buffer

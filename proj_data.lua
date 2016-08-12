@@ -103,11 +103,15 @@ events.connect(events.INITIALIZED, function()
   --Proj.init_ready = true
   Proj.updating_ui= 0
 
-  --use Proj.close_buffer in menues
+  --use Proj.buffer functions in menues
   textadept.menu.menubar[_L['_File']][_L['_Close']][2]= Proj.close_buffer
   textadept.menu.menubar[_L['_File']][_L['Close All']][2]= Proj.close_all_buffers
   textadept.menu.tab_context_menu[_L['_Close']][2]= Proj.close_buffer
-  
+
+  textadept.menu.menubar[_L['_Buffer']][_L['_Next Buffer']][2]= Proj.next_buffer
+  textadept.menu.menubar[_L['_Buffer']][_L['_Previous Buffer']][2]= Proj.prev_buffer
+  textadept.menu.menubar[_L['_Buffer']][_L['_Switch to Buffer...']][2]= Proj.switch_buffer
+
   --load recent projects list
   if Proj.SAVE_ON_QUIT then Proj.load_projects(Proj.PROJECTS_FILE) end
   
@@ -663,4 +667,53 @@ function Proj.close_all_buffers()
   Proj.close_project(false)
   --close all buffers
   io.close_all_buffers()
+end
+
+function Proj.goto_buffer(nb)
+  local b= _BUFFERS[nb]
+  if b == nil then return end
+  if b._project_select ~= nil then
+    --activate project in the proper view
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+  elseif b._type == Proj.PRJT_SEARCH then
+    --activate project in the proper view
+    Proj.goto_searchview()
+  else
+    --activate files view
+    Proj.goto_filesview()
+    if TA_MAYOR_VER < 9 then
+      view:goto_buffer(nb)
+    else
+      view:goto_buffer(b)
+    end
+  end
+end
+
+function Proj.next_buffer()
+  local nb= _BUFFERS[buffer]+1
+  if nb > #_BUFFERS then nb= 1 end
+  Proj.goto_buffer(nb)
+end
+
+function Proj.prev_buffer()
+  local nb= _BUFFERS[buffer]-1
+  if nb < 1 then nb= #_BUFFERS end
+  Proj.goto_buffer(nb)
+end
+
+function Proj.switch_buffer()
+  local columns, utf8_list = {_L['Name'], _L['File']}, {}
+  for i = 1, #_BUFFERS do
+    local buffer = _BUFFERS[i]
+    local filename = buffer.filename or buffer._type or _L['Untitled']
+    if buffer.filename then filename = filename:iconv('UTF-8', _CHARSET) end
+    local basename = buffer.filename and filename:match('[^/\\]+$') or filename
+    utf8_list[#utf8_list + 1] = (buffer.modify and '*' or '')..basename
+    utf8_list[#utf8_list + 1] = filename
+  end
+  local button, i = ui.dialogs.filteredlist{
+    title = _L['Switch Buffers'], columns = columns, items = utf8_list,
+    width = CURSES and ui.size[1] - 2 or nil
+  }
+  if button == 1 and i then Proj.goto_buffer(i) end
 end
