@@ -141,8 +141,7 @@ function Proj.goto_tag(ask)
 
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
-  Proj.store_pos_beforejump()
-  -- Jump to the tag.
+  Proj.store_current_pos()
   Proj.goto_filesview()
   io.open_file(tag[2])
   if not tonumber(tag[3]) then
@@ -194,7 +193,7 @@ function Proj.goto_next_pos()
   Proj.goto_current_pos()
 end
 
-function Proj.store_pos_beforejump()
+function Proj.store_current_pos()
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
   if jump_list.pos < #jump_list then
@@ -221,6 +220,7 @@ function Proj.append_current_pos()
   end
 end
 
+--clear position table
 function Proj.clear_pos_table()
   if #jump_list > 0 then
     for i = 0, #jump_list do jump_list[i] = nil end
@@ -228,12 +228,35 @@ function Proj.clear_pos_table()
   jump_list.pos= 0
 end
 
+--remove search from position table
+function Proj.remove_search_from_pos_table()
+  if #jump_list > 0 then
+    local j = 0
+    for i = 0, #jump_list do
+      if jump_list[i] and jump_list[i][1] == Proj.PRJT_SEARCH then
+        if jump_list.pos > 0 and jump_list.pos >=  i then
+          jump_list.pos= jump_list.pos-1
+        end
+      else
+        if j < i then jump_list[j] = jump_list[i] end
+        j=j+1
+      end
+    end
+    while j < #jump_list do
+      jump_list[j] = nil
+      j=j+1
+    end
+  end
+end
+
 --------------------------------------------------------------
 -- F11          Goto Tag
 -- SHIFT+F11    Goto previous position
 -- SHIFT+F12    Goto next position
 -- CONTROL+F11  Store current position
+-- CONTROL+F12  Clear all positions
 keys.f11 = Proj.goto_tag
 keys.sf11 = Proj.goto_prev_pos
 keys.sf12 = Proj.goto_next_pos
-keys.cf11 = Proj.append_current_pos
+keys.cf11 = Proj.store_current_pos
+keys.cf12 = Proj.clear_pos_table

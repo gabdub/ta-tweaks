@@ -63,8 +63,9 @@ require('ctrl_tab_mru')
     * SHIFT+F11:    Navigate to previous position
     * SHIFT+F12:    Navigate to next position
 	* CONTROL+F11:  Store current position
+	* CONTROL+F12:  Clear all positions
 	* SHIFT+ALT+F:  Search for text in all project files
-	* ESC:		    Close search view, then, moves between project and files view. Clear positions.
+	* ESC:		    Close search view, then, moves between project and files view
       
 __Features:__
 * Textadept version 8 and 9 compatible
