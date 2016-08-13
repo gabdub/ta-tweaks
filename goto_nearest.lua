@@ -55,7 +55,11 @@ local function goto_nearest_occurrence(reverse,ask)
 
   if word == '' then return end
   M.last_search = word       --save last search
-
+  
+  -- Store the current position in the jump history if applicable, clearing any
+  -- jump history positions beyond the current one.
+  Proj.store_current_pos()
+  
   buffer.search_flags = (M.goto_nearest_whole_word and buffer.FIND_WHOLEWORD or 0) +
                         (M.goto_nearest_match_case and buffer.FIND_MATCHCASE or 0)
   if reverse then
@@ -80,6 +84,8 @@ local function goto_nearest_occurrence(reverse,ask)
   end
   buffer:set_sel(buffer.target_start, buffer.target_end)
   ui.statusbar_text= str_one_line(M.last_search) .. ': found'
+  -- Store the current position at the end of the jump history.
+  Proj.append_current_pos()
 end
 
 local function goto_nearest_config(choose)
