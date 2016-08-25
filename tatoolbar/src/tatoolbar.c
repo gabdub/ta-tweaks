@@ -3,17 +3,17 @@
 //#define UNUSED(expr) do { (void)(expr); } while (0)
 
 //flags
-#define TTBF_SELECTABLE	0x0001
-#define TTBF_GRAYED		0x0002
+#define TTBF_SELECTABLE     0x0001
+#define TTBF_GRAYED         0x0002
 
 //images
-#define TTBI_BACKGROUND		0 //toolbar
-#define TTBI_NORMAL			0 //button
-#define TTBI_DISABLED		1 //button
-#define TTBI_HILIGHT		2 //button/toolbar
-#define TTBI_HIPRESSED		3 //button/toolbar
-#define TTBI_SEPARATOR		4 //toolbar
-#define TTBI_N				5
+#define TTBI_BACKGROUND     0 //toolbar
+#define TTBI_NORMAL         0 //button
+#define TTBI_DISABLED       1 //button
+#define TTBI_HILIGHT        2 //button/toolbar
+#define TTBI_HIPRESSED      3 //button/toolbar
+#define TTBI_SEPARATOR      4 //toolbar
+#define TTBI_N              5
 
 struct toolbar_img
 {
@@ -24,44 +24,44 @@ struct toolbar_img
 
 struct toolbar_node
 {
-	struct toolbar_node * next;
-	int flags;		//TTBF_.. flags
-	char * name;
-	char * tooltip;
-	int barx1, bary1;
-	int barx2, bary2;
-	int imgx, imgy;
-	struct toolbar_img img[TTBI_N];
+    struct toolbar_node * next;
+    int flags;      //TTBF_.. flags
+    char * name;
+    char * tooltip;
+    int barx1, bary1;
+    int barx2, bary2;
+    int imgx, imgy;
+    struct toolbar_img img[TTBI_N];
 };
 
 #define NTOOLBARS 2
 static struct toolbar_data
 {
-	GtkWidget *draw[NTOOLBARS];	//horizonal & vertical toolbar
+    GtkWidget *draw[NTOOLBARS]; //horizonal & vertical toolbar
 
-	GtkWidget *drawing_area;	//current toolbar
+    GtkWidget *drawing_area;    //current toolbar
 
-	struct toolbar_node * list;
-	struct toolbar_node * list_last;
+    struct toolbar_node * list;
+    struct toolbar_node * list_last;
 
-	int isvertical;
-	int barheight;
-	int barwidth;
-	int bwidth;
-	int bheight;
-	int xmargin;
-	int ymargin;
-	int xoff;
-	int yoff;
+    int isvertical;
+    int barheight;
+    int barwidth;
+    int bwidth;
+    int bheight;
+    int xmargin;
+    int ymargin;
+    int xoff;
+    int yoff;
 
-	int xnew;
-	int ynew;
+    int xnew;
+    int ynew;
 
-	struct toolbar_node * philight;
-	struct toolbar_node * phipress;
+    struct toolbar_node * philight;
+    struct toolbar_node * phipress;
 
-	char * img_base;
-	struct toolbar_img img[TTBI_N];
+    char * img_base;
+    struct toolbar_img img[TTBI_N];
 } ttb;
 
 static char * alloc_str( const char *s )
@@ -70,7 +70,7 @@ static char * alloc_str( const char *s )
   if( s != NULL ){
     scopy= malloc(strlen(s)+1);
     if( scopy != NULL ){
-	  strcpy( scopy, s);
+      strcpy( scopy, s);
     }
   }
   return scopy;
@@ -83,9 +83,9 @@ static char * alloc_img_str( const char *name )
   char *scopy= NULL;
   if( name != NULL ){
     n= strlen(name);
-	if( (n > 4) && ((strcmp(name+n-4, ".png") == 0)||(strcmp(name+n-4, ".PNG") == 0)) ){
-	  scopy= alloc_str( name );
-	}else{
+    if( (n > 4) && ((strcmp(name+n-4, ".png") == 0)||(strcmp(name+n-4, ".PNG") == 0)) ){
+      scopy= alloc_str( name );
+    }else{
       if( ttb.img_base == NULL ){
         img_file= g_strconcat(textadept_home, "/core/images/bar/", name, ".png", NULL);
       }else{
@@ -95,7 +95,7 @@ static char * alloc_img_str( const char *name )
         scopy= alloc_str( img_file );
         g_free(img_file);
       }
-	}
+    }
   }
   return scopy;
 }
@@ -111,31 +111,31 @@ static int set_tb_img( struct toolbar_node *p, int nimg, const char *imgname)
     pti= &(ttb.img[nimg]); //toolbar img
   }else{
     if( nimg == TTBI_SEPARATOR ){
-	  nimg= TTBI_NORMAL;
-	}
+      nimg= TTBI_NORMAL;
+    }
     pti= &(p->img[nimg]);  //button img
   }
 
   if( pti->fname != NULL ){
     if( (imgname != NULL) && (strcmp( pti->fname, imgname ) == 0) ){
-	  return 0; //same img
-	}
-	//free previous img
-	free((void *)pti->fname);
-	pti->fname= NULL;
-	pti->width= 0;
-	pti->height= 0;
+      return 0; //same img
+    }
+    //free previous img
+    free((void *)pti->fname);
+    pti->fname= NULL;
+    pti->width= 0;
+    pti->height= 0;
   }
   if( imgname != NULL ){
     pti->fname= alloc_img_str(imgname); //get img fname
-	if( pti->fname != NULL ){
-	  cairo_surface_t *cis= cairo_image_surface_create_from_png(pti->fname);
+    if( pti->fname != NULL ){
+      cairo_surface_t *cis= cairo_image_surface_create_from_png(pti->fname);
       if( cis != NULL ){
         pti->width=  cairo_image_surface_get_width(cis);
-	    pti->height= cairo_image_surface_get_height(cis);
-	    cairo_surface_destroy(cis);
-	  }
-	}
+        pti->height= cairo_image_surface_get_height(cis);
+        cairo_surface_destroy(cis);
+      }
+    }
   }
   return 1;
 }
@@ -147,49 +147,49 @@ static void redraw_button( struct toolbar_node * p )
     gtk_widget_queue_draw_area(ttb.drawing_area, p->barx1, p->bary1, p->barx2-p->barx1+1, p->bary2-p->bary1+1 ); //redraw
   }else{
     //redraw the toolbar
-	gtk_widget_queue_draw(ttb.drawing_area);
+    gtk_widget_queue_draw(ttb.drawing_area);
   }
 }
 
 static struct toolbar_node *add_ttb_node(const char * name, const char * img, const char *tooltip)
 {
-	int i;
-	struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
-	if( p != NULL){
-		p->next= NULL;
-		p->name= alloc_str(name);
-		p->tooltip= alloc_str(tooltip);
-		p->flags= 0;
-		if( p->name != NULL){
-		  p->flags |= TTBF_SELECTABLE; //if a name is provided, it can be selected
-		}
-		p->barx1= ttb.xnew;
-		p->bary1= ttb.ynew;
-		p->imgx= ttb.xnew + ttb.xoff;
-		p->imgy= ttb.ynew + ttb.yoff;
-		p->barx2= ttb.xnew + ttb.bwidth;
-		p->bary2= ttb.ynew + ttb.bheight;
-		if( ttb.isvertical ){
-		  ttb.ynew += ttb.bheight;
-		}else{
-		  ttb.xnew += ttb.bwidth;
-		}
-		for(i= 0; (i < TTBI_N); i++){
-			p->img[i].fname= NULL;
-			p->img[i].width= 0;
-			p->img[i].height= 0;
-		}
-		set_tb_img( p, TTBI_NORMAL, img );
+  int i;
+  struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
+  if( p != NULL){
+    p->next= NULL;
+    p->name= alloc_str(name);
+    p->tooltip= alloc_str(tooltip);
+    p->flags= 0;
+    if( p->name != NULL){
+      p->flags |= TTBF_SELECTABLE; //if a name is provided, it can be selected
+    }
+    p->barx1= ttb.xnew;
+    p->bary1= ttb.ynew;
+    p->imgx= ttb.xnew + ttb.xoff;
+    p->imgy= ttb.ynew + ttb.yoff;
+    p->barx2= ttb.xnew + ttb.bwidth;
+    p->bary2= ttb.ynew + ttb.bheight;
+    if( ttb.isvertical ){
+      ttb.ynew += ttb.bheight;
+    }else{
+      ttb.xnew += ttb.bwidth;
+    }
+    for(i= 0; (i < TTBI_N); i++){
+      p->img[i].fname= NULL;
+      p->img[i].width= 0;
+      p->img[i].height= 0;
+    }
+    set_tb_img( p, TTBI_NORMAL, img );
 
-		//conect node to the end of the list
-		if( ttb.list_last != NULL ){
-			ttb.list_last->next= p;
-		}else{
-			ttb.list= p; //first
-		}
-		ttb.list_last= p;
-	}
-	return p;
+    //conect node to the end of the list
+    if( ttb.list_last != NULL ){
+      ttb.list_last->next= p;
+    }else{
+      ttb.list= p; //first
+    }
+    ttb.list_last= p;
+  }
+  return p;
 }
 
 static void kill_tatoolbar( void )
@@ -197,35 +197,35 @@ static void kill_tatoolbar( void )
   struct toolbar_node * p;
   int i;
   while(ttb.list != NULL){
-	p= ttb.list;
-	ttb.list= ttb.list->next;
-	if(p->name != NULL){
-	  free((void*)p->name);
-	}
-	if(p->tooltip != NULL){
-	  free((void*)p->tooltip);
-	}
-	for(i= 0; (i < TTBI_N); i++){
-	  if( p->img[i].fname != NULL ){
-	    free((void*)p->img[i].fname);
-	  }
-	}
-	free((void*)p);
+    p= ttb.list;
+    ttb.list= ttb.list->next;
+    if(p->name != NULL){
+      free((void*)p->name);
+    }
+    if(p->tooltip != NULL){
+      free((void*)p->tooltip);
+    }
+    for(i= 0; (i < TTBI_N); i++){
+      if( p->img[i].fname != NULL ){
+        free((void*)p->img[i].fname);
+      }
+    }
+    free((void*)p);
   }
   ttb.list_last= NULL;
   ttb.philight= NULL;
   ttb.phipress= NULL;
 
   if( ttb.img_base != NULL ){
-	free((void *)ttb.img_base);
+    free((void *)ttb.img_base);
     ttb.img_base= NULL;
   }
   for(i= 0; (i < TTBI_N); i++){
     if( ttb.img[i].fname != NULL ){
-	  free((void*)ttb.img[i].fname);
-	  ttb.img[i].fname= NULL;
-	  ttb.img[i].width= 0;
-	  ttb.img[i].height= 0;
+      free((void*)ttb.img[i].fname);
+      ttb.img[i].fname= NULL;
+      ttb.img[i].width= 0;
+      ttb.img[i].height= 0;
     }
   }
 }
@@ -236,25 +236,12 @@ static struct toolbar_node * getButtonFromXY(int x, int y)
   int nx;
   for( p= ttb.list, nx=0; (p != NULL); p= p->next, nx++ ){
     //ignore non selectable things (like separators)
-	if( ((p->flags & TTBF_SELECTABLE)!=0) && (x >= p->barx1) && (x <= p->barx2) && (y >= p->bary1) && (y <= p->bary2) ){
+    if( ((p->flags & TTBF_SELECTABLE)!=0) && (x >= p->barx1) && (x <= p->barx2) && (y >= p->bary1) && (y <= p->bary2) ){
       return p;
     }
   }
   return NULL;  //invalid
 }
-
-/*static struct toolbar_node * getButtonFromPos(int nx)*/
-/*{*/
-  /*struct toolbar_node * p= ttb.list;*/
-  /*while( (nx >= 0) && (p != NULL) ){*/
-	/*if(nx == 0){*/
-	  /*return p;*/
-	/*}*/
-	/*nx--;*/
-    /*p= p->next;*/
-  /*}*/
-  /*return NULL;*/
-/*}*/
 
 static struct toolbar_node * getButtonFromName(const char *name)
 {
@@ -263,7 +250,7 @@ static struct toolbar_node * getButtonFromName(const char *name)
     for( p= ttb.list; (p != NULL); p= p->next ){
       if( (p->name != NULL) && (strcmp(p->name, name) == 0) ){
         return p;
-	  }
+      }
     }
   }
   return NULL;  //invalid
@@ -274,8 +261,8 @@ static void ttb_change_button_img(const char *name, int nimg, const char *img )
   struct toolbar_node * p= getButtonFromName(name);
   if( (p != NULL) || (strcmp(name, "TOOLBAR") == 0) ){
     if( set_tb_img(p, nimg, img ) ){
-	  redraw_button(p); //redraw button / toolbar (p==NULL)
-	}
+      redraw_button(p); //redraw button / toolbar (p==NULL)
+    }
   }
 }
 
@@ -286,13 +273,13 @@ static void ttb_enable_button(const char * name, int isenabled )
   if( p != NULL){
     flg= p->flags;
     if( isenabled ){
-	  p->flags= (flg & ~TTBF_GRAYED) | TTBF_SELECTABLE;
-	}else{
-	  p->flags= (flg & ~TTBF_SELECTABLE) | TTBF_GRAYED;
-	}
-	if( flg != p->flags ){
-	  redraw_button(p); //redraw button
-	}
+      p->flags= (flg & ~TTBF_GRAYED) | TTBF_SELECTABLE;
+    }else{
+      p->flags= (flg & ~TTBF_SELECTABLE) | TTBF_GRAYED;
+    }
+    if( flg != p->flags ){
+      redraw_button(p); //redraw button
+    }
   }
 }
 
@@ -311,18 +298,18 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
     }
     if(event->type == GDK_BUTTON_RELEASE){
       p= getButtonFromXY(event->x, event->y);
-	  gtk_widget_set_tooltip_text(widget, "");
+      gtk_widget_set_tooltip_text(widget, "");
       if( (p != NULL) && (p == ttb.phipress) ){
-		redraw_button(ttb.philight);  //redraw hilighted button
+        redraw_button(ttb.philight);  //redraw hilighted button
         //button pressed (mouse press and release over the same button)
 
-		//NOTE: this prevents to keep a hilited button when a dialog is open from the event
-		ttb.philight= NULL; //(but also removes the hilite until the mouse is moved)
+        //NOTE: this prevents to keep a hilited button when a dialog is open from the event
+        ttb.philight= NULL; //(but also removes the hilite until the mouse is moved)
         lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, -1);
       }else{
-  	    redraw_button(p); 			  //redraw button under mouse (if any)
-	    redraw_button(ttb.philight);  //redraw hilighted button (if any)
-	  }
+        redraw_button(p); 			  //redraw button under mouse (if any)
+        redraw_button(ttb.philight);  //redraw hilighted button (if any)
+      }
       ttb.phipress= NULL;
       return TRUE;
     }
@@ -335,10 +322,10 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 
 static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEvent* event, void*__)
 {
-    UNUSED(event);
-    UNUSED(__);
-    gtk_widget_queue_draw(widget); //TEST force complete redraw
-    return TRUE;
+  UNUSED(event);
+  UNUSED(__);
+  gtk_widget_queue_draw(widget); //TEST force complete redraw
+  return TRUE;
 }
 
 static void draw_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int grayed )
@@ -347,24 +334,24 @@ static void draw_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int g
   if( pti->fname != NULL ){
     cairo_surface_t *img= cairo_image_surface_create_from_png(pti->fname);
     if( img != NULL ){
-	  cairo_save(ctx);
+      cairo_save(ctx);
       cairo_translate(ctx, x, y);
       cairo_pattern_t *pattern= cairo_pattern_create_for_surface(img);
       cairo_pattern_set_extend(pattern, CAIRO_EXTEND_NONE);
       cairo_set_source(ctx, pattern);
 
-	  if( grayed ){
-	    radpat = cairo_pattern_create_rgba(0, 0, 0, 0.5);
-	    cairo_mask(ctx, radpat);
-	    cairo_pattern_destroy(radpat);
-	  }else{
-	    //cairo_rectangle(ctx, 0, 0, pti->width, pti->height);
-		cairo_paint(ctx);
-	  }
+      if( grayed ){
+        radpat = cairo_pattern_create_rgba(0, 0, 0, 0.5);
+        cairo_mask(ctx, radpat);
+        cairo_pattern_destroy(radpat);
+      }else{
+        //cairo_rectangle(ctx, 0, 0, pti->width, pti->height);
+        cairo_paint(ctx);
+      }
       cairo_pattern_destroy(pattern);
       cairo_restore(ctx);
       cairo_surface_destroy(img);
-	}
+    }
   }
 }
 
@@ -373,7 +360,7 @@ static void draw_fill_img( cairo_t *ctx, struct toolbar_img *pti, int w, int h )
   if( pti->fname != NULL ){
     cairo_surface_t *img= cairo_image_surface_create_from_png(pti->fname);
     if( img != NULL ){
-	  cairo_save(ctx);
+      cairo_save(ctx);
       cairo_pattern_t *pattern= cairo_pattern_create_for_surface(img);
       cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
       cairo_set_source(ctx, pattern);
@@ -382,7 +369,7 @@ static void draw_fill_img( cairo_t *ctx, struct toolbar_img *pti, int w, int h )
       cairo_pattern_destroy(pattern);
       cairo_restore(ctx);
       cairo_surface_destroy(img);
-	}
+    }
   }
 }
 
@@ -410,36 +397,36 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   //draw hilight (under buttons)
   p= ttb.philight;
   if( (p != NULL) && need_redraw(event, p->barx1, p->bary1, p->barx2, p->bary2) ){
-	h= -1;
+    h= -1;
     if(ttb.phipress == p){
-	  h= TTBI_HIPRESSED; //hilight as pressed
+      h= TTBI_HIPRESSED; //hilight as pressed
     }else if(ttb.phipress == NULL){
-	  h= TTBI_HILIGHT; //normal hilight (and no other button is pressed)
+      h= TTBI_HILIGHT; //normal hilight (and no other button is pressed)
     }
-	if( h >= 0){
-	  //try to use the button hilight version
-	  pti= &(p->img[h]);
-	  if( pti->fname == NULL ){
-	    //use the toolbar version
-	    pti= &(ttb.img[h]);
-	  }
+    if( h >= 0){
+      //try to use the button hilight version
+      pti= &(p->img[h]);
+      if( pti->fname == NULL ){
+        //use the toolbar version
+        pti= &(ttb.img[h]);
+      }
       draw_img(cr, pti, p->barx1, p->bary1, 0 );
-	}
+    }
   }
   //draw all button images
   for( p= ttb.list; (p != NULL); p= p->next ){
-	if( need_redraw( event, p->imgx, p->imgy, p->barx2, p->bary2) ){
-	  h= TTBI_NORMAL;
-	  grayed= 0;
-	  if( (p->flags & TTBF_GRAYED) != 0){
-	    if( p->img[TTBI_DISABLED].fname != NULL ){
-	      h= TTBI_DISABLED;
-		}else{
-		  grayed= 1; //no disabled image, gray it
-		}
-	  }
-	  draw_img(cr, &(p->img[h]), p->imgx, p->imgy, grayed );
-	}
+    if( need_redraw( event, p->imgx, p->imgy, p->barx2, p->bary2) ){
+      h= TTBI_NORMAL;
+      grayed= 0;
+      if( (p->flags & TTBF_GRAYED) != 0){
+        if( p->img[TTBI_DISABLED].fname != NULL ){
+          h= TTBI_DISABLED;
+        }else{
+          grayed= 1; //no disabled image, gray it
+        }
+      }
+      draw_img(cr, &(p->img[h]), p->imgx, p->imgy, grayed );
+    }
   }
   cairo_destroy(cr);
   return TRUE;
@@ -460,22 +447,22 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
     state = event->state;
   }
   if( (state & GDK_BUTTON1_MASK) == 0 ){
-	ttb.phipress= NULL;
+    ttb.phipress= NULL;
   }
   p= getButtonFromXY(x, y);
   if( p != ttb.philight ){
     //hilight changed
-	redraw_button(ttb.philight); //redraw prev button
+    redraw_button(ttb.philight); //redraw prev button
     ttb.philight= p;
-	redraw_button(ttb.philight); //redraw new button
-	//update tooltip text
-	tooltip= "";
-	if(p != NULL){
+    redraw_button(ttb.philight); //redraw new button
+    //update tooltip text
+    tooltip= "";
+    if(p != NULL){
       if(p->tooltip != NULL){
-	    tooltip= p->tooltip;
+        tooltip= p->tooltip;
       }
     }
-	gtk_widget_set_tooltip_text(widget, tooltip);
+    gtk_widget_set_tooltip_text(widget, tooltip);
   }
   return TRUE;
 }
@@ -484,8 +471,8 @@ static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
 {
   UNUSED(event);
   if(ttb.philight != NULL){
-	//force hilight and tooltip OFF
-	redraw_button(ttb.philight); //redraw button
+    //force hilight and tooltip OFF
+    redraw_button(ttb.philight); //redraw button
     ttb.philight= NULL;
     gtk_widget_set_tooltip_text(widget, "");
   }
@@ -517,17 +504,17 @@ static void show_tatoolbar(int show)
   if( show ){
     //show current toolbar
     gtk_widget_show( ttb.drawing_area );
-	//hide the other toolbar
-	if( ttb.drawing_area == ttb.draw[0] ){
-	  gtk_widget_hide( ttb.draw[1] );
-	}else{
-	  gtk_widget_hide( ttb.draw[0] );
-	}
-	gtk_widget_queue_draw(ttb.drawing_area); //force redraw
+    //hide the other toolbar
+    if( ttb.drawing_area == ttb.draw[0] ){
+      gtk_widget_hide( ttb.draw[1] );
+    }else{
+      gtk_widget_hide( ttb.draw[0] );
+    }
+    gtk_widget_queue_draw(ttb.drawing_area); //force redraw
   }else{
     //hide all toolbars
     gtk_widget_hide( ttb.draw[0] );
-	gtk_widget_hide( ttb.draw[1] );
+    gtk_widget_hide( ttb.draw[1] );
   }
 }
 
@@ -557,8 +544,8 @@ static int ltoolbar_new(lua_State *L) {
   ttb.ymargin= 1;
   if( ttb.isvertical ){
     ttb.drawing_area= ttb.draw[1];	//use toolbar 1 = vertical
-	ttb.barwidth= lua_tointeger(L, 1);
-	ttb.ymargin= 2;
+    ttb.barwidth= lua_tointeger(L, 1);
+    ttb.ymargin= 2;
   }else{
     ttb.drawing_area= ttb.draw[0];  //use toolbar 0 = horizontal
     ttb.barheight= lua_tointeger(L, 1);
@@ -569,7 +556,7 @@ static int ltoolbar_new(lua_State *L) {
   ttb.bheight= ttb.bwidth;
   ttb.xoff= (ttb.bwidth - lua_tointeger(L, 3))/2;
   if( ttb.xoff < 0){
-	ttb.xoff= 0;
+    ttb.xoff= 0;
   }
   ttb.yoff= ttb.xoff;
   ttb.xnew= ttb.xmargin;
@@ -608,39 +595,39 @@ static int ltoolbar_addspace(lua_State *L) {
     if( x == 0 ){
       x= ttb.bheight/2;
     }
-	if( !hide ){
+    if( !hide ){
       //show H separator in the middle
-	  p= add_ttb_node( NULL, ttb.img[TTBI_SEPARATOR].fname, NULL);
-	  if( p != NULL ){
-	    asep= ttb.img[TTBI_SEPARATOR].height; //minimun separator = image height
-	    if( x < asep ){
-		  x= asep;
-		}
-	    ttb.ynew -= ttb.bheight;
-		p->imgx= ttb.xnew;
-		p->imgy= ttb.ynew + ((x-asep)/2);
-		p->bary2= ttb.ynew + x;
-	  }
-	}
+      p= add_ttb_node( NULL, ttb.img[TTBI_SEPARATOR].fname, NULL);
+      if( p != NULL ){
+        asep= ttb.img[TTBI_SEPARATOR].height; //minimun separator = image height
+        if( x < asep ){
+          x= asep;
+        }
+        ttb.ynew -= ttb.bheight;
+        p->imgx= ttb.xnew;
+        p->imgy= ttb.ynew + ((x-asep)/2);
+        p->bary2= ttb.ynew + x;
+      }
+    }
     ttb.ynew += x;
   }else{
     if( x == 0 ){
       x= ttb.bwidth/2;
     }
-	if( !hide ){
+    if( !hide ){
       //show V separator in the middle
-	  p= add_ttb_node( NULL, ttb.img[TTBI_SEPARATOR].fname, NULL);
-	  if( p != NULL ){
-	    asep= ttb.img[TTBI_SEPARATOR].width; //minimun separator = image width
-	    if( x < asep ){
-		  x= asep;
-		}
-	    ttb.xnew -= ttb.bwidth;
-		p->imgx= ttb.xnew + ((x-asep)/2);
-		p->imgy= ttb.ynew;
-		p->barx2= ttb.xnew + x;
-	  }
-	}
+      p= add_ttb_node( NULL, ttb.img[TTBI_SEPARATOR].fname, NULL);
+      if( p != NULL ){
+        asep= ttb.img[TTBI_SEPARATOR].width; //minimun separator = image width
+        if( x < asep ){
+          x= asep;
+        }
+        ttb.xnew -= ttb.bwidth;
+        p->imgx= ttb.xnew + ((x-asep)/2);
+        p->imgy= ttb.ynew;
+        p->barx2= ttb.xnew + x;
+      }
+    }
     ttb.xnew += x;
   }
   return 0;
@@ -653,15 +640,15 @@ static int ltoolbar_gotopos(lua_State *L) {
   x= lua_tointeger(L, 1);
   if( lua_isnone(L, 2) ){
     //only one parameter: new row/column
-	if( ttb.isvertical ){
-	  //new column
+    if( ttb.isvertical ){
+      //new column
       x= ttb.xnew + ttb.bwidth + x;
-	  y= ttb.ymargin;
-	}else{
-	  //new row
-	  y= ttb.ynew + ttb.bheight + x;
+      y= ttb.ymargin;
+    }else{
+      //new row
+      y= ttb.ynew + ttb.bheight + x;
       x= ttb.xmargin;
-	}
+    }
   }else{
     //2 parameters: x,y
     y= lua_tointeger(L, 2);
