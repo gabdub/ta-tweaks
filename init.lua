@@ -51,7 +51,7 @@ if toolbar then
   end)
 
   --create toolbar: barsize,buttonsize,imgsize,[isvertical],[imgpath]
-  toolbar.new(27, 24, 16)--, false, "C:\\textadept\\textadept_NIGHTLY9\\core\\images\\bar-dark\\"); 
+  toolbar.new(27, 24, 16)--, false, "/home/gabriel/Descargas/PROG/textadept_9_NIGHTLY/core/images/bar2/")
   --toolbar.adjust(26, 24, 2, 1, 4, 4); --bwidth,bheight,xmargin,ymargin,xoff,yoff
   toolbar.seticon("TOOLBAR", "ttb-back")
 
@@ -60,12 +60,12 @@ if toolbar then
   Proj.update_go_toolbar()
   toolbar.addspace()
 
-  toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]");
+  toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]")
   --toolbar.gotopos(3); --new row
-  toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]");
-  toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]");
+  toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]")
+  toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
-  toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" );
+  toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" )
   toolbar.show(true)
 end
 
