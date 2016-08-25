@@ -4,14 +4,14 @@ ___This is a collection of my Textadept tweaks___:
 ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform text editor: http://foicica.com/textadept/
 
   __goto_nearest.lua__ (based on http://foicica.com/wiki/goto-nearest-occurrence): this module adds the following bindings:
-  
+
     * F3              goto nearest occurrence FORWARD
     * CTRL+F3:        goto nearest occurrence BACKWARD
     * ALT+F3:         goto nearest occurrence CHOOSE SEARCH OPTIONS
     * SHIFT+F3:       ASK + goto nearest occurrence FORWARD
     * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
     * SHIFT+ALT+F     Search for text in all project files (requires project.lua)
-      
+
 __Features:__
 * Textadept version 8 and 9 compatible
 * Quick search of the selected text (if not text is selected, repeat last search)
@@ -35,10 +35,10 @@ keys.cf =  keys.sf3
 ```
 
   __ctrl_tab_mru.lua__ : this module adds the following bindings:
-  
+
     * CTRL+TAB:        goto next buffer using a MRU list
     * CTRL+SHIFT+TAB:  goto previous buffer
-      
+
 __Features:__
 * Textadept version 8 and 9 compatible
 * Implements a more standard way to handle CTRL+TAB and CTRL+SHIFT+TAB
@@ -53,7 +53,7 @@ require('ctrl_tab_mru')
 ```
 
   __project.lua__ : this module adds the following bindings:
-  
+
     * F4:     (in project view)   Toggle project file mode (edit / select)
               (in a regular file) Go to project view
     * F5:     (in project view)   Refresh syntax highlighting + project folding
@@ -68,7 +68,7 @@ require('ctrl_tab_mru')
 	* ESC:		    Close search view, then, moves between project and files view
 	* CONTROL+PgUp: Previous buffer
 	* CONTROL+PgDn: Next buffer
-      
+
 __Features:__
 * Textadept version 8 and 9 compatible
 * Allow to group files in projects
@@ -101,3 +101,34 @@ require('project')
 
 **Project File Search**
 ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
+
+__tatoolbar__ this code adds a toolbar to textadept (compiling is required):
+
+  The "toolbar" object is added to textadept with the following functions:
+    * toolbar.new(barsize,buttonsize,imgsize,[isvertical],[imgpath]) creates an empty toolbar with square buttons
+    * toolbar.adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff) fine tune some parameters
+	* toolbar.addbutton(button-name,tooltiptext) add some buttons
+	* toolbar.addspace([space],[hidebar]) add some space (separator)
+	* toolbar.gotopos([dx]) change next button position: new row/column + dx pixels
+	* toolbar.gotopos(x,y) change next button position to x,y (in pixels)
+	* toolbar.show(show) show/hide the toolbar
+	* toolbar.enable(button-name,isenabled) enable/disable a button given its name
+	* toolbar.seticon(button-name,icon,[nicon]) set/change a button icon (nicon: 0=normal,1:grayed,2:hilight,3:pressed)
+	* toolbar.seticon("TOOLBAR",icon,[nicon]) set/change a global toolbar icon (nicon: 0=background,2:hilight,3:pressed,4:separator)
+
+__Usage:__
+* copy src/tatoolbar.c in Textadept/src folder
+* edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
+* optionaly copy also the lines that contains "UNUSED()" to supress some warnings
+* choose one ZIP with icons from (tatoolbar/images) and copy the icons in "Textadept/core/images/bar/" folder
+  (you can choose another icon location but have to set the path when calling toolbar.new())
+
+__Some examples:__
+**Vertical**
+![vertical toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/vertical.png "Vertical toolbar")
+
+**Horizontal**
+![horizontal toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontal.png "Horizontal toolbar, other theme")
+
+**Dual row**
+![dual row toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontalx2.png "Horizontal toolbar, two rows")
