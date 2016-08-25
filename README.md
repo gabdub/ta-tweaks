@@ -102,33 +102,38 @@ require('project')
 **Project File Search**
 ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
 
-__tatoolbar__ this code adds a toolbar to textadept (compiling is required):
+# tatoolbar
+This code adds a toolbar to textadept (compiling is required):
 
-  The "toolbar" object is added to textadept with the following functions:
-    * toolbar.new(barsize,buttonsize,imgsize,[isvertical],[imgpath]) creates an empty toolbar with square buttons
-    * toolbar.adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff) fine tune some parameters
-	* toolbar.addbutton(button-name,tooltiptext) add some buttons
-	* toolbar.addspace([space],[hidebar]) add some space (separator)
-	* toolbar.gotopos([dx]) change next button position: new row/column + dx pixels
-	* toolbar.gotopos(x,y) change next button position to x,y (in pixels)
-	* toolbar.show(show) show/hide the toolbar
-	* toolbar.enable(button-name,isenabled) enable/disable a button given its name
-	* toolbar.seticon(button-name,icon,[nicon]) set/change a button icon (nicon: 0=normal,1:grayed,2:hilight,3:pressed)
-	* toolbar.seticon("TOOLBAR",icon,[nicon]) set/change a global toolbar icon (nicon: 0=background,2:hilight,3:pressed,4:separator)
+The "toolbar" object is added to textadept with the following functions:
+
+* toolbar._new(barsize,buttonsize,imgsize,[isvertical],[imgpath])_ creates an empty toolbar with square buttons
+* toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
+* toolbar._addbutton(button-name,tooltiptext)_ add some buttons
+* toolbar._addspace([space],[hidebar])_ add some space (separator)
+* toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels
+* toolbar._gotopos(x,y)_ change next button position to x,y (in pixels)
+* toolbar._show(show)_ show/hide the toolbar
+* toolbar._enable(button-name,isenabled)_ enable/disable a button given its name
+* toolbar._seticon(button-name,icon,[nicon])_ set/change a button icon (nicon: 0=normal,1:grayed,2:hilight,3:pressed)
+* toolbar._seticon("TOOLBAR",icon,[nicon])_ set/change a global toolbar icon (nicon: 0=background,2:hilight,3:pressed,4:separator)
 
 __Usage:__
+
 * copy src/tatoolbar.c in Textadept/src folder
 * edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy also the lines that contains "UNUSED()" to supress some warnings
+* compile Textadept
 * choose one ZIP with icons from (tatoolbar/images) and copy the icons in "Textadept/core/images/bar/" folder
   (you can choose another icon location but have to set the path when calling toolbar.new())
 
 __Some examples:__
-**Vertical**
+
+**Vertical toolbar**
 ![vertical toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/vertical.png "Vertical toolbar")
 
-**Horizontal**
+**Horizontal toolbar**
 ![horizontal toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontal.png "Horizontal toolbar, other theme")
 
-**Dual row**
+**Dual row toolbar**
 ![dual row toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontalx2.png "Horizontal toolbar, two rows")
