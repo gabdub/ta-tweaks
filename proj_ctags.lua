@@ -171,6 +171,13 @@ function Proj.goto_current_pos()
   end
 end
 
+function Proj.update_go_toolbar()
+  if toolbar then
+    toolbar.enable("go-previous", (jump_list.pos >= 1) )
+    toolbar.enable("go-next", (jump_list.pos < #jump_list))
+  end
+end
+
 function Proj.goto_prev_pos()
   -- Navigate within the jump history.
   if jump_list.pos < 1 then
@@ -181,6 +188,7 @@ function Proj.goto_prev_pos()
     ui.statusbar_text= 'First position'
   else
     jump_list.pos = jump_list.pos -1
+    Proj.update_go_toolbar()
   end
   Proj.goto_current_pos()
 end
@@ -192,6 +200,7 @@ function Proj.goto_next_pos()
     return
   end
   jump_list.pos = jump_list.pos +1
+  Proj.update_go_toolbar()
   Proj.goto_current_pos()
 end
 
@@ -203,6 +212,7 @@ function Proj.store_current_pos()
   end
   -- Store the current position at the end of the jump history.
   Proj.append_current_pos()
+  Proj.update_go_toolbar()
 end
 
 function Proj.append_current_pos()
@@ -220,6 +230,7 @@ function Proj.append_current_pos()
     jump_list[#jump_list + 1] = {bname, buffer.current_pos}
     jump_list.pos = #jump_list
   end
+  Proj.update_go_toolbar()
 end
 
 --clear position table
@@ -228,6 +239,7 @@ function Proj.clear_pos_table()
     for i = 0, #jump_list do jump_list[i] = nil end
   end
   jump_list.pos= 0
+  Proj.update_go_toolbar()
 end
 
 --remove search from position table

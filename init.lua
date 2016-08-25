@@ -36,6 +36,39 @@ events.connect(events.LEXER_LOADED, function(lang)
   end
 end)
 
+if toolbar then
+  function toolbar.cmd(name,func,tooltip)
+    toolbar.addbutton(name,tooltip)
+    toolbar[name]= func
+  end
+
+  events.connect("toolbar_clicked", function(button)
+    if toolbar[button] ~= nil then
+      toolbar[button]()
+    else
+      ui.statusbar_text= button.." clicked"
+    end
+  end)
+
+  --create toolbar: barsize,buttonsize,imgsize,[isvertical],[imgpath]
+  toolbar.new(27, 24, 16)--, false, "C:\\textadept\\textadept_NIGHTLY9\\core\\images\\bar-dark\\"); 
+  --toolbar.adjust(26, 24, 2, 1, 4, 4); --bwidth,bheight,xmargin,ymargin,xoff,yoff
+  toolbar.seticon("TOOLBAR", "ttb-back")
+
+  toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
+  toolbar.cmd("go-next",                Proj.goto_next_pos,  "Next position [Shift+F12]")
+  Proj.update_go_toolbar()
+  toolbar.addspace()
+
+  toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]");
+  --toolbar.gotopos(3); --new row
+  toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]");
+  toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]");
+  toolbar.addspace()
+  toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" );
+  toolbar.show(true)
+end
+
 ------------------- tab-double-click close buffer ---------------
 --events.connect(events.TAB_DOUBLE_CLICK, function() Proj.close_buffer() end)
 
