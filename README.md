@@ -124,8 +124,71 @@ __Usage:__
 * edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy also the lines that contains "UNUSED()" to supress some warnings
 * compile Textadept
-* choose one ZIP with icons from (tatoolbar/images) and copy the icons in "Textadept/core/images/bar/" folder
-  (you can choose another icon location but have to set the path when calling toolbar.new())
+* choose one ZIP with icons from (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
+  (you can choose another icon location and set the path when calling toolbar.new())
+* to create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
+```
+if toolbar then
+  function toolbar.cmd(name,func,tooltip,icon)
+    toolbar.addbutton(name,tooltip)
+    toolbar[name]= func
+    if icon then
+      toolbar.seticon(name,icon)
+    end
+  end
+
+  events.connect("toolbar_clicked", function(button)
+    if toolbar[button] ~= nil then
+      toolbar[button]()
+    else
+      ui.statusbar_text= button.." clicked"
+    end
+  end)
+
+  --create toolbar: barsize= 27 pix, buttonsize= 24x24 pix, imgsize= 16x16 pix
+  toolbar.new(27, 24, 16)
+  --add buttons here
+  toolbar.show(true)
+end
+```
+
+* then add some buttons:
+
+```
+  toolbar.cmd("document-new", buffer.new,      "New [Ctrl+N]") --icon equals name, get from images path
+  toolbar.cmd("save",         io.save_file,    "Save [Ctrl+S]", "document-save") --diferent icon name, get from images path
+  toolbar.cmd("save-as",      io.save_file_as, "Save as [Ctrl+Shift+S]", "C:\\textadept\\textadept_NIGHTLY9\\core\\images\\bar-dark\\document-save-as.png")) --full path to the icon file
+```
+
+NOTE: the icon images __must be PNG__ files. If only the icon name is given, the toolbar uses the images path given in the toolbar.new() 5th parameter (or "Textadept/core/images/bar" if not) and adds the name and the ".png" extension.
+
+* and some separators:
+
+```
+  toolbar.seticon("TOOLBAR","myseparator",4) --optionally change the default separator image
+  toolbar.addspace() --add a half button separator with a vertical line in between
+  toolbar.addspace(30) --set separator size
+  toolbar.addspace(0,true) --don't show an image in the middle
+```
+
+* and code to enable/disable your buttons:
+
+```
+  if toolbar then
+    toolbar.enable("go-previous", (jump_list.pos >= 1) )
+    toolbar.enable("go-next", (jump_list.pos < #jump_list))
+  end
+```
+
+* one row in not enought?
+
+```
+  toolbar.new(54, 24, 16) --create a bar with room for two rows
+  toolbar.seticon("TOOLBAR", "ttb-back") --optinally add a background image (27 pix high) to draw lines at the end of every row 
+  --define row #1 buttons
+  toolbar.gotopos(3); --new row plus 3 pixels (since each rows is 27 pix and the buttons are 24 pix)
+  --define row #2 buttons
+```
 
 __Some examples:__
 
