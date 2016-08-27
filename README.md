@@ -180,7 +180,7 @@ NOTE: the icon images __must be PNG__ files. If only the icon name is given, the
   end
 ```
 
-* one row in not enought?
+* one row is not enought?
 
 ```
   toolbar.new(54, 24, 16) --create a bar with room for two rows
