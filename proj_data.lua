@@ -103,14 +103,8 @@ events.connect(events.INITIALIZED, function()
   --Proj.init_ready = true
   Proj.updating_ui= 0
 
-  --use Proj.buffer functions in menues
-  textadept.menu.menubar[_L['_File']][_L['_Close']][2]= Proj.close_buffer
-  textadept.menu.menubar[_L['_File']][_L['Close All']][2]= Proj.close_all_buffers
-  textadept.menu.tab_context_menu[_L['_Close']][2]= Proj.close_buffer
-
-  textadept.menu.menubar[_L['_Buffer']][_L['_Next Buffer']][2]= Proj.next_buffer
-  textadept.menu.menubar[_L['_Buffer']][_L['_Previous Buffer']][2]= Proj.prev_buffer
-  textadept.menu.menubar[_L['_Buffer']][_L['_Switch to Buffer...']][2]= Proj.switch_buffer
+  --replace some menu commands with the corresponding project version
+  Proj.change_menu_cmds()
 
   --load recent projects list
   if Proj.SAVE_ON_QUIT then Proj.load_projects(Proj.PROJECTS_FILE) end

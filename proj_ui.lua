@@ -512,11 +512,65 @@ function Proj.trim_trailing_spaces()
   end
 end
 
+function Proj.open_file()
+  Proj.goto_filesview() --change to files view if needed
+  io.open_file()
+end
+
+function Proj.open_recent_file()
+  Proj.goto_filesview() --change to files view if needed
+  io.open_recent_file()
+end
+
+function Proj.qopen_user()
+  Proj.goto_filesview() --change to files view if needed
+  io.quick_open(_USERHOME)
+end
+
+function Proj.qopen_home()
+  Proj.goto_filesview() --change to files view if needed
+  io.quick_open(_HOME)
+end
+
+function Proj.qopen_curdir()
+  local fname= buffer.filename
+  Proj.goto_filesview() --change to files view if needed
+  if fname then
+    io.quick_open(fname:match('^(.+)[/\\]'))
+  end
+end
+
+--replace some menu commands with the corresponding project version
+function Proj.change_menu_cmds()
+  local menu= textadept.menu.menubar[_L['_File']]
+  menu[_L['_Open']][2]= Proj.open_file
+  menu[_L['Open _Recent...']][2]= Proj.open_recent_file
+  menu[_L['_Close']][2]= Proj.close_buffer
+  menu[_L['Close All']][2]= Proj.close_all_buffers
+
+  textadept.menu.tab_context_menu[_L['_Close']][2]= Proj.close_buffer
+
+  menu= textadept.menu.menubar[_L['_Buffer']]
+  menu[_L['_Next Buffer']][2]= Proj.next_buffer
+  menu[_L['_Previous Buffer']][2]= Proj.prev_buffer
+  menu[_L['_Switch to Buffer...']][2]= Proj.switch_buffer
+
+  menu= textadept.menu.menubar[_L['_Tools']][_L['Quick _Open']]
+  menu[_L['Quickly Open _User Home']][2]= Proj.qopen_user
+  menu[_L['Quickly Open _Textadept Home']][2]= Proj.qopen_home
+  menu[_L['Quickly Open _Current Directory']][2]= Proj.qopen_curdir
+  menu[_L['Quickly Open Current _Project']][2]= Proj.snapopen
+end
+
 --------------------------------------------------------------
 -- Control+W=         close buffer
 -- Control+Shift+W=   close all buffers
 -- Control+H=         show project current row properties
+-- Control+O =        open file
+-- Control+Alt+O =    open recent file
 -- Control+Shift+O =  project snap open
+-- Control+Shift+Alt+O = open current directory
+-- Control+U =        quick open user folder
 -- F4 =               toggle project between selection and EDIT modes
 -- F5 =               refresh syntax highlighting + project folding
 -- Control+B=         switch buffer
@@ -525,7 +579,11 @@ end
 keys.cw = Proj.close_buffer
 keys.cW = Proj.close_all_buffers
 keys.ch = Proj.show_doc
+keys.co = Proj.open_file
+keys.cao= Proj.open_recent_file
 keys.cO = Proj.snapopen
+keys.caO= Proj.qopen_curdir
+keys.cu = Proj.qopen_user
 keys.f4 = change_proj_ed_mode
 keys.f5 = refresh_proj_hilight
 keys.cb = Proj.switch_buffer
