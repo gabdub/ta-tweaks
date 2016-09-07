@@ -219,14 +219,14 @@ __Some examples:__
 __Some examples usign tabs and themes:__
 
 **theme bar-sm-light**
-![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin1.png "theme bar-sm-light")
+![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win1.png "theme bar-sm-light")
 
 **theme bar-ff-dark**
-![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin2.png "theme bar-ff-dark")
+![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win2.png "theme bar-ff-dark")
 
 **Two rows (tabs at the bottom)**
-![Two rows (tabs at the bottom)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin3.png "Two rows (tabs at the bottom)")
+![Two rows (tabs at the bottom)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win3.png "Two rows (tabs at the bottom)")
 
 **Two rows (tabs at the top) and some tweaks**
-![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin4.png "Two rows (tabs at the top)")
+![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win4.png "Two rows (tabs at the top)")
 
