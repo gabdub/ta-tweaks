@@ -115,8 +115,20 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._gotopos(x,y)_ change next button position to x,y (in pixels)
 * toolbar._show(show)_ show/hide the toolbar
 * toolbar._enable(button-name,isenabled)_ enable/disable a button given its name
-* toolbar._seticon(button-name,icon,[nicon])_ set/change a button icon (nicon: 0=normal,1:grayed,2:hilight,3:pressed)
-* toolbar._seticon("TOOLBAR",icon,[nicon])_ set/change a global toolbar icon (nicon: 0=background,2:hilight,3:pressed,4:separator)
+* toolbar._seticon(button-name,icon,[nicon])_ set/change a button icon (nicon: 0=normal/separator,1:disabled,2:hilighted,3:pressed)
+* toolbar._seticon("TOOLBAR",icon,[nicon])_ set/change a global toolbar icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
+  4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
+  17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed)
+* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the toolbar
+* toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color
+* toolbar._settab(num,tab-text,tooltiptext)_ set tab n
+* toolbar._deletetab(num)_ delete tab n (decrement bigger tab-nums by 1)
+* toolbar._activatetab(num)_ activate (selects) tab n
+* toolbar._enabletab(num,enabled)_ enable/disable tab n
+* toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab n
+
+Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
+(see somo examples below)
 
 __Usage:__
 
@@ -124,7 +136,8 @@ __Usage:__
 * edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy also the lines that contains "UNUSED()" to supress some warnings
 * compile Textadept
-* choose one ZIP with icons from (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
+* copy themes files in user's textadept folder (~/.textadept/bar-sm-light and ~/.textadept/bar-ff-dark) or
+  choose one ZIP with icons from (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
   (you can choose another icon location and set the path when calling toolbar.new())
 * to create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
 ```
@@ -200,3 +213,20 @@ __Some examples:__
 
 **Dual row toolbar**
 ![dual row toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontalx2.png "Horizontal toolbar, two rows")
+
+# tabs & theming
+
+__Some examples usign tabs and themes:__
+
+**theme bar-sm-light**
+![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin1.png "theme bar-sm-light")
+
+**theme bar-ff-dark**
+![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin2.png "theme bar-ff-dark")
+
+**Two rows (tabs at the bottom)**
+![Two rows (tabs at the bottom)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin3.png "Two rows (tabs at the bottom)")
+
+**Two rows (tabs at the top) and some tweaks**
+![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tabwin4.png "Two rows (tabs at the top)")
+
