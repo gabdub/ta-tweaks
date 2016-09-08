@@ -94,12 +94,15 @@ Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_, _proj_ctags.lua_, _proj_data
 require('project')
 ```
 **SELECT Mode**
+
 ![select mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_sel.png "Project in select mode")
 
 **EDIT Mode**
+
 ![edit mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_edit.png "Project in edit mode")
 
 **Project File Search**
+
 ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
 
 # tatoolbar
@@ -206,12 +209,15 @@ NOTE: the icon images __must be PNG__ files. If only the icon name is given, the
 __Some examples:__
 
 **Vertical toolbar**
+
 ![vertical toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/vertical.png "Vertical toolbar")
 
 **Horizontal toolbar**
+
 ![horizontal toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontal.png "Horizontal toolbar, other theme")
 
 **Dual row toolbar**
+
 ![dual row toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/horizontalx2.png "Horizontal toolbar, two rows")
 
 # tabs & theming
@@ -234,7 +240,7 @@ __Some examples usign tabs and themes:__
 
 ![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win4.png "Two rows (tabs at the top)")
 
-**Two rows (tabs at the top)**
+**Two rows (theme bar-th-dark)**
 
-![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "Two rows (tabs at the top)")
+![Two rows (theme bar-th-dark)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "Two rows (theme bar-th-dark)")
 
