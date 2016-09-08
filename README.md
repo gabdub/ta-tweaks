@@ -230,3 +230,6 @@ __Some examples usign tabs and themes:__
 **Two rows (tabs at the top) and some tweaks**
 ![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win4.png "Two rows (tabs at the top)")
 
+**Two rows (tabs at the top) **
+![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "Two rows (tabs at the top)")
+
