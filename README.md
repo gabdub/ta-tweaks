@@ -128,7 +128,7 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab n
 
 Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
-(see somo examples below)
+(see some examples below)
 
 __Usage:__
 
@@ -219,17 +219,22 @@ __Some examples:__
 __Some examples usign tabs and themes:__
 
 **theme bar-sm-light**
+
 ![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win1.png "theme bar-sm-light")
 
 **theme bar-ff-dark**
+
 ![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win2.png "theme bar-ff-dark")
 
 **Two rows (tabs at the bottom)**
+
 ![Two rows (tabs at the bottom)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win3.png "Two rows (tabs at the bottom)")
 
 **Two rows (tabs at the top) and some tweaks**
+
 ![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win4.png "Two rows (tabs at the top)")
 
-**Two rows (tabs at the top) **
+**Two rows (tabs at the top)**
+
 ![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "Two rows (tabs at the top)")
 
