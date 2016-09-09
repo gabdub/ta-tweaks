@@ -44,10 +44,10 @@ if toolbar then
   ui.tabs= false  --hide regular tabbar
 
   --load toolbar theme from USERHOME
-  toolbar.set_theme("bar-sm-light")
+  --toolbar.set_theme("bar-sm-light")
   --toolbar.set_theme("bar-ff-dark")
-  --toolbar.set_theme("bar-th-dark")
-  toolbar.barsize=toolbar.barsize*2
+  toolbar.set_theme("bar-th-dark")
+  --toolbar.barsize=toolbar.barsize*2
   toolbar.tabxmargin=0
 
   --change theme defaults here
@@ -56,8 +56,8 @@ if toolbar then
 
   toolbar.create()  --create the toolbar
 
-  --toolbar.add_tabs_here()
-  --toolbar.gotopos(5) --new row
+  toolbar.add_tabs_here()
+  toolbar.gotopos(5) --new row
 
   --add some buttons
   toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
@@ -73,10 +73,10 @@ if toolbar then
   toolbar.addspace()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
-  toolbar.gotopos(3) --new row
+  --toolbar.gotopos(3) --new row
 
   --show tabs in the toolbar
-  toolbar.add_tabs_here()
+  --toolbar.add_tabs_here()
 
   toolbar.show(true)  --show toolbar
 
