@@ -168,17 +168,55 @@ function Proj.add_dir_files(dir)
     }
     if not dir then return end
 
-    flist= {}
+    local flist= {}
+    local extlist= {}
+    local ext
     if TA_MAYOR_VER < 9 then
       lfs.dir_foreach(dir, function(file)
         flist[ #flist+1 ]= file
+        ext= file:match('[^%.\\/]+$')
+        if ext then extlist[ext]= true end
         end, lfs.FILTER, true)
     else
       lfs.dir_foreach(dir, function(file)
         flist[ #flist+1 ]= file
+        ext= file:match('[^%.\\/]+$')
+        if ext then extlist[ext]= true end
         end, lfs.FILTER, nil, true)
     end
-    Proj.add_files(p_buffer, flist)
+    if #flist > 0 then
+      --choose extension to import
+      local allext= ""
+      for e,v in pairs(extlist) do
+        if allext == "" then
+          allext= e
+        else
+          allext= allext..","..e
+        end
+      end
+      r,word= ui.dialogs.inputbox{title = 'Extension list', informative_text = 'Choose the extensions to add (empty= all)', width = 400, text = allext}
+      if type(word) == 'table' then
+        word= table.concat(word, ',')
+      end
+      if word == "" then
+        --all files / dirs
+        Proj.add_files(p_buffer, flist)
+      else
+        --filtered by extensions
+        extlist= {}
+        for i in string.gmatch(word, "[^,]+") do
+          extlist[i] = true
+        end
+        local flist2= {}
+        for i,f in ipairs(flist) do
+          ext= f:match('[^%.\\/]+$')
+          if ext and extlist[ext] then
+            flist2[#flist2+1]= f
+          end
+        end
+        Proj.add_files(p_buffer, flist2)
+      end
+    end
   else
     ui.statusbar_text='Project not found'
   end

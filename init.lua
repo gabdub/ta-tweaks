@@ -40,19 +40,24 @@ end)
 
 if toolbar then
   require('toolbar')
-  
+
   ui.tabs= false  --hide regular tabbar
 
   --load toolbar theme from USERHOME
   toolbar.set_theme("bar-sm-light")
   --toolbar.set_theme("bar-ff-dark")
-  --toolbar.barsize= toolbar.barsize*2
-  
+  --toolbar.set_theme("bar-th-dark")
+  toolbar.barsize=toolbar.barsize*2
+  toolbar.tabxmargin=0
+
   --change theme defaults here
   --toolbar.tabwithclose= true
-  --toolbar.img[5]="ttb-tab-back"
+  toolbar.img[1]="ttb-back2"
 
   toolbar.create()  --create the toolbar
+
+  --toolbar.add_tabs_here()
+  --toolbar.gotopos(5) --new row
 
   --add some buttons
   toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
@@ -65,9 +70,10 @@ if toolbar then
   toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
   toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" )
+  toolbar.addspace()
+  toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
-  --toolbar.gotopos(3) --new row
-  --toolbar.addspace(5,true)
+  toolbar.gotopos(3) --new row
 
   --show tabs in the toolbar
   toolbar.add_tabs_here()

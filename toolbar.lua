@@ -11,17 +11,19 @@ if toolbar then
       ntab= toolbar.currenttab
       buf= buffer
     end
-    --update tab text
-    local filename = buf.filename or buf._type or _L['Untitled']
-    local tabtext= string.match(filename, ".-([^\\/]*)$")
-    --update modified indicator in tab
-    if toolbar.tabmodified == 0 then
-       --change tab text
-      if buf.modify then tabtext= tabtext .. "*" end
-    else
-      toolbar.modifiedtab(ntab, buf.modify)
-    end
-    toolbar.settab(ntab, tabtext, filename) --show image / change color
+    --if not toolbar.hideproject or (buf._project_select == nil and buf._type ~= Proj.PRJT_SEARCH) then
+      --update tab text
+      local filename = buf.filename or buf._type or _L['Untitled']
+      local tabtext= string.match(filename, ".-([^\\/]*)$")
+      --update modified indicator in tab
+      if toolbar.tabmodified == 0 then
+         --change tab text
+        if buf.modify then tabtext= tabtext .. "*" end
+      else
+        toolbar.modifiedtab(ntab, buf.modify)
+      end
+      toolbar.settab(ntab, tabtext, filename) --show image / change color
+    --end
   end
 
   --select a toolbar tab
@@ -96,17 +98,21 @@ if toolbar then
   end)
 
   events.connect(events.FILE_OPENED, function()
-    local filename = buffer.filename or buffer._type or _L['Untitled']
-    toolbar.settab(_BUFFERS[buffer], string.match(filename, ".-([^\\/]*)$"), filename)
-    toolbar.seltab(_BUFFERS[buffer])
+    --if not toolbar.hideproject or (buffer._project_select == nil and buffer._type ~= Proj.PRJT_SEARCH) then
+      local filename = buffer.filename or buffer._type or _L['Untitled']
+      toolbar.settab(_BUFFERS[buffer], string.match(filename, ".-([^\\/]*)$"), filename)
+      toolbar.seltab(_BUFFERS[buffer])
+    --end
   end)
 
   events.connect(events.BUFFER_NEW, function()
     local ntab=_BUFFERS[buffer]
     if ntab > 0 then --ignore TA start
-      local filename = _L['Untitled']
-      toolbar.settab(ntab, filename, filename)
-      toolbar.seltab(ntab)
+      --if not toolbar.hideproject or (buffer._project_select == nil and buffer._type ~= Proj.PRJT_SEARCH) then
+        local filename = _L['Untitled']
+        toolbar.settab(ntab, filename, filename)
+        toolbar.seltab(ntab)
+      --end
     end
   end)
 
@@ -165,14 +171,15 @@ if toolbar then
     toolbar.tabcolor_active= 0
     toolbar.tabcolor_modif= 0x800000
     toolbar.tabcolor_grayed= 0x808080
-    toolbar.adj= false    
+    toolbar.adj= false
+    toolbar.hideproject= true
     toolbar.img= {}
     local i, img
     for i= 1, 15 do
       toolbar.img[i]= ""
     end
   end
-  
+
   function toolbar.set_theme(theme)
     toolbar.themepath= _USERHOME.."/"..theme.."/"
     local f = io.open(toolbar.themepath.."toolbar.cfg", 'rb')
@@ -200,7 +207,7 @@ if toolbar then
         elseif line:find('^toolbar_img:') then
           img, i = line:match('^toolbar_img:(.-),(.+)$')
           toolbar.img[tonumber(i)+1]= img
-          
+
         elseif line:find('^toolbar_adj:') then
           bw,bh,xm,ym,xoff,yoff = line:match('^toolbar_adj:(.-),(.-),(.-),(.-),(.-),(.+)$')
           toolbar.adj_bw = tonumber(bw)
@@ -239,6 +246,6 @@ if toolbar then
     toolbar.tabfontcolor( toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
         toolbar.tabcolor_modif, toolbar.tabcolor_grayed )
   end
-  
+
   toolbar.set_defaults()
 end
