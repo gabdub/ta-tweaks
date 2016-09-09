@@ -52,7 +52,7 @@ if toolbar then
 
   --change theme defaults here
   --toolbar.tabwithclose= true
-  toolbar.img[1]="ttb-back2"
+  --toolbar.img[1]="ttb-back2"
 
   toolbar.create()  --create the toolbar
 
