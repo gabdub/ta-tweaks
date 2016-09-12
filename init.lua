@@ -41,23 +41,20 @@ end)
 if toolbar then
   require('toolbar')
 
-  ui.tabs= false  --hide regular tabbar
-
   --load toolbar theme from USERHOME
-  --toolbar.set_theme("bar-sm-light")
+  toolbar.set_theme("bar-sm-light")
   --toolbar.set_theme("bar-ff-dark")
-  toolbar.set_theme("bar-th-dark")
-  --toolbar.barsize=toolbar.barsize*2
-  toolbar.tabxmargin=0
+  --toolbar.set_theme("bar-th-dark")
 
   --change theme defaults here
   --toolbar.tabwithclose= true
-  --toolbar.img[1]="ttb-back2"
 
-  toolbar.create()  --create the toolbar
-
-  toolbar.add_tabs_here()
-  toolbar.gotopos(5) --new row
+  --create the toolbar
+  --tabpos=0: 1 row, use default tabs
+  --tabpos=1: 1 row, tabs in the same line
+  --tabpos=2: 2 rows, tabs at the top
+  --tabpos=3: 2 rows, tabs at the bottom
+  toolbar.create(1)
 
   --add some buttons
   toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
@@ -73,13 +70,6 @@ if toolbar then
   toolbar.addspace()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
-  --toolbar.gotopos(3) --new row
-
-  --show tabs in the toolbar
-  --toolbar.add_tabs_here()
-
-  toolbar.show(true)  --show toolbar
-
-  toolbar.update_all_tabs()   --load existing buffers in tab-bar
-  toolbar.seltab(_BUFFERS[buffer])  --select current buffer
+  --toolbar ready, show it
+  toolbar.ready()
 end
