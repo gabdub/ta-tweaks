@@ -139,8 +139,8 @@ __Usage:__
 * edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy also the lines that contains "UNUSED()" to supress some warnings
 * compile Textadept
-* copy themes files in user's textadept folder (~/.textadept/bar-sm-light and ~/.textadept/bar-ff-dark) or
-  choose one ZIP with icons from (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
+* copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from 
+  (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
   (you can choose another icon location and set the path when calling toolbar.new())
 * to create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
 ```
@@ -240,7 +240,14 @@ __Some examples usign tabs and themes:__
 
 ![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win4.png "Two rows (tabs at the top)")
 
-**Two rows (theme bar-th-dark)**
+**theme bar-sm-light**
 
-![Two rows (theme bar-th-dark)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "Two rows (theme bar-th-dark)")
+![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win6.png "theme bar-sm-light")
 
+**theme bar-th-dark**
+
+![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win7.png "theme bar-th-dark")
+
+**theme bar-ff-dark**
+
+![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win8.png "theme bar-ff-dark")
