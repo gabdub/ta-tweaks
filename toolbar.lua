@@ -1,8 +1,12 @@
 if toolbar then
   --define a toolbar button
-  function toolbar.cmd(name,func,tooltip)
+  function toolbar.cmd(name,func,tooltip,icon)
     toolbar.addbutton(name,tooltip)
     toolbar[name]= func
+    if icon == nil then
+      icon= toolbar.iconspath..name..".png"
+    end
+    toolbar.seticon(name,icon)
   end
 
   local function set_chg_tab(ntab,buf)
@@ -154,10 +158,12 @@ if toolbar then
 
   function toolbar.set_defaults()
     --set defaults
-    toolbar.themepath= _USERHOME.."/bar-sm-light/"
-    toolbar.barsize= 26
+    toolbar.themepath= _USERHOME.."/toolbar/bar-sm-light/"
+    toolbar.iconspath= _USERHOME.."/toolbar/icons/light/"
+    toolbar.barsize= 27
     toolbar.butsize= 24
     toolbar.imgsize= 16
+    toolbar.newrowoff= 3
     toolbar.vertical= false
     toolbar.tabxmargin= 5
     toolbar.tabxsep= -1
@@ -172,6 +178,12 @@ if toolbar then
     toolbar.tabcolor_modif= 0x800000
     toolbar.tabcolor_grayed= 0x808080
     toolbar.adj= false
+    toolbar.adj_bw= 24
+    toolbar.adj_bh= 24
+    toolbar.adj_xm= 2
+    toolbar.adj_ym= 1
+    toolbar.adj_xoff= 4
+    toolbar.adj_yoff= 4
     toolbar.hideproject= true
     toolbar.img= {}
     local i, img
@@ -181,8 +193,9 @@ if toolbar then
   end
 
   function toolbar.set_theme(theme)
-    toolbar.themepath= _USERHOME.."/"..theme.."/"
+    toolbar.themepath= _USERHOME.."/toolbar/"..theme.."/"
     local f = io.open(toolbar.themepath.."toolbar.cfg", 'rb')
+    local img,i
     if f then
       for line in f:lines() do
         --toolbar cfg--
@@ -190,6 +203,7 @@ if toolbar then
            getCfgNum( line, 'barsize')          or
            getCfgNum( line, 'butsize')          or
            getCfgNum( line, 'imgsize')          or
+           getCfgNum( line, 'newrowoff')        or
         --tabs cfg--
            getCfgNum( line, 'tabxmargin')       or
            getCfgNum( line, 'tabxsep')          or
@@ -208,6 +222,10 @@ if toolbar then
           img, i = line:match('^toolbar_img:(.-),(.+)$')
           toolbar.img[tonumber(i)+1]= img
 
+        elseif line:find('^icons:') then
+          img = line:match('^icons:(.+)$')
+          toolbar.iconspath= _USERHOME.."/toolbar/icons/"..img.."/"
+
         elseif line:find('^toolbar_adj:') then
           bw,bh,xm,ym,xoff,yoff = line:match('^toolbar_adj:(.-),(.-),(.-),(.-),(.-),(.+)$')
           toolbar.adj_bw = tonumber(bw)
@@ -223,7 +241,37 @@ if toolbar then
     end
   end
 
-  function toolbar.create()
+  function toolbar.add_tabs_here()
+    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset)
+    toolbar.addtabs(toolbar.tabxmargin, toolbar.tabxsep, toolbar.tabwithclose, toolbar.tabmodified,
+        toolbar.tabfont_sz, toolbar.tabfont_yoffset)
+
+    --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
+    toolbar.tabfontcolor( toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
+        toolbar.tabcolor_modif, toolbar.tabcolor_grayed )
+  end
+
+  --put next buttons in a new row/column
+  function toolbar.newrow(yoff)
+    toolbar.gotopos(toolbar.newrowoff + (yoff or 0)) --new row
+  end
+
+  --tabpos=0: 1 row, use default tabs (horizonal/vertical)
+  --tabpos=1: 1 row, tabs in the same line (horizonal only)
+  --tabpos=2: 2 rows, tabs at the top (horizonal only)
+  --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
+  function toolbar.create(tabpos)
+    toolbar.tabpos= tabpos
+    ui.tabs= (tabpos == 0)  --hide regular tabbar if needed
+    if tabpos > 0 then
+      toolbar.vertical= false
+    end
+    if tabpos > 1 then
+      toolbar.barsize=toolbar.barsize*2 +1 --two rows
+      toolbar.tabxmargin=0
+      toolbar.img[1]="ttb-back2"
+    end
+
     --create toolbar: barsize,buttonsize,imgsize,[isvertical],[imgpath]
     toolbar.new(toolbar.barsize, toolbar.butsize, toolbar.imgsize, toolbar.vertical, toolbar.themepath)
     if toolbar.adj then
@@ -235,16 +283,28 @@ if toolbar then
     for i, img in ipairs(toolbar.img) do
       if img ~= "" then toolbar.seticon("TOOLBAR", img, i-1) end
     end
+    if tabpos == 2 then
+      --2 rows, tabs at the top
+      toolbar.add_tabs_here()
+      toolbar.newrow(1)
+    end
   end
 
-  function toolbar.add_tabs_here()
-    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset)
-    toolbar.addtabs(toolbar.tabxmargin, toolbar.tabxsep, toolbar.tabwithclose, toolbar.tabmodified,
-        toolbar.tabfont_sz, toolbar.tabfont_yoffset)
-
-    --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
-    toolbar.tabfontcolor( toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
-        toolbar.tabcolor_modif, toolbar.tabcolor_grayed )
+  --toolbar ready, show it
+  function toolbar.ready()
+    if toolbar.tabpos == 1 then
+      --1 row, tabs in the same line
+      toolbar.add_tabs_here()
+    elseif toolbar.tabpos == 3 then
+      --2 rows, tabs at the bottom
+      toolbar.newrow(1)
+      toolbar.add_tabs_here()
+    end
+    toolbar.show(true)  --show the toolbar
+    if toolbar.tabpos > 0 then
+      toolbar.update_all_tabs()   --load existing buffers in tab-bar
+      toolbar.seltab(_BUFFERS[buffer])  --select current buffer
+    end
   end
 
   toolbar.set_defaults()
