@@ -110,8 +110,9 @@ This code adds a toolbar to textadept (compiling is required):
 
 The "toolbar" object is added to textadept with the following functions:
 
-* toolbar._new(barsize,buttonsize,imgsize,[isvertical],[imgpath])_ creates an empty toolbar with square buttons
+* toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons
 * toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
+* toolbar._seltoolbar(toolbar-num(int) or isvertical(bool))_ select which toolbar to edit
 * toolbar._addbutton(button-name,tooltiptext)_ add some buttons
 * toolbar._addspace([space],[hidebar])_ add some space (separator)
 * toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels
