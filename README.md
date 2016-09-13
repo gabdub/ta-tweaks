@@ -251,3 +251,7 @@ __Some examples usign tabs and themes:__
 **theme bar-ff-dark**
 
 ![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win8.png "theme bar-ff-dark")
+
+**mixed horizontal & vertical**
+
+![mixed horizontal & vertical](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "mixed horizontal & vertical")
