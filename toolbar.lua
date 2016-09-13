@@ -160,11 +160,12 @@ if toolbar then
     --set defaults
     toolbar.themepath= _USERHOME.."/toolbar/bar-sm-light/"
     toolbar.iconspath= _USERHOME.."/toolbar/icons/light/"
+    toolbar.tb0= true --only show toolbar 0 (horizontal)
+    toolbar.tb1= false
     toolbar.barsize= 27
     toolbar.butsize= 24
     toolbar.imgsize= 16
     toolbar.newrowoff= 3
-    toolbar.vertical= false
     toolbar.tabxmargin= 5
     toolbar.tabxsep= -1
     toolbar.tabwithclose= false
@@ -186,9 +187,12 @@ if toolbar then
     toolbar.adj_yoff= 4
     toolbar.hideproject= true
     toolbar.img= {}
-    local i, img
-    for i= 1, 15 do
+    for i= 1, 14 do
       toolbar.img[i]= ""
+    end
+    toolbar.back= {}
+    for i= 1, 4 do
+      toolbar.back[i]= ""
     end
   end
 
@@ -199,8 +203,7 @@ if toolbar then
     if f then
       for line in f:lines() do
         --toolbar cfg--
-        if getCfgBool(line, 'vertical')         or
-           getCfgNum( line, 'barsize')          or
+        if getCfgNum( line, 'barsize')          or
            getCfgNum( line, 'butsize')          or
            getCfgNum( line, 'imgsize')          or
            getCfgNum( line, 'newrowoff')        or
@@ -220,7 +223,11 @@ if toolbar then
 
         elseif line:find('^toolbar_img:') then
           img, i = line:match('^toolbar_img:(.-),(.+)$')
-          toolbar.img[tonumber(i)+1]= img
+          toolbar.img[tonumber(i)]= img
+
+        elseif line:find('^toolbar_back:') then
+          img, i = line:match('^toolbar_back:(.-),(.+)$')
+          toolbar.back[tonumber(i)]= img
 
         elseif line:find('^icons:') then
           img = line:match('^icons:(.+)$')
@@ -256,42 +263,93 @@ if toolbar then
     toolbar.gotopos(toolbar.newrowoff + (yoff or 0)) --new row
   end
 
-  --tabpos=0: 1 row, use default tabs (horizonal/vertical)
-  --tabpos=1: 1 row, tabs in the same line (horizonal only)
+  --create the toolbar (tabpos, nvertcols)
+  --tabpos=0: 1 row, use default tabs
+  --tabpos=1: 1 row, tabs & buttons in the same line
   --tabpos=2: 2 rows, tabs at the top (horizonal only)
   --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
-  function toolbar.create(tabpos)
+  --nvertcols= 0..2 = number of columns in vertical toolbar
+  function toolbar.create(tabpos, nvertcols)
     toolbar.tabpos= tabpos
     ui.tabs= (tabpos == 0)  --hide regular tabbar if needed
-    if tabpos > 0 then
-      toolbar.vertical= false
-    end
-    if tabpos > 1 then
-      toolbar.barsize=toolbar.barsize*2 +1 --two rows
+
+    --tabs to show
+    if not nvertcols then nvertcols= 0 end
+    toolbar.tb1= (nvertcols > 0)    --vertical
+    toolbar.tb0= ((tabpos > 0) or (nvertcols==0)) --horizontal
+
+    local bsz0= toolbar.barsize
+    if tabpos >= 2 then
+      bsz0= bsz0*2 +1 --two rows
       toolbar.tabxmargin=0
-      toolbar.img[1]="ttb-back2"
+    end
+    local bsz1= toolbar.barsize
+    if nvertcols > 1 then
+      bsz1= bsz1*2 +1 --two rows
     end
 
-    --create toolbar: barsize,buttonsize,imgsize,[isvertical],[imgpath]
-    toolbar.new(toolbar.barsize, toolbar.butsize, toolbar.imgsize, toolbar.vertical, toolbar.themepath)
-    if toolbar.adj then
-      --bwidth,bheight,xmargin,ymargin,xoff,yoff
-      toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
-        toolbar.adj_xoff, toolbar.adj_yoff)
+    --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
+    if toolbar.tb0 then   --create the horizontal toolbar
+      toolbar.new(bsz0, toolbar.butsize, toolbar.imgsize, 0, toolbar.themepath)
+      if toolbar.adj then
+        --bwidth,bheight,xmargin,ymargin,xoff,yoff
+        toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
+          toolbar.adj_xoff, toolbar.adj_yoff)
+      end
+      --add/change some images
+      for i, img in ipairs(toolbar.img) do
+        if img ~= "" then toolbar.seticon("TOOLBAR", img, i) end
+      end
+      if tabpos == 1 then
+        toolbar.seticon("TOOLBAR", toolbar.back[1], 0, true)  --horizontal back x 1row
+      elseif tabpos > 1 then
+        toolbar.seticon("TOOLBAR", toolbar.back[2], 0, true)  --horizontal back x 2rows
+      end
+      if tabpos == 2 then
+        --2 rows, tabs at the top
+        toolbar.add_tabs_here()
+        toolbar.newrow(1)
+      end
+    else
+      --hide the horizontal toolbar
+      toolbar.seltoolbar(0)
+      toolbar.show(false)
     end
-    --add/change some images
-    for i, img in ipairs(toolbar.img) do
-      if img ~= "" then toolbar.seticon("TOOLBAR", img, i-1) end
-    end
-    if tabpos == 2 then
-      --2 rows, tabs at the top
-      toolbar.add_tabs_here()
-      toolbar.newrow(1)
+
+    --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
+    if toolbar.tb1 then   --create the vertical toolbar
+      toolbar.new(bsz1, toolbar.butsize, toolbar.imgsize, 1, toolbar.themepath)
+      if toolbar.adj then
+        --bwidth,bheight,xmargin,ymargin,xoff,yoff
+        toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
+          toolbar.adj_xoff, toolbar.adj_yoff)
+      end
+      --add/change some images
+      for i, img in ipairs(toolbar.img) do
+        if img ~= "" then toolbar.seticon("TOOLBAR", img, i) end
+      end
+      if nvertcols < 2 then
+        toolbar.seticon("TOOLBAR", toolbar.back[3], 0, true)  --vertical back x 1col
+      else
+        toolbar.seticon("TOOLBAR", toolbar.back[4], 0, true)  --vertical back x 2cols
+      end
+      --add buttons in the vertical toolbar
+      toolbar.show(true)
+      if tabpos > 0 then
+        toolbar.seltoolbar(0)
+      end
+    else
+      --hide the vertical toolbar
+      toolbar.seltoolbar(1)
+      toolbar.show(false)
+      --add buttons in the horizontal toolbar
+      toolbar.seltoolbar(0)
     end
   end
 
   --toolbar ready, show it
   function toolbar.ready()
+    toolbar.seltoolbar(0)
     if toolbar.tabpos == 1 then
       --1 row, tabs in the same line
       toolbar.add_tabs_here()
@@ -300,7 +358,7 @@ if toolbar then
       toolbar.newrow(1)
       toolbar.add_tabs_here()
     end
-    toolbar.show(true)  --show the toolbar
+    toolbar.show(toolbar.tb0)  --show the horizontal toolbar
     if toolbar.tabpos > 0 then
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
       toolbar.seltab(_BUFFERS[buffer])  --select current buffer

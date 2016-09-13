@@ -43,7 +43,7 @@ static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 #define TTBI_TB_TAB_NSR     18 //tab scroll right
 #define TTBI_TB_TAB_HSL     19 //tab scroll left
 #define TTBI_TB_TAB_HSR     20 //tab scroll right
-#define TTBI_TB_TAB_NCLOSE  21 //normal close button   
+#define TTBI_TB_TAB_NCLOSE  21 //normal close button
 #define TTBI_TB_TAB_HCLOSE  22 //hilight close button
 #define TTBI_TB_TAB_CHANGED 23 //changed indicator
 #define TTBI_TB_N           24
@@ -79,27 +79,24 @@ static char xbutt_tooltip[128];
 static struct toolbar_node xbutton;
 
 #define NTOOLBARS 2
-static struct toolbar_data
+struct toolbar_data
 {
-  GtkWidget *draw[NTOOLBARS]; //horizonal & vertical toolbar
-
-  GtkWidget *drawing_area;    //current toolbar
+  GtkWidget *draw;    //(GtkWidget *drawing_area of this toolbar)
+  int num;            //number of toolbar
+  int isvertical;     //is a vertical toolbar (#1=yes)
 
   struct toolbar_node * list;
   struct toolbar_node * list_last;
-  struct toolbar_node * philight;
-  struct toolbar_node * phipress;
 
   struct toolbar_node * tabs;
   struct toolbar_node * tabs_last;
   struct toolbar_node * tab_node;
   int ntabs;
-  
+
   int ntabs_hide; //scroll tab support
   int islast_tab_shown;
   int xscleft, xscright;
 
-  int isvertical;
   int barheight;
   int barwidth;
   int bwidth;
@@ -128,12 +125,26 @@ static struct toolbar_data
   struct color3doubles tabtextcolM; //modified
   struct color3doubles tabtextcolG; //grayed
 
-  char * img_base;
   struct toolbar_img img[TTBI_TB_N];
+
+  int _tabs_x1,_tabs_x2,_tabs_y1,_tabs_y2;  //tab redraw area
+};
+
+static struct all_toolbars_data
+{
+  struct toolbar_data tbdata[NTOOLBARS]; //horizonal & vertical toolbars
+
+  struct toolbar_node * philight;
+  struct toolbar_node * phipress;
+  int ntbhilight;     //number of the toolbar with the hilighted button or -1
+
+  int currentntb;     //current toolbar num
+
+  char * img_base;
 } ttb;
 
 static char * alloc_str( const char *s )
-{
+{ //alloc a copy of a string
   char *scopy= NULL;
   if( s != NULL ){
     scopy= malloc(strlen(s)+1);
@@ -145,7 +156,7 @@ static char * alloc_str( const char *s )
 }
 
 static char * chg_alloc_str( char *sold, const char *snew )
-{
+{ //change alloc string
   if( sold != NULL ){
     if( snew != NULL ){
       if( strcmp( sold, snew) == 0 ){
@@ -161,16 +172,18 @@ static char * chg_alloc_str( char *sold, const char *snew )
 
 
 static char * alloc_img_str( const char *name )
-{
+{ //build + alloc image filename
   int n;
   char *img_file;
   char *scopy= NULL;
   if( name != NULL ){
     n= strlen(name);
     if( (n > 4) && ((strcmp(name+n-4, ".png") == 0)||(strcmp(name+n-4, ".PNG") == 0)) ){
+      //contains ".png": use it
       scopy= alloc_str( name );
     }else{
-      if( ttb.img_base == NULL ){
+      //build image name
+      if( ttb.img_base == NULL ){ //no global image base, use default
         img_file= g_strconcat(textadept_home, "/core/images/bar/", name, ".png", NULL);
       }else{
         img_file= g_strconcat(ttb.img_base, name, ".png", NULL);
@@ -184,28 +197,33 @@ static char * alloc_img_str( const char *name )
   return scopy;
 }
 
-static int set_tb_img( struct toolbar_node *p, int nimg, const char *imgname)
-{
+static int set_tb_img( struct toolbar_data *T, struct toolbar_node *p, int nimg, const char *imgname)
+{ //set a button or toolbar image
+  //return 1 if redraw is needed
   struct toolbar_img *pti;
+  char * simg;
 
   if( nimg < 0 ){
     return 0; //invalid image num
   }
+  pti= NULL;
   if( p == NULL ){
-    if( nimg >= TTBI_TB_N ){
-      return 0; //invalid image num
+    //toolbar image
+    if( nimg < TTBI_TB_N ){
+        pti= &(T->img[nimg]);
     }
-    pti= &(ttb.img[nimg]); //toolbar img
   }else{
-    if( nimg >= TTBI_NODE_N ){
-      return 0; //invalid image num
+    //button image
+    if( nimg < TTBI_NODE_N ){
+      pti= &(p->img[nimg]);
     }
-    pti= &(p->img[nimg]);  //button img
   }
-
+  if( pti == NULL ){
+    return 0; //invalid image num
+  }
   if( pti->fname != NULL ){
     if( (imgname != NULL) && (strcmp( pti->fname, imgname ) == 0) ){
-      return 0; //same img
+      return 0; //same img, no redraw is needed
     }
     //free previous img
     free((void *)pti->fname);
@@ -214,69 +232,76 @@ static int set_tb_img( struct toolbar_node *p, int nimg, const char *imgname)
     pti->height= 0;
   }
   if( imgname != NULL ){
-    pti->fname= alloc_img_str(imgname); //get img fname
-    if( pti->fname != NULL ){
-      cairo_surface_t *cis= cairo_image_surface_create_from_png(pti->fname);
+    simg= alloc_img_str(imgname); //get img fname
+    if( simg != NULL ){
+      cairo_surface_t *cis= cairo_image_surface_create_from_png(simg);
       if( cis != NULL ){
         pti->width=  cairo_image_surface_get_width(cis);
         pti->height= cairo_image_surface_get_height(cis);
-        cairo_surface_destroy(cis);
+        if( (pti->width > 0) && (pti->height > 0)){
+          pti->fname= simg;
+          cairo_surface_destroy(cis);
+          return 1; //image OK
+        }
       }
+      free( (void *) simg);
     }
+    //image not found or invalid
   }
-  return 1;
+  return 1; //redraw
 }
 
-static void redraw_button( struct toolbar_node * p )
+static void redraw_button( struct toolbar_data *T, struct toolbar_node * p )
 {
   if( p != NULL ){
     if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT)) == 0 ){
       //redraw the area of one regular button
-      gtk_widget_queue_draw_area(ttb.drawing_area, p->barx1, p->bary1, p->barx2-p->barx1+1, p->bary2-p->bary1+1 ); //redraw
+      gtk_widget_queue_draw_area(T->draw, p->barx1, p->bary1, p->barx2-p->barx1+1, p->bary2-p->bary1+1 ); //redraw
       return;
     }
     //redraw a tab or one of its buttons
   }
   //redraw the complete toolbar
-  gtk_widget_queue_draw(ttb.drawing_area);
+  gtk_widget_queue_draw(T->draw);
 }
 
-static  int _tabs_x1,_tabs_x2,_tabs_y1,_tabs_y2;
-static void redraw_tabs_beg( void )
+
+static void redraw_tabs_beg( struct toolbar_data *T )
 {
-  if( ttb.tab_node != NULL ){
-    _tabs_x1= ttb.tab_node->barx1;
-    _tabs_x2= ttb.tab_node->barx2;
-    _tabs_y1= ttb.tab_node->bary1;
-    _tabs_y2= ttb.tab_node->bary2;
+  if( T->tab_node != NULL ){
+    T->_tabs_x1= T->tab_node->barx1;
+    T->_tabs_x2= T->tab_node->barx2;
+    T->_tabs_y1= T->tab_node->bary1;
+    T->_tabs_y2= T->tab_node->bary2;
   }
 }
 
-static void redraw_tabs_end( void )
+static void redraw_tabs_end( struct toolbar_data *T )
 {
-  if( ttb.tab_node != NULL ){
+  if( T->tab_node != NULL ){
     //union of before and after change size
-    if( _tabs_x1 > ttb.tab_node->barx1 ){
-      _tabs_x1= ttb.tab_node->barx1;
+    if( T->_tabs_x1 > T->tab_node->barx1 ){
+      T->_tabs_x1= T->tab_node->barx1;
     }
-    if( _tabs_x2 < ttb.tab_node->barx2 ){
-      _tabs_x2= ttb.tab_node->barx2;
+    if( T->_tabs_x2 < T->tab_node->barx2 ){
+      T->_tabs_x2= T->tab_node->barx2;
     }
-    if( _tabs_y1 > ttb.tab_node->bary1 ){
-      _tabs_y1= ttb.tab_node->bary1;
+    if( T->_tabs_y1 > T->tab_node->bary1 ){
+      T->_tabs_y1= T->tab_node->bary1;
     }
-    if( _tabs_y2 < ttb.tab_node->bary2 ){
-      _tabs_y2= ttb.tab_node->bary2;
+    if( T->_tabs_y2 < T->tab_node->bary2 ){
+      T->_tabs_y2= T->tab_node->bary2;
     }
     //redraw the tabs area
-    gtk_widget_queue_draw_area(ttb.drawing_area, _tabs_x1, _tabs_y1, _tabs_x2-_tabs_x1+1, _tabs_y2-_tabs_y1+1 );
+    gtk_widget_queue_draw_area(T->draw, T->_tabs_x1, T->_tabs_y1,
+        T->_tabs_x2 - T->_tabs_x1 +1, T->_tabs_y2 - T->_tabs_y1 +1);
   }else{
     //redraw the complete toolbar
-    gtk_widget_queue_draw(ttb.drawing_area);
+    gtk_widget_queue_draw(T->draw);
   }
 }
 
-static struct toolbar_node *add_ttb_node(const char * name, const char * img, const char *tooltip)
+static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * name, const char * img, const char *tooltip)
 {
   int i;
   struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
@@ -289,57 +314,57 @@ static struct toolbar_node *add_ttb_node(const char * name, const char * img, co
     if( p->name != NULL){
       p->flags |= TTBF_SELECTABLE; //if a name is provided, it can be selected
     }
-    p->barx1= ttb.xnew;
-    p->bary1= ttb.ynew;
-    p->imgx= ttb.xnew + ttb.xoff;
-    p->imgy= ttb.ynew + ttb.yoff;
-    p->barx2= ttb.xnew + ttb.bwidth;
-    p->bary2= ttb.ynew + ttb.bheight;
-    if( ttb.isvertical ){
-      ttb.ynew += ttb.bheight;
+    p->barx1= T->xnew;
+    p->bary1= T->ynew;
+    p->imgx= T->xnew + T->xoff;
+    p->imgy= T->ynew + T->yoff;
+    p->barx2= T->xnew + T->bwidth;
+    p->bary2= T->ynew + T->bheight;
+    if( T->isvertical ){
+      T->ynew += T->bheight;
     }else{
-      ttb.xnew += ttb.bwidth;
+      T->xnew += T->bwidth;
     }
     for(i= 0; (i < TTBI_NODE_N); i++){
       p->img[i].fname= NULL;
       p->img[i].width= 0;
       p->img[i].height= 0;
     }
-    set_tb_img( p, TTBI_NORMAL, img );
+    set_tb_img( T, p, TTBI_NORMAL, img );
 
     //conect node to the end of the list
-    if( ttb.list_last != NULL ){
-      ttb.list_last->next= p;
+    if( T->list_last != NULL ){
+      T->list_last->next= p;
     }else{
-      ttb.list= p; //first
+      T->list= p; //first
     }
-    ttb.list_last= p;
+    T->list_last= p;
   }
   return p;
 }
 
-static void calc_tabnode_width(void)
+static void calc_tabnode_width( struct toolbar_data *T )
 {
-  if( ttb.tab_node != NULL ){
-    int x= ttb.tab_node->barx1 + ttb.tabxmargin + ttb.tabwidth;
+  if( T->tab_node != NULL ){
+    int x= T->tab_node->barx1 + T->tabxmargin + T->tabwidth;
     //add extra space between tabs
-    if( (ttb.ntabs > 1) && (ttb.tabxsep != 0) ){
-      x += (ttb.ntabs-1) * ttb.tabxsep;
+    if( (T->ntabs > 1) && (T->tabxsep != 0) ){
+      x += (T->ntabs-1) * T->tabxsep;
     }
-    ttb.tab_node->barx2= x;
+    T->tab_node->barx2= x;
   }
 }
 
 
-static void chg_tab_texts( struct toolbar_node * p, const char *name, const char *tooltip )
+static void chg_tab_texts( struct toolbar_data *T, struct toolbar_node * p, const char *name, const char *tooltip )
 {
   int textw;
   p->name= chg_alloc_str(p->name, name);
   textw= 0;
   if( p->name != NULL ){
     cairo_text_extents_t ext;
-    cairo_t *cr = gdk_cairo_create(ttb.drawing_area->window);
-    cairo_set_font_size(cr, ttb.tabfontsz);
+    cairo_t *cr = gdk_cairo_create(T->draw->window);
+    cairo_set_font_size(cr, T->tabfontsz);
     cairo_text_extents( cr, p->name, &ext );
     textw= (int) ext.width;
     cairo_destroy(cr);
@@ -347,16 +372,16 @@ static void chg_tab_texts( struct toolbar_node * p, const char *name, const char
   p->tooltip= chg_alloc_str(p->tooltip, tooltip);
   p->barx1= 0;
   p->bary1= 0;
-  p->imgx=  ttb.img[TTBI_TB_NTAB1].width;	//text start
-  p->barx2= p->imgx + textw + ttb.img[TTBI_TB_NTAB3].width;
-  p->bary2= ttb.img[TTBI_TB_NTAB1].height;
-  p->imgy=  ttb.tabtexty;
+  p->imgx=  T->img[TTBI_TB_NTAB1].width;	//text start
+  p->barx2= p->imgx + textw + T->img[TTBI_TB_NTAB3].width;
+  p->bary2= T->img[TTBI_TB_NTAB1].height;
+  p->imgy=  T->tabtexty;
   //total tab width without extra space
-  ttb.tabwidth += p->barx2;
-  calc_tabnode_width();
+  T->tabwidth += p->barx2;
+  calc_tabnode_width(T);
 }
 
-static struct toolbar_node *add_ttb_tab(int ntab, const char * name, const char *tooltip)
+static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip)
 {
   int i;
   struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
@@ -366,31 +391,31 @@ static struct toolbar_node *add_ttb_tab(int ntab, const char * name, const char 
     p->tooltip= NULL;
     p->num= ntab;
     p->flags= TTBF_TAB | TTBF_SELECTABLE;
-    chg_tab_texts(p, name, tooltip);
+    chg_tab_texts(T, p, name, tooltip);
 
     for(i= 0; (i < TTBI_NODE_N); i++){
       p->img[i].fname= NULL;
       p->img[i].width= 0;
       p->img[i].height= 0;
     }
-    //set_tb_img( p, TTBI_NORMAL, img ); //TODO: add an image
+    //set_tb_img( T, p, TTBI_NORMAL, img ); //TODO: add an image
 
     //conect node to the end of the list
-    if( ttb.tabs_last != NULL ){
-      ttb.tabs_last->next= p;
+    if( T->tabs_last != NULL ){
+      T->tabs_last->next= p;
     }else{
-      ttb.tabs= p; //first
+      T->tabs= p; //first
     }
-    ttb.tabs_last= p;
-    ttb.ntabs++;
+    T->tabs_last= p;
+    T->ntabs++;
   }
   return p;
 }
 
-static struct toolbar_node *get_ttb_tab(int ntab)
+static struct toolbar_node *get_ttb_tab(struct toolbar_data *T, int ntab)
 {
   struct toolbar_node * p;
-  for( p= ttb.tabs; (p != NULL); p= p->next ){
+  for( p= T->tabs; (p != NULL); p= p->next ){
     if( p->num == ntab){
       return p;
     }
@@ -398,35 +423,63 @@ static struct toolbar_node *get_ttb_tab(int ntab)
   return NULL;
 }
 
-static struct toolbar_node *set_ttb_tab(int ntab, const char * name, const char *tooltip)
+static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip)
 {
   struct toolbar_node * p;
   void * vp;
 
-  redraw_tabs_beg();
-  p= get_ttb_tab(ntab);
+  redraw_tabs_beg(T);
+  p= get_ttb_tab(T, ntab);
   if( p == NULL ){  //not found, add at the end
-    p= add_ttb_tab(ntab, name, tooltip);
+    p= add_ttb_tab(T, ntab, name, tooltip);
   }else{
     //tab found, adjust total tab width without extra space
-    ttb.tabwidth -= p->barx2;
+    T->tabwidth -= p->barx2;
     p->barx2= 0;
     //update texts
-    chg_tab_texts( p, name, tooltip);
+    chg_tab_texts(T, p, name, tooltip);
   }
   //queue a redraw using the post-modify size (in case the tabbar gets bigger)
-  redraw_tabs_end();
+  redraw_tabs_end(T);
   return p;
 }
 
-static void activate_ttb_tab(int ntab)
+static void clear_tooltip_text( struct toolbar_data *T )
+{
+  gtk_widget_set_tooltip_text(T->draw, "");
+}
+
+static void set_hilight_tooltip( struct toolbar_data *T )
+{ //update tooltip text
+  char *tooltip= "";
+  if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
+    if(ttb.philight->tooltip != NULL){
+      tooltip= ttb.philight->tooltip;
+    }
+  }
+  gtk_widget_set_tooltip_text(T->draw, tooltip);
+}
+
+static void set_hilight_off( void )
+{ //force hilight off (in any toolbar)
+  struct toolbar_node * p;
+  if( (ttb.philight != NULL) && (ttb.ntbhilight >= 0) ){
+    p= ttb.philight;
+    ttb.philight= NULL;
+    ttb.phipress= NULL;
+    redraw_button( &(ttb.tbdata[ttb.ntbhilight]), p );
+    ttb.ntbhilight= -1;
+  }
+}
+
+static void activate_ttb_tab(struct toolbar_data *T, int ntab)
 {
   struct toolbar_node *p, *t, *vistab;
   int x, nhide;
 
-  redraw_tabs_beg();
+  redraw_tabs_beg(T);
   t= NULL;
-  for( p= ttb.tabs; (p != NULL); p= p->next ){
+  for( p= T->tabs; (p != NULL); p= p->next ){
     if( p->num == ntab){
       p->flags |= TTBF_ACTIVE | TTBF_SELECTABLE;
       p->flags &= ~TTBF_GRAYED;
@@ -435,16 +488,17 @@ static void activate_ttb_tab(int ntab)
       p->flags &= ~TTBF_ACTIVE; //only one tab can be active
     }
   }
-  if( (t != NULL) && (ttb.tab_node != NULL) && (ttb.barwidth > 0) ){
+  if( (t != NULL) && (T->tab_node != NULL) && (T->barwidth > 0) ){
     //check tab visibility
-    x= ttb.tab_node->barx1 + ttb.tabxmargin;
-    for( p= ttb.tabs, nhide= ttb.ntabs_hide; (nhide > 0)&&(p != NULL); nhide-- ){
+    x= T->tab_node->barx1 + T->tabxmargin;
+    for( p= T->tabs, nhide= T->ntabs_hide; (nhide > 0)&&(p != NULL); nhide-- ){
       if( p->num == ntab){
         //the tab is left-hiden, set as the first visible
-        ttb.ntabs_hide -= nhide;
-        ttb.philight= NULL; //force hilight off
-        ttb.phipress= NULL;
-        gtk_widget_set_tooltip_text(ttb.drawing_area, "");
+        T->ntabs_hide -= nhide;
+        if( ttb.ntbhilight == T->num ){
+          set_hilight_off(); //force hilight off (only in this toolbar)
+        }
+        clear_tooltip_text(T);
         t= NULL;  //ready
         break;
       }
@@ -454,17 +508,17 @@ static void activate_ttb_tab(int ntab)
     if( t != NULL ){
       //not a left-hiden tab
       for( ; (p != NULL); p= p->next ){
-        if( x > ttb.barwidth ){
+        if( x > T->barwidth ){
           break;  //the rest of the tabs are right-hiden
         }
         if( p->num == ntab ){
           //check if it's completely visible
-          if( x+t->barx2 <= ttb.barwidth ){
+          if( x+t->barx2 <= T->barwidth ){
             t= NULL;  //visible, nothing to do
           }
           break;  //some part of the tab is hiden
         }
-        x += p->barx2 + ttb.tabxsep;
+        x += p->barx2 + T->tabxsep;
       }
     }
     if( t != NULL ){
@@ -474,37 +528,38 @@ static void activate_ttb_tab(int ntab)
         if( p->num == ntab ){
           break;
         }
-        x += ttb.tabxsep;
+        x += T->tabxsep;
       }
       //hide some tabs until the tab is completely visible
-      while( (vistab != NULL) && (x > ttb.barwidth) ){
-        x -= vistab->barx2 + ttb.tabxsep;
+      while( (vistab != NULL) && (x > T->barwidth) ){
+        x -= vistab->barx2 + T->tabxsep;
         vistab= vistab->next;
-        ttb.ntabs_hide++;
+        T->ntabs_hide++;
       }
       if( vistab == NULL ){
         //not enought space to be completely visible
         //set as the first visible tab
-        ttb.ntabs_hide= 0;
-        for( p= ttb.tabs; (p != NULL); p= p->next ){
+        T->ntabs_hide= 0;
+        for( p= T->tabs; (p != NULL); p= p->next ){
           if( p->num == ntab){
             break;
           }
-          ttb.ntabs_hide++;
+          T->ntabs_hide++;
         }
       }
-      ttb.philight= NULL; //force hilight off
-      ttb.phipress= NULL;
-      gtk_widget_set_tooltip_text(ttb.drawing_area, "");
+      if( ttb.ntbhilight == T->num ){
+          set_hilight_off(); //force hilight off (only in this toolbar)
+      }
+      clear_tooltip_text(T);
     }
   }
-  redraw_tabs_end();
+  redraw_tabs_end(T);
 }
 
-static void enable_ttb_tab(int ntab, int enable)
+static void enable_ttb_tab(struct toolbar_data *T, int ntab, int enable)
 {
-  redraw_tabs_beg();
-  struct toolbar_node * p= get_ttb_tab(ntab);
+  redraw_tabs_beg(T);
+  struct toolbar_node * p= get_ttb_tab(T, ntab);
   if( p != NULL ){
     if( enable ){
       p->flags &= ~TTBF_GRAYED;
@@ -514,13 +569,13 @@ static void enable_ttb_tab(int ntab, int enable)
       p->flags &= ~(TTBF_ACTIVE | TTBF_SELECTABLE);
     }
   }
-  redraw_tabs_end();
+  redraw_tabs_end(T);
 }
 
-static void set_changed_ttb_tab(int ntab, int changed)
+static void set_changed_ttb_tab(struct toolbar_data *T, int ntab, int changed)
 {
-  redraw_tabs_beg();
-  struct toolbar_node * p= get_ttb_tab(ntab);
+  redraw_tabs_beg(T);
+  struct toolbar_node * p= get_ttb_tab(T, ntab);
   if( p != NULL ){
     if( changed ){
       p->flags |= TTBF_CHANGED;
@@ -528,7 +583,7 @@ static void set_changed_ttb_tab(int ntab, int changed)
       p->flags &= ~TTBF_CHANGED;
     }
   }
-  redraw_tabs_end();
+  redraw_tabs_end(T);
 }
 
 static void kill_toolbar_node( struct toolbar_node * p )
@@ -558,87 +613,106 @@ static void kill_toolbar_list( struct toolbar_node * list )
   }
 }
 
-static void kill_tatoolbar( void )
-{
+static void kill_toolbar_num( int num )
+{ //kill one toolbar data
   int i;
+  struct toolbar_data *p;
 
-  kill_toolbar_list(ttb.list);
-  ttb.list= NULL;
-  ttb.list_last= NULL;
-  ttb.philight= NULL;
-  ttb.phipress= NULL;
+  if( (num >= 0) && (num < NTOOLBARS) ){
+    p= &(ttb.tbdata[num]);
+    kill_toolbar_list(p->list);
+    p->list= NULL;
+    p->list_last= NULL;
 
-  kill_toolbar_list(ttb.tabs);
-  ttb.tabs= NULL;
-  ttb.tabs_last= NULL;
-  ttb.tab_node= NULL;
-  ttb.ntabs= 0;
-  ttb.ntabs_hide= 0;
-  ttb.islast_tab_shown= 1;
-  ttb.xscleft= -1;
-  ttb.xscright= -1;
-  ttb.tabwidth= 0;
-  ttb.tabxmargin= 0;
-  ttb.tabxsep= 0;
-  ttb.closeintabs= 0;
-  ttb.tabfontsz= 10;  //font size in points (default = 10 points)
-  ttb.tabtextoff= 0;
-  ttb.tabtexty= 0;
-  ttb.tabtexth= 0;
-  ttb.tabtextcolN.R= 0.0;
-  ttb.tabtextcolN.G= 0.0;
-  ttb.tabtextcolN.B= 0.0;
+    kill_toolbar_list(p->tabs);
+    p->tabs= NULL;
+    p->tabs_last= NULL;
+    p->tab_node= NULL;
+    p->ntabs= 0;
+    p->ntabs_hide= 0;
+    p->islast_tab_shown= 1;
+    p->xscleft= -1;
+    p->xscright= -1;
+    p->tabwidth= 0;
+    p->tabxmargin= 0;
+    p->tabxsep= 0;
+    p->closeintabs= 0;
+    p->tabfontsz= 10;  //font size in points (default = 10 points)
+    p->tabtextoff= 0;
+    p->tabtexty= 0;
+    p->tabtexth= 0;
+    p->tabtextcolN.R= 0.0;
+    p->tabtextcolN.G= 0.0;
+    p->tabtextcolN.B= 0.0;
 
-  if( ttb.img_base != NULL ){
-    free((void *)ttb.img_base);
-    ttb.img_base= NULL;
-  }
-  for(i= 0; (i < TTBI_TB_N); i++){
-    if( ttb.img[i].fname != NULL ){
-      free((void*)ttb.img[i].fname);
-      ttb.img[i].fname= NULL;
-      ttb.img[i].width= 0;
-      ttb.img[i].height= 0;
+    for(i= 0; (i < TTBI_TB_N); i++){
+      if( p->img[i].fname != NULL ){
+        free((void*)p->img[i].fname);
+        p->img[i].fname= NULL;
+        p->img[i].width= 0;
+        p->img[i].height= 0;
+      }
+    }
+    if(ttb.ntbhilight == num){
+      ttb.philight= NULL;
+      ttb.phipress= NULL;
+      ttb.ntbhilight= -1;
     }
   }
 }
 
-static struct toolbar_node * getButtonFromXY(int x, int y)
+static void kill_tatoolbar( void )
+{ //kill all toolbars data
+  int nt;
+  for( nt= 0; nt < NTOOLBARS; nt++ ){
+    kill_toolbar_num(nt);
+  }
+  if( ttb.img_base != NULL ){ //global image base
+    free((void *)ttb.img_base);
+    ttb.img_base= NULL;
+  }
+  ttb.philight= NULL;
+  ttb.phipress= NULL;
+  ttb.ntbhilight= -1;
+  ttb.currentntb= 0;
+}
+
+static struct toolbar_node * getButtonFromXY(struct toolbar_data *T, int x, int y)
 {
   struct toolbar_node * p;
   int nx, nhide, xc1, xc2, yc1, yc2;
   char *s;
-  
-  for( p= ttb.list, nx=0; (p != NULL); p= p->next, nx++ ){
+
+  for( p= T->list, nx=0; (p != NULL); p= p->next, nx++ ){
     //ignore non selectable things (like separators)
     if( ((p->flags & TTBF_SELECTABLE)!=0) && (x >= p->barx1) && (x <= p->barx2) && (y >= p->bary1) && (y <= p->bary2) ){
       if( (p->flags & TTBF_TABBAR) != 0){
         //is a tabbar, locate tab node
-        if((ttb.xscleft >= 0)&&(x >= ttb.xscleft)&&(x <= ttb.xscleft+ttb.img[TTBI_TB_TAB_NSL].width+1)){
+        if((T->xscleft >= 0)&&(x >= T->xscleft)&&(x <= T->xscleft+T->img[TTBI_TB_TAB_NSL].width+1)){
           xbutton.flags= TTBF_SCROLL_BUT;
           xbutton.num= -1;
           xbutton.tooltip= NULL;
           return &xbutton; //scroll left button
         }
-        if((ttb.xscright >= 0)&&(x >= ttb.xscright)&&(x <= ttb.xscright+ttb.img[TTBI_TB_TAB_NSR].width+1)){
+        if((T->xscright >= 0)&&(x >= T->xscright)&&(x <= T->xscright+T->img[TTBI_TB_TAB_NSR].width+1)){
           xbutton.flags= TTBF_SCROLL_BUT;
           xbutton.num= 1;
           xbutton.tooltip= NULL;
           return &xbutton; //scroll right button
         }
-        x -= p->barx1 + ttb.tabxmargin;
+        x -= p->barx1 + T->tabxmargin;
         y -= p->bary1;
-        for( p= ttb.tabs, nhide= ttb.ntabs_hide; (nhide > 0)&&(p != NULL); nhide-- ){
+        for( p= T->tabs, nhide= T->ntabs_hide; (nhide > 0)&&(p != NULL); nhide-- ){
           p= p->next; //skip hidden tabs (scroll support)
         }
         for( ; (x >= 0)&&(p != NULL); p= p->next ){
           if( ((p->flags & TTBF_SELECTABLE)!=0) && (x <= p->barx2) ){
-            if( ttb.closeintabs ){
+            if( T->closeintabs ){
               //over close tab button?
-              xc1= p->barx2-ttb.img[TTBI_TB_NTAB3].width;
-              xc2= xc1+ttb.img[TTBI_TB_TAB_NCLOSE].width;
-              yc2= ttb.img[TTBI_TB_TAB_NCLOSE].height;
-              yc1= yc2-ttb.img[TTBI_TB_TAB_NCLOSE].width; //square close area
+              xc1= p->barx2-T->img[TTBI_TB_NTAB3].width;
+              xc2= xc1+T->img[TTBI_TB_TAB_NCLOSE].width;
+              yc2= T->img[TTBI_TB_TAB_NCLOSE].height;
+              yc1= yc2-T->img[TTBI_TB_TAB_NCLOSE].width; //square close area
               if( yc1 < 0){
                 yc1= 0;
               }
@@ -662,7 +736,7 @@ static struct toolbar_node * getButtonFromXY(int x, int y)
             }
             return p; //TAB
           }
-          x -= p->barx2 + ttb.tabxsep;
+          x -= p->barx2 + T->tabxsep;
         }
         return NULL;
       }
@@ -672,11 +746,11 @@ static struct toolbar_node * getButtonFromXY(int x, int y)
   return NULL;
 }
 
-static struct toolbar_node * getButtonFromName(const char *name)
+static struct toolbar_node * getButtonFromName(struct toolbar_data *T, const char *name)
 {
   struct toolbar_node * p;
   if( name != NULL ){
-    for( p= ttb.list; (p != NULL); p= p->next ){
+    for( p= T->list; (p != NULL); p= p->next ){
       if( (p->name != NULL) && (strcmp(p->name, name) == 0) ){
         return p;
       }
@@ -685,20 +759,20 @@ static struct toolbar_node * getButtonFromName(const char *name)
   return NULL;  //invalid
 }
 
-static void ttb_change_button_img(const char *name, int nimg, const char *img )
+static void ttb_change_button_img(struct toolbar_data *T, const char *name, int nimg, const char *img )
 {
-  struct toolbar_node * p= getButtonFromName(name);
+  struct toolbar_node * p= getButtonFromName(T, name);
   if( (p != NULL) || (strcmp(name, "TOOLBAR") == 0) ){
-    if( set_tb_img(p, nimg, img ) ){
-      redraw_button(p); //redraw button / toolbar (p==NULL)
+    if( set_tb_img( T, p, nimg, img ) ){
+      redraw_button(T, p); //redraw button / toolbar (p==NULL)
     }
   }
 }
 
-static void ttb_enable_button(const char * name, int isenabled )
+static void ttb_enable_button(struct toolbar_data *T, const char * name, int isenabled )
 {
   int flg;
-  struct toolbar_node * p= getButtonFromName(name);
+  struct toolbar_node * p= getButtonFromName(T, name);
   if( p != NULL){
     flg= p->flags;
     if( isenabled ){
@@ -707,112 +781,29 @@ static void ttb_enable_button(const char * name, int isenabled )
       p->flags= (flg & ~TTBF_SELECTABLE) | TTBF_GRAYED;
     }
     if( flg != p->flags ){
-      redraw_button(p); //redraw button
+      redraw_button(T, p); //redraw button
     }
   }
 }
 
-static void set_hilight_tooltip(GtkWidget *widget)
-{ //update tooltip text
-  char *tooltip= "";
-  if(ttb.philight != NULL){
-    if(ttb.philight->tooltip != NULL){
-      tooltip= ttb.philight->tooltip;
-    }
-  }
-  gtk_widget_set_tooltip_text(widget, tooltip);
-}
-
-static void scroll_tabs(GtkWidget *widget, int x, int y, int dir )
+static void scroll_tabs(struct toolbar_data *T, int x, int y, int dir )
 {
-  int nhide= ttb.ntabs_hide;
-  if((dir < 0)&&(ttb.ntabs_hide > 0)){
-    ttb.ntabs_hide--;
+  int nhide= T->ntabs_hide;
+  if((dir < 0)&&(T->ntabs_hide > 0)){
+    T->ntabs_hide--;
   }
-  if((dir > 0)&&(!ttb.islast_tab_shown) && (ttb.ntabs_hide < ttb.ntabs-1)){
-    ttb.ntabs_hide++;
+  if((dir > 0)&&(!T->islast_tab_shown) && (T->ntabs_hide < T->ntabs-1)){
+    T->ntabs_hide++;
   }
-  if( nhide != ttb.ntabs_hide ){
+  if( nhide != T->ntabs_hide ){
     //update hilight
-    ttb.philight= getButtonFromXY(x, y);
+    set_hilight_off();  //clear previous hilight
+    ttb.philight= getButtonFromXY(T, x, y); //set new hilight
+    ttb.ntbhilight= T->num;
     //update tooltip text
-    set_hilight_tooltip(widget);
-    gtk_widget_queue_draw(widget);
+    set_hilight_tooltip(T);
+    gtk_widget_queue_draw(T->draw);
   }
-}
-
-static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
-{
-  struct toolbar_node * p;
-  UNUSED(__);
-  if( (event->button == 1)||(event->button == 3) ){
-    if(event->type == GDK_BUTTON_PRESS){
-      ttb.phipress= getButtonFromXY(event->x, event->y);
-      if( ttb.phipress != NULL ){
-        ttb.philight= ttb.phipress; //hilight as pressed
-      }
-      redraw_button(ttb.phipress); //redraw button
-      return TRUE;
-    }
-    if(event->type == GDK_BUTTON_RELEASE){
-      p= getButtonFromXY(event->x, event->y);
-      gtk_widget_set_tooltip_text(widget, "");
-      if( (p != NULL) && (p == ttb.phipress) ){
-        redraw_button(ttb.philight);  //redraw hilighted button
-        //button pressed (mouse press and release over the same button)
-
-        //NOTE: this prevents to keep a hilited button when a dialog is open from the event
-        ttb.philight= NULL; //(but also removes the hilite until the mouse is moved)
-        if( (p->flags & TTBF_SCROLL_BUT) != 0 ){
-          scroll_tabs(widget, event->x, event->y, p->num);
-          
-        }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
-          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, -1);
-          lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, -1);
-          
-        }else if( (p->flags & TTBF_TAB) == 0 ){
-          if(event->button == 1){
-            lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, -1);
-          }
-        }else{
-          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, -1);
-          if(event->button == 3){
-            lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
-          }
-        }
-      }else{
-        redraw_button(p); 			  //redraw button under mouse (if any)
-        redraw_button(ttb.philight);  //redraw hilighted button (if any)
-      }
-      ttb.phipress= NULL;
-      return TRUE;
-    }
-    if(event->type == GDK_2BUTTON_PRESS){ //double click
-      p= getButtonFromXY(event->x, event->y);
-      if( p != NULL ){
-        if( (p->flags & TTBF_TAB) != 0 ){
-          lL_event(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, -1);
-        }
-      }
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, void*__)
-{
-  UNUSED(__);
-  
-  //don't scroll if a button is pressed (mouse still down)
-  if( ttb.phipress == NULL ){
-    if( (event->direction == GDK_SCROLL_UP)||(event->direction == GDK_SCROLL_LEFT) ){
-      scroll_tabs(widget, event->x, event->y, -1);
-    }else{
-      scroll_tabs(widget, event->x, event->y, 1);
-    }
-  }
-  return TRUE;
 }
 
 static void draw_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int grayed )
@@ -861,64 +852,87 @@ static void draw_fill_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, 
   }
 }
 
-static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, struct color3doubles *color )
+static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, struct color3doubles *color, int fontsz )
 {
   if( txt != NULL ){
     cairo_save(ctx);
     cairo_set_source_rgb(ctx, color->R, color->G, color->B);
-    cairo_set_font_size(ctx, ttb.tabfontsz); 
+    cairo_set_font_size(ctx, fontsz);
     cairo_move_to(ctx, x, y);
     cairo_show_text(ctx, txt);
     cairo_restore(ctx);
   }
 }
 
-static void draw_tab(cairo_t *cr, struct toolbar_node *t, int x, int y)
+static void draw_tab(struct toolbar_data *T, cairo_t *cr, struct toolbar_node *t, int x, int y)
 {
   int h, hc, x3;
-  struct color3doubles *color= &ttb.tabtextcolN;
+  struct color3doubles *color= &(T->tabtextcolN);
   h= TTBI_TB_NTAB1;
   hc= TTBI_TB_TAB_NCLOSE;
-  if( ttb.closeintabs ){
-    if( (ttb.philight != NULL) && (ttb.philight->flags & TTBF_CLOSETAB_BUT) != 0 ){
+  if( T->closeintabs ){
+    if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) && ((ttb.philight->flags & TTBF_CLOSETAB_BUT) != 0) ){
       //a tab close button is hilited, is from this tab?
       if( ttb.philight->num == t->num ){
         hc= TTBI_TB_TAB_HCLOSE;  //hilight close tab button
         h=  TTBI_TB_HTAB1;       //and tab
-        color= &ttb.tabtextcolH;
+        color= &(T->tabtextcolH);
       }
     }
   }
   if( (t->flags & TTBF_ACTIVE) != 0 ){
     h= TTBI_TB_ATAB1;
-    color= &ttb.tabtextcolA;
-    
+    color= &(T->tabtextcolA);
+
   }else if( (t->flags & TTBF_GRAYED) != 0 ){
     h= TTBI_TB_DTAB1;
-    color= &ttb.tabtextcolG;
-    
+    color= &(T->tabtextcolG);
+
   }else if( (t == ttb.philight)&&((ttb.phipress == NULL)||(ttb.phipress == t)) ){
     h= TTBI_TB_HTAB1;
-    color= &ttb.tabtextcolH;
+    color= &(T->tabtextcolH);
   }
-  draw_img(cr, &(ttb.img[h]), x, y, 0 );
-  draw_fill_img(cr, &(ttb.img[h+1]), x+t->imgx, y, t->barx2 -t->imgx -ttb.img[TTBI_TB_NTAB3].width, ttb.img[TTBI_TB_NTAB2].height );
-  
-  x3= x+t->barx2-ttb.img[TTBI_TB_NTAB3].width;
-  draw_img(cr, &(ttb.img[h+2]), x3, y, 0 );
+  draw_img(cr, &(T->img[h]), x, y, 0 );
+  draw_fill_img(cr, &(T->img[h+1]), x+t->imgx, y, t->barx2 -t->imgx -T->img[TTBI_TB_NTAB3].width, T->img[TTBI_TB_NTAB2].height );
+
+  x3= x+t->barx2-T->img[TTBI_TB_NTAB3].width;
+  draw_img(cr, &(T->img[h+2]), x3, y, 0 );
   if( (t->flags & TTBF_CHANGED) != 0 ){
-    if( ttb.tabmodshow == 1 ){
-      draw_img(cr, &(ttb.img[TTBI_TB_TAB_CHANGED]), x3, y, 0 );
-    }else if( ttb.tabmodshow == 2 ){
-      color= &ttb.tabtextcolM;
+    if( T->tabmodshow == 1 ){
+      draw_img(cr, &(T->img[TTBI_TB_TAB_CHANGED]), x3, y, 0 );
+    }else if( T->tabmodshow == 2 ){
+      color= &(T->tabtextcolM);
     }
   }
-  if( ttb.closeintabs ){
-    draw_img(cr, &(ttb.img[hc]), x3, y, 0 );
+  if( T->closeintabs ){
+    draw_img(cr, &(T->img[hc]), x3, y, 0 );
   }
 
-  draw_txt(cr, t->name, x+t->imgx, y+t->imgy, color );
+  draw_txt(cr, t->name, x+t->imgx, y+t->imgy, color, T->tabfontsz );
 }
+
+/* ============================================================================= */
+/*                                EVENTS                                         */
+/* ============================================================================= */
+static struct toolbar_data * toolbar_from_widget(GtkWidget *widget)
+{
+  int i;
+  for( i= 0; i < NTOOLBARS; i++){
+    if( widget == ttb.tbdata[i].draw ){
+      return &(ttb.tbdata[i]);
+    }
+  }
+  return &(ttb.tbdata[0]);  //toolbar?? use #0
+}
+
+static struct toolbar_data * toolbar_from_num(int num)
+{
+  if( (num >= 0) && (num < NTOOLBARS) ){
+    return &(ttb.tbdata[num]);
+  }
+  return &(ttb.tbdata[0]);  //toolbar?? use #0
+}
+
 
 static int need_redraw(GdkEventExpose *event, int x, int y, int xf, int yf)
 {
@@ -933,59 +947,65 @@ static int need_redraw(GdkEventExpose *event, int x, int y, int xf, int yf)
 
 static void ttb_size_ev(GtkWidget *widget, GdkRectangle *prec, void*__)
 {
-  UNUSED(widget);  UNUSED(__);
-  ttb.barwidth= prec->width;
-  ttb.barheight= prec->height;
+  UNUSED(__);
+  struct toolbar_data *T= toolbar_from_widget(widget);
+
+  T->barwidth= prec->width;
+  T->barheight= prec->height;
 }
 
 static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 {
   UNUSED(__);
-  struct toolbar_node * p, *t, *ta;
+  struct toolbar_node *p, *phi, *t, *ta;
   struct toolbar_img *pti;
   int h, grayed, x, y, xa, nhide;
+  struct toolbar_data *T= toolbar_from_widget(widget);
 
-  if( (ttb.barwidth < 0) || (ttb.barheight < 0) ){
-    ttb.barwidth=  widget->allocation.width;
-    ttb.barheight= widget->allocation.height;
+  if( (T->barwidth < 0) || (T->barheight < 0) ){
+    T->barwidth=  widget->allocation.width;
+    T->barheight= widget->allocation.height;
   }
-  
+
   cairo_t *cr = gdk_cairo_create(widget->window);
   //draw background image (if any)
-  draw_fill_img(cr, &(ttb.img[TTBI_TB_BACKGROUND]), 0, 0, ttb.barwidth, ttb.barheight );
+  draw_fill_img(cr, &(T->img[TTBI_TB_BACKGROUND]), 0, 0, T->barwidth, T->barheight );
   //draw hilight (under regular buttons)
-  p= ttb.philight;
-  if( (p != NULL) && ((p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT))==0) ){
-    if( need_redraw(event, p->barx1, p->bary1, p->barx2, p->bary2) ){
+  phi= NULL;
+  if( ttb.ntbhilight == T->num ){
+    phi= ttb.philight;
+  }
+  if( (phi != NULL) && ((phi->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT))==0) ){
+    if( need_redraw(event, phi->barx1, phi->bary1, phi->barx2, phi->bary2) ){
       h= -1;
-      if(ttb.phipress == p){
+      if(ttb.phipress == phi){
         h= TTBI_HIPRESSED; //hilight as pressed
       }else if(ttb.phipress == NULL){
         h= TTBI_HILIGHT; //normal hilight (and no other button is pressed)
       }
       if( h >= 0){
         //try to use the button hilight version
-        pti= &(p->img[h]);
+        pti= &(phi->img[h]);
         if( pti->fname == NULL ){
           //use the toolbar version
-          pti= &(ttb.img[h]);
+          pti= &(T->img[h]);
         }
-        draw_img(cr, pti, p->barx1, p->bary1, 0 );
+        draw_img(cr, pti, phi->barx1, phi->bary1, 0 );
       }
     }
   }
   //draw all button images
   ta= NULL;
   xa= 0;
-  for( p= ttb.list; (p != NULL); p= p->next ){
+  for( p= T->list; (p != NULL); p= p->next ){
     if( (p->flags & TTBF_TABBAR) != 0){
       //tab-bar
-      if( need_redraw( event, p->barx1, p->bary1, ttb.barwidth, p->bary2) ){
+      if( need_redraw( event, p->barx1, p->bary1, T->barwidth, p->bary2) ){
         x= p->barx1;
         y= p->bary1;
-        draw_fill_img(cr, &(ttb.img[TTBI_TB_TABBACK]), x, y, ttb.barwidth, p->bary2 );
-        x += ttb.tabxmargin;
-        for( t= ttb.tabs, nhide= ttb.ntabs_hide; (nhide > 0)&&(t != NULL); nhide-- ){
+        draw_fill_img(cr, &(T->img[TTBI_TB_TABBACK]), x, y, T->barwidth, p->bary2 );
+        x += T->tabxmargin;
+        for( t= T->tabs, nhide= T->ntabs_hide; (nhide > 0)&&(t != NULL); nhide-- ){
           t= t->next; //skip hidden tabs (scroll support)
         }
         for( ; (t != NULL); t= t->next ){
@@ -994,34 +1014,34 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
               ta= t;
               xa= x;
             }else{
-              draw_tab( cr, t, x, y );
+              draw_tab( T, cr, t, x, y );
             }
           }
-          x += t->barx2 + ttb.tabxsep;
+          x += t->barx2 + T->tabxsep;
         }
-        ttb.islast_tab_shown= (ttb.barwidth >= x );
+        T->islast_tab_shown= (T->barwidth >= x );
         //draw the active tab over the other tabs
         if( ta != NULL ){
-          draw_tab( cr, ta, xa, y );
+          draw_tab( T, cr, ta, xa, y );
         }
-        ttb.xscleft= -1;
-        ttb.xscright= -1;
+        T->xscleft= -1;
+        T->xscright= -1;
         //draw scroll indicator over the tabs
-        if( ttb.ntabs_hide > 0 ){
-          ttb.xscleft= p->barx1+ttb.tabxmargin;
+        if( T->ntabs_hide > 0 ){
+          T->xscleft= p->barx1+T->tabxmargin;
           h= TTBI_TB_TAB_NSL;
-          if( (ttb.philight != NULL)&&(ttb.philight==ttb.phipress)&&(ttb.philight->flags==TTBF_SCROLL_BUT)&&(ttb.philight->num==-1)){
+          if( (phi != NULL)&&(phi==ttb.phipress)&&(phi->flags==TTBF_SCROLL_BUT)&&(phi->num==-1)){
             h= TTBI_TB_TAB_HSL;
           }
-          draw_img(cr, &(ttb.img[h]), ttb.xscleft, p->bary1, 0 );
+          draw_img(cr, &(T->img[h]), T->xscleft, p->bary1, 0 );
         }
-        if( !ttb.islast_tab_shown ){
-          ttb.xscright= ttb.barwidth-ttb.img[TTBI_TB_TAB_NSR].width;
+        if( !T->islast_tab_shown ){
+          T->xscright= T->barwidth-T->img[TTBI_TB_TAB_NSR].width;
           h= TTBI_TB_TAB_NSR;
-          if( (ttb.philight != NULL)&&(ttb.philight==ttb.phipress)&&(ttb.philight->flags==TTBF_SCROLL_BUT)&&(ttb.philight->num==1)){
+          if( (phi != NULL)&&(phi==ttb.phipress)&&(phi->flags==TTBF_SCROLL_BUT)&&(phi->num==1)){
             h= TTBI_TB_TAB_HSR;
           }
-          draw_img(cr, &(ttb.img[h]), ttb.xscright, p->bary1, 0 );
+          draw_img(cr, &(T->img[h]), T->xscright, p->bary1, 0 );
         }
       }
     }else{
@@ -1044,42 +1064,129 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   return TRUE;
 }
 
+static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
+{
+  UNUSED(event);
+  struct toolbar_data *T= toolbar_from_widget(widget);
+
+  if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
+    //force hilight and tooltip OFF (only in this toolbar)
+    set_hilight_off();
+    clear_tooltip_text(T);
+  }
+  return FALSE;
+}
+
 static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
 {
   int x, y, nx, xhi;
   GdkModifierType state;
   struct toolbar_node * p;
 
+  struct toolbar_data *T= toolbar_from_widget(widget);
   if(event->is_hint){
-    gdk_window_get_pointer (event->window, &x, &y, &state);
+    gdk_window_get_pointer(event->window, &x, &y, &state);
   }else{
     x = event->x;
     y = event->y;
     state = event->state;
   }
-  if( (state & GDK_BUTTON1_MASK) == 0 ){
-    ttb.phipress= NULL;
-  }
-  p= getButtonFromXY(x, y);
+//  if( (state & GDK_BUTTON1_MASK) == 0 ){
+//    ttb.phipress= NULL;
+//  }
+  p= getButtonFromXY(T, x, y);
   if( p != ttb.philight ){
     //hilight changed
-    redraw_button(ttb.philight); //redraw prev button
+    //clear previous hilight (in any toolbar)
+    if( (ttb.philight != NULL) && (ttb.ntbhilight >= 0) ){
+      redraw_button( &(ttb.tbdata[ttb.ntbhilight]), ttb.philight );
+    }
     ttb.philight= p;
-    redraw_button(ttb.philight); //redraw new button
+    ttb.ntbhilight= T->num;
+    redraw_button(T, ttb.philight); //redraw new hilighted button in this toolbar
     //update tooltip text
-    set_hilight_tooltip(widget);
+    set_hilight_tooltip(T);
   }
   return TRUE;
 }
 
-static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
+static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, void*__)
 {
-  UNUSED(event);
-  if(ttb.philight != NULL){
-    //force hilight and tooltip OFF
-    redraw_button(ttb.philight); //redraw button
-    ttb.philight= NULL;
-    gtk_widget_set_tooltip_text(widget, "");
+  UNUSED(__);
+  struct toolbar_data *T= toolbar_from_widget(widget);
+  //don't scroll if a button is pressed (mouse still down)
+  if( ttb.phipress == NULL ){
+    if( (event->direction == GDK_SCROLL_UP)||(event->direction == GDK_SCROLL_LEFT) ){
+      scroll_tabs(T, event->x, event->y, -1);
+    }else{
+      scroll_tabs(T, event->x, event->y, 1);
+    }
+  }
+  return TRUE;
+}
+
+static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
+{
+  struct toolbar_node * p;
+  UNUSED(__);
+  struct toolbar_data *T= toolbar_from_widget(widget);
+
+  if( (event->button == 1)||(event->button == 3) ){
+    if(event->type == GDK_BUTTON_PRESS){
+      set_hilight_off();  //clear previous hilight
+      ttb.phipress= getButtonFromXY(T, event->x, event->y);
+      if( ttb.phipress != NULL ){
+        ttb.philight= ttb.phipress; //hilight as pressed
+        ttb.ntbhilight= T->num;
+        redraw_button(T, ttb.philight); //redraw button
+      }
+      return TRUE;
+    }
+    if(event->type == GDK_BUTTON_RELEASE){
+      clear_tooltip_text(T);
+      p= getButtonFromXY(T, event->x, event->y);
+      if( (p != NULL) && (p == ttb.phipress) && (ttb.ntbhilight == T->num) ){
+        //button pressed (mouse press and release over the same button)
+
+        //NOTE: this prevents to keep a hilited button when a dialog is open from the event
+        //(but also removes the hilite until the mouse is moved)
+        set_hilight_off();
+
+        if( (p->flags & TTBF_SCROLL_BUT) != 0 ){
+          scroll_tabs(T, event->x, event->y, p->num);
+
+        }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
+          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, -1);
+          lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, -1);
+
+        }else if( (p->flags & TTBF_TAB) == 0 ){
+          if(event->button == 1){
+            lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, -1);
+          }
+        }else{
+          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, -1);
+          if(event->button == 3){
+            lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
+          }
+        }
+      }else{
+        redraw_button(T, p); 			      //redraw button under mouse (if any)
+        if( ttb.ntbhilight == T->num ){
+          redraw_button(T, ttb.philight); //redraw hilighted button (if any in this toolbar)
+        }
+      }
+      ttb.phipress= NULL;
+      return TRUE;
+    }
+    if(event->type == GDK_2BUTTON_PRESS){ //double click
+      p= getButtonFromXY(T, event->x, event->y);
+      if( p != NULL ){
+        if( (p->flags & TTBF_TAB) != 0 ){
+          lL_event(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, -1);
+        }
+      }
+      return TRUE;
+    }
   }
   return FALSE;
 }
@@ -1088,62 +1195,92 @@ static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
 //ntoolbar=1: VERTICAL
 static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
 {
-  if( ntoolbar < NTOOLBARS){
-    ttb.drawing_area = gtk_drawing_area_new();
-    ttb.draw[ntoolbar]= ttb.drawing_area;
-    gtk_widget_set_size_request(ttb.drawing_area, -1, 1);
-    gtk_widget_set_events(ttb.drawing_area, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
+  GtkWidget * drawing_area;
+
+  if( ntoolbar < NTOOLBARS ){
+    drawing_area = gtk_drawing_area_new();
+    ttb.tbdata[ntoolbar].draw= drawing_area;
+    ttb.tbdata[ntoolbar].num=  ntoolbar;
+    ttb.tbdata[ntoolbar].isvertical= (ntoolbar == 1);
+
+    gtk_widget_set_size_request(drawing_area, -1, 1);
+    gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
       GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
-    signal(ttb.drawing_area, "size-allocate",        ttb_size_ev);
-    signal(ttb.drawing_area, "expose_event",         ttb_paint_ev);
-    signal(ttb.drawing_area, "leave-notify-event",   ttb_mouseleave_ev);
-    signal(ttb.drawing_area, "motion_notify_event",  ttb_mousemotion_ev);
-    signal(ttb.drawing_area, "scroll-event",         ttb_scrollwheel_ev);
-    signal(ttb.drawing_area, "button-press-event",   ttb_button_ev);
-    signal(ttb.drawing_area, "button-release-event", ttb_button_ev);
-    gtk_box_pack_start(GTK_BOX(vbox), ttb.drawing_area, FALSE, FALSE, 0);
+    signal(drawing_area, "size-allocate",        ttb_size_ev);
+    signal(drawing_area, "expose_event",         ttb_paint_ev);
+    signal(drawing_area, "leave-notify-event",   ttb_mouseleave_ev);
+    signal(drawing_area, "motion_notify_event",  ttb_mousemotion_ev);
+    signal(drawing_area, "scroll-event",         ttb_scrollwheel_ev);
+    signal(drawing_area, "button-press-event",   ttb_button_ev);
+    signal(drawing_area, "button-release-event", ttb_button_ev);
+    gtk_box_pack_start(GTK_BOX(vbox), drawing_area, FALSE, FALSE, 0);
+  }
+}
+
+static void show_toolbar(struct toolbar_data *T, int show)
+{ //show/hide one toolbar
+  if( show ){
+    //show this toolbar
+    gtk_widget_show( T->draw );
+    gtk_widget_queue_draw(T->draw); //force redraw
+  }else{
+    //hide this toolbar
+    gtk_widget_hide( T->draw );
   }
 }
 
 static void show_tatoolbar(int show)
-{
-  if( show ){
-    //show current toolbar
-    gtk_widget_show( ttb.drawing_area );
-    //hide the other toolbar
-    if( ttb.drawing_area == ttb.draw[0] ){
-      gtk_widget_hide( ttb.draw[1] );
-    }else{
-      gtk_widget_hide( ttb.draw[0] );
+{ //show/hide ALL toolbars
+  int i;
+  for( i= 0; i < NTOOLBARS; i++ ){
+    if( ttb.tbdata[i].draw != NULL ){
+      if( show ){
+        //show all toolbars
+        gtk_widget_show( ttb.tbdata[i].draw );
+      }else{
+        //hide all toolbars
+        gtk_widget_hide( ttb.tbdata[i].draw );
+      }
     }
-    gtk_widget_queue_draw(ttb.drawing_area); //force redraw
-  }else{
-    //hide all toolbars
-    gtk_widget_hide( ttb.draw[0] );
-    gtk_widget_hide( ttb.draw[1] );
   }
 }
 
-//-------------------------------------------------------------------
-/** `toolbar.new(barsize,buttonsize,imgsize,isvertical,imgpath)` Lua function. */
+/* ============================================================================= */
+/*                                 LUA FUNCTIONS                                 */
+/* ============================================================================= */
+/** `toolbar.new(barsize,buttonsize,imgsize,toolbarnum/isvertical,imgpath)` Lua function. */
 static int ltoolbar_new(lua_State *L) {
-  int i;
+  int i, num;
   char str[32];
-  //destroy current toolbar (if any)
-  kill_tatoolbar();
+  struct toolbar_data *T;
 
-  ttb.isvertical= lua_toboolean(L, 4);
-
-  if( !lua_isnone(L, 5) ){ //image base
-    ttb.img_base= alloc_str(luaL_checkstring(L, 5));
-  }
-  //default toolbar images
-  set_tb_img( NULL, TTBI_TB_HILIGHT,   "ttb-back-hi");
-  set_tb_img( NULL, TTBI_TB_HIPRESSED, "ttb-back-press");
-  if( ttb.isvertical ){
-    set_tb_img( NULL, TTBI_TB_SEPARATOR, "ttb-hsep" );
+  if( lua_isboolean(L,4) ){
+    num= 0;   //FALSE: horizontal = #0
+    if( lua_toboolean(L,4) ){
+      num= 1; //TRUE:  vertical   = #1
+    }
   }else{
-    set_tb_img( NULL, TTBI_TB_SEPARATOR, "ttb-vsep" );
+    num= lua_tointeger(L, 4);   //toolbar number (0:horizonal, 1:vertical,..)
+  }
+  if( (num < 0) || (num >= NTOOLBARS) ){
+    num= 0; //default #0
+  }
+  T= toolbar_from_num(num);
+  //destroy current toolbar
+  kill_toolbar_num(num);
+  //set as current toolbar
+  ttb.currentntb= num;
+
+  if( !lua_isnone(L, 5) ){ //change global image base
+    ttb.img_base= chg_alloc_str(ttb.img_base, luaL_checkstring(L, 5));
+  }
+  //set default toolbar images
+  set_tb_img( T, NULL, TTBI_TB_HILIGHT,   "ttb-back-hi");
+  set_tb_img( T, NULL, TTBI_TB_HIPRESSED, "ttb-back-press");
+  if( T->isvertical ){
+    set_tb_img( T, NULL, TTBI_TB_SEPARATOR, "ttb-hsep" );
+  }else{
+    set_tb_img( T, NULL, TTBI_TB_SEPARATOR, "ttb-vsep" );
   }
 
   //3 images per tab state: beging, middle, end
@@ -1151,68 +1288,88 @@ static int ltoolbar_new(lua_State *L) {
   for( i= 0; i < 3; i++){
     str[8]= '1'+i;
     str[4]= 'n';
-    set_tb_img( NULL, TTBI_TB_NTAB1+i, str ); //normal
+    set_tb_img( T, NULL, TTBI_TB_NTAB1+i, str ); //normal
     str[4]= 'd';
-    set_tb_img( NULL, TTBI_TB_DTAB1+i, str ); //disabled
+    set_tb_img( T, NULL, TTBI_TB_DTAB1+i, str ); //disabled
     str[4]= 'h';
-    set_tb_img( NULL, TTBI_TB_HTAB1+i, str ); //hilight
+    set_tb_img( T, NULL, TTBI_TB_HTAB1+i, str ); //hilight
     str[4]= 'a';
-    set_tb_img( NULL, TTBI_TB_ATAB1+i, str ); //active
+    set_tb_img( T, NULL, TTBI_TB_ATAB1+i, str ); //active
   }
-  //set_tb_img( NULL, TTBI_TB_TABBACK, "ttb-tab-back" );   //tab background
-  set_tb_img( NULL, TTBI_TB_TAB_NSL,    "ttb-tab-sl"    ); //normal tab scroll left
-  set_tb_img( NULL, TTBI_TB_TAB_NSR,    "ttb-tab-sr"    ); //normal tab scroll right
-  set_tb_img( NULL, TTBI_TB_TAB_HSL,    "ttb-tab-hsl"   ); //hilight tab scroll left
-  set_tb_img( NULL, TTBI_TB_TAB_HSR,    "ttb-tab-hsr"   ); //hilight tab scroll right
-  set_tb_img( NULL, TTBI_TB_TAB_NCLOSE, "ttb-tab-close" ); //normal close button   
-  set_tb_img( NULL, TTBI_TB_TAB_HCLOSE, "ttb-tab-hclose"); //hilight close button
-  set_tb_img( NULL, TTBI_TB_TAB_CHANGED,"ttb-tab-chg"   ); //change indicator
+  //set_tb_img( T, NULL, TTBI_TB_TABBACK, "ttb-tab-back" );   //tab background
+  set_tb_img( T, NULL, TTBI_TB_TAB_NSL,    "ttb-tab-sl"    ); //normal tab scroll left
+  set_tb_img( T, NULL, TTBI_TB_TAB_NSR,    "ttb-tab-sr"    ); //normal tab scroll right
+  set_tb_img( T, NULL, TTBI_TB_TAB_HSL,    "ttb-tab-hsl"   ); //hilight tab scroll left
+  set_tb_img( T, NULL, TTBI_TB_TAB_HSR,    "ttb-tab-hsr"   ); //hilight tab scroll right
+  set_tb_img( T, NULL, TTBI_TB_TAB_NCLOSE, "ttb-tab-close" ); //normal close button
+  set_tb_img( T, NULL, TTBI_TB_TAB_HCLOSE, "ttb-tab-hclose"); //hilight close button
+  set_tb_img( T, NULL, TTBI_TB_TAB_CHANGED,"ttb-tab-chg"   ); //change indicator
 
-
-  ttb.barheight= -1;
-  ttb.barwidth= -1;
-  ttb.xmargin= 1;
-  ttb.ymargin= 1;
-  if( ttb.isvertical ){
-    ttb.drawing_area= ttb.draw[1];	//use toolbar 1 = vertical
-    ttb.barwidth= lua_tointeger(L, 1);
-    ttb.ymargin= 2;
+  T->barheight= -1;
+  T->barwidth= -1;
+  T->xmargin= 1;
+  T->ymargin= 1;
+  if( T->isvertical ){
+    //ttb.drawing_area= ttb.draw[1];	//use toolbar 1 = vertical
+    T->barwidth= lua_tointeger(L, 1);
+    T->ymargin= 2;
   }else{
-    ttb.drawing_area= ttb.draw[0];  //use toolbar 0 = horizontal
-    ttb.barheight= lua_tointeger(L, 1);
-    ttb.xmargin= 2;
+    //ttb.drawing_area= ttb.draw[0];  //use toolbar 0 = horizontal
+    T->barheight= lua_tointeger(L, 1);
+    T->xmargin= 2;
   }
   //default: square buttons
-  ttb.bwidth= lua_tointeger(L, 2);
-  ttb.bheight= ttb.bwidth;
-  ttb.xoff= (ttb.bwidth - lua_tointeger(L, 3))/2;
-  if( ttb.xoff < 0){
-    ttb.xoff= 0;
+  T->bwidth= lua_tointeger(L, 2);
+  T->bheight= T->bwidth;
+  T->xoff= (T->bwidth - lua_tointeger(L, 3))/2;
+  if( T->xoff < 0){
+    T->xoff= 0;
   }
-  ttb.yoff= ttb.xoff;
-  ttb.xnew= ttb.xmargin;
-  ttb.ynew= ttb.ymargin;
-  gtk_widget_set_size_request(ttb.drawing_area, ttb.barwidth, ttb.barheight);
+  T->yoff= T->xoff;
+  T->xnew= T->xmargin;
+  T->ynew= T->ymargin;
+  gtk_widget_set_size_request(T->draw, T->barwidth, T->barheight);
   return 0;
 }
 
 /** `toolbar.adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)` Lua function. */
 static int ltoolbar_adjust(lua_State *L) {
-  ttb.bwidth=  lua_tointeger(L, 1);
-  ttb.bheight= lua_tointeger(L, 2);
-  ttb.xmargin= lua_tointeger(L, 3);
-  ttb.ymargin= lua_tointeger(L, 4);
-  ttb.xoff=    lua_tointeger(L, 5);
-  ttb.yoff=    lua_tointeger(L, 6);
-  ttb.xnew= ttb.xmargin;
-  ttb.ynew= ttb.ymargin;
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  T->bwidth=  lua_tointeger(L, 1);
+  T->bheight= lua_tointeger(L, 2);
+  T->xmargin= lua_tointeger(L, 3);
+  T->ymargin= lua_tointeger(L, 4);
+  T->xoff=    lua_tointeger(L, 5);
+  T->yoff=    lua_tointeger(L, 6);
+  T->xnew= T->xmargin;
+  T->ynew= T->ymargin;
+  return 0;
+}
+
+/** `toolbar.seltoolbar(toolbarnum/isvertical)` Lua function. */
+static int ltoolbar_seltoolbar(lua_State *L) {
+  int num;
+  if( lua_isboolean(L,1) ){
+    num= 0;   //FALSE: horizontal = #0
+    if( lua_toboolean(L,1) ){
+      num= 1; //TRUE:  vertical   = #1
+    }
+  }else{
+    num= lua_tointeger(L, 1);   //toolbar number (0:horizonal, 1:vertical,..)
+  }
+  if( (num < 0) || (num >= NTOOLBARS) ){
+    num= 0; //default #0
+  }
+  //set as current toolbar
+  ttb.currentntb= num;
   return 0;
 }
 
 /** `toolbar.addbutton(name,tooltiptext)` Lua function. */
 static int ltoolbar_addbutton(lua_State *L) {
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   const char *name= luaL_checkstring(L, 1);
-  add_ttb_node( name, name, luaL_checkstring(L, 2));
+  add_ttb_node( T, name, name, luaL_checkstring(L, 2));
   return 0;
 }
 
@@ -1220,46 +1377,47 @@ static int ltoolbar_addbutton(lua_State *L) {
 static int ltoolbar_addspace(lua_State *L) {
   struct toolbar_node * p;
   int asep;
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int x= lua_tointeger(L, 1);
   int hide= lua_toboolean(L,2);
-  if( ttb.isvertical ){
+  if( T->isvertical ){
     if( x == 0 ){
-      x= ttb.bheight/2;
+      x= T->bheight/2;
     }
     if( !hide ){
       //show H separator in the middle
-      p= add_ttb_node( NULL, ttb.img[TTBI_TB_SEPARATOR].fname, NULL);
+      p= add_ttb_node( T, NULL, T->img[TTBI_TB_SEPARATOR].fname, NULL);
       if( p != NULL ){
-        asep= ttb.img[TTBI_TB_SEPARATOR].height; //minimun separator = image height
+        asep= T->img[TTBI_TB_SEPARATOR].height; //minimun separator = image height
         if( x < asep ){
           x= asep;
         }
-        ttb.ynew -= ttb.bheight;
-        p->imgx= ttb.xnew;
-        p->imgy= ttb.ynew + ((x-asep)/2);
-        p->bary2= ttb.ynew + x;
+        T->ynew -= T->bheight;
+        p->imgx= T->xnew;
+        p->imgy= T->ynew + ((x-asep)/2);
+        p->bary2= T->ynew + x;
       }
     }
-    ttb.ynew += x;
+    T->ynew += x;
   }else{
     if( x == 0 ){
-      x= ttb.bwidth/2;
+      x= T->bwidth/2;
     }
     if( !hide ){
       //show V separator in the middle
-      p= add_ttb_node( NULL, ttb.img[TTBI_TB_SEPARATOR].fname, NULL);
+      p= add_ttb_node( T, NULL, T->img[TTBI_TB_SEPARATOR].fname, NULL);
       if( p != NULL ){
-        asep= ttb.img[TTBI_TB_SEPARATOR].width; //minimun separator = image width
+        asep= T->img[TTBI_TB_SEPARATOR].width; //minimun separator = image width
         if( x < asep ){
           x= asep;
         }
-        ttb.xnew -= ttb.bwidth;
-        p->imgx= ttb.xnew + ((x-asep)/2);
-        p->imgy= ttb.ynew;
-        p->barx2= ttb.xnew + x;
+        T->xnew -= T->bwidth;
+        p->imgx= T->xnew + ((x-asep)/2);
+        p->imgy= T->ynew;
+        p->barx2= T->xnew + x;
       }
     }
-    ttb.xnew += x;
+    T->xnew += x;
   }
   return 0;
 }
@@ -1268,45 +1426,65 @@ static int ltoolbar_addspace(lua_State *L) {
 /** `toolbar.gotopos(dx)`  Lua function. */
 static int ltoolbar_gotopos(lua_State *L) {
   int x,y;
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   x= lua_tointeger(L, 1);
   if( lua_isnone(L, 2) ){
     //only one parameter: new row/column
-    if( ttb.isvertical ){
+    if( T->isvertical ){
       //new column
-      x= ttb.xnew + ttb.bwidth + x;
-      y= ttb.ymargin;
+      x= T->xnew + T->bwidth + x;
+      y= T->ymargin;
     }else{
       //new row
-      y= ttb.ynew + ttb.bheight + x;
-      x= ttb.xmargin;
+      y= T->ynew + T->bheight + x;
+      x= T->xmargin;
     }
   }else{
     //2 parameters: x,y
     y= lua_tointeger(L, 2);
   }
-  ttb.xnew= x;
-  ttb.ynew= y;
+  T->xnew= x;
+  T->ynew= y;
   return 0;
 }
 
 /** `toolbar.show(show)` Lua function. */
 static int ltoolbar_show(lua_State *L) {
-  show_tatoolbar(lua_toboolean(L,1));
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  show_toolbar(T, lua_toboolean(L,1));
   return 0;
 }
 
-/** `toolbar.enable(name,isenabled)` Lua function. */
+/** `toolbar.enable(name,isenabled,onlyinthistoolbar)` Lua function. */
 static int ltoolbar_enable(lua_State *L) {
+  int i;
   const char *name= luaL_checkstring(L, 1);
-  ttb_enable_button(name, lua_toboolean(L,2) );
+  if( lua_toboolean(L,3) ){
+    //enable button only in this toolbar
+    ttb_enable_button(toolbar_from_num(ttb.currentntb), name, lua_toboolean(L,2) );
+  }else{
+    //enable button in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_enable_button(toolbar_from_num(i), name, lua_toboolean(L,2) );
+    }
+  }
   return 0;
 }
 
-/** `toolbar.seticon(name,icon,[nicon])` Lua function. */
+/** `toolbar.seticon(name,icon,[nicon],onlyinthistoolbar)` Lua function. */
 static int ltoolbar_seticon(lua_State *L) {
+  int i;
   const char *name= luaL_checkstring(L, 1);
   const char *img= luaL_checkstring(L, 2);
-  ttb_change_button_img(name, lua_tointeger(L, 3), img );
+  if( lua_toboolean(L,4) ){
+    //set icon only in this toolbar
+    ttb_change_button_img(toolbar_from_num(ttb.currentntb), name, lua_tointeger(L, 3), img );
+  }else{
+    //set icon in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_change_button_img(toolbar_from_num(i), name, lua_tointeger(L, 3), img );
+    }
+  }
   return 0;
 }
 
@@ -1315,43 +1493,44 @@ static int ltoolbar_addtabs(lua_State *L) {
   cairo_t * cr;
   cairo_text_extents_t ext;
   int i, rgb;
-  if( ttb.tab_node == NULL ){ //only one tabbar for now
-    ttb.tab_node= add_ttb_node( NULL, NULL, NULL);
-    if( ttb.tab_node != NULL ){
-      ttb.tab_node->flags |= TTBF_TABBAR|TTBF_SELECTABLE;	//show tabs here
-      ttb.tabxmargin= lua_tointeger(L, 1);
-      ttb.tabxsep= lua_tointeger(L, 2);
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  if( T->tab_node == NULL ){ //only one tabbar for now
+    T->tab_node= add_ttb_node( T, NULL, NULL, NULL);
+    if( T->tab_node != NULL ){
+      T->tab_node->flags |= TTBF_TABBAR|TTBF_SELECTABLE;	//show tabs here
+      T->tabxmargin= lua_tointeger(L, 1);
+      T->tabxsep= lua_tointeger(L, 2);
 
-      ttb.tabmodshow= lua_tointeger(L, 4);
-      
-      ttb.tabfontsz= lua_tointeger(L, 5);  //font size in points (default = 10 points)
-      if( ttb.tabfontsz < 2){
-        ttb.tabfontsz= 10;
+      T->tabmodshow= lua_tointeger(L, 4);
+
+      T->tabfontsz= lua_tointeger(L, 5);  //font size in points (default = 10 points)
+      if( T->tabfontsz < 2){
+        T->tabfontsz= 10;
       }
-      cr= gdk_cairo_create(ttb.drawing_area->window);
-      cairo_set_font_size(cr, ttb.tabfontsz); 
+      cr= gdk_cairo_create(T->draw->window);
+      cairo_set_font_size(cr, T->tabfontsz);
       cairo_text_extents( cr, "H", &ext );
-      ttb.tabtexth= (int) ext.height;
+      T->tabtexth= (int) ext.height;
       cairo_destroy(cr);
-      
-      ttb.tabtextoff= lua_tointeger(L, 6);
+
+      T->tabtextoff= lua_tointeger(L, 6);
       //center text verticaly + offset
-      ttb.tabtexty=  ((ttb.img[TTBI_TB_NTAB1].height+ttb.tabtexth)/2)+ttb.tabtextoff; 
-      if( ttb.tabtexty < 0){
-        ttb.tabtexty= 0;
+      T->tabtexty=  ((T->img[TTBI_TB_NTAB1].height+T->tabtexth)/2)+T->tabtextoff;
+      if( T->tabtexty < 0){
+        T->tabtexty= 0;
       }
-      
-      calc_tabnode_width();
-      ttb.tab_node->bary1 -= ttb.ymargin;
-      ttb.tabheight= 0; //use the tallest image
+
+      calc_tabnode_width(T);
+      T->tab_node->bary1 -= T->ymargin;
+      T->tabheight= 0; //use the tallest image
       for(i= TTBI_TB_TABBACK; i <= TTBI_TB_ATAB3; i++ ){
-        if( ttb.tabheight < ttb.img[i].height ){
-          ttb.tabheight= ttb.img[i].height;
+        if( T->tabheight < T->img[i].height ){
+          T->tabheight= T->img[i].height;
         }
       }
-      ttb.tab_node->bary2= ttb.tab_node->bary1 + ttb.tabheight;
-      ttb.closeintabs= lua_toboolean(L,3);
-      redraw_button(NULL); //redraw the complete toolbar
+      T->tab_node->bary2= T->tab_node->bary1 + T->tabheight;
+      T->closeintabs= lua_toboolean(L,3);
+      redraw_button(T, NULL); //redraw the complete toolbar
     }
   }
   return 0;
@@ -1375,77 +1554,83 @@ static void settabcolor(lua_State *L, int ncolor, struct color3doubles *pc )
 
 /** `toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)` Lua function. */
 static int ltoolbar_tabfontcolor(lua_State *L) {
-  redraw_tabs_beg();
-  ttb.tabtextcolN.R= 0.0;   //normal: default black
-  ttb.tabtextcolN.G= 0.0;
-  ttb.tabtextcolN.B= 0.0;
-  settabcolor( L, 1, &ttb.tabtextcolN );
-  ttb.tabtextcolH= ttb.tabtextcolN;   //hilight: default == normal 
-  settabcolor( L, 2, &ttb.tabtextcolH );
-  ttb.tabtextcolA= ttb.tabtextcolH;   //active: default == hilight 
-  settabcolor( L, 3, &ttb.tabtextcolA );
-  ttb.tabtextcolM= ttb.tabtextcolN;   //modified: default == normal 
-  settabcolor( L, 4, &ttb.tabtextcolM );
-  ttb.tabtextcolG.R= 0.5;     //grayed: default medium gray
-  ttb.tabtextcolG.G= 0.5;
-  ttb.tabtextcolG.B= 0.5;
-  settabcolor( L, 5, &ttb.tabtextcolG );
-  redraw_tabs_end();
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  redraw_tabs_beg(T);
+  T->tabtextcolN.R= 0.0;   //normal: default black
+  T->tabtextcolN.G= 0.0;
+  T->tabtextcolN.B= 0.0;
+  settabcolor( L, 1, &(T->tabtextcolN) );
+  T->tabtextcolH= T->tabtextcolN;   //hilight: default == normal
+  settabcolor( L, 2, &(T->tabtextcolH) );
+  T->tabtextcolA= T->tabtextcolH;   //active: default == hilight
+  settabcolor( L, 3, &(T->tabtextcolA) );
+  T->tabtextcolM= T->tabtextcolN;   //modified: default == normal
+  settabcolor( L, 4, &(T->tabtextcolM) );
+  T->tabtextcolG.R= 0.5;     //grayed: default medium gray
+  T->tabtextcolG.G= 0.5;
+  T->tabtextcolG.B= 0.5;
+  settabcolor( L, 5, &(T->tabtextcolG) );
+  redraw_tabs_end(T);
   return 0;
 }
 
 /** `toolbar.settab(num,name,tooltiptext)` Lua function. */
 static int ltoolbar_settab(lua_State *L) {
-  set_ttb_tab( lua_tointeger(L, 1), luaL_checkstring(L, 2), luaL_checkstring(L, 3));
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  set_ttb_tab( T, lua_tointeger(L, 1), luaL_checkstring(L, 2), luaL_checkstring(L, 3));
   return 0;
 }
 
 /** `toolbar.deletetab(num)` Lua function. */
 static int ltoolbar_deletetab(lua_State *L) {
   struct toolbar_node *k, *kprev, *p, *prev;
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int ntab= lua_tointeger(L, 1);
   kprev= NULL;
-  k= get_ttb_tab(ntab);
+  k= get_ttb_tab(T, ntab);
   if( k != NULL ){
-    redraw_tabs_beg();
+    redraw_tabs_beg(T);
     prev= NULL;
-    for( p= ttb.tabs; (p != NULL); p= p->next ){
+    for( p= T->tabs; (p != NULL); p= p->next ){
       if( p->num == ntab){
         kprev= prev;
       }else if( p->num > ntab){
         p->num--; //decrement bigger "num"s
       }
       prev= p;
-    }    
+    }
     //kill node
     if( kprev == NULL ){
-      ttb.tabs= k->next;
+      T->tabs= k->next;
     }else{
       kprev->next= k->next;
     }
-    ttb.ntabs--;
-    ttb.tabwidth -= k->barx2;
+    T->ntabs--;
+    T->tabwidth -= k->barx2;
     kill_toolbar_node(k);
-    redraw_tabs_end();
+    redraw_tabs_end(T);
   }
   return 0;
 }
 
 /** `toolbar.activatetab(num)` Lua function. */
 static int ltoolbar_activatetab(lua_State *L) {
-  activate_ttb_tab( lua_tointeger(L, 1));
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  activate_ttb_tab( T, lua_tointeger(L, 1));
   return 0;
 }
 
 /** `toolbar.enabletab(num,enable)` Lua function. */
 static int ltoolbar_enabletab(lua_State *L) {
-  enable_ttb_tab( lua_tointeger(L, 1), lua_toboolean(L,2));
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  enable_ttb_tab( T, lua_tointeger(L, 1), lua_toboolean(L,2));
   return 0;
 }
 
 /** `toolbar.modifiedtab(num,changed)` Lua function. */
 static int ltoolbar_modifiedtab(lua_State *L) {
-  set_changed_ttb_tab( lua_tointeger(L, 1), lua_toboolean(L,2));
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  set_changed_ttb_tab( T, lua_tointeger(L, 1), lua_toboolean(L,2));
   return 0;
 }
 
@@ -1453,6 +1638,7 @@ static void register_toolbar(lua_State *L) {
   lua_newtable(L);
   l_setcfunction(L, -1, "new",      ltoolbar_new);	      //create a new toolbar
   l_setcfunction(L, -1, "adjust",   ltoolbar_adjust);	    //optionaly fine tune some parameters
+  l_setcfunction(L, -1, "seltoolbar",ltoolbar_seltoolbar);//select which toolbar to edit
   l_setcfunction(L, -1, "addbutton",ltoolbar_addbutton);  //add buttons
   l_setcfunction(L, -1, "addspace", ltoolbar_addspace);   //add some space
   l_setcfunction(L, -1, "gotopos",  ltoolbar_gotopos);	  //change next button position

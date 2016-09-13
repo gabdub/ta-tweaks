@@ -48,14 +48,17 @@ if toolbar then
 
   --change theme defaults here
   --toolbar.tabwithclose= true
+  --toolbar.tabxmargin=0
 
-  --create the toolbar
+  --create the toolbar (tabpos, nvertcols)
   --tabpos=0: 1 row, use default tabs
-  --tabpos=1: 1 row, tabs in the same line
-  --tabpos=2: 2 rows, tabs at the top
-  --tabpos=3: 2 rows, tabs at the bottom
+  --tabpos=1: 1 row, tabs & buttons in the same line
+  --tabpos=2: 2 rows, tabs at the top (horizonal only)
+  --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
+  --nvertcols= 0..2 = number of columns in vertical toolbar
   toolbar.create(1)
 
+  --toolbar.seltoolbar(1)
   --add some buttons
   toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
   toolbar.cmd("go-next",                Proj.goto_next_pos,  "Next position [Shift+F12]")
@@ -66,8 +69,10 @@ if toolbar then
   toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]")
   toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
+  --toolbar.seltoolbar(1)
   toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" )
   toolbar.addspace()
+  --toolbar.newrow()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
   --toolbar ready, show it
