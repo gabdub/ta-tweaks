@@ -8,6 +8,10 @@ if toolbar then
     end
     toolbar.seticon(name,icon)
   end
+  
+  function toolbar.isbufhide(buf)
+    return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
+  end
 
   local function set_chg_tab(ntab,buf)
     if buf == nil then
@@ -15,26 +19,28 @@ if toolbar then
       ntab= toolbar.currenttab
       buf= buffer
     end
-    --if not toolbar.hideproject or (buf._project_select == nil and buf._type ~= Proj.PRJT_SEARCH) then
-      --update tab text
-      local filename = buf.filename or buf._type or _L['Untitled']
-      local tabtext= string.match(filename, ".-([^\\/]*)$")
-      --update modified indicator in tab
-      if toolbar.tabmodified == 0 then
-         --change tab text
-        if buf.modify then tabtext= tabtext .. "*" end
-      else
-        toolbar.modifiedtab(ntab, buf.modify)
-      end
-      toolbar.settab(ntab, tabtext, filename) --show image / change color
-    --end
+    --update tab text
+    local filename = buf.filename or buf._type or _L['Untitled']
+    local tabtext= string.match(filename, ".-([^\\/]*)$")
+    --update modified indicator in tab
+    if toolbar.tabmodified == 0 then
+       --change tab text
+      if buf.modify then tabtext= tabtext .. "*" end
+    else
+      toolbar.modifiedtab(ntab, buf.modify)
+    end
+    toolbar.settab(ntab, tabtext, filename) --show image / change color
+    toolbar.hidetab(ntab, toolbar.isbufhide(buf))
   end
 
   --select a toolbar tab
   function toolbar.seltab(ntab)
+    local buf= _BUFFERS[ntab]
+    --force visible state 'before' activate the tab
+    toolbar.hidetab(ntab, toolbar.isbufhide(buf))
     toolbar.currenttab= ntab
     toolbar.activatetab(ntab)
-    set_chg_tab()
+    set_chg_tab(ntab,buf)
   end
 
   events.connect("toolbar_clicked", function(button)
@@ -102,21 +108,17 @@ if toolbar then
   end)
 
   events.connect(events.FILE_OPENED, function()
-    --if not toolbar.hideproject or (buffer._project_select == nil and buffer._type ~= Proj.PRJT_SEARCH) then
-      local filename = buffer.filename or buffer._type or _L['Untitled']
-      toolbar.settab(_BUFFERS[buffer], string.match(filename, ".-([^\\/]*)$"), filename)
-      toolbar.seltab(_BUFFERS[buffer])
-    --end
+    local filename = buffer.filename or buffer._type or _L['Untitled']
+    toolbar.settab(_BUFFERS[buffer], string.match(filename, ".-([^\\/]*)$"), filename)
+    toolbar.seltab(_BUFFERS[buffer])
   end)
 
   events.connect(events.BUFFER_NEW, function()
     local ntab=_BUFFERS[buffer]
     if ntab > 0 then --ignore TA start
-      --if not toolbar.hideproject or (buffer._project_select == nil and buffer._type ~= Proj.PRJT_SEARCH) then
-        local filename = _L['Untitled']
-        toolbar.settab(ntab, filename, filename)
-        toolbar.seltab(ntab)
-      --end
+      local filename = _L['Untitled']
+      toolbar.settab(ntab, filename, filename)
+      toolbar.seltab(ntab)
     end
   end)
 

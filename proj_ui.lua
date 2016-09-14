@@ -171,7 +171,6 @@ function Proj.set_selectionmode(selmode)
     for i= #buffer.proj_fold_row, 1, -1 do
       buffer.toggle_fold(buffer.proj_fold_row[i])
     end
-
   else
     --edit project as a text file (show control info)
     buffer:set_lexer('text')
@@ -179,6 +178,9 @@ function Proj.set_selectionmode(selmode)
     proj_contextm_edit()
     --project in EDIT mode--
     proj_show_default()
+  end
+  if toolbar then
+    toolbar.seltab(_BUFFERS[buffer]) --hide/show and select tab in edit mode
   end
 end
 

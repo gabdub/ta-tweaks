@@ -13,6 +13,7 @@ static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 #define TTBF_SCROLL_BUT     0x0020
 #define TTBF_CLOSETAB_BUT   0x0040
 #define TTBF_CHANGED        0x0080
+#define TTBF_HIDDEN         0x0100
 
 //node images
 #define TTBI_NORMAL         0  //button/separator
@@ -91,9 +92,9 @@ struct toolbar_data
   struct toolbar_node * tabs;
   struct toolbar_node * tabs_last;
   struct toolbar_node * tab_node;
-  int ntabs;
-
-  int ntabs_hide; //scroll tab support
+  int ntabs;            //total number of tabs
+  int ntabs_nothidden;  //number of tabs without HIDDEN flag
+  int ntabs_scroll;     //number of tabs not shown at the left = scroll tab support
   int islast_tab_shown;
   int xscleft, xscright;
 
@@ -254,7 +255,7 @@ static int set_tb_img( struct toolbar_data *T, struct toolbar_node *p, int nimg,
 static void redraw_button( struct toolbar_data *T, struct toolbar_node * p )
 {
   if( p != NULL ){
-    if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT)) == 0 ){
+    if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT|TTBF_HIDDEN)) == 0 ){
       //redraw the area of one regular button
       gtk_widget_queue_draw_area(T->draw, p->barx1, p->bary1, p->barx2-p->barx1+1, p->bary2-p->bary1+1 ); //redraw
       return;
@@ -348,8 +349,8 @@ static void calc_tabnode_width( struct toolbar_data *T )
   if( T->tab_node != NULL ){
     int x= T->tab_node->barx1 + T->tabxmargin + T->tabwidth;
     //add extra space between tabs
-    if( (T->ntabs > 1) && (T->tabxsep != 0) ){
-      x += (T->ntabs-1) * T->tabxsep;
+    if( (T->ntabs_nothidden > 1) && (T->tabxsep != 0) ){
+      x += (T->ntabs_nothidden-1) * T->tabxsep;
     }
     T->tab_node->barx2= x;
   }
@@ -376,9 +377,10 @@ static void chg_tab_texts( struct toolbar_data *T, struct toolbar_node * p, cons
   p->barx2= p->imgx + textw + T->img[TTBI_TB_NTAB3].width;
   p->bary2= T->img[TTBI_TB_NTAB1].height;
   p->imgy=  T->tabtexty;
-  //total tab width without extra space
-  T->tabwidth += p->barx2;
-  calc_tabnode_width(T);
+  if( (p->flags & TTBF_HIDDEN) == 0 ){
+    //total tab width without extra space
+    T->tabwidth += p->barx2;
+  }
 }
 
 static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip)
@@ -408,6 +410,7 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab, const 
     }
     T->tabs_last= p;
     T->ntabs++;
+    T->ntabs_nothidden++;
   }
   return p;
 }
@@ -434,11 +437,15 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
     p= add_ttb_tab(T, ntab, name, tooltip);
   }else{
     //tab found, adjust total tab width without extra space
-    T->tabwidth -= p->barx2;
+    if( (p->flags & TTBF_HIDDEN) == 0 ){
+      T->tabwidth -= p->barx2;
+    }
     p->barx2= 0;
     //update texts
     chg_tab_texts(T, p, name, tooltip);
   }
+  //update tabs width
+  calc_tabnode_width(T);
   //queue a redraw using the post-modify size (in case the tabbar gets bigger)
   redraw_tabs_end(T);
   return p;
@@ -475,26 +482,33 @@ static void set_hilight_off( void )
 static void activate_ttb_tab(struct toolbar_data *T, int ntab)
 {
   struct toolbar_node *p, *t, *vistab;
-  int x, nhide;
+  int x, nhide, tabpos, n, prepos;
 
   redraw_tabs_beg(T);
   t= NULL;
+  tabpos= 0;
+  n= 0;
   for( p= T->tabs; (p != NULL); p= p->next ){
     if( p->num == ntab){
       p->flags |= TTBF_ACTIVE | TTBF_SELECTABLE;
       p->flags &= ~TTBF_GRAYED;
       t= p;
+      tabpos= n;
     }else{
       p->flags &= ~TTBF_ACTIVE; //only one tab can be active
     }
+    n++;
   }
-  if( (t != NULL) && (T->tab_node != NULL) && (T->barwidth > 0) ){
-    //check tab visibility
+  //check tab visibility (ignore this tab if hidden)
+  if((t != NULL) && (T->tab_node != NULL) && (T->barwidth > 0) && ((t->flags & TTBF_HIDDEN) == 0)){
     x= T->tab_node->barx1 + T->tabxmargin;
-    for( p= T->tabs, nhide= T->ntabs_hide; (nhide > 0)&&(p != NULL); nhide-- ){
-      if( p->num == ntab){
-        //the tab is left-hiden, set as the first visible
-        T->ntabs_hide -= nhide;
+    n= 0;
+    prepos= 0;
+    for( p= T->tabs, nhide= T->ntabs_scroll; (nhide > 0)&&(p != NULL); nhide-- ){
+      if( p->num == ntab ){
+        //the tab is left-hidden, set as the second (or first) visible tab
+        //(the second is better because is not shown under the scroll button)
+        T->ntabs_scroll= prepos;
         if( ttb.ntbhilight == T->num ){
           set_hilight_off(); //force hilight off (only in this toolbar)
         }
@@ -502,50 +516,54 @@ static void activate_ttb_tab(struct toolbar_data *T, int ntab)
         t= NULL;  //ready
         break;
       }
+      if( (p->flags & TTBF_HIDDEN) == 0 ){
+        prepos= n;  //previous visible tab position
+      }
+      n++;
       p= p->next; //skip hidden tabs
     }
     vistab= p;    //first visible tab
     if( t != NULL ){
-      //not a left-hiden tab
+      //not a left-hidden tab
       for( ; (p != NULL); p= p->next ){
-        if( x > T->barwidth ){
-          break;  //the rest of the tabs are right-hiden
-        }
-        if( p->num == ntab ){
-          //check if it's completely visible
-          if( x+t->barx2 <= T->barwidth ){
-            t= NULL;  //visible, nothing to do
+        if( (p->flags & TTBF_HIDDEN) == 0 ){
+          if( x > T->barwidth ){
+            break;  //the rest of the tabs are right-hidden
           }
-          break;  //some part of the tab is hiden
+          if( p->num == ntab ){
+            //check if it's completely visible
+            if( x+t->barx2 <= T->barwidth ){
+              t= NULL;  //visible, nothing to do
+            }
+            break;  //some part of the tab is hidden
+          }
+          x += p->barx2 + T->tabxsep;
         }
-        x += p->barx2 + T->tabxsep;
       }
     }
     if( t != NULL ){
-      //at least a part of the tab is right-hiden
+      //at least a part of the tab is right-hidden
       for( ; (p != NULL); p= p->next ){
-        x += p->barx2;
-        if( p->num == ntab ){
-          break;
+        if( (p->flags & TTBF_HIDDEN) == 0 ){
+          x += p->barx2;
+          if( p->num == ntab ){
+            break;
+          }
+          x += T->tabxsep;
         }
-        x += T->tabxsep;
       }
       //hide some tabs until the tab is completely visible
       while( (vistab != NULL) && (x > T->barwidth) ){
-        x -= vistab->barx2 + T->tabxsep;
+        if( (vistab->flags & TTBF_HIDDEN) == 0 ){
+          x -= vistab->barx2 + T->tabxsep;
+        }
         vistab= vistab->next;
-        T->ntabs_hide++;
+        T->ntabs_scroll++;
       }
       if( vistab == NULL ){
         //not enought space to be completely visible
         //set as the first visible tab
-        T->ntabs_hide= 0;
-        for( p= T->tabs; (p != NULL); p= p->next ){
-          if( p->num == ntab){
-            break;
-          }
-          T->ntabs_hide++;
-        }
+        T->ntabs_scroll= tabpos;
       }
       if( ttb.ntbhilight == T->num ){
           set_hilight_off(); //force hilight off (only in this toolbar)
@@ -567,6 +585,32 @@ static void enable_ttb_tab(struct toolbar_data *T, int ntab, int enable)
     }else{
       p->flags |= TTBF_GRAYED;
       p->flags &= ~(TTBF_ACTIVE | TTBF_SELECTABLE);
+    }
+  }
+  redraw_tabs_end(T);
+}
+
+static void hide_ttb_tab(struct toolbar_data *T, int ntab, int hide)
+{
+  redraw_tabs_beg(T);
+  struct toolbar_node * p= get_ttb_tab(T, ntab);
+  if( p != NULL ){
+    if( hide ){
+      if( (p->flags & TTBF_HIDDEN) == 0 ){
+        p->flags |= TTBF_HIDDEN;
+        T->tabwidth -= p->barx2;
+        T->ntabs_nothidden--;
+        //update tabs width
+        calc_tabnode_width(T);
+      }
+    }else{
+      if( (p->flags & TTBF_HIDDEN) != 0 ){
+        p->flags &= ~TTBF_HIDDEN;
+        T->tabwidth += p->barx2;
+        T->ntabs_nothidden++;
+        //update tabs width
+        calc_tabnode_width(T);
+      }
     }
   }
   redraw_tabs_end(T);
@@ -629,7 +673,8 @@ static void kill_toolbar_num( int num )
     p->tabs_last= NULL;
     p->tab_node= NULL;
     p->ntabs= 0;
-    p->ntabs_hide= 0;
+    p->ntabs_nothidden= 0;
+    p->ntabs_scroll= 0;
     p->islast_tab_shown= 1;
     p->xscleft= -1;
     p->xscright= -1;
@@ -702,41 +747,43 @@ static struct toolbar_node * getButtonFromXY(struct toolbar_data *T, int x, int 
         }
         x -= p->barx1 + T->tabxmargin;
         y -= p->bary1;
-        for( p= T->tabs, nhide= T->ntabs_hide; (nhide > 0)&&(p != NULL); nhide-- ){
+        for( p= T->tabs, nhide= T->ntabs_scroll; (nhide > 0)&&(p != NULL); nhide-- ){
           p= p->next; //skip hidden tabs (scroll support)
         }
         for( ; (x >= 0)&&(p != NULL); p= p->next ){
-          if( ((p->flags & TTBF_SELECTABLE)!=0) && (x <= p->barx2) ){
-            if( T->closeintabs ){
-              //over close tab button?
-              xc1= p->barx2-T->img[TTBI_TB_NTAB3].width;
-              xc2= xc1+T->img[TTBI_TB_TAB_NCLOSE].width;
-              yc2= T->img[TTBI_TB_TAB_NCLOSE].height;
-              yc1= yc2-T->img[TTBI_TB_TAB_NCLOSE].width; //square close area
-              if( yc1 < 0){
-                yc1= 0;
-              }
-              if( (x >= xc1)&&(x <= xc2)&&(y >= yc1)&&(y <= yc2) ){
-                xbutton.flags= TTBF_CLOSETAB_BUT;
-                xbutton.num= p->num;
-                xbutton.tooltip= xbutt_tooltip;
-                strcpy( xbutt_tooltip, "Close " );
-                s= p->tooltip;
-                if( s == NULL ){
-                  s= p->name;
+          if( (p->flags & TTBF_HIDDEN) == 0 ){  //ignore hidden tabs
+            if( ((p->flags & TTBF_SELECTABLE)!=0) && (x <= p->barx2) ){
+              if( T->closeintabs ){
+                //over close tab button?
+                xc1= p->barx2-T->img[TTBI_TB_NTAB3].width;
+                xc2= xc1+T->img[TTBI_TB_TAB_NCLOSE].width;
+                yc2= T->img[TTBI_TB_TAB_NCLOSE].height;
+                yc1= yc2-T->img[TTBI_TB_TAB_NCLOSE].width; //square close area
+                if( yc1 < 0){
+                  yc1= 0;
                 }
-                if( s != NULL ){
-                  strncpy( xbutt_tooltip+6, s, sizeof(xbutt_tooltip)-7 );
-                  xbutt_tooltip[sizeof(xbutt_tooltip)-1]= 0;
-                }else{
-                  strcpy( xbutt_tooltip+6, "tab" );
+                if( (x >= xc1)&&(x <= xc2)&&(y >= yc1)&&(y <= yc2) ){
+                  xbutton.flags= TTBF_CLOSETAB_BUT;
+                  xbutton.num= p->num;
+                  xbutton.tooltip= xbutt_tooltip;
+                  strcpy( xbutt_tooltip, "Close " );
+                  s= p->tooltip;
+                  if( s == NULL ){
+                    s= p->name;
+                  }
+                  if( s != NULL ){
+                    strncpy( xbutt_tooltip+6, s, sizeof(xbutt_tooltip)-7 );
+                    xbutt_tooltip[sizeof(xbutt_tooltip)-1]= 0;
+                  }else{
+                    strcpy( xbutt_tooltip+6, "tab" );
+                  }
+                  return &xbutton; //close tab button
                 }
-                return &xbutton; //close tab button
               }
+              return p; //TAB
             }
-            return p; //TAB
+            x -= p->barx2 + T->tabxsep;
           }
-          x -= p->barx2 + T->tabxsep;
         }
         return NULL;
       }
@@ -787,15 +834,39 @@ static void ttb_enable_button(struct toolbar_data *T, const char * name, int ise
 }
 
 static void scroll_tabs(struct toolbar_data *T, int x, int y, int dir )
-{
-  int nhide= T->ntabs_hide;
-  if((dir < 0)&&(T->ntabs_hide > 0)){
-    T->ntabs_hide--;
+{ //change the number of tabs not shown at the left (ignore hidden tabs)
+  struct toolbar_node *t;
+  int n, nt, nh;
+  int nhide= T->ntabs_scroll;
+  if((dir < 0)&&(T->ntabs_scroll > 0)){
+    nh= 0;
+    nt= 0;
+    for( t= T->tabs, n= T->ntabs_scroll-1; (n > 0)&&(t != NULL); n-- ){
+      nt++;
+      if( (t->flags & TTBF_HIDDEN) == 0 ){  //not hidden
+        nh= nt; //number of the previous visible tab
+      }
+      t= t->next;
+    }
+    T->ntabs_scroll= nh;
   }
-  if((dir > 0)&&(!T->islast_tab_shown) && (T->ntabs_hide < T->ntabs-1)){
-    T->ntabs_hide++;
+  if((dir > 0)&&(!T->islast_tab_shown) && (T->ntabs_scroll < T->ntabs-1)){
+    nh= T->ntabs_scroll+1;  //locate next tab
+    for( t= T->tabs, n= nh; (n > 0)&&(t != NULL); n-- ){
+      t= t->next;
+    }
+    if( t != NULL){
+      //skip hidden tabs
+      while( (t != NULL) && ((t->flags & TTBF_HIDDEN) != 0) ){
+        nh++;
+        t= t->next;
+      }
+      if( t != NULL){
+        T->ntabs_scroll= nh;
+      }
+    }
   }
-  if( nhide != T->ntabs_hide ){
+  if( nhide != T->ntabs_scroll ){
     //update hilight
     set_hilight_off();  //clear previous hilight
     ttb.philight= getButtonFromXY(T, x, y); //set new hilight
@@ -1005,19 +1076,21 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
         y= p->bary1;
         draw_fill_img(cr, &(T->img[TTBI_TB_TABBACK]), x, y, T->barwidth, p->bary2 );
         x += T->tabxmargin;
-        for( t= T->tabs, nhide= T->ntabs_hide; (nhide > 0)&&(t != NULL); nhide-- ){
+        for( t= T->tabs, nhide= T->ntabs_scroll; (nhide > 0)&&(t != NULL); nhide-- ){
           t= t->next; //skip hidden tabs (scroll support)
         }
         for( ; (t != NULL); t= t->next ){
-          if( need_redraw( event, x, y, x+t->barx2, y+t->bary2) ){
-            if( (t->flags & TTBF_ACTIVE) != 0 ){
-              ta= t;
-              xa= x;
-            }else{
-              draw_tab( T, cr, t, x, y );
+          if( (t->flags & TTBF_HIDDEN) == 0 ){  //skip hidden tabs
+            if( need_redraw( event, x, y, x+t->barx2, y+t->bary2) ){
+              if( (t->flags & TTBF_ACTIVE) != 0 ){
+                ta= t;
+                xa= x;
+              }else{
+                draw_tab( T, cr, t, x, y );
+              }
             }
+            x += t->barx2 + T->tabxsep;
           }
-          x += t->barx2 + T->tabxsep;
         }
         T->islast_tab_shown= (T->barwidth >= x );
         //draw the active tab over the other tabs
@@ -1027,7 +1100,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
         T->xscleft= -1;
         T->xscright= -1;
         //draw scroll indicator over the tabs
-        if( T->ntabs_hide > 0 ){
+        if( T->ntabs_scroll > 0 ){
           T->xscleft= p->barx1+T->tabxmargin;
           h= TTBI_TB_TAB_NSL;
           if( (phi != NULL)&&(phi==ttb.phipress)&&(phi->flags==TTBF_SCROLL_BUT)&&(phi->num==-1)){
@@ -1519,10 +1592,8 @@ static int ltoolbar_addtabs(lua_State *L) {
       if( T->tabtexty < 0){
         T->tabtexty= 0;
       }
-
-      calc_tabnode_width(T);
       T->tab_node->bary1 -= T->ymargin;
-      T->tabheight= 0; //use the tallest image
+      T->tabheight= T->tabtexth; //use the tallest image or text
       for(i= TTBI_TB_TABBACK; i <= TTBI_TB_ATAB3; i++ ){
         if( T->tabheight < T->img[i].height ){
           T->tabheight= T->img[i].height;
@@ -1530,6 +1601,8 @@ static int ltoolbar_addtabs(lua_State *L) {
       }
       T->tab_node->bary2= T->tab_node->bary1 + T->tabheight;
       T->closeintabs= lua_toboolean(L,3);
+      //update tabs width
+      calc_tabnode_width(T);
       redraw_button(T, NULL); //redraw the complete toolbar
     }
   }
@@ -1606,8 +1679,13 @@ static int ltoolbar_deletetab(lua_State *L) {
       kprev->next= k->next;
     }
     T->ntabs--;
-    T->tabwidth -= k->barx2;
+    if( (k->flags & TTBF_HIDDEN) == 0 ){
+      T->ntabs_nothidden--;
+      T->tabwidth -= k->barx2;
+    }
     kill_toolbar_node(k);
+    //update tabs width
+    calc_tabnode_width(T);
     redraw_tabs_end(T);
   }
   return 0;
@@ -1634,23 +1712,31 @@ static int ltoolbar_modifiedtab(lua_State *L) {
   return 0;
 }
 
+/** `toolbar.hidetab(num,hide)` Lua function. */
+static int ltoolbar_hidetab(lua_State *L) {
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  hide_ttb_tab( T, lua_tointeger(L, 1), lua_toboolean(L,2));
+  return 0;
+}
+
 static void register_toolbar(lua_State *L) {
   lua_newtable(L);
-  l_setcfunction(L, -1, "new",      ltoolbar_new);	      //create a new toolbar
-  l_setcfunction(L, -1, "adjust",   ltoolbar_adjust);	    //optionaly fine tune some parameters
-  l_setcfunction(L, -1, "seltoolbar",ltoolbar_seltoolbar);//select which toolbar to edit
-  l_setcfunction(L, -1, "addbutton",ltoolbar_addbutton);  //add buttons
-  l_setcfunction(L, -1, "addspace", ltoolbar_addspace);   //add some space
-  l_setcfunction(L, -1, "gotopos",  ltoolbar_gotopos);	  //change next button position
-  l_setcfunction(L, -1, "show",     ltoolbar_show);	      //show/hide toolbar
-  l_setcfunction(L, -1, "enable",   ltoolbar_enable);	    //enable/disable a button
-  l_setcfunction(L, -1, "seticon",  ltoolbar_seticon);	  //change a button or TOOLBAR icon
-  l_setcfunction(L, -1, "addtabs",  ltoolbar_addtabs);    //show tabs in the toolbar
+  l_setcfunction(L, -1, "new",          ltoolbar_new);	        //create a new toolbar
+  l_setcfunction(L, -1, "adjust",       ltoolbar_adjust);	      //optionaly fine tune some parameters
+  l_setcfunction(L, -1, "seltoolbar",   ltoolbar_seltoolbar);   //select which toolbar to edit
+  l_setcfunction(L, -1, "addbutton",    ltoolbar_addbutton);    //add buttons
+  l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
+  l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);	    //change next button position
+  l_setcfunction(L, -1, "show",         ltoolbar_show);	        //show/hide toolbar
+  l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
+  l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button or TOOLBAR icon
+  l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //show tabs in the toolbar
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
-  l_setcfunction(L, -1, "settab",   ltoolbar_settab);     //set tab n
-  l_setcfunction(L, -1, "deletetab",ltoolbar_deletetab);  //delete tab n
-  l_setcfunction(L, -1, "activatetab", ltoolbar_activatetab); //activate tab n
-  l_setcfunction(L, -1, "enabletab", ltoolbar_enabletab); //enable/disable tab n
-  l_setcfunction(L, -1, "modifiedtab", ltoolbar_modifiedtab); //show/hide changed indicator in tab n
+  l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab n
+  l_setcfunction(L, -1, "deletetab",    ltoolbar_deletetab);    //delete tab n
+  l_setcfunction(L, -1, "activatetab",  ltoolbar_activatetab);  //activate tab n
+  l_setcfunction(L, -1, "enabletab",    ltoolbar_enabletab);    //enable/disable tab n
+  l_setcfunction(L, -1, "modifiedtab",  ltoolbar_modifiedtab);  //show/hide changed indicator in tab n
+  l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab n
   lua_setglobal(L, "toolbar");
 }

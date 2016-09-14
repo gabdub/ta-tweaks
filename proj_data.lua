@@ -687,12 +687,30 @@ end
 function Proj.next_buffer()
   local nb= _BUFFERS[buffer]+1
   if nb > #_BUFFERS then nb= 1 end
+  if toolbar then
+    local retry= 3
+    --if project files are not shown in tabs, skip them
+    while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
+      nb=nb+1
+      if nb > #_BUFFERS then nb= 1 end
+      retry=retry-1
+    end
+  end
   Proj.goto_buffer(nb)
 end
 
 function Proj.prev_buffer()
   local nb= _BUFFERS[buffer]-1
   if nb < 1 then nb= #_BUFFERS end
+  if toolbar then
+    local retry= 3
+    --if project files are not shown in tabs, skip them
+    while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
+      nb=nb-1
+      if nb < 1 then nb= #_BUFFERS end
+      retry=retry-1
+    end
+  end
   Proj.goto_buffer(nb)
 end
 
