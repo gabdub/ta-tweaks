@@ -4,24 +4,23 @@ ___This is a collection of my Textadept tweaks___:
 ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform text editor: http://foicica.com/textadept/
 
   __goto_nearest.lua__ (based on http://foicica.com/wiki/goto-nearest-occurrence): this module adds the following bindings:
+  * __F3__ goto nearest occurrence FORWARD
+  * __CTRL+F3__: goto nearest occurrence BACKWARD
+  * __ALT+F3__: goto nearest occurrence CHOOSE SEARCH OPTIONS
+  * __SHIFT+F3__: ASK + goto nearest occurrence FORWARD
+  * __CTRL+SHIFT+F3__: goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
+  * __SHIFT+ALT+F__: Search for text in all project files (requires project.lua)
 
-    * F3              goto nearest occurrence FORWARD
-    * CTRL+F3:        goto nearest occurrence BACKWARD
-    * ALT+F3:         goto nearest occurrence CHOOSE SEARCH OPTIONS
-    * SHIFT+F3:       ASK + goto nearest occurrence FORWARD
-    * CTRL+SHIFT+F3:  goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
-    * SHIFT+ALT+F     Search for text in all project files (requires project.lua)
-
-__Features:__
-* Textadept version 8 and 9 compatible
-* Quick search of the selected text (if not text is selected, repeat last search)
-* All the buffers use the same 'last searched text' and search options
-* Based on Ultra-Edit editor F3 search key
-* Four search options:
- * 'Word:no + Ignore case (soft match)'
- * 'Word:no + Match case'
- * 'Word:yes + Ignore case'
- * 'Word:yes + Match case (strict match)'
+  __Features:__
+  * Textadept version 8 and 9 compatible
+  * Quick search of the selected text (if not text is selected, repeat last search)
+  * All the buffers use the same 'last searched text' and search options
+  * Based on Ultra-Edit editor F3 search key
+  * Four search options:
+    * 'Word:no + Ignore case (soft match)'
+    * 'Word:no + Match case'
+    * 'Word:yes + Ignore case'
+    * 'Word:yes + Match case (strict match)'
 
 __Usage:__
 Copy  _goto_nearest.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
@@ -36,8 +35,8 @@ keys.cf =  keys.sf3
 
   __ctrl_tab_mru.lua__ : this module adds the following bindings:
 
-    * CTRL+TAB:        goto next buffer using a MRU list
-    * CTRL+SHIFT+TAB:  goto previous buffer
+  * __CTRL+TAB__: goto next buffer using a MRU list
+  * __CTRL+SHIFT+TAB__: goto previous buffer
 
 __Features:__
 * Textadept version 8 and 9 compatible
@@ -54,21 +53,21 @@ require('ctrl_tab_mru')
 
   __project.lua__ : this module adds the following bindings:
 
-  * F4:     (in project view)   Toggle project file mode (edit / select)
-            (in a regular file) Go to project view
-  * SHIFT+F4:                   Show/Hide project view
-  * F5:     (in project view)   Refresh syntax highlighting + project folding
-  * CTRL+H: (in project view)   Show the complete path of the file in the selected row
-  * CTRL+SHIFT+O: Snapopen project files
-  * F11:       	  Search for a word in the project CTAG file (save current position)
-  * SHIFT+F11:    Navigate to previous position
-  * SHIFT+F12:    Navigate to next position
-	* CONTROL+F11:  Store current position
-	* CONTROL+F12:  Clear all positions
-	* SHIFT+ALT+F:  Search for text in all project files
-	* ESC:		      Close search view, then, moves between project and files view
-	* CONTROL+PgUp: Previous buffer
-	* CONTROL+PgDn: Next buffer
+  * __F4__: _(in project view)_ Toggle project file mode (edit / select)
+  * __F4__: _(in a regular file)_ Go to project view
+  * __SHIFT+F4__: Show/Hide project view
+  * __F5__: _(in project view)_ Refresh syntax highlighting + project folding
+  * __CTRL+H__: _(in project view)_ Show the complete path of the file in the selected row
+  * __CTRL+SHIFT+O__: Snapopen project files
+  * __F11__: Search for a word in the project CTAG file (save current position)
+  * __SHIFT+F11__: Navigate to previous position
+  * __SHIFT+F12__: Navigate to next position
+  * __CONTROL+F11__: Store current position
+  * __CONTROL+F12__: Clear all positions
+  * __SHIFT+ALT+F__: Search for text in all project files
+  * __ESC__: Close search view, then, moves between project and files view
+  * __CONTROL+PgUp__: Previous buffer
+  * __CONTROL+PgDn__: Next buffer
 
 __Features:__
 * Textadept version 8 and 9 compatible
@@ -107,7 +106,7 @@ require('project')
 ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
 
 # tatoolbar
-This code adds a toolbar to textadept (compiling is required):
+This code adds a toolbar to textadept (__compiling is required__):
 
 The "toolbar" object is added to textadept with the following functions:
 
