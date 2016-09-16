@@ -78,7 +78,8 @@ local function proj_contextm_sel()
       {_L['_Open'] .. ' file  [Enter]', Proj.open_sel_file},
       {'_Snapopen',                     Proj.snapopen},
       {''},
-      {_L['_Edit'] .. ' project',       Proj.toggle_selectionmode},
+      {_L['_Edit'] .. ' project',       Proj.change_proj_ed_mode},
+      {'_Hide/show project',            Proj.toggle_projview},
       {''},
       {'Add files from a _Dir',         Proj.add_dir_files},
       {'_Project Search',               Proj.search_in_files },
@@ -91,7 +92,7 @@ local function proj_contextm_edit()
   if proj_context_menu_init(2) then
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
-      {'_End edit',   Proj.toggle_selectionmode}
+      {'_End edit',   Proj.change_proj_ed_mode}
     }
   end
 end
@@ -101,17 +102,17 @@ local function proj_contextm_file()
   if proj_context_menu_init(3) then
     textadept.menu.context_menu[ Proj.cmenu_idx ]= {
       title='Project',
-      {'_Add this file',           Proj.add_this_file},
-      {'Add all open _Files',      Proj.add_all_files},
-      {'Add files from a _Dir',    Proj.add_dir_files},
+      {'_Add this file',        Proj.add_this_file},
+      {'Add all open _Files',   Proj.add_all_files},
+      {'Add files from a _Dir', Proj.add_dir_files},
       {''},
-      {'Project _Search',     Proj.search_in_files },
-      {'Goto _Tag',           Proj.goto_tag},
-      {'_Add _position',      Proj.append_current_pos},
-      {'_Prev position',      Proj.goto_prev_pos},
-      {'Ne_xt position',      Proj.goto_next_pos},
+      {'Project _Search',       Proj.search_in_files },
+      {'Goto _Tag',             Proj.goto_tag},
+      {'_Add _position',        Proj.append_current_pos},
+      {'_Prev position',        Proj.goto_prev_pos},
+      {'Ne_xt position',        Proj.goto_next_pos},
       {''},
-      {'Trim trailing spaces', Proj.trim_trailing_spaces},
+      {'_Hide/show project',    Proj.toggle_projview},
     }
   end
 end
@@ -452,7 +453,7 @@ events_connect(events.KEYPRESS, function(code)
 end)
 
 --toggle project between selection and EDIT modes
-local function change_proj_ed_mode()
+function Proj.change_proj_ed_mode()
   if buffer._project_select ~= nil then
     --project: toggle mode
     if view.size ~= nil then
@@ -517,7 +518,7 @@ function Proj.toggle_projview()
     if proj_in_editmode() then
       --project in edit mode
       Proj.goto_projview(Proj.PRJV_PROJECT)
-      change_proj_ed_mode() --return to select mode
+      Proj.change_proj_ed_mode() --return to select mode
       return
     end
     --select mode
@@ -694,7 +695,7 @@ keys.cao= Proj.open_recent_file
 keys.cO = Proj.snapopen
 keys.caO= Proj.qopen_curdir
 keys.cu = Proj.qopen_user
-keys.f4 = change_proj_ed_mode
+keys.f4 = Proj.change_proj_ed_mode
 keys.sf4= Proj.toggle_projview
 keys.f5 = refresh_proj_hilight
 keys.cb = Proj.switch_buffer
