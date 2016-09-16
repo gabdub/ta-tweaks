@@ -12,6 +12,7 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
   * __SHIFT+ALT+F__: Search for text in all project files (requires project.lua)
 
   __Features:__
+
   * Textadept version 8 and 9 compatible
   * Quick search of the selected text (if not text is selected, repeat last search)
   * All the buffers use the same 'last searched text' and search options
@@ -33,10 +34,10 @@ _Optional:_
 keys.cf =  keys.sf3
 ```
 
-  __ctrl_tab_mru.lua__ : this module adds the following bindings:
+__ctrl_tab_mru.lua__ : this module adds the following bindings:
 
-  * __CTRL+TAB__: goto next buffer using a MRU list
-  * __CTRL+SHIFT+TAB__: goto previous buffer
+* __CTRL+TAB__: goto next buffer using a MRU list
+* __CTRL+SHIFT+TAB__: goto previous buffer
 
 __Features:__
 * Textadept version 8 and 9 compatible
@@ -51,23 +52,23 @@ Copy  _ctrl_tab_mru.lua_ to your __~/.textadept/__ folder and add the following 
 require('ctrl_tab_mru')
 ```
 
-  __project.lua__ : this module adds the following bindings:
+__project.lua__ : this module adds the following bindings:
 
-  * __F4__: _(in project view)_ Toggle project file mode (edit / select)
-  * __F4__: _(in a regular file)_ Go to project view
-  * __SHIFT+F4__: Show/Hide project view
-  * __F5__: _(in project view)_ Refresh syntax highlighting + project folding
-  * __CTRL+H__: _(in project view)_ Show the complete path of the file in the selected row
-  * __CTRL+SHIFT+O__: Snapopen project files
-  * __F11__: Search for a word in the project CTAG file (save current position)
-  * __SHIFT+F11__: Navigate to previous position
-  * __SHIFT+F12__: Navigate to next position
-  * __CONTROL+F11__: Store current position
-  * __CONTROL+F12__: Clear all positions
-  * __SHIFT+ALT+F__: Search for text in all project files
-  * __ESC__: Close search view, then, moves between project and files view
-  * __CONTROL+PgUp__: Previous buffer
-  * __CONTROL+PgDn__: Next buffer
+* __F4__: _(in project view)_ Toggle project file mode (edit / select)
+* __F4__: _(in a regular file)_ Go to project view
+* __SHIFT+F4__: Show/Hide project view
+* __F5__: _(in project view)_ Refresh syntax highlighting + project folding
+* __CTRL+H__: _(in project view)_ Show the complete path of the file in the selected row
+* __CTRL+SHIFT+O__: Snapopen project files
+* __F11__: Search for a word in the project CTAG file (save current position)
+* __SHIFT+F11__: Navigate to previous position
+* __SHIFT+F12__: Navigate to next position
+* __CONTROL+F11__: Store current position
+* __CONTROL+F12__: Clear all positions
+* __SHIFT+ALT+F__: Search for text in all project files
+* __ESC__: Close search view, then, moves between project and files view
+* __CONTROL+PgUp__: Previous buffer
+* __CONTROL+PgDn__: Next buffer
 
 __Features:__
 * Textadept version 8 and 9 compatible
@@ -223,7 +224,7 @@ __Some examples:__
 
 # tabs & theming
 
-__Some examples usign tabs and themes:__
+__Some examples using tabs and themes:__
 
 **theme bar-sm-light**
 
