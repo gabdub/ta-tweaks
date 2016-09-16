@@ -4,11 +4,19 @@ if toolbar then
     toolbar.addbutton(name,tooltip)
     toolbar[name]= func
     if icon == nil then
-      icon= toolbar.iconspath..name..".png"
+      toolbar.setthemeicon(name,name) --no icon: use 'name' from theme
+    elseif string.match(icon,"%.png") == nil then
+      toolbar.setthemeicon(name,icon) --no ".png": use 'icon' from theme
+    else
+      toolbar.seticon(name,icon)  --"icon.png": use the given icon file
     end
-    toolbar.seticon(name,icon)
   end
-  
+
+  function toolbar.setthemeicon(name,icon)
+    --set button icon, get icon from theme's icons folder
+    toolbar.seticon(name,toolbar.iconspath..icon..".png")
+  end
+
   function toolbar.isbufhide(buf)
     return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
   end

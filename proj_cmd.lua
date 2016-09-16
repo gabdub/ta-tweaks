@@ -355,7 +355,7 @@ function Proj.new_project()
   Proj.add_recentproject(filename)
 
   -- project in SELECTION mode without focus--
-  Proj.set_selectionmode(true)
+  Proj.set_selectionmode(buffer,true)
   Proj.show_lost_focus(buffer)
   --update ui
   Proj.updating_ui= 1
@@ -470,6 +470,7 @@ function Proj.close_project(keepviews)
 
     if io.close_buffer() then
       ui.statusbar_text= 'Project closed'
+      Proj.update_projview()  --update project view button
       if not keepviews then
         Proj.close_search_view()
         if #_VIEWS > 1 then

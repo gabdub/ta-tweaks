@@ -60,6 +60,8 @@ if toolbar then
 
   --toolbar.seltoolbar(1)
   --add some buttons
+  toolbar.cmd("tog-projview",           Proj.toggle_projview,"Show/Hide project [Shift+F4]", "ttb-proj-o")
+
   toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
   toolbar.cmd("go-next",                Proj.goto_next_pos,  "Next position [Shift+F12]")
   Proj.update_go_toolbar()

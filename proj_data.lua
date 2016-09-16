@@ -60,15 +60,27 @@ function Proj.load_projects(filename)
           if file == recent[i] then exists = true break end
         end
         if not exists then Proj.recent_projects[#Proj.recent_projects + 1] = file end
+
+      elseif line:find('^is_visible:') then
+        Proj.is_visible= tonumber(line:match('^is_visible: (.+)$'))
+
+      elseif line:find('^edit_width:') then
+        Proj.edit_width= tonumber(line:match('^edit_width: (.+)$'))
+        if Proj.edit_width < 50 then Proj.edit_width= 600 end
+
+      elseif line:find('^select_width:') then
+        Proj.select_width= tonumber(line:match('^select_width: (.+)$'))
+        if Proj.select_width < 50 then Proj.select_width= 200 end
       end
     end
     f:close()
   end
   Proj.list_change = false
+  Proj._read_is_visible= Proj.is_visible
 end
 
 function Proj.save_projects(filename)
-  if Proj.list_change then
+  if Proj.list_change or Proj._read_is_visible ~= Proj.is_visible then
     local f = io.open(filename, 'wb')
     if f then
       local savedata = {}
@@ -76,6 +88,9 @@ function Proj.save_projects(filename)
         if i > Proj.MAX_RECENT_FILES then break end
         savedata[#savedata + 1] = ("recent: %s"):format(Proj.recent_projects[i])
       end
+      savedata[#savedata + 1] = ("is_visible: %d"):format(Proj.is_visible)
+      savedata[#savedata + 1] = ("edit_width: %d"):format(Proj.edit_width)
+      savedata[#savedata + 1] = ("select_width: %d"):format(Proj.select_width)
       f:write(table.concat(savedata, '\n'))
       f:close()
     end
@@ -106,7 +121,10 @@ events.connect(events.INITIALIZED, function()
   --replace some menu commands with the corresponding project version
   Proj.change_menu_cmds()
 
-  --load recent projects list
+  Proj.is_visible= 1  --0:hidden  1:shown in selection mode  2:shown in edit mode
+  Proj.edit_width= 600
+  Proj.select_width= 200
+  --load recent projects list / project preferences
   if Proj.SAVE_ON_QUIT then Proj.load_projects(Proj.PROJECTS_FILE) end
 
   --check if search results is open
@@ -131,7 +149,14 @@ events.connect(events.INITIALIZED, function()
       else
         view:goto_buffer(buff)
       end
-      Proj.ifproj_setselectionmode(buff)
+      if Proj.is_visible == 2 then
+        --2:shown in edit mode
+        Proj.ifproj_seteditmode(buff)
+      else
+        --0:hidden  1:shown in selection mode
+        Proj.ifproj_setselectionmode(buff)
+        Proj.is_visible= Proj._read_is_visible  --keep 0 is hidden
+      end
       --start in files view
       Proj.goto_filesview()
       --check that at least there's one regular buffer
@@ -140,12 +165,14 @@ events.connect(events.INITIALIZED, function()
         --no regular buffer found
         Proj.go_file() --open a blank file
       end
+      Proj.update_projview() --update toggle project view button
       return
     end
   end
 
   --no project file found
   Proj.update_after_switch()
+  Proj.update_projview() --gray toggle project view button
 end)
 
 -- Saves recent projects list on quit.
@@ -662,6 +689,7 @@ function Proj.close_all_buffers()
   Proj.close_project(false)
   --close all buffers
   io.close_all_buffers()
+  Proj.update_projview()  --update project view button
 end
 
 function Proj.goto_buffer(nb)

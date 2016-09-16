@@ -4,12 +4,12 @@ local _L = _L
 
 -----------------CURRENT LINE-------------------
 --project is in SELECTION mode with focus--
-local function proj_show_sel_w_focus()
+local function proj_show_sel_w_focus(buff)
   --hide line numbers
-  buffer.margin_width_n[0] = 0
+  buff.margin_width_n[0] = 0
   --highlight current line as selected
-  buffer.caret_width= 0
-  buffer.caret_line_back = 0x88acdf --property['color.base10'] -0x202020
+  buff.caret_width= 0
+  buff.caret_line_back = 0x88acdf --property['color.base10'] -0x202020
 end
 
 --lost focus: if project is in SELECTION mode change current line
@@ -22,14 +22,14 @@ function Proj.show_lost_focus(p_buffer)
 end
 
 --restore current line default settings
-local function proj_show_default()
+local function proj_show_default(buff)
   --project in EDIT mode / default text file--
   --show line numbers
-  local width = 4 * buffer:text_width(buffer.STYLE_LINENUMBER, '9')
-  buffer.margin_width_n[0] = width + (not CURSES and 4 or 0)
+  local width = 4 * buff:text_width(buffer.STYLE_LINENUMBER, '9')
+  buff.margin_width_n[0] = width + (not CURSES and 4 or 0)
   --return to default
-  buffer.caret_width= 2
-  buffer.caret_line_back = 0xf5f9ff --property['color.base06']
+  buff.caret_width= 2
+  buff.caret_line_back = 0xf5f9ff --property['color.base06']
 end
 
 -----------------MENU/CONTEXT MENU-------------------
@@ -118,10 +118,24 @@ end
 
 ------------------PROJECT CONTROL-------------------
 --if the current file is a project, enter SELECTION mode--
-function Proj.ifproj_setselectionmode()
-  if Proj.get_buffertype() >= Proj.PRJB_PROJ_MIN then
-    Proj.set_selectionmode(true)
-    if buffer.filename then
+function Proj.ifproj_setselectionmode(p_buffer)
+  if not p_buffer then p_buffer = buffer end  --use current buffer?
+  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+    Proj.set_selectionmode(p_buffer,true)
+    if p_buffer.filename then
+      ui.statusbar_text= 'Project file =' .. buffer.filename
+    end
+    return true
+  end
+  return false
+end
+
+--if the current file is a project, enter EDIT mode--
+function Proj.ifproj_seteditmode(buff)
+  if not p_buffer then p_buffer = buffer end  --use current buffer?
+  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+    Proj.set_selectionmode(p_buffer,false)
+    if p_buffer.filename then
       ui.statusbar_text= 'Project file =' .. buffer.filename
     end
     return true
@@ -133,7 +147,7 @@ end
 function Proj.toggle_selectionmode()
   local mode= Proj.get_buffertype()
   if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then
-    Proj.set_selectionmode(mode == Proj.PRJB_PROJ_EDIT) --toggle current mode
+    Proj.set_selectionmode(buffer, (mode == Proj.PRJB_PROJ_EDIT)) --toggle current mode
   else
     --if the current file is a project, enter SELECTION mode--
     if not Proj.ifproj_setselectionmode() then
@@ -145,42 +159,46 @@ end
 
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
-function Proj.set_selectionmode(selmode)
+function Proj.set_selectionmode(buff,selmode)
   local editmode= not selmode
   --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
-  buffer._project_select= selmode
+  buff._project_select= selmode
   --selection is read-only
-  buffer.read_only= selmode
+  buff.read_only= selmode
   --in SELECTION mode the current line is always visible
-  buffer.caret_line_visible_always= selmode
+  buff.caret_line_visible_always= selmode
   --and the scrollbars hidden
-  buffer.h_scroll_bar= editmode
-  buffer.v_scroll_bar= editmode
+  buff.h_scroll_bar= editmode
+  buff.v_scroll_bar= editmode
 
   if selmode then
     --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-    Proj.parse_projectbuffer(buffer)
+    Proj.parse_projectbuffer(buff)
     --set lexer to highlight groups and hidden control info ":: ... ::"
-    buffer:set_lexer('myproj')
+    buff:set_lexer('myproj')
     --project in SELECTION mode--
-    proj_show_sel_w_focus()
+    proj_show_sel_w_focus(buff)
+
     --set SELECTION mode context menu
     proj_contextm_sel()
 
     --fold the requested folders
-    for i= #buffer.proj_fold_row, 1, -1 do
-      buffer.toggle_fold(buffer.proj_fold_row[i])
+    for i= #buff.proj_fold_row, 1, -1 do
+      buff.toggle_fold(buff.proj_fold_row[i])
     end
+    Proj.is_visible= 1  --1:shown in selection mode
   else
     --edit project as a text file (show control info)
-    buffer:set_lexer('text')
+    buff:set_lexer('text')
     --set EDIT mode context menu
     proj_contextm_edit()
     --project in EDIT mode--
-    proj_show_default()
+    proj_show_default(buff)
+    Proj.is_visible= 2  --2:shown in edit mode
   end
   if toolbar then
-    toolbar.seltab(_BUFFERS[buffer]) --hide/show and select tab in edit mode
+    Proj.update_projview()  --update project view button
+    toolbar.seltab(_BUFFERS[buff]) --hide/show and select tab in edit mode
   end
 end
 
@@ -307,7 +325,7 @@ function Proj.update_after_switch()
   Proj.updating_ui= 1
   if buffer._project_select == nil then
     --normal file: restore current line default settings
-    proj_show_default()
+    proj_show_default(buffer)
     --set regular file context menu
     proj_contextm_file()
     --try to select the current file in the project
@@ -330,12 +348,12 @@ function Proj.update_after_switch()
         -- project in SELECTION mode: set "myprog" lexer --
         buffer:set_lexer('myproj')
         --project in SELECTION mode--
-        proj_show_sel_w_focus()
+        proj_show_sel_w_focus(buffer)
         --set SELECTION mode context menu
         proj_contextm_sel()
       else
         -- project in EDIT mode: restore current line default settings --
-        proj_show_default()
+        proj_show_default(buffer)
         --set EDIT mode context menu
         proj_contextm_edit()
       end
@@ -422,6 +440,12 @@ events_connect(events.KEYPRESS, function(code)
         local nv= _VIEWS[view] +1
         if nv > #_VIEWS then nv=1 end
         my_goto_view(nv)
+        if nv == Proj.prefview[Proj.PRJV_PROJECT] and Proj.is_visible == 0 then
+          --in project's view, force visibility
+          Proj.is_visible= 1  --1:shown in selection mode
+          view.size= Proj.select_width
+          Proj.update_projview()
+        end
       end
     end
   end
@@ -433,17 +457,100 @@ local function change_proj_ed_mode()
     --project: toggle mode
     if view.size ~= nil then
       if buffer._project_select then
-        view.size= math.floor(view.size*3.0)
+        if Proj.select_width ~= view.size then
+          Proj.select_width= view.size  --save current width
+          if Proj.select_width < 50 then Proj.select_width= 200 end
+          Proj.list_change= true  --save it on exit
+        end
+        Proj.is_visible= 2  --2:shown in edit mode
+        view.size= Proj.edit_width
       else
-        view.size= math.floor(view.size/3.0)
+        if Proj.edit_width ~= view.size then
+          Proj.edit_width= view.size  --save current width
+          if Proj.edit_width < 50 then Proj.edit_width= 600 end
+          Proj.list_change= true  --save it on exit
+        end
+        Proj.is_visible= 1  --1:shown in selection mode
+        view.size= Proj.select_width
       end
     end
     Proj.toggle_selectionmode()
     buffer.colourise(buffer, 0, -1)
+    Proj.update_projview()
   else
     --file: goto project view
-    if Proj.get_projectbuffer(true) then
+    Proj.show_projview()
+  end
+end
+
+local function ena_toggle_projview()
+  local ena= Proj.get_projectbuffer(true)
+  if toolbar then
+    local b="tog-projview"
+    toolbar.enable(b, ena) --gray button
+    --not enabled: "GRAYED" selection mode icon
+    if not ena then toolbar.setthemeicon(b, "ttb-proj-o") end
+  end
+  return ena
+end
+
+local function proj_in_editmode()
+  local pbuf= Proj.get_projectbuffer(true)
+  return pbuf and (Proj.get_buffertype(pbuf) == Proj.PRJB_PROJ_EDIT)
+end
+
+function Proj.show_projview()
+  --Show project / goto project view
+  if Proj.get_projectbuffer(true) then
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+    if Proj.is_visible == 0 then
+      Proj.is_visible= 1  --1:shown in selection mode
+      view.size= Proj.select_width
+      Proj.update_projview()
+    end
+  end
+end
+
+function Proj.toggle_projview()
+  --Show/Hide project
+  if ena_toggle_projview() then
+    if proj_in_editmode() then
+      --project in edit mode
       Proj.goto_projview(Proj.PRJV_PROJECT)
+      change_proj_ed_mode() --return to select mode
+      return
+    end
+    --select mode
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+    if view.size then
+      if Proj.is_visible > 0 then
+        Proj.is_visible= 0  --0:hidden
+        if Proj.select_width ~= view.size then
+          Proj.select_width= view.size  --save current width
+          if Proj.select_width < 50 then Proj.select_width= 200 end
+          Proj.list_change= true  --save it on exit
+        end
+        view.size= 0
+      else
+        Proj.is_visible= 1  --1:shown in selection mode
+        view.size= Proj.select_width
+      end
+      Proj.update_projview()
+    end
+    Proj.goto_filesview()
+  end
+end
+
+function Proj.update_projview()
+  --update toggle project view button
+  if ena_toggle_projview() and toolbar then
+    local b="tog-projview"
+    if Proj.is_visible == 2 then      --2:shown in edit mode
+      toolbar.setthemeicon(b, "ttb-proj-e")
+    elseif Proj.is_visible == 1 then  --1:shown in selection mode
+      toolbar.setthemeicon(b, "ttb-proj-o")
+    else                              --0:hidden
+      toolbar.setthemeicon(b, "ttb-proj-c")
     end
   end
 end
@@ -574,6 +681,7 @@ end
 -- Control+Shift+Alt+O = open current directory
 -- Control+U =        quick open user folder
 -- F4 =               toggle project between selection and EDIT modes
+-- SHIFT+F4 =         toggle project visibility
 -- F5 =               refresh syntax highlighting + project folding
 -- Control+B=         switch buffer
 -- Control+PgUp=      previous buffer
@@ -587,6 +695,7 @@ keys.cO = Proj.snapopen
 keys.caO= Proj.qopen_curdir
 keys.cu = Proj.qopen_user
 keys.f4 = change_proj_ed_mode
+keys.sf4= Proj.toggle_projview
 keys.f5 = refresh_proj_hilight
 keys.cb = Proj.switch_buffer
 keys['cpgup'] = Proj.prev_buffer

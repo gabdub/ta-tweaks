@@ -54,18 +54,19 @@ require('ctrl_tab_mru')
 
   __project.lua__ : this module adds the following bindings:
 
-    * F4:     (in project view)   Toggle project file mode (edit / select)
-              (in a regular file) Go to project view
-    * F5:     (in project view)   Refresh syntax highlighting + project folding
-    * CTRL+H: (in project view)   Show the complete path of the file in the selected row
-    * CTRL+SHIFT+O: Snapopen project files
-    * F11:       	Search for a word in the project CTAG file (save current position)
-    * SHIFT+F11:    Navigate to previous position
-    * SHIFT+F12:    Navigate to next position
+  * F4:     (in project view)   Toggle project file mode (edit / select)
+            (in a regular file) Go to project view
+  * SHIFT+F4:                   Show/Hide project view
+  * F5:     (in project view)   Refresh syntax highlighting + project folding
+  * CTRL+H: (in project view)   Show the complete path of the file in the selected row
+  * CTRL+SHIFT+O: Snapopen project files
+  * F11:       	  Search for a word in the project CTAG file (save current position)
+  * SHIFT+F11:    Navigate to previous position
+  * SHIFT+F12:    Navigate to next position
 	* CONTROL+F11:  Store current position
 	* CONTROL+F12:  Clear all positions
 	* SHIFT+ALT+F:  Search for text in all project files
-	* ESC:		    Close search view, then, moves between project and files view
+	* ESC:		      Close search view, then, moves between project and files view
 	* CONTROL+PgUp: Previous buffer
 	* CONTROL+PgDn: Next buffer
 
