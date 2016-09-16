@@ -434,6 +434,10 @@ events_connect(events.KEYPRESS, function(code)
   local ks= keys.KEYSYMS[code]
   if ks == '\n' or ks == 'kpenter' then  --"Enter" or "Return"
     open_proj_currrow()
+    if Proj.temporal_view then
+      Proj.temporal_view= false
+      Proj.toggle_projview()
+    end
   elseif ks == 'esc' then --"Escape"
     if not Proj.close_search_view() then
       --change view
@@ -446,6 +450,11 @@ events_connect(events.KEYPRESS, function(code)
           Proj.is_visible= 1  --1:shown in selection mode
           view.size= Proj.select_width
           Proj.update_projview()
+          Proj.temporal_view= true  --close if escape is again pressed or a file is opened
+
+        elseif Proj.temporal_view then
+          Proj.temporal_view= false
+          Proj.toggle_projview()
         end
       end
     end
