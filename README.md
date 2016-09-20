@@ -114,23 +114,25 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons
 * toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
 * toolbar._seltoolbar(toolbar-num(int) or isvertical(bool))_ select which toolbar to edit
-* toolbar._addbutton(button-name,tooltiptext)_ add some buttons
-* toolbar._addspace([space],[hidebar])_ add some space (separator)
-* toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels
-* toolbar._gotopos(x,y)_ change next button position to x,y (in pixels)
-* toolbar._show(show)_ show/hide the toolbar
-* toolbar._enable(button-name,isenabled)_ enable/disable a button given its name
-* toolbar._seticon(button-name,icon,[nicon])_ set/change a button icon (nicon: 0=normal/separator,1:disabled,2:hilighted,3:pressed)
-* toolbar._seticon("TOOLBAR",icon,[nicon])_ set/change a global toolbar icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
+* toolbar._addbutton(button-name,tooltiptext)_ add some buttons to the current edited toolbar
+* toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited toolbar
+* toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels in the current edited toolbar
+* toolbar._gotopos(x,y)_ change next button position to x,y (in pixels) in the current edited toolbar
+* toolbar._show(show)_ show/hide the current edited toolbar
+* toolbar._enable(button-name,isenabled,[onlyinthistoolbar])_ enable/disable a button given its name
+* toolbar._seticon(button-name,icon,[nicon],[onlyinthistoolbar])_ set/change a button's icon (nicon: 0=normal/separator,1:disabled,2:hilighted,3:pressed)
+* toolbar._seticon("TOOLBAR",icon,[nicon],[onlyinthistoolbar])_ set/change a global toolbar's icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
   4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed)
-* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the toolbar
-* toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color
-* toolbar._settab(num,tab-text,tooltiptext)_ set tab n
-* toolbar._deletetab(num)_ delete tab n (decrement bigger tab-nums by 1)
-* toolbar._activatetab(num)_ activate (selects) tab n
-* toolbar._enabletab(num,enabled)_ enable/disable tab n
-* toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab n
+* toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
+* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the current edited toolbar
+* toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
+* toolbar._settab(num,tab-text,tooltiptext)_ set tab n text and tooltip, in the current edited toolbar
+* toolbar._deletetab(num)_ delete tab n (decrement bigger tab-nums by 1) from the current edited toolbar
+* toolbar._activatetab(num)_ activate (selects) tab n in the current edited toolbar
+* toolbar._enabletab(num,enabled)_ enable/disable tab n in the current edited toolbar
+* toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab n in the current edited toolbar
+* toolbar._hidetab(num,hide)_ show/hide tab n in the current edited toolbar
 
 Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
 (see some examples below)

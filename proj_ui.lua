@@ -557,10 +557,13 @@ function Proj.update_projview()
     local b="tog-projview"
     if Proj.is_visible == 2 then      --2:shown in edit mode
       toolbar.setthemeicon(b, "ttb-proj-e")
+      toolbar.settooltip(b, "End edit mode [Shift+F4]")
     elseif Proj.is_visible == 1 then  --1:shown in selection mode
       toolbar.setthemeicon(b, "ttb-proj-o")
+      toolbar.settooltip(b, "Hide project [Shift+F4]")
     else                              --0:hidden
       toolbar.setthemeicon(b, "ttb-proj-c")
+      toolbar.settooltip(b, "Show project [Shift+F4]")
     end
   end
 end

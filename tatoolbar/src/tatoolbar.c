@@ -508,7 +508,7 @@ static void activate_ttb_tab(struct toolbar_data *T, int ntab)
         //the tab is left-hidden,
         //force "no scroll" to move this tab to the rightmost position
         if( ttb.ntbhilight == T->num ){
-          set_hilight_off(); //force hilight off (only in this toolbar)
+          set_hilight_off(); //force hilight off (in this toolbar only)
         }
         clear_tooltip_text(T);
         T->ntabs_scroll= 0; //
@@ -568,7 +568,7 @@ static void activate_ttb_tab(struct toolbar_data *T, int ntab)
         T->ntabs_scroll= tabpos;
       }
       if( ttb.ntbhilight == T->num ){
-          set_hilight_off(); //force hilight off (only in this toolbar)
+          set_hilight_off(); //force hilight off (in this toolbar only)
       }
       clear_tooltip_text(T);
     }
@@ -816,6 +816,15 @@ static void ttb_change_button_img(struct toolbar_data *T, const char *name, int 
     if( set_tb_img( T, p, nimg, img ) ){
       redraw_button(T, p); //redraw button / toolbar (p==NULL)
     }
+  }
+}
+
+static void ttb_change_button_tooltip(struct toolbar_data *T, const char *name, const char *tooltip )
+{
+  struct toolbar_node * p= getButtonFromName(T, name);
+  if( p != NULL ){
+    p->tooltip= chg_alloc_str(p->tooltip, tooltip);
+    redraw_button(T, p); //redraw button
   }
 }
 
@@ -1146,7 +1155,7 @@ static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
   struct toolbar_data *T= toolbar_from_widget(widget);
 
   if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
-    //force hilight and tooltip OFF (only in this toolbar)
+    //force hilight and tooltip OFF (in this toolbar only)
     set_hilight_off();
     clear_tooltip_text(T);
   }
@@ -1536,7 +1545,7 @@ static int ltoolbar_enable(lua_State *L) {
   int i;
   const char *name= luaL_checkstring(L, 1);
   if( lua_toboolean(L,3) ){
-    //enable button only in this toolbar
+    //enable button in this toolbar only
     ttb_enable_button(toolbar_from_num(ttb.currentntb), name, lua_toboolean(L,2) );
   }else{
     //enable button in every toolbar
@@ -1553,12 +1562,29 @@ static int ltoolbar_seticon(lua_State *L) {
   const char *name= luaL_checkstring(L, 1);
   const char *img= luaL_checkstring(L, 2);
   if( lua_toboolean(L,4) ){
-    //set icon only in this toolbar
+    //set icon in this toolbar only
     ttb_change_button_img(toolbar_from_num(ttb.currentntb), name, lua_tointeger(L, 3), img );
   }else{
     //set icon in every toolbar
     for( i= 0; i < NTOOLBARS; i++){
       ttb_change_button_img(toolbar_from_num(i), name, lua_tointeger(L, 3), img );
+    }
+  }
+  return 0;
+}
+
+/** `toolbar.settooltip(name,tooltip,[onlyinthistoolbar])` Lua function. */
+static int ltoolbar_settooltip(lua_State *L) {
+  int i;
+  const char *name= luaL_checkstring(L, 1);
+  const char *tooltip= luaL_checkstring(L, 2);
+  if( lua_toboolean(L,3) ){
+    //set button's tooltip in this toolbar only
+    ttb_change_button_tooltip(toolbar_from_num(ttb.currentntb), name, tooltip );
+  }else{
+    //set button's tooltip in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_change_button_tooltip(toolbar_from_num(i), name, tooltip );
     }
   }
   return 0;
@@ -1737,6 +1763,7 @@ static void register_toolbar(lua_State *L) {
   l_setcfunction(L, -1, "show",         ltoolbar_show);	        //show/hide toolbar
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
   l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button or TOOLBAR icon
+  l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);	  //change a button tooltip
   l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //show tabs in the toolbar
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
   l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab n
