@@ -96,6 +96,7 @@ struct toolbar_data
   int ntabs_nothidden;  //number of tabs without HIDDEN flag
   int ntabs_scroll;     //number of tabs not shown at the left = scroll tab support
   int islast_tab_shown;
+  int try_scrollpack;   //after tab delete try to scroll left
   int xscleft, xscright;
 
   int barheight;
@@ -482,7 +483,7 @@ static void set_hilight_off( void )
 static void activate_ttb_tab(struct toolbar_data *T, int ntab)
 {
   struct toolbar_node *p, *t, *vistab;
-  int x, nhide, tabpos, n, prepos;
+  int x, nhide, tabpos, n;
 
   redraw_tabs_beg(T);
   t= NULL;
@@ -502,29 +503,30 @@ static void activate_ttb_tab(struct toolbar_data *T, int ntab)
   //check tab visibility (ignore this tab if hidden)
   if((t != NULL) && (T->tab_node != NULL) && (T->barwidth > 0) && ((t->flags & TTBF_HIDDEN) == 0)){
     x= T->tab_node->barx1 + T->tabxmargin;
-    n= 0;
-    prepos= 0;
     for( p= T->tabs, nhide= T->ntabs_scroll; (nhide > 0)&&(p != NULL); nhide-- ){
       if( p->num == ntab ){
-        //the tab is left-hidden, set as the second (or first) visible tab
-        //(the second is better because is not shown under the scroll button)
-        T->ntabs_scroll= prepos;
+        //the tab is left-hidden,
+        //force "no scroll" to move this tab to the rightmost position
         if( ttb.ntbhilight == T->num ){
           set_hilight_off(); //force hilight off (only in this toolbar)
         }
         clear_tooltip_text(T);
-        t= NULL;  //ready
+        T->ntabs_scroll= 0; //
+        p= T->tabs;
         break;
       }
-      if( (p->flags & TTBF_HIDDEN) == 0 ){
-        prepos= n;  //previous visible tab position
-      }
-      n++;
       p= p->next; //skip hidden tabs
     }
     vistab= p;    //first visible tab
     if( t != NULL ){
-      //not a left-hidden tab
+      if( ((p->num == ntab) || (T->try_scrollpack)) && (T->ntabs_scroll > 0) ){
+        //is the first visible tab or a tab was deleted: try to remove the left scroll button
+        T->ntabs_scroll= 0; //force "no scroll" to move this tab to the rightmost position
+        p= T->tabs;
+        vistab= p;    //first visible tab
+      }
+      T->try_scrollpack= 0; //clear pack flag
+
       for( ; (p != NULL); p= p->next ){
         if( (p->flags & TTBF_HIDDEN) == 0 ){
           if( x > T->barwidth ){
@@ -676,6 +678,7 @@ static void kill_toolbar_num( int num )
     p->ntabs_nothidden= 0;
     p->ntabs_scroll= 0;
     p->islast_tab_shown= 1;
+    p->try_scrollpack= 0;
     p->xscleft= -1;
     p->xscright= -1;
     p->tabwidth= 0;
@@ -1682,6 +1685,10 @@ static int ltoolbar_deletetab(lua_State *L) {
     if( (k->flags & TTBF_HIDDEN) == 0 ){
       T->ntabs_nothidden--;
       T->tabwidth -= k->barx2;
+    }
+    //after tab delete, try to remove the left scroll button when a new tab is activated
+    if( T->ntabs_scroll > 0 ){
+      T->try_scrollpack= 1;
     }
     kill_toolbar_node(k);
     //update tabs width
