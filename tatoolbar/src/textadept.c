@@ -2369,6 +2369,10 @@ static void new_window() {
   gtk_container_child_set(GTK_CONTAINER(paned), command_entry, "shrink", FALSE,
                           NULL);
 
+#ifdef USE_TA_TOOLBAR
+  create_tatoolbar(vbox,2);
+#endif
+
   GtkWidget *hboxs = gtk_hbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(vbox), hboxs, FALSE, FALSE, 1);
 

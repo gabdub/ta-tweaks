@@ -57,7 +57,7 @@ if toolbar then
     set_chg_tab(ntab,buf)
   end
 
-  events.connect("toolbar_clicked", function(button)
+  events.connect("toolbar_clicked", function(button,ntoolbar)
     if toolbar[button] ~= nil then
       toolbar[button]()
     else
@@ -77,8 +77,7 @@ if toolbar then
   events.connect(events.SAVE_POINT_REACHED, set_chg_tab)
   events.connect(events.SAVE_POINT_LEFT, set_chg_tab)
 
-  events.connect("toolbar_tabclicked", function(ntab)
-    --ui.statusbar_text= "tab "..ntab.." clicked"
+  function toolbar.selecttab(ntab)
     toolbar.seltab(ntab)
     --check if a view change is needed
     if #_VIEWS > 1 then
@@ -105,20 +104,41 @@ if toolbar then
         end
       end
     end
+  end
+
+  events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
+    --ui.statusbar_text= "tab "..ntab.." clicked"
+    if ntoolbar == 0 then
+      toolbar.selecttab(ntab)
+    elseif ntoolbar == 2 then
+      --status bar click
+      toolbar.seltoolbar(2)
+      toolbar.settab(ntab,"nuevo status", "texto status")
+      toolbar.seltoolbar(0)
+    end
   end)
 
-  events.connect("toolbar_tab2clicked", function(ntab)
+  events.connect("toolbar_tabRclicked", function(ntab,ntoolbar)
+    if ntoolbar == 0 then
+      toolbar.selecttab(ntab)
+      return true --open context menu
+    end
+  end)
+
+  events.connect("toolbar_tab2clicked", function(ntab,ntoolbar)
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
-    if toolbar.tab2clickclose then
+    if ntoolbar == 0 and toolbar.tab2clickclose then
       Proj.close_buffer()
     end
   end)
 
-  events.connect("toolbar_tabclose", function(ntab)
+  events.connect("toolbar_tabclose", function(ntab,ntoolbar)
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
-    Proj.close_buffer()
+    if ntoolbar == 0 then
+      Proj.close_buffer()
+    end
   end)
 
   events.connect(events.FILE_OPENED, function()
@@ -376,6 +396,7 @@ if toolbar then
     end
     toolbar.show(toolbar.tb0)  --show the horizontal toolbar
     if toolbar.tabpos > 0 then
+      --toolbar.tabwidth(0,0,50,200)  --set tab width mode:0=text -1=fill >0:width / min & max
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
       toolbar.seltab(_BUFFERS[buffer])  --select current buffer
     end

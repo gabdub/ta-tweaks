@@ -4,6 +4,11 @@
 
 static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 
+//ntoolbar=0: HORIZONTAL
+//ntoolbar=1: VERTICAL
+//ntoolbar=2: HORIZONTAL
+#define NTOOLBARS 3
+
 //flags
 #define TTBF_SELECTABLE     0x0001
 #define TTBF_GRAYED         0x0002
@@ -14,6 +19,7 @@ static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 #define TTBF_CLOSETAB_BUT   0x0040
 #define TTBF_CHANGED        0x0080
 #define TTBF_HIDDEN         0x0100
+#define TTBF_STATUS         0x0200
 
 //node images
 #define TTBI_NORMAL         0  //button/separator
@@ -66,6 +72,10 @@ struct toolbar_node
   int barx1, bary1;
   int barx2, bary2;
   int imgx, imgy;
+  int textwidth;      //text width in pixels
+  int changewidth;    //0=use text width, >0=use this value in pixels, <0= % of toolbar.width
+  int minwidth;       //min tab width
+  int maxwidth;       //max tab width
   struct toolbar_img img[TTBI_NODE_N];
 };
 
@@ -79,7 +89,6 @@ struct color3doubles
 static char xbutt_tooltip[128];
 static struct toolbar_node xbutton;
 
-#define NTOOLBARS 2
 struct toolbar_data
 {
   GtkWidget *draw;    //(GtkWidget *drawing_area of this toolbar)
@@ -94,6 +103,7 @@ struct toolbar_data
   struct toolbar_node * tab_node;
   int ntabs;            //total number of tabs
   int ntabs_nothidden;  //number of tabs without HIDDEN flag
+  int ntabs_expand;     //number of tabs that expand to use all the free space
   int ntabs_scroll;     //number of tabs not shown at the left = scroll tab support
   int islast_tab_shown;
   int try_scrollpack;   //after tab delete try to scroll left
@@ -114,7 +124,8 @@ struct toolbar_data
   int tabxmargin;
   int tabxsep; //< 0 == overlap
   int tabheight;
-  int tabwidth; //total tab width without extra space
+  int tabwidth; //total 'fixed' tab width without extra space
+  int tabfixpart;   //T->img[TTBI_TB_NTAB1].width + T->img[TTBI_TB_NTAB3].width
   int closeintabs;
   int tabfontsz;  //font size in points (default = 10 points)
   int tabtexth;   //font height
@@ -126,6 +137,11 @@ struct toolbar_data
   struct color3doubles tabtextcolA; //active
   struct color3doubles tabtextcolM; //modified
   struct color3doubles tabtextcolG; //grayed
+
+  //tab defaults
+  int tabchangewidth;    //0=use text width, >0=use this value in pixels, <0= % of toolbar.width
+  int tabminwidth;       //min tab width
+  int tabmaxwidth;       //max tab width
 
   struct toolbar_img img[TTBI_TB_N];
 
@@ -204,6 +220,7 @@ static int set_tb_img( struct toolbar_data *T, struct toolbar_node *p, int nimg,
   //return 1 if redraw is needed
   struct toolbar_img *pti;
   char * simg;
+  int updatetabfix= 0;
 
   if( nimg < 0 ){
     return 0; //invalid image num
@@ -212,7 +229,10 @@ static int set_tb_img( struct toolbar_data *T, struct toolbar_node *p, int nimg,
   if( p == NULL ){
     //toolbar image
     if( nimg < TTBI_TB_N ){
-        pti= &(T->img[nimg]);
+      pti= &(T->img[nimg]);
+      if( (nimg == TTBI_TB_NTAB1)||(nimg == TTBI_TB_NTAB3)){
+        updatetabfix= 1;
+      }
     }
   }else{
     //button image
@@ -243,6 +263,9 @@ static int set_tb_img( struct toolbar_data *T, struct toolbar_node *p, int nimg,
         if( (pti->width > 0) && (pti->height > 0)){
           pti->fname= simg;
           cairo_surface_destroy(cis);
+          if( updatetabfix ){
+            T->tabfixpart= T->img[TTBI_TB_NTAB1].width + T->img[TTBI_TB_NTAB3].width;
+          }
           return 1; //image OK
         }
       }
@@ -327,6 +350,10 @@ static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * na
     }else{
       T->xnew += T->bwidth;
     }
+    p->textwidth=   0;
+    p->changewidth= 0;
+    p->minwidth=    0;
+    p->maxwidth=    0;
     for(i= 0; (i < TTBI_NODE_N); i++){
       p->img[i].fname= NULL;
       p->img[i].width= 0;
@@ -345,46 +372,143 @@ static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * na
   return p;
 }
 
-static void calc_tabnode_width( struct toolbar_data *T )
+static void clear_tabwidth(struct toolbar_data *T, struct toolbar_node * p)
 {
-  if( T->tab_node != NULL ){
-    int x= T->tab_node->barx1 + T->tabxmargin + T->tabwidth;
-    //add extra space between tabs
-    if( (T->ntabs_nothidden > 1) && (T->tabxsep != 0) ){
-      x += (T->ntabs_nothidden-1) * T->tabxsep;
-    }
-    T->tab_node->barx2= x;
-  }
-}
-
-
-static void chg_tab_texts( struct toolbar_data *T, struct toolbar_node * p, const char *name, const char *tooltip )
-{
-  int textw;
-  p->name= chg_alloc_str(p->name, name);
-  textw= 0;
-  if( p->name != NULL ){
-    cairo_text_extents_t ext;
-    cairo_t *cr = gdk_cairo_create(T->draw->window);
-    cairo_set_font_size(cr, T->tabfontsz);
-    cairo_text_extents( cr, p->name, &ext );
-    textw= (int) ext.width;
-    cairo_destroy(cr);
-  }
-  p->tooltip= chg_alloc_str(p->tooltip, tooltip);
-  p->barx1= 0;
-  p->bary1= 0;
-  p->imgx=  T->img[TTBI_TB_NTAB1].width;	//text start
-  p->barx2= p->imgx + textw + T->img[TTBI_TB_NTAB3].width;
-  p->bary2= T->img[TTBI_TB_NTAB1].height;
-  p->imgy=  T->tabtexty;
   if( (p->flags & TTBF_HIDDEN) == 0 ){
-    //total tab width without extra space
-    T->tabwidth += p->barx2;
+    if( p->changewidth >= 0 ){
+      T->tabwidth -= p->barx2;
+    }else{
+      T->tabwidth -= T->tabfixpart;
+    }
+  }
+  p->barx2= 0;
+}
+
+static void set_tabwidth(struct toolbar_data *T, struct toolbar_node * p)
+{
+  if( (p->flags & TTBF_HIDDEN) == 0 ){
+    if( p->changewidth >= 0 ){
+      if( p->changewidth == 0 ){  //use text width
+        p->barx2= p->textwidth + T->tabfixpart;
+      }else{
+        p->barx2= p->changewidth; //use this value
+        if( p->barx2 < T->tabfixpart ){
+          p->barx2= T->tabfixpart;
+        }
+      }
+      if( p->barx2 < p->minwidth ){
+        p->barx2= p->minwidth;
+      }
+      if( (p->barx2 > p->maxwidth) && (p->maxwidth > 0) ){
+        p->barx2= p->maxwidth;
+      }
+      T->tabwidth += p->barx2;
+    }else{
+      //% of toolbar.width
+      p->barx2= T->tabfixpart; //adjusted in update_tabs_size()
+      T->tabwidth += T->tabfixpart;
+    }
   }
 }
 
-static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip)
+static void update_tabs_size( struct toolbar_data *T )
+{
+  int n, nexpv, extrasp, remainsp, varw, porctot, xend;
+  struct toolbar_node *p, *pte;
+
+  if( T->tab_node != NULL ){
+    //calc 'fixed' tabs end
+    xend= T->tab_node->barx1 + T->tabxmargin + T->tabwidth;
+    //add extra space between visible tabs
+    if( (T->ntabs_nothidden > 1) && (T->tabxsep != 0) ){
+      xend += (T->ntabs_nothidden-1) * T->tabxsep;
+    }
+
+    //split free space in tabs that expand
+    nexpv= 0;
+    if( (T->ntabs_expand > 0) && (T->barwidth > 0) ){
+      T->ntabs_scroll= 0;
+      T->islast_tab_shown= 1;
+      extrasp= T->barwidth - xend; //extra space
+      if( extrasp < 0 ){
+        extrasp= 0; //no extra space
+      }
+      remainsp= extrasp;
+      pte= NULL;
+      porctot= 0;
+      //first pass, count visible expand-tabs
+      for( p= T->tabs; (p != NULL); p= p->next ){
+        if( (p->changewidth < 0) && ((p->flags & TTBF_HIDDEN) == 0) ){
+          if( nexpv == 0){
+            pte= p; //the first one
+          }
+          nexpv++;
+          porctot += p->changewidth;
+        }
+      }
+      if( porctot == 0 ){
+        porctot= -1;  //not needed, just in case... to prevent 0 div
+      }
+      //second pass, split the extra space
+      for( p= pte, n= nexpv; (p != NULL); p= p->next, n-- ){
+        if( (p->changewidth < 0) && ((p->flags & TTBF_HIDDEN) == 0) ){
+          if( n == 1 ){
+            //the last tab use all the remaining space
+            remainsp -= T->tabxsep;
+            if( remainsp < 0 ){
+              remainsp= 0;
+            }
+            p->barx2= T->tabfixpart + remainsp;
+            if( p->barx2 < p->minwidth ){
+              p->barx2= p->minwidth;
+            }
+            if( (p->barx2 > p->maxwidth) && (p->maxwidth > 0) ){
+              p->barx2= p->maxwidth;
+            }
+            break;
+          }
+          varw= ((extrasp * p->changewidth) / porctot) - T->tabxsep;
+          if( varw < 0 ){
+            varw= 0;
+          }
+          if( varw > remainsp ){
+            varw= remainsp;
+          }
+          p->barx2= T->tabfixpart + varw;
+          if( p->barx2 < p->minwidth ){
+            p->barx2= p->minwidth;
+          }
+          if( (p->barx2 > p->maxwidth) && (p->maxwidth > 0) ){
+            p->barx2= p->maxwidth;
+          }
+          remainsp -= p->barx2 - T->tabfixpart;
+        }
+      }
+      if( nexpv > 0){
+        //at least one expand-tab is visible
+        //expand tab-node to use all the extra space
+        if( xend < T->barwidth ){
+          xend= T->barwidth;
+        }
+      }
+    }
+    //update tab-node size
+    T->tab_node->barx2= xend;
+  }
+}
+
+static struct toolbar_node *get_ttb_tab(struct toolbar_data *T, int ntab)
+{
+  struct toolbar_node * p;
+  for( p= T->tabs; (p != NULL); p= p->next ){
+    if( p->num == ntab){
+      return p;
+    }
+  }
+  return NULL;
+}
+
+static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab)
 {
   int i;
   struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
@@ -394,7 +518,13 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab, const 
     p->tooltip= NULL;
     p->num= ntab;
     p->flags= TTBF_TAB | TTBF_SELECTABLE;
-    chg_tab_texts(T, p, name, tooltip);
+
+    p->changewidth= T->tabchangewidth;  //use TAB default
+    if( p->changewidth < 0 ){
+      T->ntabs_expand++;
+    }
+    p->minwidth=    T->tabminwidth;
+    p->maxwidth=    T->tabmaxwidth;
 
     for(i= 0; (i < TTBI_NODE_N); i++){
       p->img[i].fname= NULL;
@@ -416,17 +546,6 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab, const 
   return p;
 }
 
-static struct toolbar_node *get_ttb_tab(struct toolbar_data *T, int ntab)
-{
-  struct toolbar_node * p;
-  for( p= T->tabs; (p != NULL); p= p->next ){
-    if( p->num == ntab){
-      return p;
-    }
-  }
-  return NULL;
-}
-
 static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip)
 {
   struct toolbar_node * p;
@@ -435,18 +554,34 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
   redraw_tabs_beg(T);
   p= get_ttb_tab(T, ntab);
   if( p == NULL ){  //not found, add at the end
-    p= add_ttb_tab(T, ntab, name, tooltip);
+    p= add_ttb_tab(T, ntab);
+    if( p == NULL ){
+      return NULL;
+    }
   }else{
     //tab found, adjust total tab width without extra space
-    if( (p->flags & TTBF_HIDDEN) == 0 ){
-      T->tabwidth -= p->barx2;
-    }
-    p->barx2= 0;
-    //update texts
-    chg_tab_texts(T, p, name, tooltip);
+    clear_tabwidth(T, p);
   }
-  //update tabs width
-  calc_tabnode_width(T);
+  //update texts
+  p->name= chg_alloc_str(p->name, name);
+  p->tooltip= chg_alloc_str(p->tooltip, tooltip);
+  p->barx1= 0;
+  p->bary1= 0;
+  p->imgx=  T->img[TTBI_TB_NTAB1].width;	//text start
+  p->bary2= T->img[TTBI_TB_NTAB1].height;
+  p->imgy=  T->tabtexty;
+  p->textwidth= 0;
+  if( p->name != NULL ){
+    cairo_text_extents_t ext;
+    cairo_t *cr = gdk_cairo_create(T->draw->window);
+    cairo_set_font_size(cr, T->tabfontsz);
+    cairo_text_extents( cr, p->name, &ext );
+    p->textwidth= (int) ext.width;
+    cairo_destroy(cr);
+  }
+  set_tabwidth(T, p);
+  //split free space in tabs that expand
+  update_tabs_size(T);
   //queue a redraw using the post-modify size (in case the tabbar gets bigger)
   redraw_tabs_end(T);
   return p;
@@ -598,24 +733,52 @@ static void hide_ttb_tab(struct toolbar_data *T, int ntab, int hide)
   struct toolbar_node * p= get_ttb_tab(T, ntab);
   if( p != NULL ){
     if( hide ){
-      if( (p->flags & TTBF_HIDDEN) == 0 ){
+      if( ((p->flags & TTBF_HIDDEN) == 0) ){
+        clear_tabwidth(T, p);
         p->flags |= TTBF_HIDDEN;
-        T->tabwidth -= p->barx2;
         T->ntabs_nothidden--;
-        //update tabs width
-        calc_tabnode_width(T);
+        //split free space in tabs that expand
+        update_tabs_size(T);
       }
     }else{
       if( (p->flags & TTBF_HIDDEN) != 0 ){
         p->flags &= ~TTBF_HIDDEN;
-        T->tabwidth += p->barx2;
         T->ntabs_nothidden++;
-        //update tabs width
-        calc_tabnode_width(T);
+        set_tabwidth(T, p);
+        //split free space in tabs that expand
+        update_tabs_size(T);
       }
     }
   }
   redraw_tabs_end(T);
+}
+
+static void change_ttb_tabwidth(struct toolbar_data *T, int ntab, int percwidth, int minwidth, int maxwidth )
+{
+  struct toolbar_node * p= get_ttb_tab(T, ntab);
+  if( p != NULL ){
+    if( p->changewidth < 0 ){
+      T->ntabs_expand--;
+    }
+    clear_tabwidth(T, p);
+    //set new change width min, max and mode: 0:text width, >=0:fixes, <0:porcent
+    p->minwidth= minwidth;
+    p->maxwidth= maxwidth;
+    p->changewidth= percwidth;
+    if( p->changewidth < 0 ){
+      T->ntabs_expand++;
+    }
+    set_tabwidth(T, p);
+    //split free space in tabs that expand
+    update_tabs_size(T);
+    //redraw the complete toolbar
+    gtk_widget_queue_draw(T->draw);
+  }else{
+    //invalid tab, change toolbar defaults
+    T->tabminwidth= minwidth;
+    T->tabmaxwidth= maxwidth;
+    T->tabchangewidth= percwidth;
+  }
 }
 
 static void set_changed_ttb_tab(struct toolbar_data *T, int ntab, int changed)
@@ -676,6 +839,7 @@ static void kill_toolbar_num( int num )
     p->tab_node= NULL;
     p->ntabs= 0;
     p->ntabs_nothidden= 0;
+    p->ntabs_expand= 0;
     p->ntabs_scroll= 0;
     p->islast_tab_shown= 1;
     p->try_scrollpack= 0;
@@ -692,6 +856,9 @@ static void kill_toolbar_num( int num )
     p->tabtextcolN.R= 0.0;
     p->tabtextcolN.G= 0.0;
     p->tabtextcolN.B= 0.0;
+    p->tabchangewidth= 0;  //use TAB default
+    p->tabminwidth= 0;
+    p->tabmaxwidth= 0;
 
     for(i= 0; (i < TTBI_TB_N); i++){
       if( p->img[i].fname != NULL ){
@@ -1035,6 +1202,8 @@ static void ttb_size_ev(GtkWidget *widget, GdkRectangle *prec, void*__)
 
   T->barwidth= prec->width;
   T->barheight= prec->height;
+  //split free space in tabs that expand
+  update_tabs_size(T);
 }
 
 static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
@@ -1048,6 +1217,8 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   if( (T->barwidth < 0) || (T->barheight < 0) ){
     T->barwidth=  widget->allocation.width;
     T->barheight= widget->allocation.height;
+    //split free space in tabs that expand
+    update_tabs_size(T);
   }
 
   cairo_t *cr = gdk_cairo_create(widget->window);
@@ -1241,17 +1412,20 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           scroll_tabs(T, event->x, event->y, p->num);
 
         }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
-          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, -1);
-          lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, -1);
+          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+          lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
 
         }else if( (p->flags & TTBF_TAB) == 0 ){
           if(event->button == 1){
-            lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, -1);
+            lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, T->num, -1);
           }
         }else{
-          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, -1);
-          if(event->button == 3){
-            lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
+          if(event->button == 1){
+            lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+          }else if(event->button == 3){
+            if( lL_event(lua, "toolbar_tabRclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1) ){
+              lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
+            }
           }
         }
       }else{
@@ -1264,10 +1438,12 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       return TRUE;
     }
     if(event->type == GDK_2BUTTON_PRESS){ //double click
-      p= getButtonFromXY(T, event->x, event->y);
-      if( p != NULL ){
-        if( (p->flags & TTBF_TAB) != 0 ){
-          lL_event(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, -1);
+      if(event->button == 1){
+        p= getButtonFromXY(T, event->x, event->y);
+        if( p != NULL ){
+          if( (p->flags & TTBF_TAB) != 0 ){
+            lL_event(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+          }
         }
       }
       return TRUE;
@@ -1278,6 +1454,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 
 //ntoolbar=0: HORIZONTAL
 //ntoolbar=1: VERTICAL
+//ntoolbar=2: HORIZONTAL
 static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
 {
   GtkWidget * drawing_area;
@@ -1630,8 +1807,8 @@ static int ltoolbar_addtabs(lua_State *L) {
       }
       T->tab_node->bary2= T->tab_node->bary1 + T->tabheight;
       T->closeintabs= lua_toboolean(L,3);
-      //update tabs width
-      calc_tabnode_width(T);
+      //split free space in tabs that expand (none for now...)
+      update_tabs_size(T);
       redraw_button(T, NULL); //redraw the complete toolbar
     }
   }
@@ -1710,15 +1887,18 @@ static int ltoolbar_deletetab(lua_State *L) {
     T->ntabs--;
     if( (k->flags & TTBF_HIDDEN) == 0 ){
       T->ntabs_nothidden--;
-      T->tabwidth -= k->barx2;
+      if( k->changewidth < 0 ){
+        T->ntabs_expand--;
+      }
+      clear_tabwidth(T, k);
     }
     //after tab delete, try to remove the left scroll button when a new tab is activated
     if( T->ntabs_scroll > 0 ){
       T->try_scrollpack= 1;
     }
     kill_toolbar_node(k);
-    //update tabs width
-    calc_tabnode_width(T);
+    //split free space in tabs that expand
+    update_tabs_size(T);
     redraw_tabs_end(T);
   }
   return 0;
@@ -1752,11 +1932,25 @@ static int ltoolbar_hidetab(lua_State *L) {
   return 0;
 }
 
+/** `toolbar.tabwidth(num,WW,minwidth,maxwidth)` Lua function. */
+/** WW= 0:text width, >=0:fix, <0:porcent */
+static int ltoolbar_tabwidth(lua_State *L) {
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  int ntab=      lua_tointeger(L, 1);
+  int percwidth= lua_tointeger(L, 2);
+  int minwidth=  lua_tointeger(L, 3);
+  int maxwidth=  lua_tointeger(L, 4);
+  change_ttb_tabwidth( T, ntab, percwidth, minwidth, maxwidth );
+  return 0;
+}
+
 static void register_toolbar(lua_State *L) {
   lua_newtable(L);
+//toolbar
   l_setcfunction(L, -1, "new",          ltoolbar_new);	        //create a new toolbar
   l_setcfunction(L, -1, "adjust",       ltoolbar_adjust);	      //optionaly fine tune some parameters
   l_setcfunction(L, -1, "seltoolbar",   ltoolbar_seltoolbar);   //select which toolbar to edit
+//buttons
   l_setcfunction(L, -1, "addbutton",    ltoolbar_addbutton);    //add buttons
   l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
   l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);	    //change next button position
@@ -1764,6 +1958,7 @@ static void register_toolbar(lua_State *L) {
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
   l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button or TOOLBAR icon
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);	  //change a button tooltip
+//tabs
   l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //show tabs in the toolbar
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
   l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab n
@@ -1772,5 +1967,7 @@ static void register_toolbar(lua_State *L) {
   l_setcfunction(L, -1, "enabletab",    ltoolbar_enabletab);    //enable/disable tab n
   l_setcfunction(L, -1, "modifiedtab",  ltoolbar_modifiedtab);  //show/hide changed indicator in tab n
   l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab n
+  l_setcfunction(L, -1, "tabwidth",     ltoolbar_tabwidth);     //set tab n tabwidth (varible/fixed)
+
   lua_setglobal(L, "toolbar");
 }
