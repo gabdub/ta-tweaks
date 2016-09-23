@@ -77,17 +77,8 @@ if toolbar then
   --toolbar.newrow()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
-  --status bar
-  toolbar.new(24, 24, 16, 2, toolbar.themepath)
-  toolbar.seticon("TOOLBAR", toolbar.back[1], 0, true)
-  toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
-  --toolbar.cmd("dialog-ok", Proj.trim_trailing_spaces, "Trim trailing spaces")
-  toolbar.addtabs(2,2,false,0, 12, 0)
-  toolbar.settab(-1,"status", "status")
-  --toolbar.enabletab(-1,false)
-  toolbar.tabwidth(-1,-75)
-  toolbar.settab(-2,"Line:86/92  Col:32  lua  LF  Spaces:2  UTF-8", "info")
-  toolbar.tabwidth(-2,-25,200)
+  toolbar.statusbar() --show status bar
+  
   toolbar.show(true)
 
   --toolbar ready, show it

@@ -94,6 +94,7 @@ struct toolbar_data
   GtkWidget *draw;    //(GtkWidget *drawing_area of this toolbar)
   int num;            //number of toolbar
   int isvertical;     //is a vertical toolbar (#1=yes)
+  int isvisible;
 
   struct toolbar_node * list;
   struct toolbar_node * list_last;
@@ -178,7 +179,13 @@ static char * chg_alloc_str( char *sold, const char *snew )
   if( sold != NULL ){
     if( snew != NULL ){
       if( strcmp( sold, snew) == 0 ){
-        return sold;  //same string, keep the old one
+        //same string, keep the old one
+        return sold;
+      }
+      if( strlen(sold) >= strlen(snew) ){
+        //the newer is equal or shorter the old one, overwrite it
+        strcpy( sold, snew );
+        return sold;
       }
     }
     //delete old value
@@ -585,6 +592,44 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
   //queue a redraw using the post-modify size (in case the tabbar gets bigger)
   redraw_tabs_end(T);
   return p;
+}
+
+int toolbar_set_statusbar_text(const char *text, int bar)
+{ //called when textadept change the text in the status bar (bar 0 => tab#1  bar 1 => tab#2..7)
+  char txt[64];
+  const char *s;
+  const char *d;
+  unsigned n, ntab;
+  
+  if( (text != NULL) && (ttb.tbdata[2].isvisible != 0) ){
+    if( bar == 0 ){
+      set_ttb_tab( &(ttb.tbdata[2]), 1, text, text ); //tooltip = text in case it can be shown complete
+    }else{
+      //split text in parts (separator= 4 spaces)
+      ntab= 2;
+      s= text;
+      while( (*s != 0) && (ntab <= 7)){
+        d= strstr( s, "    " );
+        if( d != NULL ){
+          n= d-s;
+          if( n >= sizeof(txt) ){
+            n= sizeof(txt)-1;
+          }
+          strncpy( txt, s, n );
+          txt[n]= 0;
+          set_ttb_tab( &(ttb.tbdata[2]), ntab, txt, "" );
+          s=d+4;
+        }else{
+          //last field
+          set_ttb_tab( &(ttb.tbdata[2]), ntab, s, "" );
+          break;
+        }
+        ntab++;
+      }
+    }
+    return 0;
+  }
+  return 1; //update the regular status bar
 }
 
 static void clear_tooltip_text( struct toolbar_data *T )
@@ -1102,13 +1147,15 @@ static void draw_fill_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, 
   }
 }
 
-static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, struct color3doubles *color, int fontsz )
+static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz )
 {
   if( txt != NULL ){
     cairo_save(ctx);
+    cairo_rectangle(ctx, x, y1, w, h );
+    cairo_clip(ctx);
+    cairo_move_to(ctx, x, y);
     cairo_set_source_rgb(ctx, color->R, color->G, color->B);
     cairo_set_font_size(ctx, fontsz);
-    cairo_move_to(ctx, x, y);
     cairo_show_text(ctx, txt);
     cairo_restore(ctx);
   }
@@ -1158,7 +1205,7 @@ static void draw_tab(struct toolbar_data *T, cairo_t *cr, struct toolbar_node *t
     draw_img(cr, &(T->img[hc]), x3, y, 0 );
   }
 
-  draw_txt(cr, t->name, x+t->imgx, y+t->imgy, color, T->tabfontsz );
+  draw_txt(cr, t->name, x+t->imgx, y+t->imgy, y, x3-x, T->img[TTBI_TB_NTAB2].height, color, T->tabfontsz );
 }
 
 /* ============================================================================= */
@@ -1464,6 +1511,7 @@ static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
     ttb.tbdata[ntoolbar].draw= drawing_area;
     ttb.tbdata[ntoolbar].num=  ntoolbar;
     ttb.tbdata[ntoolbar].isvertical= (ntoolbar == 1);
+    ttb.tbdata[ntoolbar].isvisible= 0;
 
     gtk_widget_set_size_request(drawing_area, -1, 1);
     gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
@@ -1483,11 +1531,21 @@ static void show_toolbar(struct toolbar_data *T, int show)
 { //show/hide one toolbar
   if( show ){
     //show this toolbar
+    T->isvisible= 1;
     gtk_widget_show( T->draw );
     gtk_widget_queue_draw(T->draw); //force redraw
+    if( T->num == 2 ){
+      gtk_widget_hide( statusbar[0] );
+      gtk_widget_hide( statusbar[1] );
+    }
   }else{
     //hide this toolbar
+    T->isvisible= 0;
     gtk_widget_hide( T->draw );
+    if( T->num == 2 ){
+      gtk_widget_show( statusbar[0] );
+      gtk_widget_show( statusbar[1] );
+    }
   }
 }
 

@@ -909,7 +909,11 @@ static int lui__index(lua_State *L) {
 
 static void set_statusbar_text(const char *text, int bar) {
 #if GTK
-  if (statusbar[bar]) gtk_label_set_text(GTK_LABEL(statusbar[bar]), text);
+ #ifdef USE_TA_TOOLBAR
+  if( toolbar_set_statusbar_text(text, bar) ){
+    if (statusbar[bar]) gtk_label_set_text(GTK_LABEL(statusbar[bar]), text);
+  }
+ #endif
 #elif CURSES
   int start = (bar == 0) ? 0 : statusbar_length[0];
   int end = (bar == 0) ? COLS - statusbar_length[1] : COLS;

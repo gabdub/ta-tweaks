@@ -112,9 +112,15 @@ if toolbar then
       toolbar.selecttab(ntab)
     elseif ntoolbar == 2 then
       --status bar click
-      toolbar.seltoolbar(2)
-      toolbar.settab(ntab,"nuevo status", "texto status")
-      toolbar.seltoolbar(0)
+      if ntab == 1 then
+        toolbar.seltoolbar(2)
+        toolbar.settab(ntab,"nuevo status", "texto status")
+        toolbar.seltoolbar(0)
+      elseif ntab == 2 or ntab == 3 then
+        textadept.editing.goto_line()
+      elseif ntab == 4 then
+        textadept.file_types.select_lexer()
+      end
     end
   end)
 
@@ -214,6 +220,8 @@ if toolbar then
     toolbar.tabcolor_active= 0
     toolbar.tabcolor_modif= 0x800000
     toolbar.tabcolor_grayed= 0x808080
+    toolbar.statcolor_normal= 0x202020
+    toolbar.statcolor_hilight= 0
     toolbar.adj= false
     toolbar.adj_bw= 24
     toolbar.adj_bh= 24
@@ -227,7 +235,7 @@ if toolbar then
       toolbar.img[i]= ""
     end
     toolbar.back= {}
-    for i= 1, 4 do
+    for i= 1, 5 do
       toolbar.back[i]= ""
     end
   end
@@ -255,7 +263,9 @@ if toolbar then
            getCfgNum( line, 'tabcolor_hilight') or
            getCfgNum( line, 'tabcolor_active')  or
            getCfgNum( line, 'tabcolor_modif')   or
-           getCfgNum( line, 'tabcolor_grayed')  then
+           getCfgNum( line, 'tabcolor_grayed')  or
+           getCfgNum( line, 'statcolor_normal') or
+           getCfgNum( line, 'statcolor_hilight') then
 
         elseif line:find('^toolbar_img:') then
           img, i = line:match('^toolbar_img:(.-),(.+)$')
@@ -400,6 +410,28 @@ if toolbar then
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
       toolbar.seltab(_BUFFERS[buffer])  --select current buffer
     end
+  end
+  
+  function toolbar.statusbar()
+    toolbar.new(20, 20, 16, 2, toolbar.themepath)
+    toolbar.seticon("TOOLBAR", toolbar.back[5], 0, true)
+    local i=5 --5=normal 8=disabled 11=hilight 14=active
+    while i < 15 do
+      toolbar.seticon("TOOLBAR", "stat-ntab1", i,   true)
+      toolbar.seticon("TOOLBAR", "stat-ntab2", i+1, true)
+      toolbar.seticon("TOOLBAR", "stat-ntab3", i+2, true)
+      i=i+3
+    end
+    --toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
+    --xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset
+    toolbar.addtabs(-1,-1,false,0,12,-2)
+    toolbar.tabfontcolor( toolbar.statcolor_normal, toolbar.statcolor_hilight, toolbar.tabcolor_active,
+          toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
+    --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
+    for i=1, 7 do
+      toolbar.settab(i,"", "")
+    end
+    toolbar.tabwidth(1,-100, 150) --fill, min width= 150
   end
 
   toolbar.set_defaults()
