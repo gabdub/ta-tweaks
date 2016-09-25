@@ -112,11 +112,7 @@ if toolbar then
       toolbar.selecttab(ntab)
     elseif ntoolbar == 2 then
       --status bar click
-      if ntab == 1 then
-        toolbar.seltoolbar(2)
-        toolbar.settab(ntab,"nuevo status", "texto status")
-        toolbar.seltoolbar(0)
-      elseif ntab == 2 or ntab == 3 then
+      if ntab == 2 or ntab == 3 then
         textadept.editing.goto_line()
       elseif ntab == 4 then
         textadept.file_types.select_lexer()
