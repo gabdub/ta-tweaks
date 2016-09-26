@@ -77,7 +77,9 @@ if toolbar then
   --toolbar.newrow()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
-  toolbar.statusbar() --show status bar
+  if not WIN32 then --in win32 the UI gets corrupted when the statbar is shown: looks like a gtk port bug
+    toolbar.statusbar() --show status bar
+  end
   
   toolbar.show(true)
 
