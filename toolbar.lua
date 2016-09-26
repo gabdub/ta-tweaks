@@ -272,7 +272,7 @@ if toolbar then
           toolbar.back[tonumber(i)]= img
 
         elseif line:find('^icons:') then
-          img = line:match('^icons:(.+)$')
+          img = line:match('^icons:(%S+)%s-$')
           toolbar.iconspath= _USERHOME.."/toolbar/icons/"..img.."/"
 
         elseif line:find('^toolbar_adj:') then
