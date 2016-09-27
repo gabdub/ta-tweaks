@@ -83,7 +83,7 @@ __Features:__
 * Recent project list
 * Menues to create new projects and add files to the project (the current file, all open files or all files from a directory)
 * CTAG file search (add a text file to the project and mark it as a CTAG file) (use the RUN command to update the file)
-* RUN commands from the project (add a command to the project an run it with a double clic or enter)
+* RUN commands from the project (add a command to the project an run it with a double click or enter)
 * RUN command parameter __%{projfiles}__ is replaced with a temporary filename that includes the list of all project files
 * RUN command parameter __%{projfiles.ext1.ext2...}__ only project files with the given extensions are included
 * Select more than one file or command to open/run several at once
@@ -127,12 +127,14 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
 * toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the current edited toolbar
 * toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
-* toolbar._settab(num,tab-text,tooltiptext)_ set tab n text and tooltip, in the current edited toolbar
-* toolbar._deletetab(num)_ delete tab n (decrement bigger tab-nums by 1) from the current edited toolbar
-* toolbar._activatetab(num)_ activate (selects) tab n in the current edited toolbar
-* toolbar._enabletab(num,enabled)_ enable/disable tab n in the current edited toolbar
-* toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab n in the current edited toolbar
-* toolbar._hidetab(num,hide)_ show/hide tab n in the current edited toolbar
+* toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip, in the current edited toolbar
+* toolbar._deletetab(num)_ delete tab _num_ (decrement bigger tab-nums by 1) from the current edited toolbar
+* toolbar._activatetab(num)_ activate (selects) tab _num_ in the current edited toolbar
+* toolbar._enabletab(num,enabled)_ enable/disable tab _num_ in the current edited toolbar
+* toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab _num_ in the current edited toolbar
+* toolbar._hidetab(num,hide)_ show/hide tab _num_ in the current edited toolbar
+* toolbar._tabwidth(num,W,minwidth,maxwidth)_ control tab _num_ width: W=0:use text width, >=0:fix width, <0:porcent; 0 or minimum; 0 or maximum
+* toolbar._tabwidth(num,text)_ set tab _num_ width using to the given text
 
 Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
 (see some examples below)
@@ -143,7 +145,7 @@ __Usage:__
 * edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy also the lines that contains "UNUSED()" to supress some warnings
 * compile Textadept
-* copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from 
+* copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from
   (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
   (you can choose another icon location and set the path when calling toolbar.new())
 * to create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
@@ -204,7 +206,7 @@ NOTE: the icon images __must be PNG__ files. If only the icon name is given, the
 
 ```
   toolbar.new(54, 24, 16) --create a bar with room for two rows
-  toolbar.seticon("TOOLBAR", "ttb-back") --optinally add a background image (27 pix high) to draw lines at the end of every row 
+  toolbar.seticon("TOOLBAR", "ttb-back") --optinally add a background image (27 pix high) to draw lines at the end of every row
   --define row #1 buttons
   toolbar.gotopos(3); --new row plus 3 pixels (since each rows is 27 pix and the buttons are 24 pix)
   --define row #2 buttons
@@ -259,3 +261,13 @@ __Some examples using tabs and themes:__
 **mixed horizontal & vertical**
 
 ![mixed horizontal & vertical](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win5.png "mixed horizontal & vertical")
+
+
+# status bar
+
+__Features:__
+* Use the same theme as the toolbar
+* First field (ui.statusbartext) with tooltip support to allow read texts partially shown
+* click over a field to: goto line, select lexer, select EOL mode, select indentation and select encoding
+
+![status bar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win9.png "status bar")

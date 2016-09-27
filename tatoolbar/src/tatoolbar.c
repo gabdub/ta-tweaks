@@ -19,7 +19,6 @@ static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 #define TTBF_CLOSETAB_BUT   0x0040
 #define TTBF_CHANGED        0x0080
 #define TTBF_HIDDEN         0x0100
-#define TTBF_STATUS         0x0200
 
 //node images
 #define TTBI_NORMAL         0  //button/separator
@@ -538,7 +537,6 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab)
       p->img[i].width= 0;
       p->img[i].height= 0;
     }
-    //set_tb_img( T, p, TTBI_NORMAL, img ); //TODO: add an image
 
     //conect node to the end of the list
     if( T->tabs_last != NULL ){
@@ -553,7 +551,7 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab)
   return p;
 }
 
-static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip)
+static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip, int redraw)
 {
   struct toolbar_node * p;
   void * vp;
@@ -578,7 +576,13 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
   p->bary2= T->img[TTBI_TB_NTAB1].height;
   p->imgy=  T->tabtexty;
   p->textwidth= 0;
-  if( p->name != NULL ){
+  if( (p->name != NULL) && (*(p->name) != 0) && ((p->minwidth == 0)||(p->maxwidth ==0)) ){
+    //if min and max are set, there is no need to know the textwidth
+// NOTE: using variable width in status-bar fields 2..7 in "WIN32" breaks the UI!!
+// this fields are updated from the UPDATE-UI event and
+// calling gdk_cairo_create in this context (to get the text extension) freeze the UI for a second
+// and breaks the editor update mecanism (this works fine under LINUX, though)
+// so, fixed width is used for this fields
     cairo_text_extents_t ext;
     cairo_t *cr = gdk_cairo_create(T->draw->window);
     cairo_set_font_size(cr, T->tabfontsz);
@@ -589,8 +593,10 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
   set_tabwidth(T, p);
   //split free space in tabs that expand
   update_tabs_size(T);
-  //queue a redraw using the post-modify size (in case the tabbar gets bigger)
-  redraw_tabs_end(T);
+  if( redraw ){
+    //queue a redraw using the post-modify size (in case the tabbar gets bigger)
+    redraw_tabs_end(T);
+  }
   return p;
 }
 
@@ -600,10 +606,11 @@ int toolbar_set_statusbar_text(const char *text, int bar)
   const char *s;
   const char *d;
   unsigned n, ntab;
-  
-  if( (text != NULL) && (ttb.tbdata[2].isvisible != 0) ){
+
+  struct toolbar_data *T= &ttb.tbdata[2];
+  if( (text != NULL) && (T->isvisible) ){
     if( bar == 0 ){
-      set_ttb_tab( &(ttb.tbdata[2]), 1, text, text ); //tooltip = text in case it can be shown complete
+      set_ttb_tab( T, 1, text, text, 1 ); //tooltip = text in case it can be shown complete
     }else{
       //split text in parts (separator= 4 spaces)
       ntab= 2;
@@ -617,15 +624,17 @@ int toolbar_set_statusbar_text(const char *text, int bar)
           }
           strncpy( txt, s, n );
           txt[n]= 0;
-          set_ttb_tab( &(ttb.tbdata[2]), ntab, txt, "" );
+          set_ttb_tab( T, ntab, txt, "", 0 );
           s=d+4;
         }else{
           //last field
-          set_ttb_tab( &(ttb.tbdata[2]), ntab, s, "" );
+          set_ttb_tab( T, ntab, s, "", 0 );
           break;
         }
         ntab++;
       }
+      //redraw the complete toolbar
+      gtk_widget_queue_draw(T->draw);
     }
     return 0;
   }
@@ -1512,8 +1521,11 @@ static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
     ttb.tbdata[ntoolbar].num=  ntoolbar;
     ttb.tbdata[ntoolbar].isvertical= (ntoolbar == 1);
     ttb.tbdata[ntoolbar].isvisible= 0;
-
-    gtk_widget_set_size_request(drawing_area, -1, 1);
+    if( ttb.tbdata[ntoolbar].isvertical ){
+      gtk_widget_set_size_request(drawing_area, 1, -1);
+    }else{
+      gtk_widget_set_size_request(drawing_area, -1, 1);
+    }
     gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
       GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
     signal(drawing_area, "size-allocate",        ttb_size_ev);
@@ -1523,6 +1535,7 @@ static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
     signal(drawing_area, "scroll-event",         ttb_scrollwheel_ev);
     signal(drawing_area, "button-press-event",   ttb_button_ev);
     signal(drawing_area, "button-release-event", ttb_button_ev);
+
     gtk_box_pack_start(GTK_BOX(vbox), drawing_area, FALSE, FALSE, 0);
   }
 }
@@ -1914,7 +1927,7 @@ static int ltoolbar_tabfontcolor(lua_State *L) {
 /** `toolbar.settab(num,name,tooltiptext)` Lua function. */
 static int ltoolbar_settab(lua_State *L) {
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
-  set_ttb_tab( T, lua_tointeger(L, 1), luaL_checkstring(L, 2), luaL_checkstring(L, 3));
+  set_ttb_tab( T, lua_tointeger(L, 1), luaL_checkstring(L, 2), luaL_checkstring(L, 3), 1);
   return 0;
 }
 
@@ -1991,13 +2004,28 @@ static int ltoolbar_hidetab(lua_State *L) {
 }
 
 /** `toolbar.tabwidth(num,WW,minwidth,maxwidth)` Lua function. */
+/** `toolbar.tabwidth(num,text)` Lua function. */
 /** WW= 0:text width, >=0:fix, <0:porcent */
 static int ltoolbar_tabwidth(lua_State *L) {
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int ntab=      lua_tointeger(L, 1);
-  int percwidth= lua_tointeger(L, 2);
-  int minwidth=  lua_tointeger(L, 3);
-  int maxwidth=  lua_tointeger(L, 4);
+  int percwidth= 0;
+  int minwidth= 0;
+  int maxwidth= 0;
+  if( lua_isnumber(L,2) ){
+    percwidth= lua_tointeger(L, 2);
+    minwidth=  lua_tointeger(L, 3);
+    maxwidth=  lua_tointeger(L, 4);
+  }else if( lua_isstring(L,2) ){
+    //use the width of the given text
+    cairo_text_extents_t ext;
+    cairo_t *cr = gdk_cairo_create(T->draw->window);
+    cairo_set_font_size(cr, T->tabfontsz);
+    cairo_text_extents( cr, lua_tostring(L, 2), &ext );
+    minwidth= ((int) ext.width) + T->tabfixpart;
+    cairo_destroy(cr);
+    maxwidth=  minwidth;
+  }
   change_ttb_tabwidth( T, ntab, percwidth, minwidth, maxwidth );
   return 0;
 }
