@@ -50,13 +50,15 @@ if toolbar then
   --toolbar.tabwithclose= true
   --toolbar.tabxmargin=0
 
-  --create the toolbar (tabpos, nvertcols)
+  --create the toolbar (tabpos, nvertcols, stbar)
   --tabpos=0: 1 row, use default tabs
   --tabpos=1: 1 row, tabs & buttons in the same line
   --tabpos=2: 2 rows, tabs at the top (horizonal only)
   --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
   --nvertcols= 0..2 = number of columns in vertical toolbar
-  toolbar.create(1)
+  --stbar=0: use default status bar
+  --stbar=1: use toolbar's status bar
+  toolbar.create(1,0,1)
 
   --toolbar.seltoolbar(1)
   --add some buttons
@@ -76,12 +78,6 @@ if toolbar then
   toolbar.addspace()
   --toolbar.newrow()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
-
-  if not WIN32 then --in win32 the UI gets corrupted when the statbar is shown: looks like a gtk port bug
-    toolbar.statusbar() --show status bar
-  end
-  
-  toolbar.show(true)
 
   --toolbar ready, show it
   toolbar.ready()

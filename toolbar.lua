@@ -106,16 +106,40 @@ if toolbar then
     end
   end
 
+  local function choose_menu_opt(submenu,cant)
+    local menu= textadept.menu.menubar[_L['_Buffer']]
+    local sm= menu[submenu]
+    local options= {}
+    for i=1,cant do
+      options[i]= string.gsub( sm[i][1], "_", "" )
+    end
+    local button, i = ui.dialogs.filteredlist{
+      title = "Select " .. string.gsub(submenu, "_", "" ),
+      columns = _L['Name'],
+      items = options }
+    if button == 1 and i then
+      local cmd= sm[i][2]
+      if cmd then cmd() end
+    end
+  end
+
   events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
     --ui.statusbar_text= "tab "..ntab.." clicked"
     if ntoolbar == 0 then
+      --tab bar click
       toolbar.selecttab(ntab)
     elseif ntoolbar == 2 then
       --status bar click
-      if ntab == 2 or ntab == 3 then
+      if ntab == 2 then --Line
         textadept.editing.goto_line()
-      elseif ntab == 4 then
+      elseif ntab == 4 then --lexer
         textadept.file_types.select_lexer()
+      elseif ntab == 5 then --eol
+        choose_menu_opt(_L['_EOL Mode'],2)
+      elseif ntab == 6 then --indent
+        choose_menu_opt(_L['_Indentation'],6)
+      elseif ntab == 7 then --encoding
+        choose_menu_opt(_L['E_ncoding'],5)
       end
     end
   end)
@@ -200,6 +224,7 @@ if toolbar then
     toolbar.iconspath= _USERHOME.."/toolbar/icons/light/"
     toolbar.tb0= true --only show toolbar 0 (horizontal)
     toolbar.tb1= false
+    toolbar.statbar= 0
     toolbar.barsize= 27
     toolbar.butsize= 24
     toolbar.imgsize= 16
@@ -311,9 +336,12 @@ if toolbar then
   --tabpos=2: 2 rows, tabs at the top (horizonal only)
   --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
   --nvertcols= 0..2 = number of columns in vertical toolbar
-  function toolbar.create(tabpos, nvertcols)
+  --stbar=0: use default
+  --stbar=1: use tatoolbar
+  function toolbar.create(tabpos, nvertcols, stbar)
     toolbar.tabpos= tabpos
     ui.tabs= (tabpos == 0)  --hide regular tabbar if needed
+    toolbar.statbar= stbar
 
     --tabs to show
     if not nvertcols then nvertcols= 0 end
@@ -389,6 +417,48 @@ if toolbar then
     end
   end
 
+  function toolbar.shw_statusbar()
+    if toolbar.statbar == 1 then
+      --use tatoolbar's status bar
+      toolbar.new(20, 20, 16, 2, toolbar.themepath)
+      toolbar.seticon("TOOLBAR", toolbar.back[5], 0, true)
+      local i=5 --5=normal 8=disabled 11=hilight 14=active
+      while i < 15 do
+        toolbar.seticon("TOOLBAR", "stat-ntab1", i,   true)
+        toolbar.seticon("TOOLBAR", "stat-ntab2", i+1, true)
+        toolbar.seticon("TOOLBAR", "stat-ntab3", i+2, true)
+        i=i+3
+      end
+      --toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
+      --xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset
+      toolbar.addtabs(-3,-1,false,0,12,-2)
+      toolbar.tabfontcolor( toolbar.statcolor_normal, toolbar.statcolor_hilight, toolbar.tabcolor_active,
+            toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
+      --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
+      for i=1, 7 do
+        toolbar.settab(i,"", "")  --create the status panels
+      end
+      toolbar.tabwidth(1,-1, 150) --expand this section, min width= 150
+      --NOTE: using variable width in fields 2..7 in "WIN32" breaks the UI!!
+      -- this fields are updated from the UPDATE-UI event and
+      -- calling gdk_cairo_create in this context (to get the text extension) freeze the UI for a second
+      -- and breaks the editor update mecanism (this works fine under LINUX, though)
+      -- so, fixed width is used for this fields.
+      toolbar.tabwidth(2,"Line: 99999/99999")
+      local s="actionscript"  --same width = looks better
+      toolbar.tabwidth(3,s) --"Col: 999"
+      toolbar.tabwidth(4,s) --"actionscript"
+      toolbar.tabwidth(5,s) --"CRLF"
+      toolbar.tabwidth(6,s) --"Spaces: 8"
+      toolbar.tabwidth(7,s) --"ISO-8859-1"
+      toolbar.show(true)
+    else
+      --use default status bar
+      toolbar.seltoolbar(2)
+      toolbar.show(false)
+    end
+  end
+
   --toolbar ready, show it
   function toolbar.ready()
     toolbar.seltoolbar(0)
@@ -406,28 +476,9 @@ if toolbar then
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
       toolbar.seltab(_BUFFERS[buffer])  --select current buffer
     end
-  end
-  
-  function toolbar.statusbar()
-    toolbar.new(20, 20, 16, 2, toolbar.themepath)
-    toolbar.seticon("TOOLBAR", toolbar.back[5], 0, true)
-    local i=5 --5=normal 8=disabled 11=hilight 14=active
-    while i < 15 do
-      toolbar.seticon("TOOLBAR", "stat-ntab1", i,   true)
-      toolbar.seticon("TOOLBAR", "stat-ntab2", i+1, true)
-      toolbar.seticon("TOOLBAR", "stat-ntab3", i+2, true)
-      i=i+3
-    end
-    --toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
-    --xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset
-    toolbar.addtabs(-1,-1,false,0,12,-2)
-    toolbar.tabfontcolor( toolbar.statcolor_normal, toolbar.statcolor_hilight, toolbar.tabcolor_active,
-          toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
-    --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
-    for i=1, 7 do
-      toolbar.settab(i,"", "")
-    end
-    toolbar.tabwidth(1,-100, 150) --fill, min width= 150
+    --show status bar if enabled
+    toolbar.shw_statusbar()
+    toolbar.seltoolbar(0)
   end
 
   toolbar.set_defaults()
