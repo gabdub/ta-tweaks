@@ -199,7 +199,7 @@ function Proj.set_selectionmode(buff,selmode)
   end
   if toolbar then
     Proj.update_projview()  --update project view button
-    toolbar.seltab(_BUFFERS[buff]) --hide/show and select tab in edit mode
+    toolbar.seltabbuf(buff) --hide/show and select tab in edit mode
   end
 end
 

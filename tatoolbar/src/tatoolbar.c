@@ -19,6 +19,7 @@ static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 #define TTBF_CLOSETAB_BUT   0x0040
 #define TTBF_CHANGED        0x0080
 #define TTBF_HIDDEN         0x0100
+#define TTBF_DRAGTAB        0x0200
 
 //node images
 #define TTBI_NORMAL         0  //button/separator
@@ -296,6 +297,15 @@ static void redraw_button( struct toolbar_data *T, struct toolbar_node * p )
   gtk_widget_queue_draw(T->draw);
 }
 
+static int is_dragtab_enabled( struct toolbar_data *T )
+{
+  if( T->tab_node != NULL ){
+    if( (T->tab_node->flags & TTBF_DRAGTAB) != 0 ){
+      return 1; //drag support enabled
+    }
+  }
+  return 0;
+}
 
 static void redraw_tabs_beg( struct toolbar_data *T )
 {
@@ -1389,11 +1399,24 @@ static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
   return FALSE;
 }
 
+static struct toolbar_node * find_prev_tab( struct toolbar_data *T, struct toolbar_node * tab )
+{
+  struct toolbar_node * p;
+  if( T->tabs != tab ){
+    for( p= T->tabs; (p != NULL); p= p->next ){
+      if( p->next == tab ){
+        return p; //previous tab in the list
+      }
+    }
+  }
+  return NULL;  //first (or not found)
+}
+
 static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
 {
-  int x, y, nx, xhi;
+  int x, y, nx, xhi, ok;
   GdkModifierType state;
-  struct toolbar_node * p;
+  struct toolbar_node * p, *prev;
 
   struct toolbar_data *T= toolbar_from_widget(widget);
   if(event->is_hint){
@@ -1404,11 +1427,56 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
     state = event->state;
   }
 //  if( (state & GDK_BUTTON1_MASK) == 0 ){
-//    ttb.phipress= NULL;
+//    if( ttb.phipress != NULL ) //mouse release event lost or coming?
 //  }
   p= getButtonFromXY(T, x, y);
   if( p != ttb.philight ){
     //hilight changed
+    if( (p != NULL) && (ttb.phipress != NULL) && is_dragtab_enabled(T) && (p != ttb.phipress) &&
+        ((p->flags & TTBF_TAB) != 0) && ((ttb.phipress->flags & TTBF_TAB) != 0) ){
+      //drag tab from "ttb.phipress" to "p" position
+      ok= 1;
+      if( p == ttb.phipress->next ){
+        ok= 2;  //special case: move the tab one place to the right (swap tabs)
+      }
+      //remove the dragged tab from the list
+      prev= find_prev_tab( T, ttb.phipress );
+      if( prev == NULL){
+        if( T->tabs == ttb.phipress ){
+          //remove from list head
+          T->tabs= ttb.phipress->next;
+          ttb.phipress->next= NULL;
+        }else{
+          ok= 0; //tab position???? ignore the drag
+        }
+      }else{
+        //remove from list
+        prev->next= ttb.phipress->next;
+        ttb.phipress->next= NULL;
+      }
+      if( ok == 1 ){
+        //put dragged tab before "p"
+        ttb.phipress->next= p;
+        prev= find_prev_tab( T, p );
+        if( prev == NULL){
+          T->tabs= ttb.phipress;
+        }else{
+          prev->next= ttb.phipress;
+        }
+      }else if( ok == 2 ){
+        //put dragged tab after "p"
+        ttb.phipress->next= p->next;
+        p->next= ttb.phipress;
+      }
+      if( ok != 0 ){
+        //update the last tab (insertion point)
+        T->tabs_last= find_prev_tab( T, NULL );
+        //hilight the dragged tab
+        p= ttb.phipress;
+        //redraw the complete toolbar
+        gtk_widget_queue_draw(T->draw);
+      }
+    }
     //clear previous hilight (in any toolbar)
     if( (ttb.philight != NULL) && (ttb.ntbhilight >= 0) ){
       redraw_button( &(ttb.tbdata[ttb.ntbhilight]), ttb.philight );
@@ -1838,7 +1906,7 @@ static int ltoolbar_settooltip(lua_State *L) {
   return 0;
 }
 
-/** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)` Lua function. */
+/** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-drag])` Lua function. */
 static int ltoolbar_addtabs(lua_State *L) {
   cairo_t * cr;
   cairo_text_extents_t ext;
@@ -1848,6 +1916,9 @@ static int ltoolbar_addtabs(lua_State *L) {
     T->tab_node= add_ttb_node( T, NULL, NULL, NULL);
     if( T->tab_node != NULL ){
       T->tab_node->flags |= TTBF_TABBAR|TTBF_SELECTABLE;	//show tabs here
+      if( lua_toboolean(L,7) ){
+        T->tab_node->flags |= TTBF_DRAGTAB; //enable drag support
+      }
       T->tabxmargin= lua_tointeger(L, 1);
       T->tabxsep= lua_tointeger(L, 2);
 
@@ -1933,23 +2004,28 @@ static int ltoolbar_settab(lua_State *L) {
 
 /** `toolbar.deletetab(num)` Lua function. */
 static int ltoolbar_deletetab(lua_State *L) {
-  struct toolbar_node *k, *kprev, *p, *prev;
+  struct toolbar_node *k, *kprev, *p; //, *prev;
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int ntab= lua_tointeger(L, 1);
   kprev= NULL;
   k= get_ttb_tab(T, ntab);
   if( k != NULL ){
     redraw_tabs_beg(T);
-    prev= NULL;
-    for( p= T->tabs; (p != NULL); p= p->next ){
-      if( p->num == ntab){
-        kprev= prev;
-      }else if( p->num > ntab){
-        p->num--; //decrement bigger "num"s
-      }
-      prev= p;
+//    prev= NULL;
+//    for( p= T->tabs; (p != NULL); p= p->next ){
+//      if( p->num == ntab){
+//        kprev= prev;
+//      }else if( p->num > ntab){
+//        p->num--; //decrement bigger "num"s
+//      }
+//      prev= p;
+//    }
+    kprev= find_prev_tab( T, k );
+    if( k == T->tabs_last ){
+      //the last tab will be deleted, choose the previous as the new "last"
+      T->tabs_last= kprev;
     }
-    //kill node
+    //disconect node
     if( kprev == NULL ){
       T->tabs= k->next;
     }else{

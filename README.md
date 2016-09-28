@@ -134,7 +134,7 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab _num_ in the current edited toolbar
 * toolbar._hidetab(num,hide)_ show/hide tab _num_ in the current edited toolbar
 * toolbar._tabwidth(num,W,minwidth,maxwidth)_ control tab _num_ width: W=0:use text width, >=0:fix width, <0:porcent; 0 or minimum; 0 or maximum
-* toolbar._tabwidth(num,text)_ set tab _num_ width using to the given text
+* toolbar._tabwidth(num,text)_ set tab _num_ width using the given text
 
 Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
 (see some examples below)

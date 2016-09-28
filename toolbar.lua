@@ -21,12 +21,22 @@ if toolbar then
     return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
   end
 
-  local function set_chg_tab(ntab,buf)
+  local function getntabbuff(buf)
+    if buf._buffnum == nil then
+      --assign a unique number to each buffer
+      buf._buffnum= toolbar.buffnum
+      toolbar.buffnum= toolbar.buffnum+1
+      toolbar.buffers[_BUFFERS[buf]]= buf._buffnum
+    end
+    return buf._buffnum
+  end
+
+  local function set_chg_tabbuf(buf)
     if buf == nil then
       --update current tab
-      ntab= toolbar.currenttab
       buf= buffer
     end
+    local ntab= getntabbuff(buf)
     --update tab text
     local filename = buf.filename or buf._type or _L['Untitled']
     local tabtext= string.match(filename, ".-([^\\/]*)$")
@@ -47,14 +57,22 @@ if toolbar then
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
   end
 
-  --select a toolbar tab
-  function toolbar.seltab(ntab)
-    local buf= _BUFFERS[ntab]
+  --select a buffer's tab
+  function toolbar.seltabbuf(buf)
+    local ntab= getntabbuff(buf)
     --force visible state 'before' activate the tab
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
     toolbar.currenttab= ntab
     toolbar.activatetab(ntab)
-    set_chg_tab(ntab,buf)
+    set_chg_tabbuf(buf)
+  end
+
+  --get the buffer number of a tab
+  function toolbar.gettabnbuff(ntab)
+    for i=1,#_BUFFERS do
+      if toolbar.buffers[i] == ntab then return i end
+    end
+    return 0 --not found
   end
 
   events.connect("toolbar_clicked", function(button,ntoolbar)
@@ -68,39 +86,46 @@ if toolbar then
   function toolbar.update_all_tabs()
     --load existing buffers in tab-bar
     if #_BUFFERS > 0 then
-      for i, b in ipairs(_BUFFERS) do
-        set_chg_tab(i,b)
+      --rebuild the buffers list
+      toolbar.buffers={}
+      for i, buf in ipairs(_BUFFERS) do
+        set_chg_tabbuf(buf)
+        toolbar.buffers[i]= _BUFFERS[i]._buffnum
       end
     end
   end
 
-  events.connect(events.SAVE_POINT_REACHED, set_chg_tab)
-  events.connect(events.SAVE_POINT_LEFT, set_chg_tab)
+  events.connect(events.SAVE_POINT_REACHED, set_chg_tabbuf)
+  events.connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
 
   function toolbar.selecttab(ntab)
-    toolbar.seltab(ntab)
-    --check if a view change is needed
-    if #_VIEWS > 1 then
-      if _BUFFERS[ntab]._project_select ~= nil then
-        --project buffer: force project view
-        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-        my_goto_view(projv)
-      elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
-        --project search
-        if Proj.search_vn ~= nil then
-          my_goto_view(Proj.search_vn)
+    local nb= toolbar.gettabnbuff(ntab)
+    if nb > 0 then
+      local buf= _BUFFERS[nb]
+      toolbar.seltabbuf(buf)
+      --check if a view change is needed
+      if #_VIEWS > 1 then
+        if buf._project_select ~= nil then
+          --project buffer: force project view
+          local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+          my_goto_view(projv)
+        elseif buf._type == Proj.PRJT_SEARCH then
+          --project search
+          if Proj.search_vn ~= nil then
+            my_goto_view(Proj.search_vn)
+          else
+            --activate search view
+            Proj.goto_searchview()
+            Proj.search_vn= _VIEWS[view]
+          end
         else
-          --activate search view
-          Proj.goto_searchview()
-          Proj.search_vn= _VIEWS[view]
-        end
-      else
-        --normal file: check we are not in project view
-        Proj.goto_filesview() --change to files view if needed
-        if TA_MAYOR_VER < 9 then
-          view.goto_buffer(view, ntab, false)
-        else
-          view.goto_buffer(view, _BUFFERS[ntab])
+          --normal file: check we are not in project view
+          Proj.goto_filesview() --change to files view if needed
+          if TA_MAYOR_VER < 9 then
+            view.goto_buffer(view, _BUFFERS[buf], false)
+          else
+            view.goto_buffer(view, buf)
+          end
         end
       end
     end
@@ -168,34 +193,54 @@ if toolbar then
   end)
 
   events.connect(events.FILE_OPENED, function()
+    local ntab= getntabbuff(buffer)
     local filename = buffer.filename or buffer._type or _L['Untitled']
-    toolbar.settab(_BUFFERS[buffer], string.match(filename, ".-([^\\/]*)$"), filename)
-    toolbar.seltab(_BUFFERS[buffer])
+    toolbar.settab(ntab, string.match(filename, ".-([^\\/]*)$"), filename)
+    toolbar.seltabbuf(buffer)
   end)
 
   events.connect(events.BUFFER_NEW, function()
-    local ntab=_BUFFERS[buffer]
-    if ntab > 0 then --ignore TA start
+    if _BUFFERS[buffer] > 0 then --ignore TA start
+      local ntab= getntabbuff(buffer)
       local filename = _L['Untitled']
       toolbar.settab(ntab, filename, filename)
-      toolbar.seltab(ntab)
+      toolbar.seltabbuf(buffer)
     end
   end)
 
   events.connect(events.BUFFER_DELETED, function()
     --TA doesn't inform which buffer was deleted so,
-    --delete the first tab (all tab numbers are decremented) and update all tabs
-    toolbar.deletetab(1)
-    toolbar.update_all_tabs()
-    toolbar.seltab(toolbar.currenttab) --keep last selection
+    --check the tab list to find out
+    if #toolbar.buffers == #_BUFFERS+1 then
+      local deleted= false
+      for i=1, #_BUFFERS do
+        if toolbar.buffers[i] ~= _BUFFERS[i]._buffnum then
+          toolbar.deletetab(toolbar.buffers[i])
+          deleted= true
+          break
+        end
+      end
+      if not deleted then --delete the last one
+        toolbar.deletetab(toolbar.buffers[#toolbar.buffers])
+      end
+      --rebuild the buffers list
+      toolbar.buffers={}
+      for i=1,#_BUFFERS do
+        toolbar.buffers[i]= _BUFFERS[i]._buffnum
+      end
+    else
+      ui.statusbar_text= "ERROR, toolbar N="..#toolbar.buffers.." buffers N="..#_BUFFERS
+    end
+    --select current buffer's tab
+    toolbar.seltabbuf(buffer)
   end)
 
   events.connect(events.BUFFER_AFTER_SWITCH, function()
-    toolbar.seltab(_BUFFERS[buffer])
+    toolbar.seltabbuf(buffer)
   end)
 
   events.connect(events.VIEW_AFTER_SWITCH, function()
-    toolbar.seltab(_BUFFERS[buffer])
+    toolbar.seltabbuf(buffer)
   end)
 
   local function getCfgNum(line, field)
@@ -220,6 +265,8 @@ if toolbar then
 
   function toolbar.set_defaults()
     --set defaults
+    toolbar.buffnum= 1  --assign a unique number to each buffer
+    toolbar.buffers= {} --list of buffnum in use
     toolbar.themepath= _USERHOME.."/toolbar/bar-sm-light/"
     toolbar.iconspath= _USERHOME.."/toolbar/icons/light/"
     toolbar.tb0= true --only show toolbar 0 (horizontal)
@@ -316,9 +363,9 @@ if toolbar then
   end
 
   function toolbar.add_tabs_here()
-    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset)
+    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag])
     toolbar.addtabs(toolbar.tabxmargin, toolbar.tabxsep, toolbar.tabwithclose, toolbar.tabmodified,
-        toolbar.tabfont_sz, toolbar.tabfont_yoffset)
+        toolbar.tabfont_sz, toolbar.tabfont_yoffset,true) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
     toolbar.tabfontcolor( toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
@@ -474,7 +521,7 @@ if toolbar then
     if toolbar.tabpos > 0 then
       --toolbar.tabwidth(0,0,50,200)  --set tab width mode:0=text -1=fill >0:width / min & max
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
-      toolbar.seltab(_BUFFERS[buffer])  --select current buffer
+      toolbar.seltabbuf(buffer)  --select current buffer
     end
     --show status bar if enabled
     toolbar.shw_statusbar()
