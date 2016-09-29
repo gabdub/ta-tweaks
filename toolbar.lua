@@ -89,6 +89,7 @@ if toolbar then
       --rebuild the buffers list
       toolbar.buffers={}
       for i, buf in ipairs(_BUFFERS) do
+        buf._buffnum= nil --force: get a new tab buffnum
         set_chg_tabbuf(buf)
         toolbar.buffers[i]= _BUFFERS[i]._buffnum
       end
@@ -280,6 +281,9 @@ if toolbar then
     toolbar.tabxsep= -1
     toolbar.tabwithclose= false
     toolbar.tab2clickclose= true
+    toolbar.tabwidthmode= 0  --0=text >0=fixed <0=expand
+    toolbar.tabwidthmin= 0
+    toolbar.tabwidthmax= 0
     toolbar.tabmodified= 0
     toolbar.tabfont_sz= 0
     toolbar.tabfont_yoffset= 0
@@ -368,8 +372,11 @@ if toolbar then
         toolbar.tabfont_sz, toolbar.tabfont_yoffset,true) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
-    toolbar.tabfontcolor( toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
-        toolbar.tabcolor_modif, toolbar.tabcolor_grayed )
+    toolbar.tabfontcolor(toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
+        toolbar.tabcolor_modif, toolbar.tabcolor_grayed)
+
+    --tabwidthmode: 0=text >0=fixed <0=expand
+    toolbar.tabwidth(0, toolbar.tabwidthmode, toolbar.tabwidthmin, toolbar.tabwidthmax)
   end
 
   --put next buttons in a new row/column
@@ -491,7 +498,7 @@ if toolbar then
       -- calling gdk_cairo_create in this context (to get the text extension) freeze the UI for a second
       -- and breaks the editor update mecanism (this works fine under LINUX, though)
       -- so, fixed width is used for this fields.
-      toolbar.tabwidth(2,"Line: 99999/99999")
+      toolbar.tabwidth(2, _L['Line:'].." 99999/99999")
       local s="actionscript"  --same width = looks better
       toolbar.tabwidth(3,s) --"Col: 999"
       toolbar.tabwidth(4,s) --"actionscript"

@@ -405,6 +405,21 @@ static void set_tabwidth(struct toolbar_data *T, struct toolbar_node * p)
   if( (p->flags & TTBF_HIDDEN) == 0 ){
     if( p->changewidth >= 0 ){
       if( p->changewidth == 0 ){  //use text width
+        //update textwidth if 0
+        if( (p->textwidth == 0) && (p->name != NULL) && (*(p->name) != 0) && ((p->minwidth == 0)||(p->minwidth != p->maxwidth)) ){
+          //if min and max are set and equal, there is no need to know the textwidth
+      // NOTE: using variable width in status-bar fields 2..7 in "WIN32" breaks the UI!!
+      // this fields are updated from the UPDATE-UI event and
+      // calling gdk_cairo_create in this context (to get the text extension) freeze the UI for a second
+      // and breaks the editor update mecanism (this works fine under LINUX, though)
+      // so, fixed width is used for this fields
+          cairo_text_extents_t ext;
+          cairo_t *cr = gdk_cairo_create(T->draw->window);
+          cairo_set_font_size(cr, T->tabfontsz);
+          cairo_text_extents( cr, p->name, &ext );
+          p->textwidth= (int) ext.width;
+          cairo_destroy(cr);
+        }
         p->barx2= p->textwidth + T->tabfixpart;
       }else{
         p->barx2= p->changewidth; //use this value
@@ -586,20 +601,6 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
   p->bary2= T->img[TTBI_TB_NTAB1].height;
   p->imgy=  T->tabtexty;
   p->textwidth= 0;
-  if( (p->name != NULL) && (*(p->name) != 0) && ((p->minwidth == 0)||(p->maxwidth ==0)) ){
-    //if min and max are set, there is no need to know the textwidth
-// NOTE: using variable width in status-bar fields 2..7 in "WIN32" breaks the UI!!
-// this fields are updated from the UPDATE-UI event and
-// calling gdk_cairo_create in this context (to get the text extension) freeze the UI for a second
-// and breaks the editor update mecanism (this works fine under LINUX, though)
-// so, fixed width is used for this fields
-    cairo_text_extents_t ext;
-    cairo_t *cr = gdk_cairo_create(T->draw->window);
-    cairo_set_font_size(cr, T->tabfontsz);
-    cairo_text_extents( cr, p->name, &ext );
-    p->textwidth= (int) ext.width;
-    cairo_destroy(cr);
-  }
   set_tabwidth(T, p);
   //split free space in tabs that expand
   update_tabs_size(T);
@@ -825,23 +826,36 @@ static void change_ttb_tabwidth(struct toolbar_data *T, int ntab, int percwidth,
       T->ntabs_expand--;
     }
     clear_tabwidth(T, p);
-    //set new change width min, max and mode: 0:text width, >=0:fixes, <0:porcent
-    p->minwidth= minwidth;
-    p->maxwidth= maxwidth;
+    //set new change width min, max and mode: 0:text width, >0:fixes, <0:porcent
     p->changewidth= percwidth;
-    if( p->changewidth < 0 ){
-      T->ntabs_expand++;
+    if( percwidth > 0 ){
+      //fixed width, ignore minimum and maximum
+      p->minwidth= 0;
+      p->maxwidth= 0;
+    }else{
+      //variable width
+      p->minwidth= minwidth;
+      p->maxwidth= maxwidth;
+      if( percwidth < 0 ){
+        T->ntabs_expand++;
+      }
     }
     set_tabwidth(T, p);
     //split free space in tabs that expand
     update_tabs_size(T);
     //redraw the complete toolbar
     gtk_widget_queue_draw(T->draw);
-  }else{
+  }else if( ntab <= 0 ){
     //invalid tab, change toolbar defaults
-    T->tabminwidth= minwidth;
-    T->tabmaxwidth= maxwidth;
     T->tabchangewidth= percwidth;
+    if( percwidth > 0 ){
+      //fixed width, ignore minimum and maximum
+      T->tabminwidth= 0;
+      T->tabmaxwidth= 0;
+    }else{
+      T->tabminwidth= minwidth;
+      T->tabmaxwidth= maxwidth;
+    }
   }
 }
 
@@ -2081,7 +2095,7 @@ static int ltoolbar_hidetab(lua_State *L) {
 
 /** `toolbar.tabwidth(num,WW,minwidth,maxwidth)` Lua function. */
 /** `toolbar.tabwidth(num,text)` Lua function. */
-/** WW= 0:text width, >=0:fix, <0:porcent */
+/** WW= 0:text width, >0:fix, <0:porcent */
 static int ltoolbar_tabwidth(lua_State *L) {
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int ntab=      lua_tointeger(L, 1);
