@@ -1,4 +1,5 @@
 if toolbar then
+  local events, events_connect = events, events.connect
   --define a toolbar button
   function toolbar.cmd(name,func,tooltip,icon)
     toolbar.addbutton(name,tooltip)
@@ -75,7 +76,7 @@ if toolbar then
     return 0 --not found
   end
 
-  events.connect("toolbar_clicked", function(button,ntoolbar)
+  events_connect("toolbar_clicked", function(button,ntoolbar)
     if toolbar[button] ~= nil then
       toolbar[button]()
     else
@@ -96,8 +97,8 @@ if toolbar then
     end
   end
 
-  events.connect(events.SAVE_POINT_REACHED, set_chg_tabbuf)
-  events.connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
+  events_connect(events.SAVE_POINT_REACHED, set_chg_tabbuf)
+  events_connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
 
   function toolbar.selecttab(ntab)
     local nb= toolbar.gettabnbuff(ntab)
@@ -149,7 +150,7 @@ if toolbar then
     end
   end
 
-  events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
+  events_connect("toolbar_tabclicked", function(ntab,ntoolbar)
     --ui.statusbar_text= "tab "..ntab.." clicked"
     if ntoolbar == 0 then
       --tab bar click
@@ -170,14 +171,14 @@ if toolbar then
     end
   end)
 
-  events.connect("toolbar_tabRclicked", function(ntab,ntoolbar)
+  events_connect("toolbar_tabRclicked", function(ntab,ntoolbar)
     if ntoolbar == 0 then
       toolbar.selecttab(ntab)
       return true --open context menu
     end
   end)
 
-  events.connect("toolbar_tab2clicked", function(ntab,ntoolbar)
+  events_connect("toolbar_tab2clicked", function(ntab,ntoolbar)
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
     if ntoolbar == 0 and toolbar.tab2clickclose then
@@ -185,7 +186,7 @@ if toolbar then
     end
   end)
 
-  events.connect("toolbar_tabclose", function(ntab,ntoolbar)
+  events_connect("toolbar_tabclose", function(ntab,ntoolbar)
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
     if ntoolbar == 0 then
@@ -193,14 +194,14 @@ if toolbar then
     end
   end)
 
-  events.connect(events.FILE_OPENED, function()
+  events_connect(events.FILE_OPENED, function()
     local ntab= getntabbuff(buffer)
     local filename = buffer.filename or buffer._type or _L['Untitled']
     toolbar.settab(ntab, string.match(filename, ".-([^\\/]*)$"), filename)
     toolbar.seltabbuf(buffer)
   end)
 
-  events.connect(events.BUFFER_NEW, function()
+  events_connect(events.BUFFER_NEW, function()
     if _BUFFERS[buffer] > 0 then --ignore TA start
       local ntab= getntabbuff(buffer)
       local filename = _L['Untitled']
@@ -209,7 +210,7 @@ if toolbar then
     end
   end)
 
-  events.connect(events.BUFFER_DELETED, function()
+  events_connect(events.BUFFER_DELETED, function()
     --TA doesn't inform which buffer was deleted so,
     --check the tab list to find out
     if #toolbar.buffers == #_BUFFERS+1 then
@@ -236,11 +237,11 @@ if toolbar then
     toolbar.seltabbuf(buffer)
   end)
 
-  events.connect(events.BUFFER_AFTER_SWITCH, function()
+  events_connect(events.BUFFER_AFTER_SWITCH, function()
     toolbar.seltabbuf(buffer)
   end)
 
-  events.connect(events.VIEW_AFTER_SWITCH, function()
+  events_connect(events.VIEW_AFTER_SWITCH, function()
     toolbar.seltabbuf(buffer)
   end)
 
@@ -265,18 +266,27 @@ if toolbar then
   end
 
   function toolbar.set_defaults()
-    --set defaults
+    --set toolbar defaults
     toolbar.buffnum= 1  --assign a unique number to each buffer
     toolbar.buffers= {} --list of buffnum in use
     toolbar.themepath= _USERHOME.."/toolbar/bar-sm-light/"
     toolbar.iconspath= _USERHOME.."/toolbar/icons/light/"
     toolbar.tb0= true --only show toolbar 0 (horizontal)
     toolbar.tb1= false
-    toolbar.statbar= 0
+    toolbar.statbar= 0 --0:use default statusbar 1:create 2:already created
     toolbar.barsize= 27
     toolbar.butsize= 24
     toolbar.imgsize= 16
     toolbar.newrowoff= 3
+    toolbar.adj= false
+    toolbar.adj_bw= 24
+    toolbar.adj_bh= 24
+    toolbar.adj_xm= 2
+    toolbar.adj_ym= 1
+    toolbar.adj_xoff= 4
+    toolbar.adj_yoff= 4
+    --tabs
+    toolbar.hideproject= true --don't show project files in tabs
     toolbar.tabxmargin= 5
     toolbar.tabxsep= -1
     toolbar.tabwithclose= false
@@ -292,16 +302,17 @@ if toolbar then
     toolbar.tabcolor_active= 0
     toolbar.tabcolor_modif= 0x800000
     toolbar.tabcolor_grayed= 0x808080
+    --status-bar
+    toolbar.statsize= 20
+    toolbar.statbutsize= 20
+    toolbar.statimgsize= 16
+    toolbar.statxmargin= -3
+    toolbar.statxsep= -1
+    toolbar.statfont_sz= 12
+    toolbar.statfont_yoffset=-2
     toolbar.statcolor_normal= 0x202020
     toolbar.statcolor_hilight= 0
-    toolbar.adj= false
-    toolbar.adj_bw= 24
-    toolbar.adj_bh= 24
-    toolbar.adj_xm= 2
-    toolbar.adj_ym= 1
-    toolbar.adj_xoff= 4
-    toolbar.adj_yoff= 4
-    toolbar.hideproject= true
+    --images
     toolbar.img= {}
     for i= 1, 14 do
       toolbar.img[i]= ""
@@ -336,6 +347,9 @@ if toolbar then
            getCfgNum( line, 'tabcolor_active')  or
            getCfgNum( line, 'tabcolor_modif')   or
            getCfgNum( line, 'tabcolor_grayed')  or
+           getCfgNum( line, 'tabwidthmode')     or
+           getCfgNum( line, 'tabwidthmin')      or
+           getCfgNum( line, 'tabwidthmax')      or
            getCfgNum( line, 'statcolor_normal') or
            getCfgNum( line, 'statcolor_hilight') then
 
@@ -471,23 +485,31 @@ if toolbar then
     end
   end
 
+  function toolbar.create_statusbar()
+    toolbar.new(toolbar.statsize, toolbar.statbutsize, toolbar.statimgsize, 2, toolbar.themepath)
+    toolbar.seticon("TOOLBAR", toolbar.back[5], 0, true)
+    local i=5 --5=normal 8=disabled 11=hilight 14=active
+    while i < 15 do
+      toolbar.seticon("TOOLBAR", "stat-ntab1", i,   true)
+      toolbar.seticon("TOOLBAR", "stat-ntab2", i+1, true)
+      toolbar.seticon("TOOLBAR", "stat-ntab3", i+2, true)
+      i=i+3
+    end
+    toolbar.statbar= 2 --created
+  end
+
   function toolbar.shw_statusbar()
     if toolbar.statbar == 1 then
       --use tatoolbar's status bar
-      toolbar.new(20, 20, 16, 2, toolbar.themepath)
-      toolbar.seticon("TOOLBAR", toolbar.back[5], 0, true)
-      local i=5 --5=normal 8=disabled 11=hilight 14=active
-      while i < 15 do
-        toolbar.seticon("TOOLBAR", "stat-ntab1", i,   true)
-        toolbar.seticon("TOOLBAR", "stat-ntab2", i+1, true)
-        toolbar.seticon("TOOLBAR", "stat-ntab3", i+2, true)
-        i=i+3
-      end
-      --toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
-      --xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset
-      toolbar.addtabs(-3,-1,false,0,12,-2)
+      toolbar.create_statusbar()
+    end
+    toolbar.seltoolbar(2)
+    if toolbar.statbar == 2 then
+      --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag])
+      toolbar.addtabs(toolbar.statxmargin, toolbar.statxsep, false, 0,
+        toolbar.statfont_sz, toolbar.statfont_yoffset, false)
       toolbar.tabfontcolor( toolbar.statcolor_normal, toolbar.statcolor_hilight, toolbar.tabcolor_active,
-            toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
+        toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
       --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
       for i=1, 7 do
         toolbar.settab(i,"", "")  --create the status panels
@@ -497,7 +519,7 @@ if toolbar then
       -- this fields are updated from the UPDATE-UI event and
       -- calling gdk_cairo_create in this context (to get the text extension) freeze the UI for a second
       -- and breaks the editor update mecanism (this works fine under LINUX, though)
-      -- so, fixed width is used for this fields.
+      -- so, fixed width is used for these fields.
       toolbar.tabwidth(2, _L['Line:'].." 99999/99999")
       local s="actionscript"  --same width = looks better
       toolbar.tabwidth(3,s) --"Col: 999"
@@ -507,8 +529,7 @@ if toolbar then
       toolbar.tabwidth(7,s) --"ISO-8859-1"
       toolbar.show(true)
     else
-      --use default status bar
-      toolbar.seltoolbar(2)
+      --use the default status bar
       toolbar.show(false)
     end
   end

@@ -49,9 +49,6 @@ if toolbar then
   --change theme defaults here
   --toolbar.tabwithclose= true
   --toolbar.tabxmargin=0
-  --toolbar.tabwidthmode=-1  --tabwidthmode: 0=var >0=fixed <0=expand
-  toolbar.tabwidthmin=60
-  toolbar.tabwidthmax=160
 
   --create the toolbar (tabpos, nvertcols, stbar)
   --tabpos=0: 1 row, use default tabs

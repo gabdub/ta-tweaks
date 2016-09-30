@@ -228,6 +228,28 @@ __Some examples:__
 
 # tabs & theming
 
+__Theming Features:__
+
+* Allows to have the same look and feel in different operating systems and match exactly the colors used in the editor
+* You can choose from different predefined themes or build your own (just copy one and edit it)
+
+__Tabs Features:__
+
+* 4 tab-states: normal, hilight on over, active and disabled
+* 3 images define each tab-state: left + middle (variable width) + right
+* each tab-state can have a different text color
+* tab show/hide control
+* tab tooltip
+* 3 width options: text length, fixed width and expanded (with optional minimum and maximum width)
+* 3 options to show file modification: change text, show an image, change text color
+* option to show a close button in every tab with hilight on over
+* option to close a tab with double click
+* option to rearrange tabs by dragging
+* can have buttons on the left side
+* scroll bar buttons are shown when needed (mouse wheel can be used to scroll tabs)
+* every horizontal toolbar can have _one_ tab group (status-bar is actually a tab group)
+* font size and y-position adjustment
+
 __Some examples using tabs and themes:__
 
 **theme bar-sm-light**
@@ -270,4 +292,10 @@ __Features:__
 * First field (ui.statusbartext) with tooltip support to allow read texts partially shown
 * click over a field to: goto line, select lexer, select EOL mode, select indentation and select encoding
 
+**default status-bar**
+
 ![status bar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win9.png "status bar")
+
+**status-bar with buttons**
+
+![status bar with buttons](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win10.png "status bar with buttons")
