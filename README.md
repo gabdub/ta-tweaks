@@ -252,11 +252,11 @@ __Tabs Features:__
 
 __Some examples using tabs and themes:__
 
-**theme bar-sm-light**
+**theme: bar-sm-light**
 
 ![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win1.png "theme bar-sm-light")
 
-**theme bar-ff-dark**
+**theme: bar-ff-dark**
 
 ![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win2.png "theme bar-ff-dark")
 
@@ -268,17 +268,21 @@ __Some examples using tabs and themes:__
 
 ![Two rows (tabs at the top)](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win4.png "Two rows (tabs at the top)")
 
-**theme bar-sm-light**
+**theme: bar-sm-light**
 
 ![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win6.png "theme bar-sm-light")
 
-**theme bar-th-dark**
+**theme: bar-th-dark**
 
 ![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win7.png "theme bar-th-dark")
 
-**theme bar-ff-dark**
+**theme: bar-ff-dark**
 
 ![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win8.png "theme bar-ff-dark")
+
+**theme: bar-ch-dark**
+
+![theme bar-ch-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win11.png "theme bar-ch-dark")
 
 **mixed horizontal & vertical**
 
