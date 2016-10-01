@@ -111,7 +111,7 @@ This code adds a toolbar to textadept (__compiling is required__):
 
 The "toolbar" object is added to textadept with the following functions:
 
-* toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons
+* toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons (_toolbar-num_ = 0/false:top, 1/true:vertical, 2:status-bar)
 * toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
 * toolbar._seltoolbar(toolbar-num(int) or isvertical(bool))_ select which toolbar to edit
 * toolbar._addbutton(button-name,tooltiptext)_ add some buttons to the current edited toolbar
@@ -127,13 +127,13 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
 * toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the current edited toolbar
 * toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
-* toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip, in the current edited toolbar
-* toolbar._deletetab(num)_ delete tab _num_ (decrement bigger tab-nums by 1) from the current edited toolbar
+* toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip in the current edited toolbar
+* toolbar._deletetab(num)_ delete tab _num_ from the current edited toolbar
 * toolbar._activatetab(num)_ activate (selects) tab _num_ in the current edited toolbar
 * toolbar._enabletab(num,enabled)_ enable/disable tab _num_ in the current edited toolbar
 * toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab _num_ in the current edited toolbar
 * toolbar._hidetab(num,hide)_ show/hide tab _num_ in the current edited toolbar
-* toolbar._tabwidth(num,W,minwidth,maxwidth)_ control tab _num_ width: W=0:use text width, >=0:fix width, <0:porcent; 0 or minimum; 0 or maximum
+* toolbar._tabwidth(num,W,minwidth,maxwidth)_ control tab _num_ width: W=0:use text width, >0:fix width, <0:porcent; 0 or minimum; 0 or maximum
 * toolbar._tabwidth(num,text)_ set tab _num_ width using the given text
 
 Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
