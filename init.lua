@@ -45,9 +45,10 @@ if toolbar then
   toolbar.set_theme("bar-sm-light")
   --toolbar.set_theme("bar-ff-dark")
   --toolbar.set_theme("bar-th-dark")
+  --toolbar.set_theme("bar-ch-dark")
 
   --change theme defaults here
-  --toolbar.tabwithclose= true
+  --toolbar.tabwithclose=true
   --toolbar.tabxmargin=0
 
   --create the toolbar (tabpos, nvertcols, stbar)

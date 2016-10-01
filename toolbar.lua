@@ -314,7 +314,7 @@ if toolbar then
     toolbar.statcolor_hilight= 0
     --images
     toolbar.img= {}
-    for i= 1, 14 do
+    for i= 1, 23 do
       toolbar.img[i]= ""
     end
     toolbar.back= {}
@@ -433,6 +433,13 @@ if toolbar then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
         toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
           toolbar.adj_xoff, toolbar.adj_yoff)
+      end
+      if not toolbar.tabwithclose then
+        --no close button in tabs, use a shorter tab end (part #3)
+        if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
+        if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
+        if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end
+        if toolbar.img[16] == "" then toolbar.img[16]= "ttb-atab3nc" end
       end
       --add/change some images
       for i, img in ipairs(toolbar.img) do
