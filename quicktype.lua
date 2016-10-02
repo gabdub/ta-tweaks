@@ -7,41 +7,45 @@ keys.cg = textadept.editing.goto_line
 -- Control+F4 =   RESET textadept
 keys.cf4 = reset
 
+function type_before_after(before,after)
+  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
+    --if something is selected use enclose (left the cursor at the end)
+    textadept.editing.enclose(before,after)
+    return
+  end
+  --nothing is selected, left the cursor between 'before' and 'after'
+  buffer.add_text(buffer, before)
+  local pos= buffer.current_pos
+  buffer.add_text(buffer, after)
+  buffer.goto_pos(buffer, pos)
+end
+
 -- Alt+1 = ($=cursor position) TYPE
 -- /*
 --      $:
 --
 -- */
 keys.a1 = function()
-  buffer.add_text(buffer, "/*\n    ")
-  local pos= buffer.current_pos
-  buffer.add_text(buffer, ":\n      \n*/\n")
-  buffer.goto_pos(buffer, pos)
+  type_before_after("/*\n    ", ":\n      \n*/\n")
 end
 
 -- Alt+2 = ($=cursor position) TYPE
 -- /* $ */
 keys.a2 = function()
-  buffer.add_text(buffer, "/* ")
-  local pos= buffer.current_pos
-  buffer.add_text(buffer, " */")
-  buffer.goto_pos(buffer, pos)
+  type_before_after("/* ", " */")
 end
 
 -- Alt+3 = ($=cursor position) TYPE
 -- #define $
 keys.a3 = function()
-  buffer.add_text(buffer, "#define ")
+  type_before_after("#define ", "")
 end
 
 
 -- Alt+4 = ($=cursor position) TYPE
 -- /* TO DO: $ */
 keys.a4 = function()
-  buffer.add_text(buffer, "/* TO DO: ")
-  local pos= buffer.current_pos
-  buffer.add_text(buffer, " */")
-  buffer.goto_pos(buffer, pos)
+  type_before_after("/* TO DO: ", " */")
 end
 
 -- Alt+5 = ($=cursor position) TYPE
@@ -50,14 +54,14 @@ end
 --     \|/   */
 -- $
 keys.a5 = function()
-  buffer.add_text(buffer, "/*    |\n      |\n     \\|/   */\n")
+  type_before_after("/*    |\n      |\n     \\|/   */\n", "")
 end
 
 -- Alt+0 = ($=cursor position) TYPE
 -- /* ==....== */
 -- $
 keys.a0 = function()
-  buffer.add_text(buffer, "/* ============================================================================= */\n")
+  type_before_after("/* ============================================================================= */\n", "")
 end
 
 -- Ctrl+, = ($=cursor position) GOTO MAIN C-BLOCK BEG

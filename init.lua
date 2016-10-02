@@ -36,7 +36,35 @@ events.connect(events.LEXER_LOADED, function(lang)
     buffer.tab_width = 2
     buffer.use_tabs = false
   end
+  if toolbar then
+    --show vertical toolbar only in html files
+    toolbar.seltoolbar(1)
+    toolbar.show(lang == 'html')
+    toolbar.seltoolbar(0)
+  end
 end)
+
+local function enc_html_html()
+  type_before_after('<html>\n', '\n\n</html>\n')
+end
+local function enc_html_para()
+  type_before_after('<p>', '</p>\n')
+end
+local function enc_html_bold()
+  type_before_after('<b>', '</b>')
+end
+local function enc_html_italic()
+  type_before_after('<i>', '</i>')
+end
+local function enc_html_underline()
+  type_before_after('<u>', '</u>')
+end
+local function enc_html_ul()
+  type_before_after('<ul>\n', '</ul>\n')
+end
+local function enc_html_li()
+  type_before_after('<li>', '</li>\n')
+end
 
 if toolbar then
   require('toolbar')
@@ -59,9 +87,8 @@ if toolbar then
   --nvertcols= 0..2 = number of columns in vertical toolbar
   --stbar=0: use default status bar
   --stbar=1: use toolbar's status bar
-  toolbar.create(1,0,1)
+  toolbar.create(1,1,1)
 
-  --toolbar.seltoolbar(1)
   --add some buttons
   toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
 
@@ -74,11 +101,19 @@ if toolbar then
   toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]")
   toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
-  --toolbar.seltoolbar(1)
   toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" )
   toolbar.addspace()
   --toolbar.newrow()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
+
+  toolbar.seltoolbar(1)
+  toolbar.cmd("go-home",                enc_html_html,           "HTML block")
+  toolbar.cmd("edit-select-all",        enc_html_para,           "HTML paragraph")
+  toolbar.cmd("format-text-bold",       enc_html_bold,           "HTML bold text")
+  toolbar.cmd("format-text-italic",     enc_html_italic,         "HTML italic text")
+  toolbar.cmd("format-text-underline",  enc_html_underline,      "HTML underline text")
+  toolbar.cmd("view-list-details-symbolic",enc_html_ul,          "HTML unordered list")
+  toolbar.cmd("view-list-compact-symbolic",enc_html_li,          "HTML list item")
 
   --toolbar ready, show it
   toolbar.ready()
