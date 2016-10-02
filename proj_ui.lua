@@ -713,3 +713,5 @@ keys.f5 = refresh_proj_hilight
 keys.cb = Proj.switch_buffer
 keys['cpgup'] = Proj.prev_buffer
 keys['cpgdn'] = Proj.next_buffer
+keys['apgup'] = Proj.first_buffer
+keys['apgdn'] = Proj.last_buffer

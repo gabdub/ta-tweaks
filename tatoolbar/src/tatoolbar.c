@@ -1241,6 +1241,73 @@ static void draw_tab(struct toolbar_data *T, cairo_t *cr, struct toolbar_node *t
   draw_txt(cr, t->name, x+t->imgx, y+t->imgy, y, x3-x, T->img[TTBI_TB_NTAB2].height, color, T->tabfontsz );
 }
 
+static struct toolbar_node * find_prev_tab( struct toolbar_data *T, struct toolbar_node * tab )
+{
+  struct toolbar_node * p;
+  if( T->tabs != tab ){
+    for( p= T->tabs; (p != NULL); p= p->next ){
+      if( p->next == tab ){
+        return p; //previous tab in the list
+      }
+    }
+  }
+  return NULL;  //first (or not found)
+}
+
+static void goto_ttb_tab(struct toolbar_data *T, int tabpos)
+{  //generate a click in tab: -1:prev,1:next,0:first,2:last
+  struct toolbar_node *p, *pcurr;
+  p= NULL;
+  if( T->tab_node != NULL ){
+    //find the current active tab
+    for( pcurr= T->tabs; (pcurr != NULL); pcurr= pcurr->next ){
+      if( (pcurr->flags & TTBF_ACTIVE) != 0 ){
+        break;
+      }
+    }
+    if( tabpos == 1 ){
+      //next visible tab
+      if( pcurr != NULL ){
+        p= pcurr->next;
+        while( (p != NULL) && ((p->flags & TTBF_HIDDEN) != 0) ){
+          p= p->next; //skip hidden tabs
+        }
+      }
+      if( p == NULL ){
+        tabpos= 0; //activate the first one
+      }
+    }else if( tabpos == -1 ){
+      //prev visible tab
+      if( pcurr != NULL ){
+        p= find_prev_tab( T, pcurr );
+        while( (p != NULL) && ((p->flags & TTBF_HIDDEN) != 0) ){
+          p= find_prev_tab( T, p ); //skip hidden tabs
+        }
+      }
+      if( p == NULL ){
+        tabpos= 2; //activate the last one
+      }
+    }
+    if( tabpos == 0 ){
+      //first visible tab
+      for( p= T->tabs; (p != NULL); p= p->next ){
+        if( (p->flags & TTBF_HIDDEN) == 0 ){
+          break;
+        }
+      }
+    }else if( tabpos == 2 ){
+      //last visible tab
+      p= T->tabs_last;
+      while( (p != NULL) && ((p->flags & TTBF_HIDDEN) != 0) ){
+        p= find_prev_tab( T, p ); //skip hidden tabs
+      }
+    }
+    if( (p != NULL) && (p != pcurr) ){
+      lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+    }
+  }
+}
+
 /* ============================================================================= */
 /*                                EVENTS                                         */
 /* ============================================================================= */
@@ -1411,19 +1478,6 @@ static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
     clear_tooltip_text(T);
   }
   return FALSE;
-}
-
-static struct toolbar_node * find_prev_tab( struct toolbar_data *T, struct toolbar_node * tab )
-{
-  struct toolbar_node * p;
-  if( T->tabs != tab ){
-    for( p= T->tabs; (p != NULL); p= p->next ){
-      if( p->next == tab ){
-        return p; //previous tab in the list
-      }
-    }
-  }
-  return NULL;  //first (or not found)
 }
 
 static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
@@ -2120,6 +2174,14 @@ static int ltoolbar_tabwidth(lua_State *L) {
   return 0;
 }
 
+/** `toolbar.gototab(tabpos)` Lua function. */
+static int ltoolbar_gototab(lua_State *L) {
+  //generate a click in tab: -1:prev,1:next,0:first,2:last
+  struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
+  goto_ttb_tab( T, lua_tointeger(L, 1));
+  return 0;
+}
+
 static void register_toolbar(lua_State *L) {
   lua_newtable(L);
 //toolbar
@@ -2137,13 +2199,14 @@ static void register_toolbar(lua_State *L) {
 //tabs
   l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //show tabs in the toolbar
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
-  l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab n
-  l_setcfunction(L, -1, "deletetab",    ltoolbar_deletetab);    //delete tab n
-  l_setcfunction(L, -1, "activatetab",  ltoolbar_activatetab);  //activate tab n
-  l_setcfunction(L, -1, "enabletab",    ltoolbar_enabletab);    //enable/disable tab n
-  l_setcfunction(L, -1, "modifiedtab",  ltoolbar_modifiedtab);  //show/hide changed indicator in tab n
-  l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab n
-  l_setcfunction(L, -1, "tabwidth",     ltoolbar_tabwidth);     //set tab n tabwidth (varible/fixed)
+  l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab num
+  l_setcfunction(L, -1, "deletetab",    ltoolbar_deletetab);    //delete tab num
+  l_setcfunction(L, -1, "activatetab",  ltoolbar_activatetab);  //activate tab num
+  l_setcfunction(L, -1, "enabletab",    ltoolbar_enabletab);    //enable/disable tab num
+  l_setcfunction(L, -1, "modifiedtab",  ltoolbar_modifiedtab);  //show/hide changed indicator in tab num
+  l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab num
+  l_setcfunction(L, -1, "tabwidth",     ltoolbar_tabwidth);     //set tab num tabwidth (varible/fixed)
+  l_setcfunction(L, -1, "gototab",      ltoolbar_gototab);      //generate a click in tab: -1:prev,1:next,0:first,2:last
 
   lua_setglobal(L, "toolbar");
 }

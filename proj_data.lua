@@ -712,34 +712,53 @@ function Proj.goto_buffer(nb)
   end
 end
 
-function Proj.next_buffer()
-  local nb= _BUFFERS[buffer]+1
-  if nb > #_BUFFERS then nb= 1 end
+function Proj.first_buffer()
   if toolbar then
-    local retry= 3
-    --if project files are not shown in tabs, skip them
-    while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
-      nb=nb+1
-      if nb > #_BUFFERS then nb= 1 end
-      retry=retry-1
-    end
+    toolbar.gototab(0)
   end
-  Proj.goto_buffer(nb)
+end
+function Proj.last_buffer()
+  if toolbar then
+    toolbar.gototab(2)
+  end
+end
+
+function Proj.next_buffer()
+  if toolbar then
+    toolbar.gototab(1)
+  else
+    local nb= _BUFFERS[buffer]+1
+    if nb > #_BUFFERS then nb= 1 end
+    if toolbar then
+      local retry= 3
+      --if project files are not shown in tabs, skip them
+      while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
+        nb=nb+1
+        if nb > #_BUFFERS then nb= 1 end
+        retry=retry-1
+      end
+    end
+    Proj.goto_buffer(nb)
+  end
 end
 
 function Proj.prev_buffer()
-  local nb= _BUFFERS[buffer]-1
-  if nb < 1 then nb= #_BUFFERS end
   if toolbar then
-    local retry= 3
-    --if project files are not shown in tabs, skip them
-    while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
-      nb=nb-1
-      if nb < 1 then nb= #_BUFFERS end
-      retry=retry-1
+    toolbar.gototab(-1)
+  else
+    local nb= _BUFFERS[buffer]-1
+    if nb < 1 then nb= #_BUFFERS end
+    if toolbar then
+      local retry= 3
+      --if project files are not shown in tabs, skip them
+      while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
+        nb=nb-1
+        if nb < 1 then nb= #_BUFFERS end
+        retry=retry-1
+      end
     end
+    Proj.goto_buffer(nb)
   end
-  Proj.goto_buffer(nb)
 end
 
 function Proj.switch_buffer()

@@ -13,26 +13,7 @@
 local ctrl_key_down = false
 local tab_mru_idx= 0
 local mru_buff= {}
-
---DEBUG: show the MRU list in the status bar
-local function mru_status()
-  local txt= 'MRU'
-  local i= 1
-  while i <= #mru_buff and i < 15 do
-    local p,f,e
-    if mru_buff[i].filename == nil then
-      f='*'
-    else
-      p,f,e= string.match(mru_buff[i].filename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
-      if f == nil then
-        f= mru_buff[i].filename
-      end
-    end
-    txt= txt .. '|' .. f
-    i=i+1
-  end
-  ui.statusbar_text= txt
-end
+local events, events_connect = events, events.connect
 
 local function mru_getbuffpos(b)
   --locate buffer 'b' in the MRU list
@@ -132,33 +113,31 @@ local function mru_ctrl_tab_handler(shift)
   end
 end
 
-events.connect(events.KEYPRESS, function(code, shift, control, alt, meta)
+events_connect(events.KEYPRESS, function(code, shift, control, alt, meta)
   --control key pressed? (left=65507=FFE3, right=65508=FFE4)
   if code == 0xFFE3 or code == 0xFFE4 then
     ctrl_key_down = true
   end
 end )
 
-events.connect(events.BUFFER_AFTER_SWITCH, function()
+events_connect(events.BUFFER_AFTER_SWITCH, function()
   --move the current buffer to the TOP of the MRU list, pushing down the rest
   mru_buftotop(buffer)
-  --mru_status()
 end)
 
-events.connect(events.BUFFER_NEW, function()
+events_connect(events.BUFFER_NEW, function()
   --add a new buffer to the TOP of the MRU list
   --keep in mind that this event is also fired when TA starts
   if #_BUFFERS > #mru_buff then
     mru_buftotop(buffer)
-    --mru_status()
   end
 end)
 
-events.connect(events.BUFFER_DELETED, function()
+events_connect(events.BUFFER_DELETED, function()
   --remove the closed buffer from the MRU list
   --this event is called AFTER the buffer was deleted
   --(the deleted buffer is NOT in the top of the MRU list)
-  --is safer to check ALL the buffers and remove from the MRU list
+  --it's safer to check ALL the buffers and remove from the MRU list
   --the ones that don't exist any more
   local i= 1
   while i <= #mru_buff do
@@ -175,7 +154,6 @@ events.connect(events.BUFFER_DELETED, function()
       i=i+1
     end
   end
-  --mru_status()
 end)
 
 --load existing buffers in the MRU list
