@@ -36,7 +36,7 @@ events.connect(events.LEXER_LOADED, function(lang)
     buffer.tab_width = 2
     buffer.use_tabs = false
   end
-  if toolbar then
+  if toolbar and lang ~= 'myproj' then
     --show vertical toolbar only in html files
     toolbar.seltoolbar(1)
     toolbar.show(lang == 'html')
