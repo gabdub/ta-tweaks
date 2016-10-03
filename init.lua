@@ -90,10 +90,10 @@ if toolbar then
   type_html('<table','><tbody>\n', '</tbody></table>\n')
  end
  local function enc_html_row()
-  type_html('<tr','>', '</tr>\n')
+  type_html('<tr','>', '</tr>')
  end
  local function enc_html_data()
-  type_html('<td','>', '</td>\n')
+  type_html('<td','>', '</td>')
  end
  local function enc_html_input()
   type_html('<input ','type="" name="', '" value="">\n')
