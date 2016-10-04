@@ -65,10 +65,11 @@ struct toolbar_img
 struct toolbar_node
 {
   struct toolbar_node * next;
-  int flags;      //TTBF_.. flags
-  char * name;
-  char * tooltip;
-  int num;
+  int flags;          //TTBF_.. flags
+  int num;            //number of a tab
+  char * name;        //name of a button
+  char * text;        //text shown (tab/text button)
+  char * tooltip;     //tooltip text
   int barx1, bary1;
   int barx2, bary2;
   int imgx, imgy;
@@ -348,12 +349,13 @@ static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * na
   struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
   if( p != NULL){
     p->next= NULL;
-    p->name= alloc_str(name);
-    p->tooltip= alloc_str(tooltip);
     p->num= 0;
+    p->name= alloc_str(name);
+    p->text= NULL;
+    p->tooltip= alloc_str(tooltip);
     p->flags= 0;
     if( p->name != NULL){
-      p->flags |= TTBF_SELECTABLE; //if a name is provided, it can be selected
+      p->flags |= TTBF_SELECTABLE; //if a name is provided, it can be selected (it's a button)
     }
     p->barx1= T->xnew;
     p->bary1= T->ynew;
@@ -406,7 +408,7 @@ static void set_tabwidth(struct toolbar_data *T, struct toolbar_node * p)
     if( p->changewidth >= 0 ){
       if( p->changewidth == 0 ){  //use text width
         //update textwidth if 0
-        if( (p->textwidth == 0) && (p->name != NULL) && (*(p->name) != 0) && ((p->minwidth == 0)||(p->minwidth != p->maxwidth)) ){
+        if( (p->textwidth == 0) && (p->text != NULL) && (*(p->text) != 0) && ((p->minwidth == 0)||(p->minwidth != p->maxwidth)) ){
           //if min and max are set and equal, there is no need to know the textwidth
       // NOTE: using variable width in status-bar fields 2..7 in "WIN32" breaks the UI!!
       // this fields are updated from the UPDATE-UI event and
@@ -416,7 +418,7 @@ static void set_tabwidth(struct toolbar_data *T, struct toolbar_node * p)
           cairo_text_extents_t ext;
           cairo_t *cr = gdk_cairo_create(T->draw->window);
           cairo_set_font_size(cr, T->tabfontsz);
-          cairo_text_extents( cr, p->name, &ext );
+          cairo_text_extents( cr, p->text, &ext );
           p->textwidth= (int) ext.width;
           cairo_destroy(cr);
         }
@@ -546,6 +548,7 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab)
   if( p != NULL){
     p->next= NULL;
     p->name= NULL;
+    p->text= NULL;
     p->tooltip= NULL;
     p->num= ntab;
     p->flags= TTBF_TAB | TTBF_SELECTABLE;
@@ -576,7 +579,7 @@ static struct toolbar_node *add_ttb_tab(struct toolbar_data *T, int ntab)
   return p;
 }
 
-static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const char * name, const char *tooltip, int redraw)
+static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const char * text, const char *tooltip, int redraw)
 {
   struct toolbar_node * p;
   void * vp;
@@ -593,7 +596,7 @@ static struct toolbar_node *set_ttb_tab(struct toolbar_data *T, int ntab, const 
     clear_tabwidth(T, p);
   }
   //update texts
-  p->name= chg_alloc_str(p->name, name);
+  p->text= chg_alloc_str(p->text, text);
   p->tooltip= chg_alloc_str(p->tooltip, tooltip);
   p->barx1= 0;
   p->bary1= 0;
@@ -879,6 +882,9 @@ static void kill_toolbar_node( struct toolbar_node * p )
   if(p->name != NULL){
     free((void*)p->name);
   }
+  if(p->text != NULL){
+    free((void*)p->text);
+  }
   if(p->tooltip != NULL){
     free((void*)p->tooltip);
   }
@@ -1017,7 +1023,7 @@ static struct toolbar_node * getButtonFromXY(struct toolbar_data *T, int x, int 
                   strcpy( xbutt_tooltip, "Close " );
                   s= p->tooltip;
                   if( s == NULL ){
-                    s= p->name;
+                    s= p->text;
                   }
                   if( s != NULL ){
                     strncpy( xbutt_tooltip+6, s, sizeof(xbutt_tooltip)-7 );
@@ -1238,7 +1244,7 @@ static void draw_tab(struct toolbar_data *T, cairo_t *cr, struct toolbar_node *t
     draw_img(cr, &(T->img[hc]), x3, y, 0 );
   }
 
-  draw_txt(cr, t->name, x+t->imgx, y+t->imgy, y, x3-x, T->img[TTBI_TB_NTAB2].height, color, T->tabfontsz );
+  draw_txt(cr, t->text, x+t->imgx, y+t->imgy, y, x3-x, T->img[TTBI_TB_NTAB2].height, color, T->tabfontsz );
 }
 
 static struct toolbar_node * find_prev_tab( struct toolbar_data *T, struct toolbar_node * tab )
@@ -1608,7 +1614,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
 
         }else if( (p->flags & TTBF_TAB) == 0 ){
-          if(event->button == 1){
+          if((event->button == 1) && (p->name != NULL)){
             lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, T->num, -1);
           }
         }else{
@@ -1718,7 +1724,8 @@ static void show_tatoolbar(int show)
 /*                                 LUA FUNCTIONS                                 */
 /* ============================================================================= */
 /** `toolbar.new(barsize,buttonsize,imgsize,toolbarnum/isvertical,imgpath)` Lua function. */
-static int ltoolbar_new(lua_State *L) {
+static int ltoolbar_new(lua_State *L)
+{
   int i, num;
   char str[32];
   struct toolbar_data *T;
@@ -1752,7 +1759,7 @@ static int ltoolbar_new(lua_State *L) {
     set_tb_img( T, NULL, TTBI_TB_SEPARATOR, "ttb-vsep" );
   }
 
-  //3 images per tab state: beging, middle, end
+  //3 images per tab state: beginning, middle, end
   strcpy( str, "ttb-#tab#" );
   for( i= 0; i < 3; i++){
     str[8]= '1'+i;
@@ -1802,7 +1809,8 @@ static int ltoolbar_new(lua_State *L) {
 }
 
 /** `toolbar.adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)` Lua function. */
-static int ltoolbar_adjust(lua_State *L) {
+static int ltoolbar_adjust(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   T->bwidth=  lua_tointeger(L, 1);
   T->bheight= lua_tointeger(L, 2);
@@ -1816,7 +1824,8 @@ static int ltoolbar_adjust(lua_State *L) {
 }
 
 /** `toolbar.seltoolbar(toolbarnum/isvertical)` Lua function. */
-static int ltoolbar_seltoolbar(lua_State *L) {
+static int ltoolbar_seltoolbar(lua_State *L)
+{
   int num;
   if( lua_isboolean(L,1) ){
     num= 0;   //FALSE: horizontal = #0
@@ -1835,7 +1844,8 @@ static int ltoolbar_seltoolbar(lua_State *L) {
 }
 
 /** `toolbar.addbutton(name,tooltiptext)` Lua function. */
-static int ltoolbar_addbutton(lua_State *L) {
+static int ltoolbar_addbutton(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   const char *name= luaL_checkstring(L, 1);
   add_ttb_node( T, name, name, luaL_checkstring(L, 2));
@@ -1843,7 +1853,8 @@ static int ltoolbar_addbutton(lua_State *L) {
 }
 
 /** `toolbar.addspace(space,hidebar)` Lua function. */
-static int ltoolbar_addspace(lua_State *L) {
+static int ltoolbar_addspace(lua_State *L)
+{
   struct toolbar_node * p;
   int asep;
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
@@ -1893,7 +1904,8 @@ static int ltoolbar_addspace(lua_State *L) {
 
 /** `toolbar.gotopos(x,y)` Lua function. */
 /** `toolbar.gotopos(dx)`  Lua function. */
-static int ltoolbar_gotopos(lua_State *L) {
+static int ltoolbar_gotopos(lua_State *L)
+{
   int x,y;
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   x= lua_tointeger(L, 1);
@@ -1918,14 +1930,16 @@ static int ltoolbar_gotopos(lua_State *L) {
 }
 
 /** `toolbar.show(show)` Lua function. */
-static int ltoolbar_show(lua_State *L) {
+static int ltoolbar_show(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   show_toolbar(T, lua_toboolean(L,1));
   return 0;
 }
 
 /** `toolbar.enable(name,isenabled,onlyinthistoolbar)` Lua function. */
-static int ltoolbar_enable(lua_State *L) {
+static int ltoolbar_enable(lua_State *L)
+{
   int i;
   const char *name= luaL_checkstring(L, 1);
   if( lua_toboolean(L,3) ){
@@ -1941,7 +1955,8 @@ static int ltoolbar_enable(lua_State *L) {
 }
 
 /** `toolbar.seticon(name,icon,[nicon],onlyinthistoolbar)` Lua function. */
-static int ltoolbar_seticon(lua_State *L) {
+static int ltoolbar_seticon(lua_State *L)
+{
   int i;
   const char *name= luaL_checkstring(L, 1);
   const char *img= luaL_checkstring(L, 2);
@@ -1958,7 +1973,8 @@ static int ltoolbar_seticon(lua_State *L) {
 }
 
 /** `toolbar.settooltip(name,tooltip,[onlyinthistoolbar])` Lua function. */
-static int ltoolbar_settooltip(lua_State *L) {
+static int ltoolbar_settooltip(lua_State *L)
+{
   int i;
   const char *name= luaL_checkstring(L, 1);
   const char *tooltip= luaL_checkstring(L, 2);
@@ -1975,7 +1991,8 @@ static int ltoolbar_settooltip(lua_State *L) {
 }
 
 /** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-drag])` Lua function. */
-static int ltoolbar_addtabs(lua_State *L) {
+static int ltoolbar_addtabs(lua_State *L)
+{
   cairo_t * cr;
   cairo_text_extents_t ext;
   int i, rgb;
@@ -2042,7 +2059,8 @@ static void settabcolor(lua_State *L, int ncolor, struct color3doubles *pc )
 }
 
 /** `toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)` Lua function. */
-static int ltoolbar_tabfontcolor(lua_State *L) {
+static int ltoolbar_tabfontcolor(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   redraw_tabs_beg(T);
   T->tabtextcolN.R= 0.0;   //normal: default black
@@ -2064,14 +2082,16 @@ static int ltoolbar_tabfontcolor(lua_State *L) {
 }
 
 /** `toolbar.settab(num,name,tooltiptext)` Lua function. */
-static int ltoolbar_settab(lua_State *L) {
+static int ltoolbar_settab(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   set_ttb_tab( T, lua_tointeger(L, 1), luaL_checkstring(L, 2), luaL_checkstring(L, 3), 1);
   return 0;
 }
 
 /** `toolbar.deletetab(num)` Lua function. */
-static int ltoolbar_deletetab(lua_State *L) {
+static int ltoolbar_deletetab(lua_State *L)
+{
   struct toolbar_node *k, *kprev, *p; //, *prev;
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int ntab= lua_tointeger(L, 1);
@@ -2079,15 +2099,6 @@ static int ltoolbar_deletetab(lua_State *L) {
   k= get_ttb_tab(T, ntab);
   if( k != NULL ){
     redraw_tabs_beg(T);
-//    prev= NULL;
-//    for( p= T->tabs; (p != NULL); p= p->next ){
-//      if( p->num == ntab){
-//        kprev= prev;
-//      }else if( p->num > ntab){
-//        p->num--; //decrement bigger "num"s
-//      }
-//      prev= p;
-//    }
     kprev= find_prev_tab( T, k );
     if( k == T->tabs_last ){
       //the last tab will be deleted, choose the previous as the new "last"
@@ -2120,28 +2131,32 @@ static int ltoolbar_deletetab(lua_State *L) {
 }
 
 /** `toolbar.activatetab(num)` Lua function. */
-static int ltoolbar_activatetab(lua_State *L) {
+static int ltoolbar_activatetab(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   activate_ttb_tab( T, lua_tointeger(L, 1));
   return 0;
 }
 
 /** `toolbar.enabletab(num,enable)` Lua function. */
-static int ltoolbar_enabletab(lua_State *L) {
+static int ltoolbar_enabletab(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   enable_ttb_tab( T, lua_tointeger(L, 1), lua_toboolean(L,2));
   return 0;
 }
 
 /** `toolbar.modifiedtab(num,changed)` Lua function. */
-static int ltoolbar_modifiedtab(lua_State *L) {
+static int ltoolbar_modifiedtab(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   set_changed_ttb_tab( T, lua_tointeger(L, 1), lua_toboolean(L,2));
   return 0;
 }
 
 /** `toolbar.hidetab(num,hide)` Lua function. */
-static int ltoolbar_hidetab(lua_State *L) {
+static int ltoolbar_hidetab(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   hide_ttb_tab( T, lua_tointeger(L, 1), lua_toboolean(L,2));
   return 0;
@@ -2150,7 +2165,8 @@ static int ltoolbar_hidetab(lua_State *L) {
 /** `toolbar.tabwidth(num,WW,minwidth,maxwidth)` Lua function. */
 /** `toolbar.tabwidth(num,text)` Lua function. */
 /** WW= 0:text width, >0:fix, <0:porcent */
-static int ltoolbar_tabwidth(lua_State *L) {
+static int ltoolbar_tabwidth(lua_State *L)
+{
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   int ntab=      lua_tointeger(L, 1);
   int percwidth= 0;
@@ -2175,14 +2191,16 @@ static int ltoolbar_tabwidth(lua_State *L) {
 }
 
 /** `toolbar.gototab(tabpos)` Lua function. */
-static int ltoolbar_gototab(lua_State *L) {
+static int ltoolbar_gototab(lua_State *L)
+{
   //generate a click in tab: -1:prev,1:next,0:first,2:last
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   goto_ttb_tab( T, lua_tointeger(L, 1));
   return 0;
 }
 
-static void register_toolbar(lua_State *L) {
+static void register_toolbar(lua_State *L)
+{
   lua_newtable(L);
 //toolbar
   l_setcfunction(L, -1, "new",          ltoolbar_new);	        //create a new toolbar
