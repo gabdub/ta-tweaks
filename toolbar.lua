@@ -1,5 +1,7 @@
 if toolbar then
   local events, events_connect = events, events.connect
+  local tbglobalicon="TOOLBAR"
+  
   --define a toolbar button
   function toolbar.cmd(name,func,tooltip,icon)
     toolbar.addbutton(name,tooltip)
@@ -285,6 +287,11 @@ if toolbar then
     toolbar.adj_ym= 1
     toolbar.adj_xoff= 4
     toolbar.adj_yoff= 4
+    --text buttons
+    toolbar.textfont_sz= 12
+    toolbar.textfont_yoffset= 0
+    toolbar.textcolor_normal= 0x101010
+    toolbar.textcolor_grayed= 0x808080
     --tabs
     toolbar.hideproject= true --don't show project files in tabs
     toolbar.tabxmargin= 5
@@ -314,7 +321,7 @@ if toolbar then
     toolbar.statcolor_hilight= 0
     --images
     toolbar.img= {}
-    for i= 1, 23 do
+    for i= 1, 29 do
       toolbar.img[i]= ""
     end
     toolbar.back= {}
@@ -334,6 +341,10 @@ if toolbar then
            getCfgNum( line, 'butsize')          or
            getCfgNum( line, 'imgsize')          or
            getCfgNum( line, 'newrowoff')        or
+           getCfgNum( line, 'textfont_sz')      or
+           getCfgNum( line, 'textfont_yoffset') or
+           getCfgNum( line, 'textcolor_normal') or
+           getCfgNum( line, 'textcolor_grayed') or
         --tabs cfg--
            getCfgNum( line, 'tabxmargin')       or
            getCfgNum( line, 'tabxsep')          or
@@ -443,18 +454,19 @@ if toolbar then
       end
       --add/change some images
       for i, img in ipairs(toolbar.img) do
-        if img ~= "" then toolbar.seticon("TOOLBAR", img, i) end
+        if img ~= "" then toolbar.seticon(tbglobalicon, img, i) end
       end
       if tabpos == 1 then
-        toolbar.seticon("TOOLBAR", toolbar.back[1], 0, true)  --horizontal back x 1row
+        toolbar.seticon(tbglobalicon, toolbar.back[1], 0, true)  --horizontal back x 1row
       elseif tabpos > 1 then
-        toolbar.seticon("TOOLBAR", toolbar.back[2], 0, true)  --horizontal back x 2rows
+        toolbar.seticon(tbglobalicon, toolbar.back[2], 0, true)  --horizontal back x 2rows
       end
       if tabpos == 2 then
         --2 rows, tabs at the top
         toolbar.add_tabs_here()
         toolbar.newrow(1)
       end
+      toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     else
       --hide the horizontal toolbar
       toolbar.seltoolbar(0)
@@ -471,18 +483,19 @@ if toolbar then
       end
       --add/change some images
       for i, img in ipairs(toolbar.img) do
-        if img ~= "" then toolbar.seticon("TOOLBAR", img, i) end
+        if img ~= "" then toolbar.seticon(tbglobalicon, img, i) end
       end
       if nvertcols < 2 then
-        toolbar.seticon("TOOLBAR", toolbar.back[3], 0, true)  --vertical back x 1col
+        toolbar.seticon(tbglobalicon, toolbar.back[3], 0, true)  --vertical back x 1col
       else
-        toolbar.seticon("TOOLBAR", toolbar.back[4], 0, true)  --vertical back x 2cols
+        toolbar.seticon(tbglobalicon, toolbar.back[4], 0, true)  --vertical back x 2cols
       end
       --add buttons in the vertical toolbar
       toolbar.show(true)
       if tabpos > 0 then
         toolbar.seltoolbar(0)
       end
+      toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     else
       --hide the vertical toolbar
       toolbar.seltoolbar(1)
@@ -494,14 +507,15 @@ if toolbar then
 
   function toolbar.create_statusbar()
     toolbar.new(toolbar.statsize, toolbar.statbutsize, toolbar.statimgsize, 2, toolbar.themepath)
-    toolbar.seticon("TOOLBAR", toolbar.back[5], 0, true)
+    toolbar.seticon(tbglobalicon, toolbar.back[5], 0, true)
     local i=5 --5=normal 8=disabled 11=hilight 14=active
     while i < 15 do
-      toolbar.seticon("TOOLBAR", "stat-ntab1", i,   true)
-      toolbar.seticon("TOOLBAR", "stat-ntab2", i+1, true)
-      toolbar.seticon("TOOLBAR", "stat-ntab3", i+2, true)
+      toolbar.seticon(tbglobalicon, "stat-ntab1", i,   true)
+      toolbar.seticon(tbglobalicon, "stat-ntab2", i+1, true)
+      toolbar.seticon(tbglobalicon, "stat-ntab3", i+2, true)
       i=i+3
     end
+    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     toolbar.statbar= 2 --created
   end
 
