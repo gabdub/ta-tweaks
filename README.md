@@ -161,7 +161,10 @@ if toolbar then
       toolbar.seticon(name,icon)
     end
   end
-
+  function toolbar.textcmd(text,func,tooltip)
+    toolbar.addtext(text,text,tooltip)
+    toolbar[text]= func
+  end
   events.connect("toolbar_clicked", function(button)
     if toolbar[button] ~= nil then
       toolbar[button]()
@@ -183,6 +186,8 @@ end
   toolbar.cmd("document-new", buffer.new,      "New [Ctrl+N]") --icon equals name, get from images path
   toolbar.cmd("save",         io.save_file,    "Save [Ctrl+S]", "document-save") --diferent icon name, get from images path
   toolbar.cmd("save-as",      io.save_file_as, "Save as [Ctrl+Shift+S]", "C:\\textadept\\textadept_NIGHTLY9\\core\\images\\bar-dark\\document-save-as.png")) --full path to the icon file
+  toolbar.addtext("", "Buttons:","") --pasive text
+  toolbar.textcmd("reload",   io.reload_file,  "Reload buffer") --text button
 ```
 
 NOTE: the icon images __must be PNG__ files. If only the icon name is given, the toolbar uses the images path given in the toolbar.new() 5th parameter (or "Textadept/core/images/bar" if not) and adds the name and the ".png" extension.
@@ -261,7 +266,7 @@ __Some examples using tabs and themes:__
 
 **theme: bar-th-dark**
 
-![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win2.png "theme bar-ff-dark")
+![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win2.png "theme bar-th-dark")
 
 **Two rows (tabs at the bottom)**
 
@@ -279,9 +284,9 @@ __Some examples using tabs and themes:__
 
 ![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win7.png "theme bar-th-dark")
 
-**theme: bar-ff-dark**
+**theme: bar-th-dark with other background**
 
-![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win8.png "theme bar-ff-dark")
+![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win8.png "theme bar-th-dark")
 
 **theme: bar-ch-dark**
 
