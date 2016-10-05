@@ -1,7 +1,7 @@
 if toolbar then
   local events, events_connect = events, events.connect
   local tbglobalicon="TOOLBAR"
-  
+
   --define a toolbar button
   function toolbar.cmd(name,func,tooltip,icon)
     toolbar.addbutton(name,tooltip)
@@ -276,6 +276,7 @@ if toolbar then
     toolbar.tb0= true --only show toolbar 0 (horizontal)
     toolbar.tb1= false
     toolbar.statbar= 0 --0:use default statusbar 1:create 2:already created
+    toolbar.html_tb=false --html toolbar on/off
     toolbar.barsize= 27
     toolbar.butsize= 24
     toolbar.imgsize= 16
@@ -673,14 +674,39 @@ if toolbar then
     toolbar.addspace()
     toolbar.cmd("addclass",               enc_html_class,       "HTML insert class: OFF", "package-available")
     toolbar.seltoolbar(0)
+    --modify view menu
+    local med=textadept.menu.menubar[_L['_View']]
+    med[#med+1]= {''}
+    med[#med+1]= {'View HTML _Toolbar', toolbar.html_toolbar_onoff}
+    toolbar.html_tb= true --on for now...
+  end
+
+  function toolbar.html_toolbar_onoff()
+    if Proj.get_projectbuffer(false) then
+      Proj.goto_filesview() --change to files view if needed
+    end
+    if buffer.html_toolbar_on == true then
+      buffer.html_toolbar_on= false
+    else
+      buffer.html_toolbar_on= true
+    end
+    toolbar.show_html_toolbar('') --update toolbar
   end
 
   function toolbar.show_html_toolbar(lang)
-    if lang ~= 'myproj' then
-      --show vertical toolbar only in html files
-      toolbar.seltoolbar(1)
-      toolbar.show(lang == 'html')
-      toolbar.seltoolbar(0)
+    if lang ~= 'myproj' then --ignore project files
+      local on
+      if buffer.html_toolbar_on ~= nil then
+        on= buffer.html_toolbar_on  --keep buffer set
+      else --default: show only in html files
+        on= (lang == 'html')
+      end
+      if on ~= toolbar.html_tb then
+        toolbar.html_tb= on
+        toolbar.seltoolbar(1)
+        toolbar.show(on)
+        toolbar.seltoolbar(0)
+      end
     end
   end
 
