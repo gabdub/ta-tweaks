@@ -259,7 +259,7 @@ __Some examples using tabs and themes:__
 
 ![theme bar-sm-light](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win1.png "theme bar-sm-light")
 
-**theme: bar-ff-dark**
+**theme: bar-th-dark**
 
 ![theme bar-ff-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win2.png "theme bar-ff-dark")
 
