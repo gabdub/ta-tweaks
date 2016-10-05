@@ -685,10 +685,10 @@ if toolbar then
     if Proj.get_projectbuffer(false) then
       Proj.goto_filesview() --change to files view if needed
     end
-    if buffer.html_toolbar_on == true then
-      buffer.html_toolbar_on= false
+    if buffer.html_toolbar_on ~= nil then
+      buffer.html_toolbar_on= not buffer.html_toolbar_on
     else
-      buffer.html_toolbar_on= true
+      buffer.html_toolbar_on= not toolbar.html_tb
     end
     toolbar.show_html_toolbar('') --update toolbar
   end
