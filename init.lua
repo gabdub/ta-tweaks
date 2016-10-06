@@ -44,16 +44,18 @@ end)
 
 if toolbar then
   require('toolbar')
+  require('htmltoolbar')
 
   --load toolbar theme from USERHOME
   toolbar.set_theme("bar-sm-light")
-  --toolbar.set_theme("bar-ff-dark")
   --toolbar.set_theme("bar-th-dark")
   --toolbar.set_theme("bar-ch-dark")
 
   --change theme defaults here
   --toolbar.tabwithclose=true
   --toolbar.tabxmargin=0
+  --toolbar.back[2]="ttb-back2-same"
+  --toolbar.back[2]="ttb-back2-down"
 
   --create the toolbar (tabpos, nvertcols, stbar)
   --tabpos=0: 1 row, use default tabs

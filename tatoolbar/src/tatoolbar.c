@@ -371,7 +371,45 @@ static void redraw_tabs_end( struct toolbar_data *T )
   }
 }
 
-static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * name, const char * img, const char *tooltip, const char * text)
+static int set_text_bt_width(struct toolbar_data *T, struct toolbar_node * p )
+{ //text button (text & no image)
+  cairo_text_extents_t ext;
+  cairo_t *cr;
+  int diff= 0;
+  if( p->text != NULL ){
+    cr = gdk_cairo_create(T->draw->window);
+    cairo_set_font_size(cr, T->txtfontsz);
+    cairo_text_extents( cr, p->text, &ext );
+    p->textwidth= (int) ext.width;
+    if( T->txttexty < 0 ){
+      cairo_text_extents( cr, "H", &ext );
+      T->txttexth= (int) ext.height;
+      //center text verticaly + offset
+      T->txttexty=  ((T->img[TTBI_TB_TXT_HIL1].height+T->txttexth)/2)+T->txttextoff;
+      if( T->txttexty < 0){
+        T->txttexty= 0;
+      }
+    }
+    cairo_destroy(cr);
+    diff= p->barx2;
+    p->imgx= p->barx1 + T->img[TTBI_TB_TXT_HIL1].width;
+    p->imgy= p->bary1 + T->txttexty;
+    p->barx2= p->imgx + p->textwidth + T->img[TTBI_TB_TXT_HIL3].width;
+    if( p->barx2 < (p->barx1+p->minwidth)){
+      //expand button (center text)
+      p->imgx += (p->barx1 + p->minwidth - p->barx2)/2;
+      p->barx2= p->barx1+p->minwidth;
+
+    }else if( (p->maxwidth > 0) && (p->barx2 > (p->barx1+p->maxwidth)) ){
+      //reduce button (trimm text)
+      p->barx2= p->barx1+p->maxwidth;
+    }
+    diff= p->barx2 - diff;  //width diff
+  }
+  return diff;
+}
+
+static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * name, const char * img, const char *tooltip, const char * text, int chwidth)
 {
   int i;
   struct toolbar_node * p= (struct toolbar_node *) malloc( sizeof(struct toolbar_node));
@@ -392,9 +430,14 @@ static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * na
     p->barx2= T->xnew + T->bwidth;
     p->bary2= T->ynew + T->bheight;
     p->textwidth=   0;
-    p->changewidth= 0;
-    p->minwidth=    0;
-    p->maxwidth=    0;
+    p->changewidth= chwidth;
+    if( chwidth > 0 ){
+      p->minwidth= chwidth;
+      p->maxwidth= chwidth;
+    }else{
+      p->minwidth= 0;
+      p->maxwidth= 0;
+    }
     for(i= 0; (i < TTBI_NODE_N); i++){
       p->img[i].fname= NULL;
       p->img[i].width= 0;
@@ -405,24 +448,7 @@ static struct toolbar_node *add_ttb_node(struct toolbar_data *T, const char * na
 
     }else if( p->text != NULL ){
       //text button (text & no image)
-      cairo_text_extents_t ext;
-      cairo_t *cr = gdk_cairo_create(T->draw->window);
-      cairo_set_font_size(cr, T->txtfontsz);
-      cairo_text_extents( cr, p->text, &ext );
-      p->textwidth= (int) ext.width;
-      if( T->txttexty < 0 ){
-        cairo_text_extents( cr, "H", &ext );
-        T->txttexth= (int) ext.height;
-        //center text verticaly + offset
-        T->txttexty=  ((T->img[TTBI_TB_TXT_HIL1].height+T->txttexth)/2)+T->txttextoff;
-        if( T->txttexty < 0){
-          T->txttexty= 0;
-        }
-      }
-      cairo_destroy(cr);
-      p->imgx= T->xnew + T->img[TTBI_TB_TXT_HIL1].width;
-      p->imgy= T->ynew + T->txttexty;
-      p->barx2= p->imgx + p->textwidth + T->img[TTBI_TB_TXT_HIL3].width;
+      set_text_bt_width(T, p);
       p->flags |= TTBF_TEXT;
     }
     if( T->isvertical ){
@@ -1139,6 +1165,35 @@ static void ttb_change_button_tooltip(struct toolbar_data *T, const char *name, 
   }
 }
 
+static void ttb_change_button_text(struct toolbar_data *T, const char *name, const char *text )
+{
+  int dif;
+  struct toolbar_node * p= getButtonFromName(T, name);
+  if( p != NULL ){
+    p->text= chg_alloc_str(p->text, text);
+    dif= set_text_bt_width(T, p);
+    if( dif != 0){
+      //button width changed, update all buttons to the right
+      p= p->next;
+      while( p != NULL ){
+        p->barx1 += dif;
+        if( (p->flags & TTBF_TABBAR) == 0){
+          p->barx2 += dif;
+          p->imgx += dif;
+        }
+        p= p->next;
+      }
+      //split free space in tabs that expand
+      update_tabs_size(T);
+      //redraw the complete toolbar
+      gtk_widget_queue_draw(T->draw);
+    }else{
+      //same width
+      redraw_button(T, p); //redraw button
+    }
+  }
+}
+
 static void ttb_enable_button(struct toolbar_data *T, const char * name, int isenabled )
 {
   int flg;
@@ -1196,6 +1251,7 @@ static void scroll_tabs(struct toolbar_data *T, int x, int y, int dir )
     ttb.ntbhilight= T->num;
     //update tooltip text
     set_hilight_tooltip(T);
+    //redraw the complete toolbar
     gtk_widget_queue_draw(T->draw);
   }
 }
@@ -1468,10 +1524,13 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
           }else{
             h= TTBI_TB_TXT_HPR1;  //hilight as pressed
           }
-          draw_img(cr, &(T->img[h]), phi->barx1, phi->bary1, 0 );
-          draw_fill_img(cr, &(T->img[h+1]), phi->imgx, phi->bary1, phi->textwidth, T->img[h].height );
-          draw_img(cr, &(T->img[h+2]), phi->imgx+phi->textwidth, phi->bary1, 0 );
-          draw_txt(cr, phi->text, phi->imgx, phi->imgy, phi->bary1, phi->textwidth, T->img[h].height, &(T->txttextcolN), T->txtfontsz );
+          x= phi->barx1;
+          draw_img(cr, &(T->img[h]), x, phi->bary1, 0 );
+          x += T->img[TTBI_TB_TXT_HIL1].width;
+          xa= phi->barx2 - T->img[TTBI_TB_TXT_HIL3].width;
+          draw_fill_img(cr, &(T->img[h+1]), x, phi->bary1, xa-x, T->img[h].height );
+          draw_img(cr, &(T->img[h+2]), xa, phi->bary1, 0 );
+          //draw_txt(cr, phi->text, phi->imgx, phi->imgy, phi->bary1, xa-phi->imgx, T->img[h].height, &(T->txttextcolN), T->txtfontsz );
         }
       }
     }
@@ -1549,7 +1608,8 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
           if( (p->flags & TTBF_GRAYED) != 0){
             color= &(T->txttextcolG);
           }
-          draw_txt(cr, p->text, p->imgx, p->imgy, p->bary1, p->textwidth, p->bary2 - p->bary1, color, T->txtfontsz );
+          xa= p->barx2 - T->img[TTBI_TB_TXT_HIL3].width;
+          draw_txt(cr, p->text, p->imgx, p->imgy, p->bary1, xa - p->imgx, p->bary2 - p->bary1, color, T->txtfontsz );
         }
       }
     }
@@ -1773,7 +1833,8 @@ static void show_toolbar(struct toolbar_data *T, int show)
     //show this toolbar
     T->isvisible= 1;
     gtk_widget_show( T->draw );
-    gtk_widget_queue_draw(T->draw); //force redraw
+    //redraw the complete toolbar
+    gtk_widget_queue_draw(T->draw);
     if( T->num == 2 ){
       gtk_widget_hide( statusbar[0] );
       gtk_widget_hide( statusbar[1] );
@@ -1941,16 +2002,16 @@ static int ltoolbar_addbutton(lua_State *L)
 {
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   const char *name= luaL_checkstring(L, 1);
-  add_ttb_node( T, name, name, luaL_checkstring(L, 2), NULL);
+  add_ttb_node( T, name, name, luaL_checkstring(L, 2), NULL, 0);
   return 0;
 }
 
-/** `toolbar.addtext(name,text,tooltiptext)` Lua function. */
+/** `toolbar.addtext(name,text,tooltiptext,width)` Lua function. */
 static int ltoolbar_addtext(lua_State *L)
 {
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   const char *name= luaL_checkstring(L, 1);
-  add_ttb_node( T, name, NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2));
+  add_ttb_node( T, name, NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2), lua_tointeger(L, 4));
   return 0;
 }
 
@@ -1968,7 +2029,7 @@ static int ltoolbar_addspace(lua_State *L)
     }
     if( !hide ){
       //show H separator in the middle
-      p= add_ttb_node( T, NULL, T->img[TTBI_TB_SEPARATOR].fname, NULL, NULL);
+      p= add_ttb_node( T, NULL, T->img[TTBI_TB_SEPARATOR].fname, NULL, NULL, 0);
       if( p != NULL ){
         asep= T->img[TTBI_TB_SEPARATOR].height; //minimun separator = image height
         if( x < asep ){
@@ -1987,7 +2048,7 @@ static int ltoolbar_addspace(lua_State *L)
     }
     if( !hide ){
       //show V separator in the middle
-      p= add_ttb_node( T, NULL, T->img[TTBI_TB_SEPARATOR].fname, NULL, NULL);
+      p= add_ttb_node( T, NULL, T->img[TTBI_TB_SEPARATOR].fname, NULL, NULL, 0);
       if( p != NULL ){
         asep= T->img[TTBI_TB_SEPARATOR].width; //minimun separator = image width
         if( x < asep ){
@@ -2092,6 +2153,34 @@ static int ltoolbar_settooltip(lua_State *L)
   return 0;
 }
 
+/** `toolbar.settext(name,text,[tooltip],[onlyinthistoolbar])` Lua function. */
+static int ltoolbar_settext(lua_State *L)
+{
+  int i;
+  const char *name= luaL_checkstring(L, 1);
+  const char *text= luaL_checkstring(L, 2);
+  const char *tooltip= NULL;
+  if( !lua_isnone(L, 3) ){
+    tooltip= luaL_checkstring(L, 3);
+  }
+  if( lua_toboolean(L,4) ){
+    //set button's text/tooltip in this toolbar only
+    ttb_change_button_text(toolbar_from_num(ttb.currentntb), name, text );
+    if(tooltip != NULL){
+      ttb_change_button_tooltip(toolbar_from_num(ttb.currentntb), name, tooltip );
+    }
+  }else{
+    //set button's text/tooltip in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_change_button_text(toolbar_from_num(i), name, text );
+      if(tooltip != NULL){
+        ttb_change_button_tooltip(toolbar_from_num(i), name, tooltip );
+      }
+    }
+  }
+  return 0;
+}
+
 /** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-drag])` Lua function. */
 static int ltoolbar_addtabs(lua_State *L)
 {
@@ -2100,7 +2189,7 @@ static int ltoolbar_addtabs(lua_State *L)
   int i, rgb;
   struct toolbar_data *T= toolbar_from_num(ttb.currentntb);
   if( T->tab_node == NULL ){ //only one tabbar for now
-    T->tab_node= add_ttb_node( T, NULL, NULL, NULL, NULL);
+    T->tab_node= add_ttb_node( T, NULL, NULL, NULL, NULL, 0);
     if( T->tab_node != NULL ){
       T->tab_node->flags |= TTBF_TABBAR|TTBF_SELECTABLE;	//show tabs here
       if( lua_toboolean(L,7) ){
@@ -2326,6 +2415,8 @@ static void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
   l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button or TOOLBAR icon
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);	  //change a button tooltip
+  l_setcfunction(L, -1, "settext",      ltoolbar_settext);      //change a button text
+  l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
 //tabs
   l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //show tabs in the toolbar
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
@@ -2337,7 +2428,6 @@ static void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab num
   l_setcfunction(L, -1, "tabwidth",     ltoolbar_tabwidth);     //set tab num tabwidth (varible/fixed)
   l_setcfunction(L, -1, "gototab",      ltoolbar_gototab);      //generate a click in tab: -1:prev,1:next,0:first,2:last
-  l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
 
   lua_setglobal(L, "toolbar");
 }

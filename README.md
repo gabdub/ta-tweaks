@@ -115,7 +115,7 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
 * toolbar._seltoolbar(toolbar-num(int) or isvertical(bool))_ select which toolbar to edit
 * toolbar._addbutton(button-name,tooltiptext)_ add a graphic button to the current edited toolbar (icon=button-name)
-* toolbar._addtext(button-name,text,tooltiptext)_ add a text button or text (button-name="") to the current edited toolbar
+* toolbar._addtext(button-name,text,tooltiptext,W)_ add a text button or text (button-name="") to the current edited toolbar. width: W=0:use text width, >0:fix width
 * toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited toolbar
 * toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels in the current edited toolbar
 * toolbar._gotopos(x,y)_ change next button position to x,y (in pixels) in the current edited toolbar
@@ -127,6 +127,8 @@ The "toolbar" object is added to textadept with the following functions:
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed,
   24-25-26=hilighted text button, 27-28-29=hilight as pressed text button)
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
+* toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ change a text button's text (and tooltip)
+* toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ change default text buttons font size and colors in the current edited toolbar
 * toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the current edited toolbar
 * toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
 * toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip in the current edited toolbar
@@ -137,7 +139,7 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._hidetab(num,hide)_ show/hide tab _num_ in the current edited toolbar
 * toolbar._tabwidth(num,W,minwidth,maxwidth)_ control tab _num_ width: W=0:use text width, >0:fix width, <0:porcent; 0 or minimum; 0 or maximum
 * toolbar._tabwidth(num,text)_ set tab _num_ width using the given text
-* toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ change default text buttons font size and colors in the current edited toolbar
+* toolbar._gototab(pos)_ generate a click in tab _pos_: -1=prev, 1=next, 0=first, 2=last
 
 Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
 (see some examples below)

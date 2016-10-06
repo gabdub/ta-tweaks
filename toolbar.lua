@@ -1,11 +1,12 @@
 if toolbar then
   local events, events_connect = events, events.connect
   local tbglobalicon="TOOLBAR"
+  toolbar.cmds={}
 
   --define a toolbar button
   function toolbar.cmd(name,func,tooltip,icon)
     toolbar.addbutton(name,tooltip)
-    toolbar[name]= func
+    toolbar.cmds[name]= func
     if icon == nil then
       toolbar.setthemeicon(name,name) --no icon: use 'name' from theme
     elseif string.match(icon,"%.png") == nil then
@@ -13,6 +14,14 @@ if toolbar then
     else
       toolbar.seticon(name,icon)  --"icon.png": use the given icon file
     end
+  end
+
+  function toolbar.cmdtext(text,func,tooltip,name,usebutsz)
+    if not name then name=text end
+    local w=0
+    if usebutsz then w=toolbar.butsize end
+    toolbar.addtext(name,text,tooltip,w)
+    toolbar.cmds[name]= func
   end
 
   function toolbar.setthemeicon(name,icon)
@@ -78,11 +87,11 @@ if toolbar then
     return 0 --not found
   end
 
-  events_connect("toolbar_clicked", function(button,ntoolbar)
-    if toolbar[button] ~= nil then
-      toolbar[button]()
+  events_connect("toolbar_clicked", function(buttonname,ntoolbar)
+    if toolbar.cmds[buttonname] ~= nil then
+      toolbar.cmds[buttonname]()
     else
-      ui.statusbar_text= button.." clicked"
+      ui.statusbar_text= buttonname.." clicked"
     end
   end)
 
@@ -576,138 +585,6 @@ if toolbar then
     --show status bar if enabled
     toolbar.shw_statusbar()
     toolbar.seltoolbar(0)
-  end
-
-  --HTML quicktype toolbar
-  local addclass=false
-  local function type_html(befclass,before,after)
-    if addclass then
-      type_before_after(befclass..' class="" '..before,after)
-    else
-      type_before_after(befclass..before,after)
-    end
-  end
-  local function enc_html_html()
-    type_before_after('<!DOCTYPE html>\n<html lang="es">\n<head>\n  <title></title>\n</head>\n<body>\n  ', '\n</body>\n</html>\n')
-  end
-  local function enc_html_para()
-    type_html('<p','>', '</p>\n')
-  end
-  local function enc_html_bold()
-    if addclass then
-      type_before_after('<strong>', '</strong>')
-    else
-      type_before_after('<b>', '</b>')
-    end
-  end
-  local function enc_html_italic()
-    if addclass then
-      type_before_after('<em>', '</em>')
-    else
-      type_before_after('<i>', '</i>')
-    end
-  end
-  local function enc_html_underline()
-    type_before_after('<u>', '</u>')
-  end
-  local function enc_html_ul()
-    type_html('<ul','>\n', '</ul>\n')
-  end
-  local function enc_html_ol()
-    type_html('<ol','>\n', '</ol>\n')
-  end
-  local function enc_html_li()
-    type_html('<li','>', '</li>\n')
-  end
-  local function enc_html_table()
-    type_html('<table','><tbody>\n', '</tbody></table>\n')
-  end
-  local function enc_html_row()
-    type_html('<tr','>', '</tr>')
-  end
-  local function enc_html_data()
-    type_html('<td','>', '</td>')
-  end
-  local function enc_html_input()
-    type_html('<input ','type="" name="', '" value="">\n')
-  end
-  local function enc_html_link()
-    type_html('<a href=""','>', '</a>')
-  end
-  local function enc_html_img()
-    type_html('<img ','src="', '" alt="" />')
-  end
-  local function enc_html_class()
-    local b="addclass"
-    if addclass then
-      addclass=false
-      toolbar.setthemeicon(b, "package-available")
-      toolbar.settooltip(b, "HTML insert class: OFF")
-    else
-      addclass=true
-      toolbar.setthemeicon(b, "package-install")
-      toolbar.settooltip(b, "HTML insert class: ON")
-    end
-  end
-
-  --HTML quicktype toolbar
-  function toolbar.add_html_toolbar()
-    toolbar.seltoolbar(1)
-    toolbar.cmd("go-home",                enc_html_html,        "HTML basic blocks")
-    toolbar.addspace()
-    toolbar.cmd("edit-select-all",        enc_html_para,        "HTML paragraph")
-    toolbar.cmd("format-text-bold",       enc_html_bold,        "HTML bold text")
-    toolbar.cmd("format-text-italic",     enc_html_italic,      "HTML italic text")
-    toolbar.cmd("format-text-underline",  enc_html_underline,   "HTML underline text")
-    toolbar.addspace()
-    toolbar.cmd("add-ul",                 enc_html_ul,          "HTML unordered list", "view-list-compact-symbolic")
-    toolbar.cmd("add-ol",                 enc_html_ol,          "HTML ordered list", "view-list-details-symbolic")
-    toolbar.cmd("add-li",                 enc_html_li,          "HTML list item", "list-add")
-    toolbar.addspace()
-    toolbar.cmd("view-list-icons-symbolic",enc_html_table,      "HTML table")
-    toolbar.cmd("table-row",              enc_html_row,         "HTML table row",  "view-list-compact-symbolic")
-    toolbar.cmd("table-data",             enc_html_data,        "HTML table data", "list-add")
-    toolbar.cmd("table-input",            enc_html_input,       "HTML input", "gtk-edit")
-    toolbar.addspace()
-    toolbar.cmd("insert-link",            enc_html_link,        "HTML link")
-    toolbar.cmd("insert-image",           enc_html_img,         "HTML image")
-    toolbar.addspace()
-    toolbar.cmd("addclass",               enc_html_class,       "HTML insert class: OFF", "package-available")
-    toolbar.seltoolbar(0)
-    --modify view menu
-    local med=textadept.menu.menubar[_L['_View']]
-    med[#med+1]= {''}
-    med[#med+1]= {'View HTML _Toolbar', toolbar.html_toolbar_onoff}
-    toolbar.html_tb= true --on for now...
-  end
-
-  function toolbar.html_toolbar_onoff()
-    if Proj.get_projectbuffer(false) then
-      Proj.goto_filesview() --change to files view if needed
-    end
-    if buffer.html_toolbar_on ~= nil then
-      buffer.html_toolbar_on= not buffer.html_toolbar_on
-    else
-      buffer.html_toolbar_on= not toolbar.html_tb
-    end
-    toolbar.show_html_toolbar('') --update toolbar
-  end
-
-  function toolbar.show_html_toolbar(lang)
-    if lang ~= 'myproj' then --ignore project files
-      local on
-      if buffer.html_toolbar_on ~= nil then
-        on= buffer.html_toolbar_on  --keep buffer set
-      else --default: show only in html files
-        on= (lang == 'html')
-      end
-      if on ~= toolbar.html_tb then
-        toolbar.html_tb= on
-        toolbar.seltoolbar(1)
-        toolbar.show(on)
-        toolbar.seltoolbar(0)
-      end
-    end
   end
 
   toolbar.set_defaults()
