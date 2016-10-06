@@ -65,30 +65,30 @@ if toolbar then
     local b="addclass"
     if addclass then
       addclass=false
-      toolbar.settext(b, "c", "HTML insert class: OFF")
+      toolbar.settext(b, "cl", "HTML insert class: OFF")
     else
       addclass=true
-      toolbar.settext(b, "C", "HTML insert class: ON")
+      toolbar.settext(b, "CL", "HTML insert class: ON")
     end
   end
   local function enc_html_id()
     local b="addid"
     if addid then
       addid=false
-      toolbar.settext(b, "i", "HTML insert id: OFF")
+      toolbar.settext(b, "id", "HTML insert id: OFF")
     else
       addid=true
-      toolbar.settext(b, "I", "HTML insert id: ON")
+      toolbar.settext(b, "ID", "HTML insert id: ON")
     end
   end
   local function enc_html_style()
     local b="addstyle"
     if addstyle then
       addstyle=false
-      toolbar.settext(b, "s", "HTML insert style: OFF")
+      toolbar.settext(b, "st", "HTML insert style: OFF")
     else
       addstyle=true
-      toolbar.settext(b, "S", "HTML insert style: ON")
+      toolbar.settext(b, "ST", "HTML insert style: ON")
     end
   end
 
@@ -114,9 +114,9 @@ if toolbar then
     toolbar.cmd("insert-link",            enc_html_link,        "HTML link")
     toolbar.cmd("insert-image",           enc_html_img,         "HTML image")
     toolbar.addspace()
-    toolbar.cmdtext("c",                  enc_html_class,       "HTML insert class: OFF", "addclass", true)
-    toolbar.cmdtext("i",                  enc_html_id,          "HTML insert id: OFF",    "addid",    true)
-    toolbar.cmdtext("s",                  enc_html_style,       "HTML insert style: OFF", "addstyle", true)
+    toolbar.cmdtext("cl",                 enc_html_class,       "HTML insert class: OFF", "addclass", true)
+    toolbar.cmdtext("id",                 enc_html_id,          "HTML insert id: OFF",    "addid",    true)
+    toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
     toolbar.addspace()
     toolbar.seltoolbar(0)
     --modify view menu
