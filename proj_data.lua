@@ -654,6 +654,23 @@ function Proj.getFirstRegularBuf()
   return nil
 end
 
+--check that at least one regular buffer remains after closing
+function Proj.check_after_close_buffer()
+  local rbuf = Proj.getFirstRegularBuf()
+  if rbuf == nil then
+    --no regular buffer found
+    Proj.go_file() --open a blank file
+
+  elseif not isRegularBuf(buffer) then
+    --replace current buffer with a regular one
+    if TA_MAYOR_VER < 9 then
+      view:goto_buffer(_BUFFERS[rbuf])
+    else
+      view:goto_buffer(rbuf)
+    end
+  end
+end
+
 function Proj.close_buffer()
   if buffer._project_select ~= nil then
     --close project file and views
@@ -667,19 +684,7 @@ function Proj.close_buffer()
     --close a regular file
     if io.close_buffer() then
       --check that at least one regular buffer remains after closing
-      local rbuf = Proj.getFirstRegularBuf()
-      if rbuf == nil then
-        --no regular buffer found
-        Proj.go_file() --open a blank file
-
-      elseif not isRegularBuf(buffer) then
-        --replace current buffer with a regular one
-        if TA_MAYOR_VER < 9 then
-          view:goto_buffer(_BUFFERS[rbuf])
-        else
-          view:goto_buffer(rbuf)
-        end
-      end
+      Proj.check_after_close_buffer()
     end
   end
 end
@@ -690,6 +695,48 @@ function Proj.close_all_buffers()
   --close all buffers
   io.close_all_buffers()
   Proj.update_projview()  --update project view button
+end
+
+function Proj.onlykeep_projopen(keepone)
+  --close all buffers except project (and buffer._dont_close)
+  if Proj.get_projectbuffer(false) ~= nil then
+    --close search results
+    Proj.close_search_view()
+    Proj.goto_filesview() --change to files view if needed
+  elseif not keepone then
+     io.close_all_buffers()
+     return
+  end
+  local i=1
+  while i <= #_BUFFERS do
+    local buf=_BUFFERS[i]
+    if isRegularBuf(buf) and not buf._dont_close then
+      --regular file, close it
+      view:goto_buffer(buf)
+      if not io.close_buffer() then return end
+    else
+      --skip project buffer and don't close buffers
+      i= i+1
+      buf._dont_close= nil --remove flag
+    end
+  end
+  --check that at least one regular buffer remains after closing
+  Proj.check_after_close_buffer()
+end
+
+function Proj.keep_thisbuffer()
+  if Proj.get_projectbuffer(false) ~= nil then
+    Proj.goto_filesview() --change to files view if needed
+  end
+  --keep this buffer
+  buffer._dont_close= true
+end
+
+function Proj.close_others()
+  --keep this buffer
+  Proj.keep_thisbuffer()
+  --close the others
+  Proj.onlykeep_projopen(true)
 end
 
 function Proj.goto_buffer(nb)
