@@ -24,6 +24,7 @@ require('ctrl_tab_mru')
 require('quicktype')
 
 textadept.file_types.extensions.mas = 'mas'
+textadept.editing.comment_string.ansi_c = '//'
 
 events.connect(events.LEXER_LOADED, function(lang)
   if lang == 'vala' then
