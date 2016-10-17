@@ -70,23 +70,29 @@ if toolbar then
 
   --add some buttons
   toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
-
+  toolbar.addspace(4,true)
   toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
   toolbar.cmd("go-next",                Proj.goto_next_pos,  "Next position [Shift+F12]")
   Proj.update_go_toolbar()
   toolbar.addspace()
 
-  toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]")
+  --toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]")
   toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]")
   toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
   toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" )
-  toolbar.addspace()
+  --toolbar.addspace()
   --toolbar.newrow()
   toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
 
   --HTML quicktype toolbar
   toolbar.add_html_toolbar()
+
+  --add tab group if pending
+  toolbar.addpending()
+  --add a group of buttons after tabs
+  toolbar.addrightgroup()
+  toolbar.cmd("new",           buffer.new,          "New [Ctrl+N]", "list-add")
 
   --toolbar ready, show it
   toolbar.ready()

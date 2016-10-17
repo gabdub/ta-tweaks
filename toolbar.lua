@@ -482,8 +482,7 @@ if toolbar then
       toolbar.addgroup(9, 0, 0, butth)
       if toolbar.adj then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
-        toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
-          toolbar.adj_xoff, toolbar.adj_yoff)
+        toolbar.adjust(toolbar.adj_bw,toolbar.adj_bh,toolbar.adj_xm,toolbar.adj_ym,toolbar.adj_xoff,toolbar.adj_yoff)
       end
       toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     else
@@ -499,8 +498,7 @@ if toolbar then
       toolbar.addgroup(0, 9, toolbar.barsize, 0)
       if toolbar.adj then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
-        toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
-          toolbar.adj_xoff, toolbar.adj_yoff)
+        toolbar.adjust(toolbar.adj_bw,toolbar.adj_bh,toolbar.adj_xm,toolbar.adj_ym,toolbar.adj_xoff,toolbar.adj_yoff)
       end
       --add/change some images
       for i, img in ipairs(toolbar.img) do
@@ -522,6 +520,29 @@ if toolbar then
       toolbar.show(false)
       --add buttons in the horizontal toolbar
       toolbar.seltoolbar(0)
+    end
+    --call addpending() later
+    toolbar._pending= true
+  end
+
+  function toolbar.addpending()
+    toolbar.seltoolbar(0)
+    if toolbar._pending then
+      toolbar._pending= false
+      --1 row, tabs in the same line or 2 rows, tabs at the bottom
+      if toolbar.tabpos == 1 or toolbar.tabpos == 3 then
+        toolbar.add_tabs_here()
+      end
+      toolbar.show(toolbar.tb0)  --show the horizontal toolbar
+    end
+  end
+
+  function toolbar.addrightgroup()
+    --buttons group: align right + width=use buttons / fixed height=butth
+    toolbar.addgroup(10, 0, 0, toolbar.barsize)
+    if toolbar.adj then
+      --bwidth,bheight,xmargin,ymargin,xoff,yoff
+      toolbar.adjust(toolbar.adj_bw,toolbar.adj_bh,0,toolbar.adj_ym,toolbar.adj_xoff,toolbar.adj_yoff)
     end
   end
 
@@ -577,23 +598,14 @@ if toolbar then
 
   --toolbar ready, show it
   function toolbar.ready()
-    toolbar.seltoolbar(0)
-    if toolbar.tabpos == 1 then
-      --1 row, tabs in the same line
-      toolbar.add_tabs_here()
-    elseif toolbar.tabpos == 3 then
-      --2 rows, tabs at the bottom
-      toolbar.add_tabs_here()
-    end
-    toolbar.show(toolbar.tb0)  --show the horizontal toolbar
-    if toolbar.tabpos > 0 then
-      --toolbar.tabwidth(0,0,50,200)  --set tab width mode:0=text -1=fill >0:width / min & max
-      toolbar.update_all_tabs()   --load existing buffers in tab-bar
-      toolbar.seltabbuf(buffer)  --select current buffer
-    end
+    toolbar.addpending()
     --show status bar if enabled
     toolbar.shw_statusbar()
     toolbar.seltoolbar(0)
+    if toolbar.tabpos > 0 then
+      toolbar.update_all_tabs()   --load existing buffers in tab-bar
+      toolbar.seltabbuf(buffer)  --select current buffer
+    end
   end
 
   toolbar.set_defaults()
