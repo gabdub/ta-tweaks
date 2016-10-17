@@ -110,11 +110,15 @@ require('project')
 This code adds a toolbar to textadept (__compiling is required__):
 
 The "toolbar" object is added to textadept with the following functions:
+
 __toolbars__
+
 * toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons (_toolbar-num_ = 0/false:top, 1/true:vertical, 2:status-bar)
 * toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
 * toolbar._show(show)_ show/hide the current edited toolbar
+
 __groups__
+
 * toolbar._seltoolbar(toolbar-num(int) or isvertical(bool), [groupnum])_ select which toolbar/group to edit
 * toolbar._addgroup(xcontrol,ycontrol,width,height,[hidden])_ add a buttons group to the current edited toolbar
   (x/y control: 0=allow groups before and after  1=no groups at the left/top  2=no groups at the right/bottom  3=exclusive row/col
@@ -122,7 +126,9 @@ __groups__
 * toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-dragging],[xcontrol],[height])_ show tabs in the current edited toolbar
   (tabs use their own group. xcontrol: 0=allow groups before and after  1=no groups at the left  2=no groups at the right
   3=exclusive row  +4=expand  +8:use items size for width)
+
 __buttons__
+
 * toolbar._addbutton(button-name,tooltiptext)_ add a graphic button to the current edited button-group (icon=button-name)
 * toolbar._addtext(button-name,text,tooltiptext,W)_ add a text button or text (button-name="") to the current edited button-group. width: W=0:use text width, >0:fix width
 * toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited button-group
@@ -137,7 +143,9 @@ __buttons__
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
 * toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ change a text button's text (and tooltip)
 * toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ change default text buttons font size and colors in the current edited toolbar
+
 __tabs__
+
 * toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
 * toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip in the current edited toolbar
 * toolbar._deletetab(num)_ delete tab _num_ from the current edited toolbar
