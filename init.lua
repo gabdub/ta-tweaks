@@ -54,7 +54,7 @@ if toolbar then
 
   --change theme defaults here
   --toolbar.tabwithclose=true
-  --toolbar.tabxmargin=0
+  --toolbar.tabxmargin=1
   --toolbar.back[2]="ttb-back2-same"
   --toolbar.back[2]="ttb-back2-down"
 

@@ -404,7 +404,7 @@ if toolbar then
   function toolbar.add_tabs_here(extrah)
     local xcontrol=4 --x-expanded: use all available space
     if toolbar.tabpos > 1 then
-      xcontrol=7 --x-expanded + exclusive row
+      xcontrol=5 --x-expanded + left align (new row)
     end
     if not extrah then extrah=0 end
     --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
@@ -447,7 +447,6 @@ if toolbar then
     if tabpos >= 2 then
       bsz0= bsz0*2 +1 --two rows
       butth= butth+1
-      toolbar.tabxmargin=0
     end
     local bsz1= toolbar.barsize
     if nvertcols > 1 then
