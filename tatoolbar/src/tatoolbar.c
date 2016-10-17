@@ -2153,6 +2153,9 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
       if( need_redraw( event, x0, y0, g->barx2, g->bary2) ){
         wt= g->barx2 - g->barx1;
         ht= g->bary2 - g->bary1;
+        cairo_save(cr);
+        cairo_rectangle(cr, x0, y0, wt, ht );
+        cairo_clip(cr);
         //draw group items
         if( (g->flags & TTBF_GRP_TABBAR) != 0){
           //tab-bar
@@ -2238,6 +2241,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
             }
           }
         }
+        cairo_restore(cr);
       }
     }
   }
