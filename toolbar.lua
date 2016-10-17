@@ -401,10 +401,15 @@ if toolbar then
     end
   end
 
-  function toolbar.add_tabs_here()
-    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag])
+  function toolbar.add_tabs_here(extrah)
+    local xcontrol=4 --x-expanded: use all available space
+    if toolbar.tabpos > 1 then
+      xcontrol=7 --x-expanded + exclusive row
+    end
+    if not extrah then extrah=0 end
+    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
     toolbar.addtabs(toolbar.tabxmargin, toolbar.tabxsep, toolbar.tabwithclose, toolbar.tabmodified,
-        toolbar.tabfont_sz, toolbar.tabfont_yoffset,true) --enable drag support
+        toolbar.tabfont_sz, toolbar.tabfont_yoffset,true,xcontrol,toolbar.barsize+extrah) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
     toolbar.tabfontcolor(toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
@@ -422,8 +427,8 @@ if toolbar then
   --create the toolbar (tabpos, nvertcols)
   --tabpos=0: 1 row, use default tabs
   --tabpos=1: 1 row, tabs & buttons in the same line
-  --tabpos=2: 2 rows, tabs at the top (horizonal only)
-  --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
+  --tabpos=2: 2 rows, tabs at the top
+  --tabpos=3: 2 rows, tabs at the bottom
   --nvertcols= 0..2 = number of columns in vertical toolbar
   --stbar=0: use default
   --stbar=1: use tatoolbar
@@ -438,8 +443,10 @@ if toolbar then
     toolbar.tb0= ((tabpos > 0) or (nvertcols==0)) --horizontal
 
     local bsz0= toolbar.barsize
+    local butth= bsz0
     if tabpos >= 2 then
       bsz0= bsz0*2 +1 --two rows
+      butth= butth+1
       toolbar.tabxmargin=0
     end
     local bsz1= toolbar.barsize
@@ -450,11 +457,6 @@ if toolbar then
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb0 then   --create the horizontal toolbar
       toolbar.new(bsz0, toolbar.butsize, toolbar.imgsize, 0, toolbar.themepath)
-      if toolbar.adj then
-        --bwidth,bheight,xmargin,ymargin,xoff,yoff
-        toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
-          toolbar.adj_xoff, toolbar.adj_yoff)
-      end
       if not toolbar.tabwithclose then
         --no close button in tabs, use a shorter tab end (part #3)
         if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
@@ -473,8 +475,16 @@ if toolbar then
       end
       if tabpos == 2 then
         --2 rows, tabs at the top
-        toolbar.add_tabs_here()
-        toolbar.newrow(1)
+        toolbar.add_tabs_here(1)
+        --put buttons in another group
+        butth= toolbar.barsize
+      end
+      --buttons group: align left + width=use buttons / fixed height=butth
+      toolbar.addgroup(9, 0, 0, butth)
+      if toolbar.adj then
+        --bwidth,bheight,xmargin,ymargin,xoff,yoff
+        toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
+          toolbar.adj_xoff, toolbar.adj_yoff)
       end
       toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     else
@@ -486,6 +496,8 @@ if toolbar then
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb1 then   --create the vertical toolbar
       toolbar.new(bsz1, toolbar.butsize, toolbar.imgsize, 1, toolbar.themepath)
+      --buttons group: align top + height=use buttons / fixed width
+      toolbar.addgroup(0, 9, toolbar.barsize, 0)
       if toolbar.adj then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
         toolbar.adjust(toolbar.adj_bw, toolbar.adj_bh, toolbar.adj_xm, toolbar.adj_ym,
@@ -500,12 +512,11 @@ if toolbar then
       else
         toolbar.seticon(tbglobalicon, toolbar.back[4], 0, true)  --vertical back x 2cols
       end
-      --add buttons in the vertical toolbar
+      toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
       toolbar.show(true)
       if tabpos > 0 then
         toolbar.seltoolbar(0)
       end
-      toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     else
       --hide the vertical toolbar
       toolbar.seltoolbar(1)
@@ -536,9 +547,9 @@ if toolbar then
     end
     toolbar.seltoolbar(2)
     if toolbar.statbar == 2 then
-      --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag])
+      --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
       toolbar.addtabs(toolbar.statxmargin, toolbar.statxsep, false, 0,
-        toolbar.statfont_sz, toolbar.statfont_yoffset, false)
+        toolbar.statfont_sz, toolbar.statfont_yoffset, false, 4, toolbar.statsize) --x-expanded
       toolbar.tabfontcolor( toolbar.statcolor_normal, toolbar.statcolor_hilight, toolbar.tabcolor_active,
         toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
       --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
@@ -573,7 +584,6 @@ if toolbar then
       toolbar.add_tabs_here()
     elseif toolbar.tabpos == 3 then
       --2 rows, tabs at the bottom
-      toolbar.newrow(1)
       toolbar.add_tabs_here()
     end
     toolbar.show(toolbar.tb0)  --show the horizontal toolbar

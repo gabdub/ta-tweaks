@@ -61,8 +61,8 @@ if toolbar then
   --create the toolbar (tabpos, nvertcols, stbar)
   --tabpos=0: 1 row, use default tabs
   --tabpos=1: 1 row, tabs & buttons in the same line
-  --tabpos=2: 2 rows, tabs at the top (horizonal only)
-  --tabpos=3: 2 rows, tabs at the bottom (horizonal only)
+  --tabpos=2: 2 rows, tabs at the top
+  --tabpos=3: 2 rows, tabs at the bottom
   --nvertcols= 0..2 = number of columns in vertical toolbar
   --stbar=0: use default status bar
   --stbar=1: use toolbar's status bar

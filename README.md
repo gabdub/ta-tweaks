@@ -110,26 +110,34 @@ require('project')
 This code adds a toolbar to textadept (__compiling is required__):
 
 The "toolbar" object is added to textadept with the following functions:
-
+__toolbars__
 * toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons (_toolbar-num_ = 0/false:top, 1/true:vertical, 2:status-bar)
 * toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
-* toolbar._seltoolbar(toolbar-num(int) or isvertical(bool))_ select which toolbar to edit
-* toolbar._addbutton(button-name,tooltiptext)_ add a graphic button to the current edited toolbar (icon=button-name)
-* toolbar._addtext(button-name,text,tooltiptext,W)_ add a text button or text (button-name="") to the current edited toolbar. width: W=0:use text width, >0:fix width
-* toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited toolbar
-* toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels in the current edited toolbar
-* toolbar._gotopos(x,y)_ change next button position to x,y (in pixels) in the current edited toolbar
 * toolbar._show(show)_ show/hide the current edited toolbar
+__groups__
+* toolbar._seltoolbar(toolbar-num(int) or isvertical(bool), [groupnum])_ select which toolbar/group to edit
+* toolbar._addgroup(xcontrol,ycontrol,width,height,[hidden])_ add a buttons group to the current edited toolbar
+  (x/y control: 0=allow groups before and after  1=no groups at the left/top  2=no groups at the right/bottom  3=exclusive row/col
+  +4=expand  +8=use items size)
+* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-dragging],[xcontrol],[height])_ show tabs in the current edited toolbar
+  (tabs use their own group. xcontrol: 0=allow groups before and after  1=no groups at the left  2=no groups at the right
+  3=exclusive row  +4=expand  +8:use items size for width)
+__buttons__
+* toolbar._addbutton(button-name,tooltiptext)_ add a graphic button to the current edited button-group (icon=button-name)
+* toolbar._addtext(button-name,text,tooltiptext,W)_ add a text button or text (button-name="") to the current edited button-group. width: W=0:use text width, >0:fix width
+* toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited button-group
+* toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels in the current edited button-group
+* toolbar._gotopos(x,y)_ change next button position to x,y (in pixels) in the current edited button-group
 * toolbar._enable(button-name,isenabled,[onlyinthistoolbar])_ enable/disable a button given its name
 * toolbar._seticon(button-name,icon,[nicon],[onlyinthistoolbar])_ set/change a button's icon (nicon: 0=normal/separator,1:disabled,2:hilighted,3:pressed)
-* toolbar._seticon("TOOLBAR",icon,[nicon],[onlyinthistoolbar])_ set/change a global toolbar's icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
+* toolbar._seticon("GROUP"/"TOOLBAR",icon,[nicon],[onlyinthistoolbar])_ set/change a group or global toolbar's icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
   4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed,
   24-25-26=hilighted text button, 27-28-29=hilight as pressed text button)
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
 * toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ change a text button's text (and tooltip)
 * toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ change default text buttons font size and colors in the current edited toolbar
-* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset)_ show tabs in the current edited toolbar
+__tabs__
 * toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
 * toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip in the current edited toolbar
 * toolbar._deletetab(num)_ delete tab _num_ from the current edited toolbar
@@ -141,7 +149,7 @@ The "toolbar" object is added to textadept with the following functions:
 * toolbar._tabwidth(num,text)_ set tab _num_ width using the given text
 * toolbar._gototab(pos)_ generate a click in tab _pos_: -1=prev, 1=next, 0=first, 2=last
 
-Instead of calling some of this functions directly is better to use theming and __requiere('toolbar')__
+Instead of calling some of this functions directly, is better to use theming and __requiere('toolbar')__
 (see some examples below)
 
 __Usage:__
