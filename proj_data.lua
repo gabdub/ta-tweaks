@@ -49,6 +49,50 @@ Proj.list_change = false
 --recent Projects list
 Proj.recent_projects= {}
 
+--hilight project's open files
+local indic_open = _SCINTILLA.next_indic_number()
+buffer.indic_fore[indic_open]=0x404040
+buffer.indic_style[indic_open]= buffer.INDIC_DOTS
+
+--remove all open-indicators from project
+function Proj.clear_open_indicators(pbuf)
+  pbuf.indicator_current= indic_open
+  pbuf:indicator_clear_range(0,pbuf.length-1)
+end
+
+function Proj.add_open_indicator(pbuf,row)
+  pbuf.indicator_current= indic_open
+  local pos= pbuf.line_indent_position[row]
+  local len= pbuf.line_end_position[row] - pos
+  pbuf:indicator_fill_range(pos,len)
+end
+
+--if buff is a project's file, hilight it with and open-indicator
+function Proj.show_open_indicator(pbuf,buff)
+  --ignore project and search buffers
+  if buff._project_select == nil and buff._type == nil then
+    local file= buff.filename
+    if file then
+      local row= Proj.locate_file(pbuf, file)
+      if row then
+        Proj.add_open_indicator(pbuf,row-1)
+      end
+    end
+  end
+end
+
+--add and open-indicator to all project's files that are open
+function Proj.mark_open_files(pbuf)
+  if pbuf then
+    Proj.clear_open_indicators(pbuf)
+    if pbuf._project_select then --only in selection mode
+      for _, b in ipairs(_BUFFERS) do
+        Proj.show_open_indicator(pbuf,b)
+      end
+    end
+  end
+end
+
 function Proj.load_projects(filename)
   local f = io.open(filename, 'rb')
   if f then

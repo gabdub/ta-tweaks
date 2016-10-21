@@ -80,7 +80,7 @@ function Proj.open_sel_file()
       end
     end
     --try to select the current file in the working project
-    Proj.track_this_file(true)
+    Proj.track_this_file()
     return
   end
   --there is no file for this row, fold instead

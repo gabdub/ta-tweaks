@@ -188,6 +188,7 @@ function Proj.set_selectionmode(buff,selmode)
       buff.toggle_fold(buff.proj_fold_row[i])
     end
     Proj.is_visible= 1  --1:shown in selection mode
+    Proj.mark_open_files(buff)
   else
     --edit project as a text file (show control info)
     buff:set_lexer('text')
@@ -196,6 +197,7 @@ function Proj.set_selectionmode(buff,selmode)
     --project in EDIT mode--
     proj_show_default(buff)
     Proj.is_visible= 2  --2:shown in edit mode
+    Proj.clear_open_indicators(buff)
   end
   if toolbar then
     Proj.update_projview()  --update project view button
@@ -371,35 +373,32 @@ end
 
 --try to select the current file in the working project
 --(only if the project is currently visible)
-function Proj.track_this_file( proj_in_view )
+function Proj.track_this_file()
   local p_buffer = Proj.get_projectbuffer(false)
-  if p_buffer and p_buffer._project_select then
-    --ok, the working project is in SELECTION mode
+  --only track the file if the project is visible and in SELECTION mode and is not an special buffer
+  if p_buffer and p_buffer._project_select and buffer._type == nil then
+    --get file path
+    local file= buffer.filename
+    if file ~= nil then
+      row= Proj.locate_file(p_buffer, file)
+      if row ~= nil then
+        --prevent some events to fire for ever
+        Proj.updating_ui= Proj.updating_ui+1
 
-    --only track the file if the project is visible and is not an special buffer
-    if buffer._type == nil then
-      --get file path
-      local file= buffer.filename
-      if file ~= nil then
-        row= Proj.locate_file(p_buffer, file)
-        if row ~= nil then
-          --row found
-          --prevent some events to fire for ever
-          Proj.updating_ui= Proj.updating_ui+1
+        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+        my_goto_view(projv)
+        --move the selection bar
+        p_buffer:ensure_visible_enforce_policy(row- 1)
+        p_buffer:goto_line(row-1)
+        p_buffer:home()
+        --hilight the file as open
+        Proj.add_open_indicator(p_buffer,row-1)
+         -- project in SELECTION mode without focus--
+        Proj.show_lost_focus(p_buffer)
+        --return to this file (it could be in a different view)
+        Proj.go_file(file)
 
-          local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-          my_goto_view(projv)
-          --move the selection bar
-          p_buffer:ensure_visible_enforce_policy(row- 1)
-          p_buffer:goto_line(row-1)
-          p_buffer:home()
-           -- project in SELECTION mode without focus--
-          Proj.show_lost_focus(p_buffer)
-          --return to this file (it could be in a different view)
-          Proj.go_file(file)
-
-          Proj.updating_ui= Proj.updating_ui-1
-        end
+        Proj.updating_ui= Proj.updating_ui-1
       end
     end
   end
@@ -411,6 +410,14 @@ events_connect(events.VIEW_BEFORE_SWITCH,   Proj.show_lost_focus)
 
 events_connect(events.BUFFER_AFTER_SWITCH,  Proj.update_after_switch)
 events_connect(events.VIEW_AFTER_SWITCH,    Proj.update_after_switch)
+
+events_connect(events.BUFFER_DELETED, function()
+  --update open files hilight if the project is visible and in SELECTION mode
+  local pbuf = Proj.get_projectbuffer(false)
+  if pbuf and pbuf._project_select then
+    Proj.mark_open_files(pbuf)
+  end
+end)
 
 --if the current file is a project, enter SELECTION mode--
 events_connect(events.FILE_OPENED, function()
@@ -647,11 +654,13 @@ end
 function Proj.qopen_user()
   Proj.goto_filesview() --change to files view if needed
   io.quick_open(_USERHOME)
+  Proj.track_this_file()
 end
 
 function Proj.qopen_home()
   Proj.goto_filesview() --change to files view if needed
   io.quick_open(_HOME)
+  Proj.track_this_file()
 end
 
 function Proj.qopen_curdir()
@@ -659,6 +668,7 @@ function Proj.qopen_curdir()
   Proj.goto_filesview() --change to files view if needed
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
+    Proj.track_this_file()
   end
 end
 
