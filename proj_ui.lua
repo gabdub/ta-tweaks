@@ -56,7 +56,7 @@ local function proj_context_menu_init(num)
       {''},
       {'Project _Search',     Proj.search_in_files },
       {'Goto _Tag',           Proj.goto_tag},
-      {'_Add _position',      Proj.append_current_pos},
+      {'S_ave position',      Proj.store_current_pos},
       {'_Prev position',      Proj.goto_prev_pos},
       {'Ne_xt position',      Proj.goto_next_pos},
     }
@@ -108,7 +108,7 @@ local function proj_contextm_file()
       {''},
       {'Project _Search',       Proj.search_in_files },
       {'Goto _Tag',             Proj.goto_tag},
-      {'_Add _position',        Proj.append_current_pos},
+      {'S_ave position',        Proj.store_current_pos},
       {'_Prev position',        Proj.goto_prev_pos},
       {'Ne_xt position',        Proj.goto_next_pos},
       {''},
