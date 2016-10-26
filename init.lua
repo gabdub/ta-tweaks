@@ -79,7 +79,7 @@ if toolbar then
   Proj.update_go_toolbar()
   toolbar.addspace()
 
-  --toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]")
+  toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]")
   toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]")
   toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
@@ -95,7 +95,7 @@ if toolbar then
   toolbar.addpending()
   --add a group of buttons after tabs
   toolbar.addrightgroup()
-  toolbar.cmd("new",           buffer.new,    "New [Ctrl+N]", "list-add")
+  --toolbar.cmd("new",           buffer.new,    "New [Ctrl+N]", "list-add")
 
   local function toggleconfig()
     local on
@@ -113,10 +113,13 @@ if toolbar then
   --toolbar ready, show it
   toolbar.ready()
 
+  toolbar.cfgtabs={"Buffer", "View", "Project", "Editor", "Toolbar"}
+
   events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
     if ntoolbar == 3 then
       toolbar.seltoolbar(3)
       toolbar.activatetab(ntab)
+      toolbar.settext("cfgtit", toolbar.cfgtabs[ntab].." configuration", "", true)
       toolbar.seltoolbar(0)
     end
   end)
@@ -124,11 +127,13 @@ if toolbar then
   --vertical right (config)
   toolbar.new(350, 24, 16, 3, toolbar.themepath)
   toolbar.seticon("TOOLBAR", "ttb-cback", 0, true)  --vertical back
-  --buttons group: align top + height=27 / width=expand
-  toolbar.addgroup(7, 1, 0, 27)
+
+  --config title: width=expand / height=27
+  toolbar.addgroup(7, 0, 0, 27)
   toolbar.seticon("GROUP", "ttb-cback2", 0, true)
-  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.textcolor_grayed)
-  toolbar.addtext("", "Configuration", "", 350)
+  toolbar.textfont(toolbar.textfont_sz+4, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.statcolor_normal)
+  toolbar.addtext("cfgtit", toolbar.cfgtabs[1].." configuration", "", 350)
+  toolbar.enable("cfgtit",false,true)
 
   toolbar.tabwithclose=false
   toolbar.tabwidthmode=0
@@ -144,13 +149,11 @@ if toolbar then
   end
   toolbar.seticon("GROUP", toolbar.back[1], 0, true)  --horizontal back x 1row
   toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-  toolbar.settab(1,"Buffer", "")
-  toolbar.settab(2,"View", "")
-  toolbar.settab(3,"Project", "")
-  toolbar.settab(4,"Editor", "")
-  toolbar.settab(5,"Theme", "")
+  for i,txt in ipairs(toolbar.cfgtabs) do
+    toolbar.settab(i,txt, "")
+  end
   toolbar.activatetab(1)
-  --toolbar.addtext("", "Editor", "")
+
   toolbar.show(false)
   toolbar.seltoolbar(0)
 end
