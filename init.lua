@@ -17,6 +17,9 @@ function my_goto_line(p_buffer,line)
   p_buffer:goto_line(line)
 end
 
+export = require('export')
+--export.browser = 'chromium-browser'
+
 require('project')
 require('goto_nearest')
 require('ctrl_tab_mru')
@@ -92,8 +95,30 @@ if toolbar then
   toolbar.addpending()
   --add a group of buttons after tabs
   toolbar.addrightgroup()
-  toolbar.cmd("new",           buffer.new,          "New [Ctrl+N]", "list-add")
+  toolbar.cmd("new",           buffer.new,    "New [Ctrl+N]", "list-add")
+
+  local function toggleconfig()
+    local on
+    if toolbar.config_toolbar_on then
+      toolbar.config_toolbar_on= false
+    else
+      toolbar.config_toolbar_on= true
+    end
+    toolbar.seltoolbar(3)
+    toolbar.show(toolbar.config_toolbar_on)
+    toolbar.seltoolbar(0)
+  end
+  toolbar.cmd("cfg",           toggleconfig,  "Show configuration panel", "visualization")
 
   --toolbar ready, show it
   toolbar.ready()
+
+  --vertical right (config)
+  toolbar.new(350, 24, 16, 3, toolbar.themepath)
+  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+  toolbar.seticon("TOOLBAR", "ttb-cback", 0, true)  --vertical back x 1col
+  toolbar.addtext("", "Configuration", "")
+  toolbar.addtext("", "Editor", "")
+  toolbar.show(false)
+  toolbar.seltoolbar(0)
 end

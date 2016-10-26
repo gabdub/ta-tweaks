@@ -2370,10 +2370,13 @@ static void new_window() {
 
 #ifdef USE_TA_TOOLBAR
   create_tatoolbar(hbox,1);
-#endif
-
+  GtkWidget *hboxED = gtk_hbox_new(FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), hboxED, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(hboxED), new_view(0), TRUE, TRUE, 0);
+  create_tatoolbar(hbox,3);
+#else
   gtk_box_pack_start(GTK_BOX(hbox), new_view(0), TRUE, TRUE, 0);
-
+#endif
   gtk_box_pack_start(GTK_BOX(vboxp), new_findbox(), FALSE, FALSE, 5);
 
   command_entry = scintilla_new();
@@ -2385,7 +2388,11 @@ static void new_window() {
                           NULL);
 
   GtkWidget *hboxs = gtk_hbox_new(FALSE, 0);
+#ifdef USE_TA_TOOLBAR
+  gtk_box_pack_start(GTK_BOX(vbox), hboxs, FALSE, FALSE, 0);
+#else
   gtk_box_pack_start(GTK_BOX(vbox), hboxs, FALSE, FALSE, 1);
+#endif
 
   statusbar[0] = gtk_label_new(NULL), statusbar[1] = gtk_label_new(NULL);
   gtk_box_pack_start(GTK_BOX(hboxs), statusbar[0], TRUE, TRUE, 5);
