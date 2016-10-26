@@ -113,12 +113,44 @@ if toolbar then
   --toolbar ready, show it
   toolbar.ready()
 
+  events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
+    if ntoolbar == 3 then
+      toolbar.seltoolbar(3)
+      toolbar.activatetab(ntab)
+      toolbar.seltoolbar(0)
+    end
+  end)
+
   --vertical right (config)
   toolbar.new(350, 24, 16, 3, toolbar.themepath)
+  toolbar.seticon("TOOLBAR", "ttb-cback", 0, true)  --vertical back
+  --buttons group: align top + height=27 / width=expand
+  toolbar.addgroup(7, 1, 0, 27)
+  toolbar.seticon("GROUP", "ttb-cback2", 0, true)
+  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.textcolor_grayed)
+  toolbar.addtext("", "Configuration", "", 350)
+
+  toolbar.tabwithclose=false
+  toolbar.tabwidthmode=0
+  toolbar.tabwidthmin=0
+  toolbar.add_tabs_here()
+  if toolbar.img[4]  == "" then toolbar.img[4]=  "ttb-tab-back" end
+  if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
+  if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
+  if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end
+  if toolbar.img[16] == "" then toolbar.img[16]= "ttb-atab3nc" end
+  for i, img in ipairs(toolbar.img) do
+    if img ~= "" then toolbar.seticon("GROUP", img, i, true) end
+  end
+  toolbar.seticon("GROUP", toolbar.back[1], 0, true)  --horizontal back x 1row
   toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-  toolbar.seticon("TOOLBAR", "ttb-cback", 0, true)  --vertical back x 1col
-  toolbar.addtext("", "Configuration", "")
-  toolbar.addtext("", "Editor", "")
+  toolbar.settab(1,"Buffer", "")
+  toolbar.settab(2,"View", "")
+  toolbar.settab(3,"Project", "")
+  toolbar.settab(4,"Editor", "")
+  toolbar.settab(5,"Theme", "")
+  toolbar.activatetab(1)
+  --toolbar.addtext("", "Editor", "")
   toolbar.show(false)
   toolbar.seltoolbar(0)
 end

@@ -2105,6 +2105,24 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   cairo_t *cr = gdk_cairo_create(widget->window);
   //draw background image (if any)
   draw_fill_img(cr, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
+  //draw group backgrounds (if any)
+  for( g= T->group; (g != NULL); g= g->next ){
+    if( (g->flags & (TTBF_HIDDEN|TTBF_GRP_TABBAR)) == 0 ){
+      if(g->img[TTBI_TB_BACKGROUND].width > 0){
+        x0= g->barx1;
+        y0= g->bary1;
+        if( need_redraw( event, x0, y0, g->barx2, g->bary2) ){
+          wt= g->barx2 - g->barx1;
+          ht= g->bary2 - g->bary1;
+          //cairo_save(cr);
+          //cairo_rectangle(cr, x0, y0, wt, ht );
+          //cairo_clip(cr);
+          draw_fill_img(cr, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
+          //cairo_restore(cr);
+        }
+      }
+    }
+  }
 
   //draw hilighted background (before drawing buttons)
   phi= NULL;
