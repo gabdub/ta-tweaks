@@ -174,7 +174,15 @@ if toolbar then
     elseif ntoolbar == 2 then
       --status bar click
       if ntab == 2 then --Line
-        textadept.editing.goto_line()
+        if goto_line_col then
+          goto_line_col(false)
+        else
+          textadept.editing.goto_line()
+        end
+      elseif ntab == 3 then --Col
+        if goto_line_col then
+          goto_line_col(true)
+        end
       elseif ntab == 4 then --lexer
         textadept.file_types.select_lexer()
       elseif ntab == 5 then --eol

@@ -3,6 +3,9 @@ if not CURSES then ui.set_theme('ggg') end
 
 TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
 
+-- Control+F4 = RESET textadept
+keys.cf4 = reset
+
 function my_goto_view(view)
   if TA_MAYOR_VER < 9 then
     ui.goto_view(view)

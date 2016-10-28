@@ -59,7 +59,7 @@ local function goto_nearest_occurrence(reverse,ask)
   if Proj then  --Project module?
     -- Store the current position in the jump history if applicable, clearing any
     -- jump history positions beyond the current one.
-    Proj.store_current_pos()
+    Proj.store_current_pos(true)
   end
 
   buffer.search_flags = (M.goto_nearest_whole_word and buffer.FIND_WHOLEWORD or 0) +
@@ -116,6 +116,31 @@ local function goto_nearest_config(choose)
     stat= stat .. ' (soft match)'
   end
   ui.statusbar_text= stat
+end
+
+function goto_line_col(askcol)
+  if Proj then  --Project module?
+    -- Store the current position in the jump history if applicable, clearing any
+    -- jump history positions beyond the current one.
+    Proj.store_current_pos(true)
+  end
+  if askcol then
+    local pos=buffer.current_pos
+    local button, inputs = ui.dialogs.inputbox{
+      title = 'Goto Line and Column',
+      informative_text = {'Goto Position', 'Line:', 'Col:'},
+      text = {buffer:line_from_position(pos) + 1,buffer.column[pos]+1}
+    }
+    local line = tonumber(inputs[1])
+    local column = tonumber(inputs[2])
+    if button == 1 and line and column then
+      buffer:ensure_visible_enforce_policy(line - 1)
+      local pos = buffer:find_column(line - 1, column - 1)
+      buffer:goto_pos(pos)
+    end
+  else
+    textadept.editing.goto_line()
+  end
 end
 
 if Proj then  --Project module?
@@ -180,3 +205,8 @@ keys.cf3 =  function() goto_nearest_occurrence(true) end
 keys.af3 =  function() goto_nearest_config(true) end
 keys.sf3 =  function() goto_nearest_occurrence(false, true) end
 keys.csf3 = function() goto_nearest_config(false) end
+-- Control+G =    goto-line
+keys.cg = goto_line_col
+-- Control+F =    Shift+F3
+keys.cf = keys.sf3
+

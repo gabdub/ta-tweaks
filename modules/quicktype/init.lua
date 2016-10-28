@@ -1,12 +1,3 @@
--- Control+F =    Shift+F3
-keys.cf = keys.sf3
-
--- Control+G =    goto-line
-keys.cg = textadept.editing.goto_line
-
--- Control+F4 =   RESET textadept
-keys.cf4 = reset
-
 local function type_before_after(before,after)
   if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
     --if something is selected use enclose (left the cursor at the end)

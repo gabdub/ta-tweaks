@@ -601,7 +601,7 @@ function Proj.open_search_file()
     textadept.bookmarks.toggle()
     -- Store the current position in the jump history if applicable, clearing any
     -- jump history positions beyond the current one.
-    Proj.store_current_pos()
+    Proj.store_current_pos(true)
     Proj.go_file(file, line_num)
     -- Store the current position at the end of the jump history.
     Proj.append_current_pos()
