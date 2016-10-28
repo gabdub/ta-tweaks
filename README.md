@@ -3,7 +3,7 @@ ___This is a collection of my Textadept tweaks___:
 
 ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform text editor: http://foicica.com/textadept/
 
-  __goto_nearest.lua__ (based on http://foicica.com/wiki/goto-nearest-occurrence): this module adds the following bindings:
+  __goto_nearest__ (based on http://foicica.com/wiki/goto-nearest-occurrence): this module adds the following bindings:
   * __F3__ goto nearest occurrence FORWARD
   * __CTRL+F3__: goto nearest occurrence BACKWARD
   * __ALT+F3__: goto nearest occurrence CHOOSE SEARCH OPTIONS
@@ -11,7 +11,8 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
   * __CTRL+SHIFT+F3__: goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
   * __SHIFT+ALT+F__: Search for text in all project files (requires project.lua)
 
-  __Features:__
+
+__Features:__
 
   * Textadept version 8 and 9 compatible
   * Quick search of the selected text (if not text is selected, repeat last search)
@@ -24,7 +25,7 @@ ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform 
     * 'Word:yes + Match case (strict match)'
 
 __Usage:__
-Copy  _goto_nearest.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
+Copy _goto_nearest_ module into __~/.textadept/modules__ and add the following to your personal _init.lua_ file:
 ```lua
 require('goto_nearest')
 ```
@@ -34,7 +35,7 @@ _Optional:_
 keys.cf =  keys.sf3
 ```
 
-__ctrl_tab_mru.lua__ : this module adds the following bindings:
+__ctrl_tab_mru__ : this module adds the following bindings:
 
 * __CTRL+TAB__: goto next buffer using a MRU list
 * __CTRL+SHIFT+TAB__: goto previous buffer
@@ -47,12 +48,12 @@ __Features:__
 * Ignores project file and search results (_project.lua_)
 
 __Usage:__
-Copy  _ctrl_tab_mru.lua_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file:
+Copy _ctrl_tab_mru_ module into __~/.textadept/modules__ and add the following to your personal _init.lua_ file:
 ```lua
 require('ctrl_tab_mru')
 ```
 
-__project.lua__ : this module adds the following bindings:
+__project__ : this module adds the following bindings:
 
 * __F4__: _(in project view)_ Toggle project file mode (edit / select)
 * __F4__: _(in a regular file)_ Go to project view
@@ -90,7 +91,8 @@ __Features:__
 * Edit menu: Trim trailing spaces
 
 __Usage:__
-Copy  _project.lua_, _proj_ui.lua_, _proj_cmd.lua_, _proj_ctags.lua_, _proj_data.lua_ and the folders _themes_ and _lexers_ to your __~/.textadept/__ folder and add the following to your personal _init.lua_ file (or use the provided _init.lua_ file as an example):
+Copy _project_ module into __~/.textadept/modules__ and the folders _themes_ and _lexers_ into __~/.textadept/__
+and add the following to your personal _init.lua_ file (or use the provided _init.lua_ file as an example):
 ```lua
 require('project')
 ```
@@ -162,13 +164,17 @@ Instead of calling some of this functions directly, is better to use theming and
 
 __Usage:__
 
-* copy src/tatoolbar.c in Textadept/src folder
-* edit the current Textadept/src/textadept.c adding the lines indicated in src/textadept.c that contains "USE_TA_TOOLBAR"
-* optionaly copy also the lines that contains "UNUSED()" to supress some warnings
+* copy src/tatoolbar.c and src/tatoolbar.h into Textadept/src folder
+* edit the current Textadept/src/textadept.c file, adding the lines shown in src/textadept.c that contains "USE_TA_TOOLBAR"
+* optionaly copy the lines that contains "UNUSED()" to supress some warnings when compiling on Win32
 * compile Textadept
 * copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from
   (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
   (you can choose another icon location and set the path when calling toolbar.new())
+* copy _toolbar_ module into __~/.textadept/modules__ for theming and easy of use
+* optionaly copy _htmltoolbar_ module into __~/.textadept/modules__
+
+
 * to create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
 ```
 if toolbar then
