@@ -1363,6 +1363,25 @@ static void setrgbcolor(int rgb, struct color3doubles *pc)
   pc->B= rgb2double(rgb);
 }
 
+static void ttb_show_groupG( struct toolbar_group *G, int show )
+{
+  int f;
+  if( G != NULL ){
+    redraw_begG(G);
+    f= G->flags;
+    if( show ){
+      f &= ~TTBF_HIDDEN;
+    }else{
+      f |= TTBF_HIDDEN;
+    }
+    if( f != G->flags ){
+      G->flags= f;
+      //group size changed, update toolbar
+      update_group_sizeG(G, 1);
+    }
+  }
+}
+
 /* ============================================================================= */
 /*                            TOOLBAR                                            */
 /* ============================================================================= */
@@ -1480,6 +1499,7 @@ static void ttb_change_button_textT(struct toolbar_data *T, const char *name, co
     p->text= chg_alloc_str(p->text, text);
     dif= set_text_bt_width(p);
     if( dif != 0){
+      redraw_begG(G);
       //button width changed, update all buttons to the right
       p= p->next;
       while( p != NULL ){
@@ -1535,6 +1555,7 @@ static void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
   struct toolbar_item * p;
   int asep;
   if( G != NULL ){
+    redraw_begG(G);
     if( G->isvertical ){
       if( sepsize == 0 ){
         sepsize= G->bheight/2;
@@ -1594,6 +1615,7 @@ static void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, i
     G= add_groupT_rcoh(T, xcontrol, 0, 0);
     T->tab_group= G;
     if( G != NULL ){
+      redraw_begG(G);
       G->flags |= TTBF_GRP_TABBAR;    //it's a tabbar group
       if( wdrag ){
         G->flags |= TTBF_GRP_DRAGTAB; //enable drag support
@@ -1799,6 +1821,7 @@ static void ttb_change_tabwidthG(struct toolbar_group *G, int ntab, int percwidt
 {
   struct toolbar_item * p= item_from_numG(G, ntab);
   if( p != NULL ){
+    redraw_begG(G);
     if( p->changewidth < 0 ){
       G->nitems_expand--;
     }
@@ -2105,24 +2128,6 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   cairo_t *cr = gdk_cairo_create(widget->window);
   //draw background image (if any)
   draw_fill_img(cr, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
-  //draw group backgrounds (if any)
-  for( g= T->group; (g != NULL); g= g->next ){
-    if( (g->flags & (TTBF_HIDDEN|TTBF_GRP_TABBAR)) == 0 ){
-      if(g->img[TTBI_TB_BACKGROUND].width > 0){
-        x0= g->barx1;
-        y0= g->bary1;
-        if( need_redraw( event, x0, y0, g->barx2, g->bary2) ){
-          wt= g->barx2 - g->barx1;
-          ht= g->bary2 - g->bary1;
-          //cairo_save(cr);
-          //cairo_rectangle(cr, x0, y0, wt, ht );
-          //cairo_clip(cr);
-          draw_fill_img(cr, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
-          //cairo_restore(cr);
-        }
-      }
-    }
-  }
 
   //draw hilighted background (before drawing buttons)
   phi= NULL;
@@ -2615,6 +2620,13 @@ static int ltoolbar_addtabs(lua_State *L)
   return 0;
 }
 
+/** `toolbar.showgroup(show)` Lua function. */
+static int ltoolbar_showgroup(lua_State *L)
+{
+  ttb_show_groupG( current_group(), lua_toboolean(L,1) );
+  return 0;
+}
+
 static struct toolbar_group * current_buttongrp( void )
 {
   struct toolbar_data *T;
@@ -2634,9 +2646,13 @@ static struct toolbar_group * current_buttongrp( void )
 static int ltoolbar_addbutton(lua_State *L)
 {
   const char *name= luaL_checkstring(L, 1);
-  add_itemG( current_buttongrp(), name, name, luaL_checkstring(L, 2), NULL, 0);
-  //group size changed, update toolbar
-  update_group_sizeG(current_buttongrp(), 1); //redraw
+  struct toolbar_group * g= current_buttongrp();
+  if( g != NULL ){
+    redraw_begG(g);
+    add_itemG( g, name, name, luaL_checkstring(L, 2), NULL, 0);
+    //group size changed, update toolbar
+    update_group_sizeG(g, 1); //redraw
+  }
   return 0;
 }
 
@@ -2644,9 +2660,13 @@ static int ltoolbar_addbutton(lua_State *L)
 static int ltoolbar_addtext(lua_State *L)
 {
   const char *name= luaL_checkstring(L, 1);
-  add_itemG( current_buttongrp(), name, NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2), lua_tointeger(L, 4));
-  //group size changed, update toolbar
-  update_group_sizeG(current_buttongrp(), 1); //redraw
+  struct toolbar_group * g= current_buttongrp();
+  if( g != NULL ){
+    redraw_begG(g);
+    add_itemG( g, name, NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2), lua_tointeger(L, 4));
+    //group size changed, update toolbar
+    update_group_sizeG(g, 1); //redraw
+  }
   return 0;
 }
 
@@ -2877,6 +2897,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "seltoolbar",   ltoolbar_seltoolbar);   //select which toolbar/group to edit
   l_setcfunction(L, -1, "addgroup",     ltoolbar_addgroup);     //add a new group
   l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //add a tabs-group
+  l_setcfunction(L, -1, "showgroup",    ltoolbar_showgroup);    //show/hide a group
 //buttons
   l_setcfunction(L, -1, "addbutton",    ltoolbar_addbutton);    //add button
   l_setcfunction(L, -1, "addtext",      ltoolbar_addtext);      //add text button

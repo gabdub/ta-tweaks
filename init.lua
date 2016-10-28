@@ -120,12 +120,21 @@ if toolbar then
   toolbar.ready()
 
   toolbar.cfgtabs={"Buffer", "View", "Project", "Editor", "Toolbar"}
+  toolbar.cfggroup={0,0,0,0,0}
+  toolbar.cfgcurgroup=1
 
   events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
     if ntoolbar == 3 then
       toolbar.seltoolbar(3)
       toolbar.activatetab(ntab)
       toolbar.settext("cfgtit", toolbar.cfgtabs[ntab].." configuration", "", true)
+      if toolbar.cfggroup[ntab] > 0 then
+        toolbar.seltoolbar(3,toolbar.cfggroup[toolbar.cfgcurgroup])
+        toolbar.showgroup(false)
+        toolbar.seltoolbar(3,toolbar.cfggroup[ntab])
+        toolbar.showgroup(true)
+        toolbar.cfgcurgroup= ntab
+      end
       toolbar.seltoolbar(0)
     end
   end)
@@ -158,6 +167,22 @@ if toolbar then
   for i,txt in ipairs(toolbar.cfgtabs) do
     toolbar.settab(i,txt, "")
   end
+  toolbar.addgroup(7,8,0,0,false)
+  toolbar.addtext("", "text 1", "", 350)
+  toolbar.cfggroup[1]=3
+  toolbar.addgroup(7,8,0,0,true)
+  toolbar.addtext("", "text 2", "", 350)
+  toolbar.cfggroup[2]=4
+  toolbar.addgroup(7,8,0,0,true)
+  toolbar.addtext("", "text 3", "", 350)
+  toolbar.cfggroup[3]=5
+  toolbar.addgroup(7,8,0,0,true)
+  toolbar.addtext("", "text 4", "", 350)
+  toolbar.cfggroup[4]=6
+  toolbar.addgroup(7,8,0,0,true)
+  toolbar.addtext("", "text 5", "", 350)
+  toolbar.cfggroup[5]=7
+
   toolbar.activatetab(1)
 
   toolbar.show(false)

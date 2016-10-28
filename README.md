@@ -128,6 +128,7 @@ __groups__
 * toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-dragging],[xcontrol],[height])_ show tabs in the current edited toolbar
   (tabs use their own group. xcontrol: 0=allow groups before and after  1=no groups at the left  2=no groups at the right
   3=exclusive row  +4=expand  +8:use items size for width)
+* toolbar._showgroup(show)_ show/hide the current selected group
 
 __buttons__
 
