@@ -48,7 +48,7 @@ Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
 Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
 Proj.PRJF_RUN   =       4   -- a run command
 
-require('project\\proj_data')
-require('project\\proj_cmd')
-require('project\\proj_ui')
-require('project\\proj_ctags')
+require('project.proj_data')
+require('project.proj_cmd')
+require('project.proj_ui')
+require('project.proj_ctags')
