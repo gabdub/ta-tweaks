@@ -53,7 +53,8 @@ local function mru_ctrl_tab_handler(shift)
     return --not enought buffers
   end
 
-  if buffer._project_select ~= nil or buffer._type ~= nil then
+  --Project module?
+  if Proj and (buffer._project_select ~= nil or buffer._type ~= nil) then
     --goto files view before handling control+tab
     Proj.goto_filesview() --change to files view if needed
     return

@@ -4,6 +4,19 @@ if toolbar then
   local addid= false
   local addstyle= false
 
+  local function type_before_after(before,after)
+    if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
+      --if something is selected use enclose (left the cursor at the end)
+      textadept.editing.enclose(before,after)
+      return
+    end
+    --nothing is selected, left the cursor between 'before' and 'after'
+    buffer.add_text(buffer, before)
+    local pos= buffer.current_pos
+    buffer.add_text(buffer, after)
+    buffer.goto_pos(buffer, pos)
+  end
+
   local function type_html(befclass,before,after)
     if addclass then befclass= befclass..' class=""'  end
     if addid    then befclass= befclass..' id=""'     end
@@ -154,5 +167,4 @@ if toolbar then
       end
     end
   end
-
 end

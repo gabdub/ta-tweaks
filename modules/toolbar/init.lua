@@ -30,7 +30,10 @@ if toolbar then
   end
 
   function toolbar.isbufhide(buf)
-    return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
+  	if Proj then  --Project module?
+      return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
+    end
+    return false
   end
 
   local function getntabbuff(buf)
@@ -116,28 +119,30 @@ if toolbar then
     if nb > 0 then
       local buf= _BUFFERS[nb]
       toolbar.seltabbuf(buf)
-      --check if a view change is needed
-      if #_VIEWS > 1 then
-        if buf._project_select ~= nil then
-          --project buffer: force project view
-          local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-          my_goto_view(projv)
-        elseif buf._type == Proj.PRJT_SEARCH then
-          --project search
-          if Proj.search_vn ~= nil then
-            my_goto_view(Proj.search_vn)
+      if Proj then  --Project module?
+        --check if a view change is needed
+        if #_VIEWS > 1 then
+          if buf._project_select ~= nil then
+            --project buffer: force project view
+            local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+            my_goto_view(projv)
+          elseif buf._type == Proj.PRJT_SEARCH then
+            --project search
+            if Proj.search_vn ~= nil then
+              my_goto_view(Proj.search_vn)
+            else
+              --activate search view
+              Proj.goto_searchview()
+              Proj.search_vn= _VIEWS[view]
+            end
           else
-            --activate search view
-            Proj.goto_searchview()
-            Proj.search_vn= _VIEWS[view]
-          end
-        else
-          --normal file: check we are not in project view
-          Proj.goto_filesview() --change to files view if needed
-          if TA_MAYOR_VER < 9 then
-            view.goto_buffer(view, _BUFFERS[buf], false)
-          else
-            view.goto_buffer(view, buf)
+            --normal file: check we are not in project view
+            Proj.goto_filesview() --change to files view if needed
+            if TA_MAYOR_VER < 9 then
+              view.goto_buffer(view, _BUFFERS[buf], false)
+            else
+              view.goto_buffer(view, buf)
+            end
           end
         end
       end
@@ -193,7 +198,7 @@ if toolbar then
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
     if ntoolbar == 0 and toolbar.tab2clickclose then
-      Proj.close_buffer()
+      if Proj then Proj.close_buffer() else io.close_buffer() end
     end
   end)
 
@@ -201,7 +206,7 @@ if toolbar then
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
     if ntoolbar == 0 then
-      Proj.close_buffer()
+      if Proj then Proj.close_buffer() else io.close_buffer() end
     end
   end)
 
