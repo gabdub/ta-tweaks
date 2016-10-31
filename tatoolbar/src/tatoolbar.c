@@ -1376,6 +1376,8 @@ static void ttb_show_groupG( struct toolbar_group *G, int show )
     }
     if( f != G->flags ){
       G->flags= f;
+      //layout changed, redraw the complete toolbar
+      G->toolbar->_layout_chg= 1;
       //group size changed, update toolbar
       update_group_sizeG(G, 1);
     }
