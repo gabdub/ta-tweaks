@@ -1,7 +1,33 @@
 if toolbar then
+  --config panel on toolbar #3
+  require('toolbar.configtb')
+
   local events, events_connect = events, events.connect
   local tbglobalicon="TOOLBAR"
   toolbar.cmds={}
+
+  --select a toolbar as current
+  function toolbar.sel_toolbar_n(ntb, ngrp)
+    if ngrp == nil then ngrp = 0 end
+    if toolbar.current_toolbar ~= ntb or toolbar.current_tb_group ~= ngrp then
+      toolbar.current_toolbar= ntb
+      toolbar.current_tb_group= ngrp
+      toolbar.seltoolbar(ntb,ngrp)
+    end
+  end
+  --select a toolbar by name
+  function toolbar.sel_top_bar()
+    toolbar.sel_toolbar_n(0)
+  end
+  function toolbar.sel_left_bar()
+    toolbar.sel_toolbar_n(1)
+  end
+  function toolbar.sel_stat_bar()
+    toolbar.sel_toolbar_n(2)
+  end
+  function toolbar.sel_config_bar()
+    toolbar.sel_toolbar_n(3)
+  end
 
   --define a toolbar button
   function toolbar.cmd(name,func,tooltip,icon)
@@ -36,7 +62,10 @@ if toolbar then
     return false
   end
 
+  --select the top toolbar and return the tab number of a buffer
   local function getntabbuff(buf)
+    --tabs are in the top bar
+    toolbar.sel_top_bar()
     if buf._buffnum == nil then
       --assign a unique number to each buffer
       buf._buffnum= toolbar.buffnum
@@ -51,6 +80,7 @@ if toolbar then
       --update current tab
       buf= buffer
     end
+    --select the top toolbar and get the tab number of the buffer
     local ntab= getntabbuff(buf)
     --update tab text
     local filename = buf.filename or buf._type or _L['Untitled']
@@ -74,6 +104,7 @@ if toolbar then
 
   --select a buffer's tab
   function toolbar.seltabbuf(buf)
+    --select the top toolbar and get the tab number of the buffer
     local ntab= getntabbuff(buf)
     --force visible state 'before' activate the tab
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
@@ -82,8 +113,10 @@ if toolbar then
     set_chg_tabbuf(buf)
   end
 
-  --get the buffer number of a tab
+  --select the top toolbar and get the buffer number of a tab
   function toolbar.gettabnbuff(ntab)
+    --tabs are in the top bar
+    toolbar.sel_top_bar()
     for i=1,#_BUFFERS do
       if toolbar.buffers[i] == ntab then return i end
     end
@@ -115,6 +148,7 @@ if toolbar then
   events_connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
 
   function toolbar.selecttab(ntab)
+    --select the top toolbar and get the buffer number of a tab
     local nb= toolbar.gettabnbuff(ntab)
     if nb > 0 then
       local buf= _BUFFERS[nb]
@@ -192,6 +226,9 @@ if toolbar then
       elseif ntab == 7 then --encoding
         choose_menu_opt(_L['E_ncoding'],5)
       end
+    elseif ntoolbar == 3 then
+      --config panel
+      toolbar.config_tab_click(ntab)
     end
   end)
 
@@ -219,6 +256,7 @@ if toolbar then
   end)
 
   events_connect(events.FILE_OPENED, function()
+    --select the top toolbar and get the tab number of the buffer
     local ntab= getntabbuff(buffer)
     local filename = buffer.filename or buffer._type or _L['Untitled']
     toolbar.settab(ntab, string.match(filename, ".-([^\\/]*)$"), filename)
@@ -227,6 +265,7 @@ if toolbar then
 
   events_connect(events.BUFFER_NEW, function()
     if _BUFFERS[buffer] > 0 then --ignore TA start
+      --select the top toolbar and get the tab number of the buffer
       local ntab= getntabbuff(buffer)
       local filename = _L['Untitled']
       toolbar.settab(ntab, filename, filename)
@@ -237,6 +276,8 @@ if toolbar then
   events_connect(events.BUFFER_DELETED, function()
     --TA doesn't inform which buffer was deleted so,
     --check the tab list to find out
+    --tabs are in the top bar
+    toolbar.sel_top_bar()
     if #toolbar.buffers == #_BUFFERS+1 then
       local deleted= false
       for i=1, #_BUFFERS do
@@ -446,6 +487,7 @@ if toolbar then
   --stbar=0: use default
   --stbar=1: use tatoolbar
   function toolbar.create(tabpos, nvertcols, stbar)
+    toolbar.current_toolbar=-1
     toolbar.tabpos= tabpos
     ui.tabs= (tabpos == 0)  --hide regular tabbar if needed
     toolbar.statbar= stbar
@@ -469,6 +511,8 @@ if toolbar then
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb0 then   --create the horizontal toolbar
       toolbar.new(bsz0, toolbar.butsize, toolbar.imgsize, 0, toolbar.themepath)
+      toolbar.current_toolbar= 0
+      toolbar.current_tb_group= 0
       if not toolbar.tabwithclose then
         --no close button in tabs, use a shorter tab end (part #3)
         if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
@@ -499,14 +543,16 @@ if toolbar then
       end
       toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     else
-      --hide the horizontal toolbar
-      toolbar.seltoolbar(0)
+      --hide the horizonatal (top) toolbar
+      toolbar.sel_top_bar()
       toolbar.show(false)
     end
 
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb1 then   --create the vertical toolbar
       toolbar.new(bsz1, toolbar.butsize, toolbar.imgsize, 1, toolbar.themepath)
+      toolbar.current_toolbar= 1
+      toolbar.current_tb_group= 0
       --buttons group: align top + height=use buttons / fixed width
       toolbar.addgroup(0, 9, toolbar.barsize, 0)
       if toolbar.adj then
@@ -524,22 +570,22 @@ if toolbar then
       end
       toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
       toolbar.show(true)
-      if tabpos > 0 then
-        toolbar.seltoolbar(0)
-      end
     else
-      --hide the vertical toolbar
-      toolbar.seltoolbar(1)
+      --hide the vertical (left) toolbar
+      toolbar.sel_left_bar()
       toolbar.show(false)
-      --add buttons in the horizontal toolbar
-      toolbar.seltoolbar(0)
+    end
+    if toolbar.tb0 then
+      --add buttons in the horizontal (top) toolbar
+      toolbar.sel_top_bar()
     end
     --call addpending() later
     toolbar._pending= true
   end
 
+  --add tabs to top toolbar if pending
   function toolbar.addpending()
-    toolbar.seltoolbar(0)
+    toolbar.sel_top_bar()
     if toolbar._pending then
       toolbar._pending= false
       --1 row, tabs in the same line or 2 rows, tabs at the bottom
@@ -561,6 +607,8 @@ if toolbar then
 
   function toolbar.create_statusbar()
     toolbar.new(toolbar.statsize, toolbar.statbutsize, toolbar.statimgsize, 2, toolbar.themepath)
+    toolbar.current_toolbar= 2
+    toolbar.current_tb_group= 0
     toolbar.seticon(tbglobalicon, toolbar.back[5], 0, true)
     local i=5 --5=normal 8=disabled 11=hilight 14=active
     while i < 15 do
@@ -578,7 +626,7 @@ if toolbar then
       --use tatoolbar's status bar
       toolbar.create_statusbar()
     end
-    toolbar.seltoolbar(2)
+    toolbar.sel_stat_bar()
     if toolbar.statbar == 2 then
       --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
       toolbar.addtabs(toolbar.statxmargin, toolbar.statxsep, false, 0,
@@ -614,7 +662,7 @@ if toolbar then
     toolbar.addpending()
     --show status bar if enabled
     toolbar.shw_statusbar()
-    toolbar.seltoolbar(0)
+    toolbar.sel_top_bar()
     if toolbar.tabpos > 0 then
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
       toolbar.seltabbuf(buffer)  --select current buffer

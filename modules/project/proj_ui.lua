@@ -641,6 +641,11 @@ function Proj.trim_trailing_spaces()
   end
 end
 
+function Proj.new_file()
+  Proj.goto_filesview() --change to files view if needed
+  buffer.new()
+end
+
 function Proj.open_file()
   Proj.goto_filesview() --change to files view if needed
   io.open_file()
@@ -684,6 +689,7 @@ end
 --replace some menu commands with the corresponding project version
 function Proj.change_menu_cmds()
   local menu= textadept.menu.menubar[_L['_File']]
+  menu[_L['_New']][2]= Proj.new_file
   menu[_L['_Open']][2]= Proj.open_file
   menu[_L['Open _Recent...']][2]= Proj.open_recent_file
   menu[_L['_Close']][2]= Proj.close_buffer
@@ -720,6 +726,7 @@ end
 -- Control+H=         show project current row properties
 -- Control+O =        open file
 -- Control+Alt+O =    open recent file
+-- Control+N=         new buffer
 -- Control+Shift+O =  project snap open
 -- Control+Shift+Alt+O = open current directory
 -- Control+U =        quick open user folder
@@ -734,6 +741,7 @@ keys.cW = Proj.close_all_buffers
 keys.ch = Proj.show_doc
 keys.co = Proj.open_file
 keys.cao= Proj.open_recent_file
+keys.cn=  Proj.new_file
 keys.cO = Proj.snapopen
 keys.caO= Proj.qopen_curdir
 keys.cu = Proj.qopen_user

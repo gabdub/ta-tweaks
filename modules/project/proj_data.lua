@@ -805,17 +805,20 @@ end
 
 function Proj.first_buffer()
   if toolbar then
+    toolbar.sel_top_bar()
     toolbar.gototab(0)
   end
 end
 function Proj.last_buffer()
   if toolbar then
+    toolbar.sel_top_bar()
     toolbar.gototab(2)
   end
 end
 
 function Proj.next_buffer()
   if toolbar then
+    toolbar.sel_top_bar()
     toolbar.gototab(1)
   else
     local nb= _BUFFERS[buffer]+1
@@ -835,6 +838,7 @@ end
 
 function Proj.prev_buffer()
   if toolbar then
+    toolbar.sel_top_bar()
     toolbar.gototab(-1)
   else
     local nb= _BUFFERS[buffer]-1

@@ -107,7 +107,7 @@ if toolbar then
 
   --HTML quicktype toolbar
   function toolbar.add_html_toolbar()
-    toolbar.seltoolbar(1)
+    toolbar.sel_left_bar()
     toolbar.cmd("go-home",                enc_html_html,        "HTML basic blocks")
     toolbar.addspace()
     toolbar.cmd("edit-select-all",        enc_html_para,        "HTML paragraph")
@@ -131,7 +131,6 @@ if toolbar then
     toolbar.cmdtext("id",                 enc_html_id,          "HTML insert id: OFF",    "addid",    true)
     toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
     toolbar.addspace()
-    toolbar.seltoolbar(0)
     --modify view menu
     local med=textadept.menu.menubar[_L['_View']]
     med[#med+1]= {''}
@@ -161,9 +160,8 @@ if toolbar then
       end
       if on ~= toolbar.html_tb then
         toolbar.html_tb= on
-        toolbar.seltoolbar(1)
+        toolbar.sel_left_bar()
         toolbar.show(on)
-        toolbar.seltoolbar(0)
       end
     end
   end

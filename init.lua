@@ -76,115 +76,33 @@ if toolbar then
 
   --add some buttons
   if Proj then
-    toolbar.cmd("tog-projview",           Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
+    toolbar.cmd("tog-projview", Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
     toolbar.addspace(4,true)
-    toolbar.cmd("go-previous",            Proj.goto_prev_pos,  "Previous position [Shift+F11]")
-    toolbar.cmd("go-next",                Proj.goto_next_pos,  "Next position [Shift+F12]")
+    toolbar.cmd("go-previous",  Proj.goto_prev_pos,  "Previous position [Shift+F11]")
+    toolbar.cmd("go-next",      Proj.goto_next_pos,  "Next position [Shift+F12]")
     Proj.update_go_toolbar()
     toolbar.addspace()
   end
 
-  toolbar.cmd("document-new",           buffer.new,          "New [Ctrl+N]")
-  toolbar.cmd("document-save",          io.save_file,        "Save [Ctrl+S]")
-  toolbar.cmd("document-save-as",       io.save_file_as,     "Save as [Ctrl+Shift+S]")
+  toolbar.cmd("document-new",     Proj.new_file,   "New [Ctrl+N]")
+  toolbar.cmd("document-save",    io.save_file,    "Save [Ctrl+S]")
+  toolbar.cmd("document-save-as", io.save_file_as, "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
 
-  toolbar.cmd("gnome-app-install-star", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]" )
+  toolbar.cmd("tog-book", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
   if Proj then
-    toolbar.cmd("dialog-ok",              Proj.trim_trailing_spaces, "Trim trailing spaces")
+    toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")
   end
 
   --HTML quicktype toolbar
   toolbar.add_html_toolbar()
 
-  --add tab group if pending
-  toolbar.addpending()
-  --add a group of buttons after tabs
-  toolbar.addrightgroup()
-  --toolbar.cmd("new",           buffer.new,    "New [Ctrl+N]", "list-add")
-
-  local function toggleconfig()
-    local on
-    if toolbar.config_toolbar_on then
-      toolbar.config_toolbar_on= false
-    else
-      toolbar.config_toolbar_on= true
-    end
-    toolbar.seltoolbar(3)
-    toolbar.show(toolbar.config_toolbar_on)
-    toolbar.seltoolbar(0)
-  end
-  toolbar.cmd("cfg",           toggleconfig,  "Show configuration panel", "visualization")
+  --add a button to show/hide the config panel
+  toolbar.add_showconfig_button()
 
   --toolbar ready, show it
   toolbar.ready()
 
-  toolbar.cfgtabs={"Buffer", "View", "Project", "Editor", "Toolbar"}
-  toolbar.cfggroup={0,0,0,0,0}
-  toolbar.cfgcurgroup=1
-
-  events.connect("toolbar_tabclicked", function(ntab,ntoolbar)
-    if ntoolbar == 3 then
-      toolbar.seltoolbar(3)
-      toolbar.activatetab(ntab)
-      toolbar.settext("cfgtit", toolbar.cfgtabs[ntab].." configuration", "", true)
-      if toolbar.cfggroup[ntab] > 0 then
-        toolbar.seltoolbar(3,toolbar.cfggroup[toolbar.cfgcurgroup])
-        toolbar.showgroup(false)
-        toolbar.seltoolbar(3,toolbar.cfggroup[ntab])
-        toolbar.showgroup(true)
-        toolbar.cfgcurgroup= ntab
-      end
-      toolbar.seltoolbar(0)
-    end
-  end)
-
-  --vertical right (config)
-  toolbar.new(350, 24, 16, 3, toolbar.themepath)
-  toolbar.seticon("TOOLBAR", "ttb-cback", 0, true)  --vertical back
-
-  --config title: width=expand / height=27
-  toolbar.addgroup(7, 0, 0, 27)
-  toolbar.seticon("GROUP", "ttb-cback2", 0, true)
-  toolbar.textfont(toolbar.textfont_sz+4, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.statcolor_normal)
-  toolbar.addtext("cfgtit", toolbar.cfgtabs[1].." configuration", "", 350)
-  toolbar.enable("cfgtit",false,true)
-
-  toolbar.tabwithclose=false
-  toolbar.tabwidthmode=0
-  toolbar.tabwidthmin=0
-  toolbar.add_tabs_here()
-  if toolbar.img[4]  == "" then toolbar.img[4]=  "ttb-tab-back" end
-  if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
-  if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
-  if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end
-  if toolbar.img[16] == "" then toolbar.img[16]= "ttb-atab3nc" end
-  for i, img in ipairs(toolbar.img) do
-    if img ~= "" then toolbar.seticon("GROUP", img, i, true) end
-  end
-  toolbar.seticon("GROUP", toolbar.back[1], 0, true)  --horizontal back x 1row
-  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-  for i,txt in ipairs(toolbar.cfgtabs) do
-    toolbar.settab(i,txt, "")
-  end
-  toolbar.addgroup(7,8,0,0,false)
-  toolbar.addtext("", "text 1", "", 350)
-  toolbar.cfggroup[1]=3
-  toolbar.addgroup(7,8,0,0,true)
-  toolbar.addtext("", "text 2", "", 350)
-  toolbar.cfggroup[2]=4
-  toolbar.addgroup(7,8,0,0,true)
-  toolbar.addtext("", "text 3", "", 350)
-  toolbar.cfggroup[3]=5
-  toolbar.addgroup(7,8,0,0,true)
-  toolbar.addtext("", "text 4", "", 350)
-  toolbar.cfggroup[4]=6
-  toolbar.addgroup(7,8,0,0,true)
-  toolbar.addtext("", "text 5", "", 350)
-  toolbar.cfggroup[5]=7
-
-  toolbar.activatetab(1)
-
-  toolbar.show(false)
-  toolbar.seltoolbar(0)
+  --create config panel
+  toolbar.add_config_panel()
 end
