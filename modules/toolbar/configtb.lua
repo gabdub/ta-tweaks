@@ -1,14 +1,14 @@
-local function toggle_showconfig()
+function toolbar.toggle_showconfig()
   --toggle shown state
   local b="showconfig"
   if toolbar.config_toolbar_shown then
     toolbar.config_toolbar_shown= false
     toolbar.setthemeicon(b, "visualization")
-    toolbar.settooltip(b, "Show configuration panel")
+    toolbar.settooltip(b, "Show configuration panel [F9]")
   else
     toolbar.config_toolbar_shown= true
     toolbar.setthemeicon(b, "ttb-proj-c")
-    toolbar.settooltip(b, "Hide configuration panel")
+    toolbar.settooltip(b, "Hide configuration panel [F9]")
   end
   toolbar.sel_config_bar()
   toolbar.show(toolbar.config_toolbar_shown)
@@ -16,7 +16,7 @@ end
 
 function toolbar.hide_config()
   if toolbar.config_toolbar_shown then
-    toggle_showconfig()
+    toolbar.toggle_showconfig()
     return true
   end
   return false
@@ -28,7 +28,7 @@ function toolbar.add_showconfig_button()
   toolbar.addpending()
   --add a group of buttons after tabs
   toolbar.addrightgroup()
-  toolbar.cmd("showconfig", toggle_showconfig, "Show configuration panel", "visualization")
+  toolbar.cmd("showconfig", toolbar.toggle_showconfig, "Show configuration panel [F9]", "visualization")
 end
 
 function toolbar.config_tab_click(ntab)
@@ -81,6 +81,7 @@ end
 
 local function add_config_tabgroup(name,title,ngrp)
   local n=#toolbar.cfgpnl_tit+1
+  if ngrp == nil then ngrp=n+1 end
   toolbar.cfgpnl_tit[n]=title
   toolbar.cfgpnl_group[n]=ngrp
   toolbar.settab(n, name, "")
@@ -159,7 +160,7 @@ function toolbar.add_config_panel()
   --create the "vertical right (config)" panel
   add_config_start(1) --start in tabgroup #1
 
-  add_config_tabgroup("Buffer", "Buffer configuration", 2)
+  add_config_tabgroup("Buffer", "Buffer configuration")
   add_config_check("chk_a", "Some option #1", "Check test 1", false)
   add_config_check("chk_b", "Some option #2", "Check test 2", true)
   add_config_check("chk_c", "Some option #3", "Check test 3", false)
@@ -172,23 +173,26 @@ function toolbar.add_config_panel()
   add_config_radio("rad_b:2", "B radio option #2", "Radio test B2")
 
 
-  add_config_tabgroup("View", "View configuration", 3)
+  add_config_tabgroup("View", "View configuration")
   add_config_radio("rad_c:1", "C radio option #1", "Radio test C1", true)
   add_config_radio("rad_c:2", "C radio option #2", "Radio test C2")
 
   add_config_check("chk_d", "Some option #1", "Check test 1", true)
 
 
-  add_config_tabgroup("Project", "Project configuration", 4)
+  add_config_tabgroup("Project", "Project configuration")
   toolbar.addtext("", "text 3", "", toolbar.cfgpnl_width)
 
-  add_config_tabgroup("Editor", "Editor configuration", 5)
+  add_config_tabgroup("Editor", "Editor configuration")
   toolbar.addtext("", "text 4", "", toolbar.cfgpnl_width)
 
-  add_config_tabgroup("Toolbar", "Toolbar configuration", 6)
+  add_config_tabgroup("Toolbar", "Toolbar configuration")
   toolbar.addtext("", "text 5", "", toolbar.cfgpnl_width)
 
   --hidden for now
   toolbar.show(false)
 end
 
+--------------------------------------------------------------
+-- F9            show/hide config panel
+keys['f9']= toolbar.toggle_showconfig
