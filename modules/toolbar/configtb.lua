@@ -58,8 +58,8 @@ function toolbar.add_config_panel()
   toolbar.tabwidthmode=0
   toolbar.tabwidthmin=0
   toolbar.add_tabs_here()
-  toolbar.img[2]= "ttb-back-hi-2"
-  toolbar.img[3]= "ttb-back-press-2"
+  --toolbar.img[2]= "ttb-back-hi-2"
+  --toolbar.img[3]= "ttb-back-press-2"
   if toolbar.img[4]  == "" then toolbar.img[4]=  "ttb-tab-back" end
   if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
   if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
@@ -86,9 +86,28 @@ function toolbar.add_config_panel()
       toolbar.setthemeicon("chk_a", "check1")
     end
   end
+  toolbar.gotopos(3,30)
   toolbar.cmd("chk_a", check_test, "Check test", "check0")
-  toolbar.seticon("GROUP", "", 2, true)
-  toolbar.seticon("GROUP", "", 3, true)
+  toolbar.setthemeicon("chk_a", "check-hi", 2)
+  toolbar.setthemeicon("chk_a", "check-pr", 3)
+
+  local function rada_test()
+    toolbar.setthemeicon("rad_a", "radio1")
+    toolbar.setthemeicon("rad_b", "radio0")
+  end
+  local function radb_test()
+    toolbar.setthemeicon("rad_a", "radio0")
+    toolbar.setthemeicon("rad_b", "radio1")
+  end
+  toolbar.gotopos(3,60)
+  toolbar.cmd("rad_a", rada_test, "Radio test A", "radio1")
+  toolbar.setthemeicon("rad_a", "radio-hi", 2)
+  toolbar.setthemeicon("rad_a", "radio-pr", 3)
+
+  --toolbar.gotopos(40,60)
+  toolbar.cmd("rad_b", radb_test, "Radio test B", "radio0")
+  toolbar.setthemeicon("rad_b", "radio-hi", 2)
+  toolbar.setthemeicon("rad_b", "radio-pr", 3)
 
   toolbar.cfggroup[1]=3
   toolbar.addgroup(7,8,0,0,true)

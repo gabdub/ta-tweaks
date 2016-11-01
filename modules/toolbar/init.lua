@@ -50,9 +50,9 @@ if toolbar then
     toolbar.cmds[name]= func
   end
 
-  function toolbar.setthemeicon(name,icon)
+  function toolbar.setthemeicon(name,icon,num)
     --set button icon, get icon from theme's icons folder
-    toolbar.seticon(name,toolbar.iconspath..icon..".png")
+    toolbar.seticon(name,toolbar.iconspath..icon..".png",num)
   end
 
   function toolbar.isbufhide(buf)
