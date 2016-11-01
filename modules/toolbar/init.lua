@@ -125,7 +125,12 @@ if toolbar then
 
   events_connect("toolbar_clicked", function(buttonname,ntoolbar)
     if toolbar.cmds[buttonname] ~= nil then
-      toolbar.cmds[buttonname]()
+      --is a config checkbox?
+      if toolbar.cfgpnl_chkval ~= nil and toolbar.cfgpnl_chkval[buttonname] ~= nil then
+        toolbar.cmds[buttonname](buttonname) --pass the name of the checkbox
+      else
+        toolbar.cmds[buttonname]()
+      end
     else
       ui.statusbar_text= buttonname.." clicked"
     end
@@ -392,6 +397,12 @@ if toolbar then
     for i= 1, 5 do
       toolbar.back[i]= ""
     end
+    --config panel
+    toolbar.cfgpnl_width=350
+    toolbar.cfgpnl_ymargin=3
+    toolbar.cfgpnl_xmargin=3
+    toolbar.cfgpnl_xcontrol=290
+    toolbar.cfgpnl_rheight=30
   end
 
   function toolbar.set_theme(theme)

@@ -446,8 +446,13 @@ events_connect(events.KEYPRESS, function(code)
       Proj.toggle_projview()
     end
   elseif ks == 'esc' then --"Escape"
+    --1) try to close config panel
+    if toolbar and toolbar.hide_config() then
+      return
+    end
+    --2) try to close search view
     if not Proj.close_search_view() then
-      --change view
+      --3) change view
       if #_VIEWS > 1 then
         local nv= _VIEWS[view] +1
         if nv > #_VIEWS then nv=1 end
