@@ -118,15 +118,27 @@ local function add_config_tabgroup(name,title,ngrp)
   --toolbar.seticon("GROUP", "ttb-cback2", 0, true)
 end
 
-local function check_clicked(name)
+local function set_check_val(name,checked)
   --toggle checkbox value
-  if toolbar.cfgpnl_chkval[name] then
-    toolbar.cfgpnl_chkval[name]= false
-    toolbar.setthemeicon(name, "check0")
-  else
+  if checked then
     toolbar.cfgpnl_chkval[name]= true
     toolbar.setthemeicon(name, "check1")
+  else
+    toolbar.cfgpnl_chkval[name]= false
+    toolbar.setthemeicon(name, "check0")
   end
+end
+
+local function get_check_val(name)
+  if toolbar.cfgpnl_chkval[name] then
+    return true
+  end
+  return false
+end
+
+local function check_clicked(name)
+  --toggle checkbox value
+  set_check_val(name, not get_check_val(name))
 end
 
 local function add_config_check(name,text,tooltip,val)
@@ -162,18 +174,52 @@ local function radio_clicked(name)
   end
 end
 
-local function add_config_radio(name,text,tooltip,val)
-  if val == nil then val=false end
+local function set_radio_val(name,val)
+  radio_clicked(name..":"..val)
+end
+
+local function get_radio_val(name)
+  local i=1
+  while toolbar.cfgpnl_chkval[name..':'..i] ~= nil do
+    if toolbar.cfgpnl_chkval[name..':'..i] then
+      return i
+    end
+    i=i+1
+  end
+  return 0
+end
+
+local function _add_config_radio(name,text,tooltip,checked)
+  if checked == nil then checked=false end
   --text
   toolbar.gotopos(toolbar.xfgpnl_xmargin, toolbar.cfgpnl_y)
   toolbar.addtext("", text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xmargin)
   --radio button
   toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
-  toolbar.cmd(name, radio_clicked, tooltip, (val and "radio1" or "radio0"))
+  toolbar.cmd(name, radio_clicked, tooltip, (checked and "radio1" or "radio0"))
   toolbar.setthemeicon(name, "radio-hi", 2)
   toolbar.setthemeicon(name, "radio-pr", 3)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
-  toolbar.cfgpnl_chkval[name]=val
+  toolbar.cfgpnl_chkval[name]=checked
+  toolbar.last_rnum= toolbar.last_rnum+1
+end
+
+--start a new radio button: name="rname:num" or "rname" (num=1)
+local function add_config_radio(name,text,tooltip,checked)
+  local rname,rnum= string.match(name, "(.-):(.*)$")
+  if rname then
+    toolbar.last_rname= rname
+    toolbar.last_rnum= tonumber(rnum)
+  else
+    toolbar.last_rname= name
+    toolbar.last_rnum= 1
+    name= name..":1"
+  end
+  _add_config_radio(name,text,tooltip,checked)
+end
+
+local function cont_config_radio(text,tooltip,checked)
+  _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
 end
 
 function toolbar.add_config_panel()
@@ -181,33 +227,32 @@ function toolbar.add_config_panel()
   add_config_start(1) --start in tabgroup #1
 
   add_config_tabgroup("Buffer", "Buffer configuration")
-  add_config_check("chk_a", "Some option #1", "Check test 1", false)
-  add_config_check("chk_b", "Some option #2", "Check test 2", true)
-  add_config_check("chk_c", "Some option #3", "Check test 3", false)
+    add_config_check("chk_a", "Some option #1", "Check test 1", false)
+    add_config_check("chk_b", "Some option #2", "Check test 2", true)
+    add_config_check("chk_c", "Some option #3", "Check test 3", false)
 
-  add_config_radio("rad_a:1", "A radio option #1", "Radio test A1", true)
-  add_config_radio("rad_a:2", "A radio option #2", "Radio test A2")
-  add_config_radio("rad_a:3", "A radio option #3", "Radio test A3")
+    add_config_radio("rad_a", "A radio option #1", "Radio test A1")
+    cont_config_radio("A radio option #2", "Radio test A2")
+    cont_config_radio("A radio option #3", "Radio test A3")
+    set_radio_val("rad_a", 3)
 
-  add_config_radio("rad_b:1", "B radio option #1", "Radio test B1", true)
-  add_config_radio("rad_b:2", "B radio option #2", "Radio test B2")
-
+    add_config_radio("rad_b", "B radio option #1", "Radio test B1", true)
+    cont_config_radio("B radio option #2", "Radio test B2")
 
   add_config_tabgroup("View", "View configuration")
-  add_config_radio("rad_c:1", "C radio option #1", "Radio test C1", true)
-  add_config_radio("rad_c:2", "C radio option #2", "Radio test C2")
+    add_config_radio("rad_c:1", "C radio option #1", "Radio test C1")
+    add_config_radio("rad_c:2", "C radio option #2", "Radio test C2", true)
 
-  add_config_check("chk_d", "Some option #1", "Check test 1", true)
-
+    add_config_check("chk_d", "Some option #1", "Check test 1", true)
 
   add_config_tabgroup("Project", "Project configuration")
-  toolbar.addtext("", "text 3", "", toolbar.cfgpnl_width)
+    toolbar.addtext("", "text 3", "", toolbar.cfgpnl_width)
 
   add_config_tabgroup("Editor", "Editor configuration")
-  toolbar.addtext("", "text 4", "", toolbar.cfgpnl_width)
+    toolbar.addtext("", "text 4", "", toolbar.cfgpnl_width)
 
   add_config_tabgroup("Toolbar", "Toolbar configuration")
-  toolbar.addtext("", "text 5", "", toolbar.cfgpnl_width)
+    toolbar.addtext("", "text 5", "", toolbar.cfgpnl_width)
 
   --hidden for now
   toolbar.show(false)
