@@ -8,7 +8,7 @@ function toolbar.toggle_showconfig()
   else
     toolbar.config_toolbar_shown= true
     toolbar.setthemeicon(b, "ttb-proj-c")
-    toolbar.settooltip(b, "Hide configuration panel [F9]")
+    toolbar.settooltip(b, "Hide configuration panel [Esc]")
   end
   toolbar.sel_config_bar()
   toolbar.show(toolbar.config_toolbar_shown)
@@ -20,6 +20,26 @@ function toolbar.hide_config()
     return true
   end
   return false
+end
+
+--show config panel / next config tab
+function toolbar.next_configtab()
+  if not toolbar.config_toolbar_shown then
+    toolbar.toggle_showconfig()
+    return
+  end
+  toolbar.sel_config_bar()
+  toolbar.gototab(1)
+end
+
+--show config panel / prev config tab
+function toolbar.prev_configtab()
+  if not toolbar.config_toolbar_shown then
+    toolbar.toggle_showconfig()
+    return
+  end
+  toolbar.sel_config_bar()
+  toolbar.gototab(-1)
 end
 
 --add a button to show/hide the config panel
@@ -194,5 +214,7 @@ function toolbar.add_config_panel()
 end
 
 --------------------------------------------------------------
--- F9            show/hide config panel
-keys['f9']= toolbar.toggle_showconfig
+-- F9            show config panel / next config tab
+-- SHIFT+F9      show config panel / prev config tab
+keys['f9']= toolbar.next_configtab
+keys['sf9']= toolbar.prev_configtab
