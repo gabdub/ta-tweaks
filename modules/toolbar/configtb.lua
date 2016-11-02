@@ -119,7 +119,6 @@ local function add_config_tabgroup(name,title,ngrp)
 end
 
 local function set_check_val(name,checked)
-  --toggle checkbox value
   if checked then
     toolbar.cfgpnl_chkval[name]= true
     toolbar.setthemeicon(name, "check1")
@@ -201,7 +200,6 @@ local function _add_config_radio(name,text,tooltip,checked)
   toolbar.setthemeicon(name, "radio-pr", 3)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
   toolbar.cfgpnl_chkval[name]=checked
-  toolbar.last_rnum= toolbar.last_rnum+1
 end
 
 --start a new radio button: name="rname:num" or "rname" (num=1)
@@ -219,6 +217,7 @@ local function add_config_radio(name,text,tooltip,checked)
 end
 
 local function cont_config_radio(text,tooltip,checked)
+  toolbar.last_rnum= toolbar.last_rnum+1
   _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
 end
 
