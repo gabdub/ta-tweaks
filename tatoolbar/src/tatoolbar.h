@@ -25,6 +25,7 @@
 #define TTBF_TAB            0x00000040  //it's a tab
 #define TTBF_CLOSETAB_BUT   0x00000080  //it's a close tab button
 #define TTBF_SCROLL_BUT     0x00000100  //it's a scroll button
+#define TTBF_TEXT_LEFT      0x00000200  //draw text left aligned (default = center)
 //group flags
 #define TTBF_GRP_TABBAR     0x00010000  //tabs group
 #define TTBF_GRP_DRAGTAB    0x00020000  //tab dragging enabled in TTBF_TABBAR

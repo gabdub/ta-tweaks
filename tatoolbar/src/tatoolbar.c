@@ -2278,6 +2278,9 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
                 if( (p->flags & TTBF_GRAYED) != 0){
                   color= &(g->txttextcolG);
                 }
+                if( (p->flags & TTBF_TEXT_LEFT) != 0){
+                  x= x0 + p->barx1 + p->prew; //text is left aligned
+                }
                 xa= x0 + p->barx2 - p->postw;
                 draw_txt(cr, p->text, x, y, y0+p->bary1, xa - x, p->bary2 - p->bary1, color, g->txtfontsz );
               }
@@ -2690,6 +2693,23 @@ static int ltoolbar_addtext(lua_State *L)
   return 0;
 }
 
+/** `toolbar.addlabel(text,tooltiptext,width,leftalign)` Lua function. */
+static int ltoolbar_addlabel(lua_State *L)
+{
+  struct toolbar_item * p;
+  struct toolbar_group * g= current_buttongrp();
+  if( g != NULL ){
+    redraw_begG(g);
+    p= add_itemG( g, "", NULL, luaL_checkstring(L, 2), luaL_checkstring(L, 1), lua_tointeger(L, 3));
+    if( (p != NULL) && (lua_toboolean(L,4)) ){
+      p->flags |= TTBF_TEXT_LEFT; //left align text
+    }
+    //group size changed, update toolbar
+    update_group_sizeG(g, 1); //redraw
+  }
+  return 0;
+}
+
 /** `toolbar.addspace(space,hidebar)` Lua function. */
 static int ltoolbar_addspace(lua_State *L)
 {
@@ -2921,6 +2941,7 @@ void register_toolbar(lua_State *L)
 //buttons
   l_setcfunction(L, -1, "addbutton",    ltoolbar_addbutton);    //add button
   l_setcfunction(L, -1, "addtext",      ltoolbar_addtext);      //add text button
+  l_setcfunction(L, -1, "addlabel",     ltoolbar_addlabel);     //add a text label
   l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
   l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);	    //change next button position
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
