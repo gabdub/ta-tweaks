@@ -176,7 +176,7 @@ __Usage:__
 * copy src/tatoolbar.c and src/tatoolbar.h into Textadept/src folder
 * edit the current Textadept/src/textadept.c file, adding the lines shown in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy the lines that contains "UNUSED()" to supress some warnings when compiling on Win32
-* ![Compile Textadept](https://foicica.com/textadept/manual.html#Compiling)
+* Compile Textadept: https://foicica.com/textadept/manual.html#Compiling
 * copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from
   (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
   (you can choose another icon location and set the path when calling toolbar.new())
