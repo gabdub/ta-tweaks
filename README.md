@@ -134,6 +134,8 @@ __buttons__
 
 * toolbar._addbutton(button-name,tooltiptext)_ add a graphic button to the current edited button-group (icon=button-name)
 * toolbar._addtext(button-name,text,tooltiptext,W)_ add a text button or text (button-name="") to the current edited button-group. width: W=0:use text width, >0:fix width
+* toolbar._addlabel(text,tooltiptext,W,leftalign,bold,[lblname])_ add a text label to the current edited button-group. width: W=0:use text width, >0:fix width.
+  "lblname" is only required for changing the label text dinamically
 * toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited button-group
 * toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels in the current edited button-group
 * toolbar._gotopos(x,y)_ change next button position to x,y (in pixels) in the current edited button-group

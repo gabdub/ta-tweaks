@@ -403,7 +403,7 @@ if toolbar then
     toolbar.cfgpnl_xmargin=3
     toolbar.cfgpnl_xtext=30
     toolbar.cfgpnl_xcontrol=290
-    toolbar.cfgpnl_rheight=30
+    toolbar.cfgpnl_rheight=24
   end
 
   function toolbar.set_theme(theme)

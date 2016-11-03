@@ -2018,7 +2018,7 @@ static void draw_fill_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, 
   }
 }
 
-static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz )
+static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold )
 {
   if( txt != NULL ){
     cairo_save(ctx);
@@ -2027,6 +2027,9 @@ static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, int y1, int w
     cairo_move_to(ctx, x, y);
     cairo_set_source_rgb(ctx, color->R, color->G, color->B);
     cairo_set_font_size(ctx, fontsz);
+    if( bold ){
+      cairo_select_font_face(ctx, "", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD );
+    }
     cairo_show_text(ctx, txt);
     cairo_restore(ctx);
   }
@@ -2077,7 +2080,7 @@ static void draw_tabG(struct toolbar_group *G, cairo_t *cr, struct toolbar_item 
     draw_img(cr, get_group_img(G,hc), x3, y, 0 );
   }
 
-  draw_txt(cr, t->text, x+t->imgx, y+t->imgy, y, x3-x, get_group_imgH(G,TTBI_TB_NTAB2), color, G->tabfontsz );
+  draw_txt(cr, t->text, x+t->imgx, y+t->imgy, y, x3-x, get_group_imgH(G,TTBI_TB_NTAB2), color, G->tabfontsz, 0 );
 }
 
 /* ============================================================================= */
@@ -2282,7 +2285,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
                   x= x0 + p->barx1 + p->prew; //text is left aligned
                 }
                 xa= x0 + p->barx2 - p->postw;
-                draw_txt(cr, p->text, x, y, y0+p->bary1, xa - x, p->bary2 - p->bary1, color, g->txtfontsz );
+                draw_txt(cr, p->text, x, y, y0+p->bary1, xa - x, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD) );
               }
             }
           }
@@ -2693,16 +2696,22 @@ static int ltoolbar_addtext(lua_State *L)
   return 0;
 }
 
-/** `toolbar.addlabel(text,tooltiptext,width,leftalign)` Lua function. */
+/** `toolbar.addlabel(text,tooltiptext,width,leftalign,bold,name)` Lua function. */
 static int ltoolbar_addlabel(lua_State *L)
 {
   struct toolbar_item * p;
   struct toolbar_group * g= current_buttongrp();
   if( g != NULL ){
     redraw_begG(g);
-    p= add_itemG( g, "", NULL, luaL_checkstring(L, 2), luaL_checkstring(L, 1), lua_tointeger(L, 3));
-    if( (p != NULL) && (lua_toboolean(L,4)) ){
-      p->flags |= TTBF_TEXT_LEFT; //left align text
+    p= add_itemG( g, lua_tostring(L,6), NULL, luaL_checkstring(L, 2), luaL_checkstring(L, 1), lua_tointeger(L, 3));
+    if( p != NULL ){
+      p->flags &= ~TTBF_SELECTABLE; //remove the selectable flag (it's not a button)
+      if( lua_toboolean(L,4) ){
+        p->flags |= TTBF_TEXT_LEFT; //left align text
+      }
+      if( lua_toboolean(L,5) ){
+        p->flags |= TTBF_TEXT_BOLD; //use bold
+      }
     }
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw

@@ -80,8 +80,7 @@ local function add_config_start(startgroup)
   toolbar.addgroup(7, 0, 0, 27)
   toolbar.seticon("GROUP", "ttb-cback2", 0, true)
   toolbar.textfont(toolbar.textfont_sz+4, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.statcolor_normal)
-  toolbar.addtext("cfgtit", "", "", toolbar.cfgpnl_width) --group title (set later)
-  toolbar.enable("cfgtit",false,true)
+  toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
   toolbar.tabwithclose=false
   toolbar.tabwidthmode=0
@@ -118,13 +117,13 @@ local function add_config_tabgroup(name,title,ngrp)
   --toolbar.seticon("GROUP", "ttb-cback2", 0, true)
 end
 
-local function add_config_label(text,extrasep)
+local function add_config_label(text,extrasep,notbold)
   if extrasep then
     --add extra separation (1/2 row)
     toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight/2
   end
   toolbar.gotopos(toolbar.cfgpnl_xmargin, toolbar.cfgpnl_y)
-  toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true)
+  toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,not notbold)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
 
