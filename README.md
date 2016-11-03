@@ -110,6 +110,7 @@ require('project')
 
 # tatoolbar
 This code adds 4 toolbars to textadept (__compiling is required__):
+
 Each toolbar can be used as you wish but the implemented function is as follows:
 * #0: The horizontal top toolbar is used to shown buttons and tabs
 * #1: The vertical left toolbar is used to shown buttons
