@@ -109,58 +109,64 @@ require('project')
 ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
 
 # tatoolbar
-This code adds a toolbar to textadept (__compiling is required__):
+This code adds 4 toolbars to textadept (__compiling is required__):
+Each toolbar can be used as you wish but the implemented function is as follows:
+* #0: The horizontal top toolbar is used to shown buttons and tabs
+* #1: The vertical left toolbar is used to shown buttons
+* #2: The horizontal bottom toolbar is used as a status bar replacement
+* #3: The vertical right toolbar is used as a configuration panel
 
-The "toolbar" object is added to textadept with the following functions:
+
+The _toolbar_ object adds the following functions to **textadept**:
 
 __toolbars__
 
-* toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons (_toolbar-num_ = 0/false:top, 1/true:vertical, 2:status-bar)
-* toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ fine tune some parameters
-* toolbar._show(show)_ show/hide the current edited toolbar
+* toolbar._new(barsize,buttonsize,imgsize,toolbar-num(int) or isvertical(bool),[imgpath])_ creates an empty toolbar with square buttons (_toolbar-num_ = 0/false:top, 1/true:vertical, 2:status-bar, 3:config-panel)
+* toolbar._adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)_ allows to fine tune some parameters
+* toolbar._show(show)_ shows/hides the current edited toolbar
 
 __groups__
 
-* toolbar._seltoolbar(toolbar-num(int) or isvertical(bool), [groupnum])_ select which toolbar/group to edit
-* toolbar._addgroup(xcontrol,ycontrol,width,height,[hidden])_ add a buttons group to the current edited toolbar
+* toolbar._seltoolbar(toolbar-num(int) or isvertical(bool), [groupnum])_ selects which toolbar/group to edit
+* toolbar._addgroup(xcontrol,ycontrol,width,height,[hidden])_ adds a buttons group to the current edited toolbar
   (x/y control: 0=allow groups before and after  1=no groups at the left/top  2=no groups at the right/bottom  3=exclusive row/col
   +4=expand  +8=use items size)
-* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-dragging],[xcontrol],[height])_ show tabs in the current edited toolbar
+* toolbar._addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-dragging],[xcontrol],[height])_ shows tabs in the current edited toolbar
   (tabs use their own group. xcontrol: 0=allow groups before and after  1=no groups at the left  2=no groups at the right
   3=exclusive row  +4=expand  +8:use items size for width)
-* toolbar._showgroup(show)_ show/hide the current selected group
+* toolbar._showgroup(show)_ shows/hides the current selected group
 
 __buttons__
 
-* toolbar._addbutton(button-name,tooltiptext)_ add a graphic button to the current edited button-group (icon=button-name)
-* toolbar._addtext(button-name,text,tooltiptext,W)_ add a text button or text (button-name="") to the current edited button-group. width: W=0:use text width, >0:fix width
-* toolbar._addlabel(text,tooltiptext,W,leftalign,bold,[lblname])_ add a text label to the current edited button-group. width: W=0:use text width, >0:fix width.
+* toolbar._addbutton(button-name,tooltiptext)_ adds a graphic button to the current edited button-group (icon=button-name)
+* toolbar._addtext(button-name,text,tooltiptext,W)_ adds a text button or text (button-name="") to the current edited button-group. width: W=0:use text width, >0:fix width
+* toolbar._addlabel(text,tooltiptext,W,leftalign,bold,[lblname])_ adds a text label to the current edited button-group. width: W=0:use text width, >0:fix width.
   "lblname" is only required for changing the label text dinamically
-* toolbar._addspace([space],[hidebar])_ add some space (separator) to the current edited button-group
-* toolbar._gotopos([dx])_ change next button position: new row/column + dx pixels in the current edited button-group
-* toolbar._gotopos(x,y)_ change next button position to x,y (in pixels) in the current edited button-group
-* toolbar._enable(button-name,isenabled,[onlyinthistoolbar])_ enable/disable a button given its name
-* toolbar._seticon(button-name,icon,[nicon],[onlyinthistoolbar])_ set/change a button's icon (nicon: 0=normal/separator,1:disabled,2:hilighted,3:pressed)
-* toolbar._seticon("GROUP"/"TOOLBAR",icon,[nicon],[onlyinthistoolbar])_ set/change a group or global toolbar's icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
+* toolbar._addspace([space],[hidebar])_ adds some space (separator) to the current edited button-group
+* toolbar._gotopos([dx])_ changes next button position: new row/column + dx pixels in the current edited button-group
+* toolbar._gotopos(x,y)_ changes next button position to x,y (in pixels) in the current edited button-group
+* toolbar._enable(button-name,isenabled,[onlyinthistoolbar])_ enables/disables a button given its name
+* toolbar._seticon(button-name,icon,[nicon],[onlyinthistoolbar])_ sets/changes a button's icon (nicon: 0=normal/separator,1:disabled,2:hilighted,3:pressed)
+* toolbar._seticon("GROUP"/"TOOLBAR",icon,[nicon],[onlyinthistoolbar])_ sets/changes a group or global toolbar's icon (nicon: 0=background,1:separator,2:hilighted,3:pressed,
   4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed,
   24-25-26=hilighted text button, 27-28-29=hilight as pressed text button)
-* toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ change a button's tooltip
-* toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ change a text button's text (and tooltip)
-* toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ change default text buttons font size and colors in the current edited toolbar
+* toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ changes a button's tooltip
+* toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ changes a text button's text (and tooltip)
+* toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ changes the default text buttons font size and colors in the current edited toolbar
 
 __tabs__
 
-* toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ change default tab font color in the current edited toolbar
-* toolbar._settab(num,tab-text,tooltiptext)_ set tab _num_ text and tooltip in the current edited toolbar
-* toolbar._deletetab(num)_ delete tab _num_ from the current edited toolbar
-* toolbar._activatetab(num)_ activate (selects) tab _num_ in the current edited toolbar
-* toolbar._enabletab(num,enabled)_ enable/disable tab _num_ in the current edited toolbar
-* toolbar._modifiedtab(num,changed)_ show/hide change indicator in tab _num_ in the current edited toolbar
-* toolbar._hidetab(num,hide)_ show/hide tab _num_ in the current edited toolbar
-* toolbar._tabwidth(num,W,minwidth,maxwidth)_ control tab _num_ width: W=0:use text width, >0:fix width, <0:porcent; 0 or minimum; 0 or maximum
-* toolbar._tabwidth(num,text)_ set tab _num_ width using the given text
-* toolbar._gototab(pos)_ generate a click in tab _pos_: -1=prev, 1=next, 0=first, 2=last
+* toolbar._tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)_ changes the default tabs font color in the current edited toolbar
+* toolbar._settab(num,tab-text,tooltiptext)_ sets tab _num_ text and tooltip in the current edited toolbar
+* toolbar._deletetab(num)_ deletes tab _num_ from the current edited toolbar
+* toolbar._activatetab(num)_ activates (selects) tab _num_ in the current edited toolbar
+* toolbar._enabletab(num,enabled)_ enables/disables tab _num_ in the current edited toolbar
+* toolbar._modifiedtab(num,changed)_ shows/hides change indicator in tab _num_ in the current edited toolbar
+* toolbar._hidetab(num,hide)_ shows/hides tab _num_ in the current edited toolbar
+* toolbar._tabwidth(num,W,minwidth,maxwidth)_ sets tab _num_ width option: W=0:use text width, >0:fix width, <0:porcent; 0 or minimum; 0 or maximum
+* toolbar._tabwidth(num,text)_ sets tab _num_ width using the given text
+* toolbar._gototab(pos)_ generates a click in tab _pos_: -1=prev, 1=next, 0=first, 2=last
 
 Instead of calling some of this functions directly, is better to use theming and __requiere('toolbar')__
 (see some examples below)
@@ -170,7 +176,7 @@ __Usage:__
 * copy src/tatoolbar.c and src/tatoolbar.h into Textadept/src folder
 * edit the current Textadept/src/textadept.c file, adding the lines shown in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy the lines that contains "UNUSED()" to supress some warnings when compiling on Win32
-* compile Textadept
+* ![Compile Textadept](https://foicica.com/textadept/manual.html#Compiling)
 * copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from
   (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
   (you can choose another icon location and set the path when calling toolbar.new())
