@@ -85,7 +85,8 @@ local function add_config_start(startgroup)
   toolbar.tabwithclose=false
   toolbar.tabwidthmode=0
   toolbar.tabwidthmin=0
-  if toolbar.img[4]  == "" then toolbar.img[4]=  "ttb-tab-back" end
+  toolbar.img[1]= "ttb-csep"
+  toolbar.img[4]= "ttb-ctab-back"
   if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
   if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
   if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end
@@ -93,7 +94,7 @@ local function add_config_start(startgroup)
   for i, img in ipairs(toolbar.img) do
     if img ~= "" then toolbar.seticon("TOOLBAR", img, i, true) end
   end
-  toolbar.add_tabs_here()
+  toolbar.add_tabs_here(3)
 
   toolbar.seticon("GROUP", toolbar.back[1], 0, true)  --horizontal back x 1row
 end
@@ -117,8 +118,14 @@ local function add_config_tabgroup(name,title,ngrp)
   --toolbar.seticon("GROUP", "ttb-cback2", 0, true)
 end
 
+local function add_config_separator()
+  toolbar.gotopos(0, toolbar.cfgpnl_y+2)
+  toolbar.addspace()
+end
+
 local function add_config_label(text,extrasep,notbold)
   if extrasep then
+    add_config_separator()
     --add extra separation (1/2 row)
     toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight/2
   end
@@ -249,6 +256,7 @@ function toolbar.add_config_panel()
     add_config_label("More radios",true)
     add_config_radio("rad_b", "B radio option #1", "Radio test B1", true)
     cont_config_radio("B radio option #2", "Radio test B2")
+    add_config_separator()
 
   add_config_tabgroup("View", "View configuration")
     add_config_label("More radios")
@@ -257,6 +265,7 @@ function toolbar.add_config_panel()
 
     add_config_label("Some checks",true)
     add_config_check("chk_d", "Some option #1", "Check test 1", true)
+    add_config_separator()
 
   add_config_tabgroup("Project", "Project configuration")
     add_config_label("to do 1")
