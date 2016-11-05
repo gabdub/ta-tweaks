@@ -53,10 +53,17 @@ if toolbar then
   require('toolbar')
   require('htmltoolbar')
 
+  --read configuration file
+  toolbar.load_config(true)
+  local theme= toolbar.get_radio_val("tbtheme",3)
   --load toolbar theme from USERHOME
-  toolbar.set_theme("bar-sm-light")
-  --toolbar.set_theme("bar-th-dark")
-  --toolbar.set_theme("bar-ch-dark")
+  if theme == 2 then
+    toolbar.set_theme("bar-th-dark")
+  elseif theme == 3 then
+    toolbar.set_theme("bar-ch-dark")
+  else
+    toolbar.set_theme("bar-sm-light") --default
+  end
 
   --change theme defaults here
   --toolbar.tabwithclose=true
@@ -64,6 +71,8 @@ if toolbar then
   --toolbar.back[2]="ttb-back2-same"
   --toolbar.back[2]="ttb-back2-down"
 
+  local tabpos= toolbar.get_radio_val("tbtabs",4) -1
+  if tabpos < 0 then tabpos= 1 end
   --create the toolbar (tabpos, nvertcols, stbar)
   --tabpos=0: 1 row, use default tabs
   --tabpos=1: 1 row, tabs & buttons in the same line
@@ -72,7 +81,7 @@ if toolbar then
   --nvertcols= 0..2 = number of columns in vertical toolbar
   --stbar=0: use default status bar
   --stbar=1: use toolbar's status bar
-  toolbar.create(1,1,1)
+  toolbar.create(tabpos,1,1)
 
   --add some buttons
   if Proj then

@@ -1,3 +1,7 @@
+toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
+toolbar.cfgpnl_chkval={}
+toolbar.config_change=false
+
 function toolbar.toggle_showconfig()
   --toggle shown state
   local b="showconfig"
@@ -5,6 +9,8 @@ function toolbar.toggle_showconfig()
     toolbar.config_toolbar_shown= false
     toolbar.setthemeicon(b, "visualization")
     toolbar.settooltip(b, "Show configuration panel [F9]")
+    -- Save configuration changes
+    toolbar.save_config()
   else
     toolbar.config_toolbar_shown= true
     toolbar.setthemeicon(b, "ttb-proj-c")
@@ -79,7 +85,7 @@ local function add_config_start(startgroup)
   --config title: width=expand / height=27
   toolbar.addgroup(7, 0, 0, 27)
   toolbar.seticon("GROUP", "ttb-cback2", 0, true)
-  toolbar.textfont(toolbar.textfont_sz+4, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.statcolor_normal)
+  toolbar.textfont(toolbar.textfont_sz+4, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
   toolbar.tabwithclose=false
@@ -109,7 +115,7 @@ local function add_config_tabgroup(name,title,ngrp)
   local hidegrp=(n ~= toolbar.cfgpnl_curgroup) --only one tab group is visible at a time
   toolbar.addgroup(7,8,0,0,hidegrp)
   toolbar.adjust(48,24,2,1,3,3)
-  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.statcolor_normal, toolbar.statcolor_normal)
+  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
   if n == toolbar.cfgpnl_curgroup then
     toolbar.settext("cfgtit", title, "", true)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
@@ -121,26 +127,26 @@ end
 local function add_config_separator()
   toolbar.gotopos(0, toolbar.cfgpnl_y+2)
   toolbar.addspace()
+  --add extra separation (1/2 row)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight/2
 end
 
 local function add_config_label(text,extrasep,notbold)
   if extrasep then
     add_config_separator()
-    --add extra separation (1/2 row)
-    toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight/2
   end
   toolbar.gotopos(toolbar.cfgpnl_xmargin, toolbar.cfgpnl_y)
   toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,not notbold)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
 
-local function set_check_val(name,checked)
+local function set_check_val(name,checked,dontset_toolbar)
   if checked then
     toolbar.cfgpnl_chkval[name]= true
-    toolbar.setthemeicon(name, "check1")
+    if not dontset_toolbar then toolbar.setthemeicon(name, "check1") end
   else
     toolbar.cfgpnl_chkval[name]= false
-    toolbar.setthemeicon(name, "check0")
+    if not dontset_toolbar then toolbar.setthemeicon(name, "check0") end
   end
 end
 
@@ -154,6 +160,7 @@ end
 local function check_clicked(name)
   --toggle checkbox value
   set_check_val(name, not get_check_val(name))
+  toolbar.config_change=true
 end
 
 local function add_config_check(name,text,tooltip,val)
@@ -170,36 +177,46 @@ local function add_config_check(name,text,tooltip,val)
   toolbar.cfgpnl_chkval[name]=val
 end
 
-local function radio_clicked(name)
+local function radio_clicked(name,dontset_toolbar)
   --set new radio button value
   toolbar.cfgpnl_chkval[name]= true
-  toolbar.setthemeicon(name, "radio1")
+  if not dontset_toolbar then toolbar.setthemeicon(name, "radio1") end
   --reset the others (same rname in "rname:option-value")
-  local rname=string.match(name, "(.-):.*$")
+  local rname=string.match(name, "(.-):.+$")
   if rname then
     local i=1
     while toolbar.cfgpnl_chkval[rname..':'..i] ~= nil do
       local rbn=rname..':'..i
       if name ~= rbn and toolbar.cfgpnl_chkval[rbn] then
         toolbar.cfgpnl_chkval[rbn]= false
-        toolbar.setthemeicon(rbn, "radio0")
+        if not dontset_toolbar then toolbar.setthemeicon(rbn, "radio0") end
       end
       i=i+1
     end
   end
+  toolbar.config_change=true
 end
 
-local function set_radio_val(name,val)
-  radio_clicked(name..":"..val)
+local function set_radio_val(name,val,dontset_toolbar)
+  radio_clicked(name..":"..val,dontset_toolbar)
 end
 
-local function get_radio_val(name)
+function toolbar.get_radio_val(name,maxnum)
   local i=1
-  while toolbar.cfgpnl_chkval[name..':'..i] ~= nil do
-    if toolbar.cfgpnl_chkval[name..':'..i] then
-      return i
+  if maxnum then
+    while i <= maxnum do
+      if toolbar.cfgpnl_chkval[name..':'..i] then
+        return i
+      end
+      i=i+1
     end
-    i=i+1
+  else
+    while toolbar.cfgpnl_chkval[name..':'..i] ~= nil do
+      if toolbar.cfgpnl_chkval[name..':'..i] then
+        return i
+      end
+      i=i+1
+    end
   end
   return 0
 end
@@ -220,7 +237,7 @@ end
 
 --start a new radio button: name="rname:num" or "rname" (num=1)
 local function add_config_radio(name,text,tooltip,checked)
-  local rname,rnum= string.match(name, "(.-):(.*)$")
+  local rname,rnum= string.match(name, "(.-):(.+)$")
   if rname then
     toolbar.last_rname= rname
     toolbar.last_rnum= tonumber(rnum)
@@ -235,6 +252,61 @@ end
 local function cont_config_radio(text,tooltip,checked)
   toolbar.last_rnum= toolbar.last_rnum+1
   _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
+end
+
+function toolbar.save_config()
+  if toolbar.config_change then
+    local f = io.open(toolbar.CONFIG_FILE, 'wb')
+    if f then
+      local savedata = {}
+      for optname, val in pairs(toolbar.cfgpnl_chkval) do
+        local rname= string.match(optname, "(.-):.+$")
+        if rname then
+          --radio (only save the choosen option)
+          if val then
+            savedata[#savedata + 1] = optname --name:index
+          end
+        else
+          --check (save all)
+          savedata[#savedata + 1] = optname..(val and ':true' or ':false') --name=true/false
+        end
+      end
+      f:write(table.concat(savedata, '\n'))
+      f:close()
+    end
+    toolbar.config_change= false
+  end
+end
+
+function toolbar.load_config(dontset_toolbar)
+  if dontset_toolbar == nil then dontset_toolbar=false end
+  local f = io.open(toolbar.CONFIG_FILE, 'rb')
+  if f then
+    for line in f:lines() do
+      local rname,rnum= string.match(line, "(.-):(.+)$")
+      if rname then
+        if rnum == 'true' then
+          set_check_val(rname,true,dontset_toolbar)
+        elseif rnum == 'false' then
+          set_check_val(rname,false,dontset_toolbar)
+        else
+          set_radio_val(rname,rnum,dontset_toolbar)
+        end
+      end
+    end
+    f:close()
+  end
+  toolbar.config_change= false
+end
+
+--on init load the configuration file but don't set the toolbar yet
+--events.connect(events.INITIALIZED, function() toolbar.load_config(true) end)
+-- Save configuration changes on quit
+events.connect(events.QUIT, function() toolbar.save_config() end, 1)
+
+local function reload_theme()
+  toolbar.save_config()
+  reset()
 end
 
 function toolbar.add_config_panel()
@@ -274,7 +346,25 @@ function toolbar.add_config_panel()
     add_config_label("to do 2")
 
   add_config_tabgroup("Toolbar", "Toolbar configuration")
-    add_config_label("to do 3")
+    add_config_label("Theme")
+    add_config_radio("tbtheme",  "bar-sm-light", "Light theme with small tabs", true)
+    cont_config_radio(           "bar-th-dark",  "Dark theme with rounded tabs")
+    cont_config_radio(           "bar-ch-dark",  "Dark theme with triangular tabs")
+    add_config_separator()
+
+    add_config_label("Tabs position")
+    add_config_radio("tbtabs",   "Off",         "Use default system tabs", true)
+    cont_config_radio(           "Same row",    "Tabs and buttons in the same row")
+    cont_config_radio(           "Top row",     "Tabs over buttons")
+    cont_config_radio(           "Bottom row",  "Tabs under buttons")
+    add_config_separator()
+
+    toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+    toolbar.cmdtext("Reset editor", reload_theme, "Reset to apply the changes", "reload")
+
+
+  --load config settings and set toolbar images
+  toolbar.load_config()
 
   --hidden for now
   toolbar.show(false)
