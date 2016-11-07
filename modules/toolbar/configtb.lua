@@ -150,7 +150,7 @@ local function add_config_label(text,extrasep,notbold)
   end
 end
 
-local function set_check_val(name,checked,dontset_toolbar)
+function toolbar.set_check_val(name,checked,dontset_toolbar)
   if checked then
     toolbar.cfgpnl_chkval[name]= true
     if not dontset_toolbar then toolbar.setthemeicon(name, "check1") end
@@ -160,7 +160,7 @@ local function set_check_val(name,checked,dontset_toolbar)
   end
 end
 
-local function get_check_val(name)
+function toolbar.get_check_val(name)
   if toolbar.cfgpnl_chkval[name] then
     return true
   end
@@ -169,7 +169,7 @@ end
 
 local function check_clicked(name)
   --toggle checkbox value
-  set_check_val(name, not get_check_val(name))
+  toolbar.set_check_val(name, not toolbar.get_check_val(name))
   toolbar.config_change=true
 end
 
@@ -210,7 +210,16 @@ local function radio_clicked(name,dontset_toolbar)
   toolbar.config_change=true
 end
 
-local function set_radio_val(name,val,dontset_toolbar)
+function toolbar.set_radio_val(name,val,dontset_toolbar,maxnum)
+  if maxnum then --create all missing items
+    local i=1
+    while i <= maxnum do
+      if toolbar.cfgpnl_chkval[name..':'..i] == nil then
+        toolbar.cfgpnl_chkval[name..':'..i]=false
+      end
+      i=i+1
+    end
+  end
   radio_clicked(name..":"..val,dontset_toolbar)
 end
 
@@ -236,6 +245,7 @@ end
 
 local function _add_config_radio(name,text,tooltip,checked)
   if checked == nil then checked=false end
+  if tooltip == nil then tooltip="" end
   --text
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext, true)
@@ -286,7 +296,7 @@ function toolbar.save_config()
             savedata[n] = rname..":"..toolbar.get_radio_val(rname)
           else
             --check: name=true/false
-            savedata[n] = optname..(get_check_val(optname) and ':true' or ':false')
+            savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
           end
         end
       end
@@ -305,11 +315,11 @@ function toolbar.load_config(dontset_toolbar)
       local rname,rnum= string.match(line, "([^;]-):(.+)$")
       if rname then
         if rnum == 'true' then
-          set_check_val(rname,true,dontset_toolbar)
+          toolbar.set_check_val(rname,true,dontset_toolbar)
         elseif rnum == 'false' then
-          set_check_val(rname,false,dontset_toolbar)
+          toolbar.set_check_val(rname,false,dontset_toolbar)
         else
-          set_radio_val(rname,rnum,dontset_toolbar)
+          toolbar.set_radio_val(rname,rnum,dontset_toolbar)
         end
       end
     end
@@ -328,66 +338,105 @@ local function reload_theme()
   reset()
 end
 
+local function add_buffer_cfg_panel()
+  add_config_tabgroup("Buffer", "Buffer configuration")
+
+  add_config_label("Some checks")
+  add_config_check("chk_a", "Some option #1", "Check test 1", false)
+  add_config_check("chk_b", "Some option #2", "Check test 2", true)
+  add_config_check("chk_c", "Some option #3", "Check test 3", false)
+
+  add_config_label("Some radios",true)
+  add_config_radio("rad_a", "A radio option #1", "Radio test A1")
+  cont_config_radio("A radio option #2", "Radio test A2")
+  cont_config_radio("A radio option #3", "Radio test A3")
+  toolbar.set_radio_val("rad_a", 3)
+
+  add_config_label("More radios",true)
+  add_config_radio("rad_b", "B radio option #1", "Radio test B1", true)
+  cont_config_radio("B radio option #2", "Radio test B2")
+  add_config_separator()
+end
+
+local function add_view_cfg_panel()
+  add_config_tabgroup("View", "View configuration")
+
+  add_config_label("More radios")
+  add_config_radio("rad_c:1", "C radio option #1", "Radio test C1")
+  add_config_radio("rad_c:2", "C radio option #2", "Radio test C2", true)
+
+  add_config_label("Some checks",true)
+  add_config_check("chk_d", "Some option #1", "Check test 1", true)
+  add_config_separator()
+end
+
+local function add_project_cfg_panel()
+  add_config_tabgroup("Project", "Project configuration")
+  add_config_label("to do 1")
+end
+
+local function add_toolbar_cfg_panel()
+  add_config_tabgroup("Toolbar", "Toolbar configuration")
+
+  add_config_label("THEME")
+  add_config_radio("tbtheme", "bar-sm-light", "Light theme with small tabs", true)
+  cont_config_radio( "bar-th-dark", "Dark theme with rounded tabs")
+  cont_config_radio( "bar-ch-dark", "Dark theme with triangular tabs")
+
+  add_config_label("TABS",true)
+  add_config_label("Tabs position")
+  add_config_radio("tbtabs", "Off", "Use default system tabs", true)
+  cont_config_radio("Same row", "Tabs and buttons in the same row")
+  cont_config_radio("Top row", "Tabs over buttons")
+  cont_config_radio("Bottom row", "Tabs under buttons")
+
+  add_config_label("Show close button")
+  add_config_radio("tbtabclose", "Hide")
+  cont_config_radio("Show")
+  cont_config_radio("Let the Theme choose", "", true)
+
+  add_config_label("Close with double click")
+  add_config_radio("tbtab2clickclose", "No")
+  cont_config_radio("Yes")
+  cont_config_radio("Let the Theme choose", "", true)
+
+  add_config_label("STATUS BAR",true)
+  add_config_check("tbshowstatbar", "Use toolbar status bar", "", true)
+
+  add_config_label("VERTICAL BAR",true)
+  add_config_radio("tbvertbar", "1 Column", "", true)
+  cont_config_radio("2 Columns")
+  if toolbar.add_html_toolbar == nil then
+    --NO HTML quicktype toolbar, add "HIDE" option
+    cont_config_radio("Hide")
+  end
+
+  add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Reset editor", reload_theme, "Reset to apply the changes", "reload")
+end
+
 function toolbar.add_config_panel()
   --create the "vertical right (config)" panel
   add_config_start(1) --start in tabgroup #1
 
-  add_config_tabgroup("Buffer", "Buffer configuration")
-    add_config_label("Some checks")
-    add_config_check("chk_a", "Some option #1", "Check test 1", false)
-    add_config_check("chk_b", "Some option #2", "Check test 2", true)
-    add_config_check("chk_c", "Some option #3", "Check test 3", false)
-
-    add_config_label("Some radios",true)
-    add_config_radio("rad_a", "A radio option #1", "Radio test A1")
-    cont_config_radio("A radio option #2", "Radio test A2")
-    cont_config_radio("A radio option #3", "Radio test A3")
-    set_radio_val("rad_a", 3)
-
-    add_config_label("More radios",true)
-    add_config_radio("rad_b", "B radio option #1", "Radio test B1", true)
-    cont_config_radio("B radio option #2", "Radio test B2")
-    add_config_separator()
-
-  add_config_tabgroup("View", "View configuration")
-    add_config_label("More radios")
-    add_config_radio("rad_c:1", "C radio option #1", "Radio test C1")
-    add_config_radio("rad_c:2", "C radio option #2", "Radio test C2", true)
-
-    add_config_label("Some checks",true)
-    add_config_check("chk_d", "Some option #1", "Check test 1", true)
-    add_config_separator()
-
   toolbar.config_saveon=false --don't save this config options
-  add_config_tabgroup("Project", "Project configuration")
-    add_config_label("to do 1")
-
-  add_config_tabgroup("Editor", "Editor configuration")
-    add_config_label("to do 2")
-
+  add_buffer_cfg_panel()  --BUFFER
+  add_view_cfg_panel()    --VIEW
+  add_project_cfg_panel() --PROJECT
   toolbar.config_saveon=true --resume saving
-  add_config_tabgroup("Toolbar", "Toolbar configuration")
-    add_config_label("Theme")
-    add_config_radio("tbtheme",  "bar-sm-light", "Light theme with small tabs", true)
-    cont_config_radio(           "bar-th-dark",  "Dark theme with rounded tabs")
-    cont_config_radio(           "bar-ch-dark",  "Dark theme with triangular tabs")
-    add_config_separator()
 
-    add_config_label("Tabs position")
-    add_config_radio("tbtabs",   "Off",         "Use default system tabs", true)
-    cont_config_radio(           "Same row",    "Tabs and buttons in the same row")
-    cont_config_radio(           "Top row",     "Tabs over buttons")
-    cont_config_radio(           "Bottom row",  "Tabs under buttons")
-    add_config_separator()
+  add_toolbar_cfg_panel() --TOOLBAR
 
-    toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-    toolbar.cmdtext("Reset editor", reload_theme, "Reset to apply the changes", "reload")
-
-
-  --load config settings and set toolbar images
+  --load config settings / set toolbar controls
   toolbar.load_config()
 
-  --hidden for now
+  --check: hide toolbar + htmltoolbar => force 1 row
+  if toolbar.get_radio_val("tbvertbar") == 3 and toolbar.add_html_toolbar ~= nil then
+    toolbar.set_radio_val("tbvertbar",1)
+  end
+
+  --hide the config panel for now
   toolbar.show(false)
 end
 

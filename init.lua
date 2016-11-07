@@ -43,7 +43,7 @@ events.connect(events.LEXER_LOADED, function(lang)
     buffer.tab_width = 2
     buffer.use_tabs = false
   end
-  if toolbar then
+  if toolbar.show_html_toolbar ~= nil then
     --show vertical toolbar only in html files
     toolbar.show_html_toolbar(lang)
   end
@@ -53,35 +53,15 @@ if toolbar then
   require('toolbar')
   require('htmltoolbar')
 
-  --read configuration file
-  toolbar.load_config(true)
-  local theme= toolbar.get_radio_val("tbtheme",3)
-  --load toolbar theme from USERHOME
-  if theme == 2 then
-    toolbar.set_theme("bar-th-dark")
-  elseif theme == 3 then
-    toolbar.set_theme("bar-ch-dark")
-  else
-    toolbar.set_theme("bar-sm-light") --default
-  end
+  --set the configured theme
+  toolbar.set_theme_from_config()
 
   --change theme defaults here
-  --toolbar.tabwithclose=true
-  --toolbar.tabxmargin=1
   --toolbar.back[2]="ttb-back2-same"
   --toolbar.back[2]="ttb-back2-down"
 
-  local tabpos= toolbar.get_radio_val("tbtabs",4) -1
-  if tabpos < 0 then tabpos= 1 end
-  --create the toolbar (tabpos, nvertcols, stbar)
-  --tabpos=0: 1 row, use default tabs
-  --tabpos=1: 1 row, tabs & buttons in the same line
-  --tabpos=2: 2 rows, tabs at the top
-  --tabpos=3: 2 rows, tabs at the bottom
-  --nvertcols= 0..2 = number of columns in vertical toolbar
-  --stbar=0: use default status bar
-  --stbar=1: use toolbar's status bar
-  toolbar.create(tabpos,1,1)
+  --create the configured toolbars
+  toolbar.create_from_config()
 
   --add some buttons
   if Proj then
@@ -103,15 +83,6 @@ if toolbar then
     toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")
   end
 
-  --HTML quicktype toolbar
-  toolbar.add_html_toolbar()
-
-  --add a button to show/hide the config panel
-  toolbar.add_showconfig_button()
-
-  --toolbar ready, show it
+  --toolbars ready, show them
   toolbar.ready()
-
-  --create config panel
-  toolbar.add_config_panel()
 end

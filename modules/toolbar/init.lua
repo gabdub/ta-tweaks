@@ -498,11 +498,13 @@ if toolbar then
   --nvertcols= 0..2 = number of columns in vertical toolbar
   --stbar=0: use default
   --stbar=1: use tatoolbar
-  function toolbar.create(tabpos, nvertcols, stbar)
+  --configpanel==true: add a button to show config panel and create the config panel
+  function toolbar.create(tabpos, nvertcols, stbar, configpanel)
     toolbar.current_toolbar=-1
     toolbar.tabpos= tabpos
     ui.tabs= (tabpos == 0)  --hide regular tabbar if needed
     toolbar.statbar= stbar
+    toolbar.configpanel=configpanel
 
     --tabs to show
     if not nvertcols then nvertcols= 0 end
@@ -671,6 +673,14 @@ if toolbar then
 
   --toolbar ready, show it
   function toolbar.ready()
+    if toolbar.add_html_toolbar ~= nil then
+      --HTML quicktype toolbar
+      toolbar.add_html_toolbar()
+    end
+    if toolbar.configpanel then
+      --add a button to show/hide the config panel
+      toolbar.add_showconfig_button()
+    end
     toolbar.addpending()
     --show status bar if enabled
     toolbar.shw_statusbar()
@@ -679,6 +689,55 @@ if toolbar then
       toolbar.update_all_tabs()   --load existing buffers in tab-bar
       toolbar.seltabbuf(buffer)  --select current buffer
     end
+    if toolbar.configpanel then
+      --create the config panel
+      toolbar.add_config_panel()
+    end
+  end
+
+  --set the configured theme
+  function toolbar.set_theme_from_config()
+    --read the configuration file
+    toolbar.load_config(true)
+    local theme= toolbar.get_radio_val("tbtheme",3)
+    --load toolbar theme from USERHOME
+    if theme == 2 then
+      toolbar.set_theme("bar-th-dark")
+    elseif theme == 3 then
+      toolbar.set_theme("bar-ch-dark")
+    else
+      toolbar.set_theme("bar-sm-light") --default
+    end
+  end
+
+  --create the configured toolbars
+  function toolbar.create_from_config()
+    local tabclose= toolbar.get_radio_val("tbtabclose",3)
+    if tabclose == 1 then toolbar.tabwithclose=false
+    elseif tabclose == 2 then toolbar.tabwithclose=true end
+
+    tabclose= toolbar.get_radio_val("tbtab2clickclose",3)
+    if tabclose == 1 then toolbar.tab2clickclose=false
+    elseif tabclose == 2 then toolbar.tab2clickclose=true end
+
+    --create the toolbars (tabpos, nvertcols, stbar, configpanel)
+    --tabpos=0: 1 row, use default tabs
+    --tabpos=1: 1 row, tabs & buttons in the same line
+    --tabpos=2: 2 rows, tabs at the top
+    --tabpos=3: 2 rows, tabs at the bottom
+    local tabpos= toolbar.get_radio_val("tbtabs",4) -1
+    if tabpos < 0 then tabpos= 1 end
+    --nvertcols= 0..2 = number of columns in vertical toolbar
+    local nvertcols= toolbar.get_radio_val("tbvertbar", 3)
+    if nvertcols < 1 then nvertcols=1 end --default= 1 row
+    if nvertcols == 3 then --hide (only if htmltoolbar is not used)
+      if toolbar.add_html_toolbar == nil then nvertcols=0 else nvertcols=1 end
+    end
+    --stbar=0: use default status bar
+    --stbar=1: use toolbar's status bar
+    local statbar= (toolbar.get_check_val("tbshowstatbar") and 1 or 0)
+    --configpanel==true: add a button to show config panel and create the config panel
+    toolbar.create(tabpos,nvertcols,statbar,true)
   end
 
   toolbar.set_defaults()
