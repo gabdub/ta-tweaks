@@ -1,5 +1,7 @@
 toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
 toolbar.cfgpnl_chkval={}
+toolbar.cfgpnl_savelst={}
+toolbar.config_saveon=false
 toolbar.config_change=false
 
 function toolbar.toggle_showconfig()
@@ -76,6 +78,8 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_group={}
   toolbar.cfgpnl_curgroup= startgroup
   toolbar.cfgpnl_chkval={}
+  toolbar.cfgpnl_savelst={}
+  toolbar.config_saveon=true
 
   toolbar.new(toolbar.cfgpnl_width, 24, 16, 3, toolbar.themepath)
   toolbar.current_toolbar= 3
@@ -122,6 +126,9 @@ local function add_config_tabgroup(name,title,ngrp)
   end
   toolbar.cfgpnl_y= toolbar.cfgpnl_ymargin
   --toolbar.seticon("GROUP", "ttb-cback2", 0, true)
+  if toolbar.config_saveon then --save as a comment in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";===[ "..name.." ]==="
+  end
 end
 
 local function add_config_separator()
@@ -138,6 +145,9 @@ local function add_config_label(text,extrasep,notbold)
   toolbar.gotopos(toolbar.cfgpnl_xmargin, toolbar.cfgpnl_y)
   toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,not notbold)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+  if toolbar.config_saveon then --save as a comment in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";"..text
+  end
 end
 
 local function set_check_val(name,checked,dontset_toolbar)
@@ -175,6 +185,9 @@ local function add_config_check(name,text,tooltip,val)
   toolbar.setthemeicon(name, "check-pr", 3)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
   toolbar.cfgpnl_chkval[name]=val
+  if toolbar.config_saveon then --save this check in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
+  end
 end
 
 local function radio_clicked(name,dontset_toolbar)
@@ -247,6 +260,9 @@ local function add_config_radio(name,text,tooltip,checked)
     name= name..":1"
   end
   _add_config_radio(name,text,tooltip,checked)
+  if toolbar.config_saveon and toolbar.last_rnum == 1 then --save this radio in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
+  end
 end
 
 local function cont_config_radio(text,tooltip,checked)
@@ -259,16 +275,19 @@ function toolbar.save_config()
     local f = io.open(toolbar.CONFIG_FILE, 'wb')
     if f then
       local savedata = {}
-      for optname, val in pairs(toolbar.cfgpnl_chkval) do
-        local rname= string.match(optname, "(.-):.+$")
-        if rname then
-          --radio (only save the choosen option)
-          if val then
-            savedata[#savedata + 1] = optname --name:index
-          end
+      for _,optname in ipairs(toolbar.cfgpnl_savelst) do
+        local n=#savedata + 1
+        if string.match(optname, ";.*$") then
+          savedata[n] = optname --save comments
         else
-          --check (save all)
-          savedata[#savedata + 1] = optname..(val and ':true' or ':false') --name=true/false
+          local rname= string.match(optname, "(.-):.+$")
+          if rname then
+            --radio: name:index
+            savedata[n] = rname..":"..toolbar.get_radio_val(rname)
+          else
+            --check: name=true/false
+            savedata[n] = optname..(get_check_val(optname) and ':true' or ':false')
+          end
         end
       end
       f:write(table.concat(savedata, '\n'))
@@ -283,7 +302,7 @@ function toolbar.load_config(dontset_toolbar)
   local f = io.open(toolbar.CONFIG_FILE, 'rb')
   if f then
     for line in f:lines() do
-      local rname,rnum= string.match(line, "(.-):(.+)$")
+      local rname,rnum= string.match(line, "([^;]-):(.+)$")
       if rname then
         if rnum == 'true' then
           set_check_val(rname,true,dontset_toolbar)
@@ -339,12 +358,14 @@ function toolbar.add_config_panel()
     add_config_check("chk_d", "Some option #1", "Check test 1", true)
     add_config_separator()
 
+  toolbar.config_saveon=false --don't save this config options
   add_config_tabgroup("Project", "Project configuration")
     add_config_label("to do 1")
 
   add_config_tabgroup("Editor", "Editor configuration")
     add_config_label("to do 2")
 
+  toolbar.config_saveon=true --resume saving
   add_config_tabgroup("Toolbar", "Toolbar configuration")
     add_config_label("Theme")
     add_config_radio("tbtheme",  "bar-sm-light", "Light theme with small tabs", true)
