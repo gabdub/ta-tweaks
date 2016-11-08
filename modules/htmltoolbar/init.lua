@@ -165,4 +165,7 @@ if toolbar then
       end
     end
   end
+
+  --show vertical toolbar only in html files
+  events.connect(events.LEXER_LOADED, toolbar.show_html_toolbar)
 end

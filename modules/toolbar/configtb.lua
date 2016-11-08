@@ -1,5 +1,7 @@
 toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
 toolbar.cfgpnl_chkval={}
+toolbar.cfgpnl_chknotify={}
+toolbar.cfgpnl_lexer_indent={}
 toolbar.cfgpnl_savelst={}
 toolbar.config_saveon=false
 toolbar.config_change=false
@@ -17,6 +19,8 @@ function toolbar.toggle_showconfig()
     toolbar.config_toolbar_shown= true
     toolbar.setthemeicon(b, "ttb-proj-c")
     toolbar.settooltip(b, "Hide configuration panel [Esc]")
+    --update current buffer config
+    toolbar.set_buffer_cfg()
   end
   toolbar.sel_config_bar()
   toolbar.show(toolbar.config_toolbar_shown)
@@ -78,6 +82,7 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_group={}
   toolbar.cfgpnl_curgroup= startgroup
   toolbar.cfgpnl_chkval={}
+  toolbar.cfgpnl_chknotify={}
   toolbar.cfgpnl_savelst={}
   toolbar.config_saveon=true
 
@@ -150,6 +155,10 @@ local function add_config_label(text,extrasep,notbold)
   end
 end
 
+local function set_notify_on_change(name,func)
+  toolbar.cfgpnl_chknotify[name]=func
+end
+
 function toolbar.set_check_val(name,checked,dontset_toolbar)
   if checked then
     toolbar.cfgpnl_chkval[name]= true
@@ -171,6 +180,9 @@ local function check_clicked(name)
   --toggle checkbox value
   toolbar.set_check_val(name, not toolbar.get_check_val(name))
   toolbar.config_change=true
+  if toolbar.cfgpnl_chknotify[name] ~= nil then
+    toolbar.cfgpnl_chknotify[name]()
+  end
 end
 
 local function add_config_check(name,text,tooltip,val)
@@ -190,7 +202,7 @@ local function add_config_check(name,text,tooltip,val)
   end
 end
 
-local function radio_clicked(name,dontset_toolbar)
+local function radio_clicked(name,dontset_toolbar,dont_notify)
   --set new radio button value
   toolbar.cfgpnl_chkval[name]= true
   if not dontset_toolbar then toolbar.setthemeicon(name, "radio1") end
@@ -208,6 +220,9 @@ local function radio_clicked(name,dontset_toolbar)
     end
   end
   toolbar.config_change=true
+  if (not dont_notify) and (toolbar.cfgpnl_chknotify[rname] ~= nil) then
+    toolbar.cfgpnl_chknotify[rname]()
+  end
 end
 
 function toolbar.set_radio_val(name,val,dontset_toolbar,maxnum)
@@ -220,7 +235,7 @@ function toolbar.set_radio_val(name,val,dontset_toolbar,maxnum)
       i=i+1
     end
   end
-  radio_clicked(name..":"..val,dontset_toolbar)
+  radio_clicked(name..":"..val,dontset_toolbar,true)
 end
 
 function toolbar.get_radio_val(name,maxnum)
@@ -300,6 +315,11 @@ function toolbar.save_config()
           end
         end
       end
+      savedata[#savedata+1] = ";==========="
+      savedata[#savedata+1] = "LEXER:INDENT"
+      for optname,val in pairs(toolbar.cfgpnl_lexer_indent) do
+        savedata[#savedata+1] = optname..":"..val
+      end
       f:write(table.concat(savedata, '\n'))
       f:close()
     end
@@ -309,17 +329,26 @@ end
 
 function toolbar.load_config(dontset_toolbar)
   if dontset_toolbar == nil then dontset_toolbar=false end
+  toolbar.cfgpnl_lexer_indent={}
+  local readlexer= false
+  local rname,rnum
   local f = io.open(toolbar.CONFIG_FILE, 'rb')
   if f then
     for line in f:lines() do
-      local rname,rnum= string.match(line, "([^;]-):(.+)$")
+      rname,rnum= string.match(line, "([^;]-):(.+)$")
       if rname then
-        if rnum == 'true' then
-          toolbar.set_check_val(rname,true,dontset_toolbar)
-        elseif rnum == 'false' then
-          toolbar.set_check_val(rname,false,dontset_toolbar)
+        if readlexer then
+          toolbar.cfgpnl_lexer_indent[rname]=rnum
+        elseif rname == "LEXER" and rnum == "INDENT" then
+          readlexer=true
         else
-          toolbar.set_radio_val(rname,rnum,dontset_toolbar)
+          if rnum == 'true' then
+            toolbar.set_check_val(rname,true,dontset_toolbar)
+          elseif rnum == 'false' then
+            toolbar.set_check_val(rname,false,dontset_toolbar)
+          else
+            toolbar.set_radio_val(rname,rnum,dontset_toolbar)
+          end
         end
       end
     end
@@ -334,28 +363,102 @@ end
 events.connect(events.QUIT, function() toolbar.save_config() end, 1)
 
 local function reload_theme()
+  --Reset to apply the changes
   toolbar.save_config()
   reset()
+end
+
+local function get_lexer()
+  local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
+  return buffer:private_lexer_call(GETLEXERLANGUAGE):match('^[^/]+')
+end
+
+local function get_lexer_cfg(lexer)
+  if toolbar.cfgpnl_lexer_indent[lexer] ~= nil then return toolbar.cfgpnl_lexer_indent[lexer] end
+  --no lexer val set, try "text"
+  if toolbar.cfgpnl_lexer_indent["text"] ~= nil then return toolbar.cfgpnl_lexer_indent["text"] end
+  --no "text" val set, use global default
+  return "s4"
+end
+
+local function get_lexer_ind_use_tabs(lexer)
+  local ind= get_lexer_cfg(lexer)
+  if string.match(ind,"s") then return false end
+  return true
+end
+
+local function get_lexer_ind_width(lexer)
+  local ind= get_lexer_cfg(lexer)
+  return string.match(ind,"[st](.*)$")
+end
+
+local function set_lexer_cfg()
+  --Use current settings as Lexer default
+  local lexer= get_lexer()
+  local indent=string.format('%s%d', buffer.use_tabs and 't' or 's', buffer.tab_width)
+  toolbar.cfgpnl_lexer_indent[lexer]=indent
+  toolbar.config_change=true
+end
+
+function toolbar.set_buffer_cfg()
+  toolbar.set_radio_val("bfindent", (buffer._cfg_bfindent ~= nil and buffer._cfg_bfindent or 1))
+  toolbar.set_radio_val("bfusetab", (buffer._cfg_bfusetab ~= nil and buffer._cfg_bfusetab or 1))
+end
+
+--only update when the config is open
+local function update_buffer_cfg()
+  if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg() end
+end
+
+events.connect(events.BUFFER_AFTER_SWITCH,  update_buffer_cfg)
+events.connect(events.VIEW_AFTER_SWITCH,    update_buffer_cfg)
+
+local function set_buffer_indent_as_cfg(updateui)
+  local iw= buffer._cfg_bfindent
+  if iw == 2 then       buffer.tab_width= 2
+  elseif iw == 3 then   buffer.tab_width= 3
+  elseif iw == 4 then   buffer.tab_width= 4
+  elseif iw == 5 then   buffer.tab_width= 8
+  else                  buffer.tab_width= get_lexer_ind_width(get_lexer())   end
+
+  local ut= buffer._cfg_bfusetab
+  if ut == 2 then       buffer.use_tabs= false
+  elseif ut == 3 then   buffer.use_tabs= true
+  else                  buffer.use_tabs= get_lexer_ind_use_tabs(get_lexer()) end
+
+  if updateui then
+    events.emit(events.UPDATE_UI) -- for updating statusbar
+  end
+end
+
+events.connect(events.LEXER_LOADED, set_buffer_indent_as_cfg)
+
+local function buf_indent_change()
+  buffer._cfg_bfindent= toolbar.get_radio_val("bfindent")
+  buffer._cfg_bfusetab= toolbar.get_radio_val("bfusetab")
+  set_buffer_indent_as_cfg(true)
 end
 
 local function add_buffer_cfg_panel()
   add_config_tabgroup("Buffer", "Buffer configuration")
 
-  add_config_label("Some checks")
-  add_config_check("chk_a", "Some option #1", "Check test 1", false)
-  add_config_check("chk_b", "Some option #2", "Check test 2", true)
-  add_config_check("chk_c", "Some option #3", "Check test 3", false)
+  add_config_label("Indentation width")
+  add_config_radio("bfindent", "Use Lexer default")
+  cont_config_radio("Tab width: 2")
+  cont_config_radio("Tab width: 3")
+  cont_config_radio("Tab width: 4")
+  cont_config_radio("Tab width: 8")
+  set_notify_on_change("bfindent",buf_indent_change)
 
-  add_config_label("Some radios",true)
-  add_config_radio("rad_a", "A radio option #1", "Radio test A1")
-  cont_config_radio("A radio option #2", "Radio test A2")
-  cont_config_radio("A radio option #3", "Radio test A3")
-  toolbar.set_radio_val("rad_a", 3)
-
-  add_config_label("More radios",true)
-  add_config_radio("rad_b", "B radio option #1", "Radio test B1", true)
-  cont_config_radio("B radio option #2", "Radio test B2")
+  add_config_label("Indentation char",true)
+  add_config_radio("bfusetab", "Use Lexer default")
+  cont_config_radio("Spaces")
+  cont_config_radio("Tabs")
+  set_notify_on_change("bfusetab",buf_indent_change)
   add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Set as Lexer default", set_lexer_cfg, "Use current settings as Lexer default", "setlexercfg")
+  toolbar.set_buffer_cfg()
 end
 
 local function add_view_cfg_panel()
@@ -373,6 +476,9 @@ end
 local function add_project_cfg_panel()
   add_config_tabgroup("Project", "Project configuration")
   add_config_label("to do 1")
+  add_config_check("chk_a", "Some option #1", "Check test 1", false)
+  add_config_check("chk_b", "Some option #2", "Check test 2", true)
+  add_config_check("chk_c", "Some option #3", "Check test 3", false)
 end
 
 local function add_toolbar_cfg_panel()

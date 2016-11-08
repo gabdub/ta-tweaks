@@ -32,23 +32,6 @@ require('quicktype')
 textadept.file_types.extensions.mas = 'mas'
 textadept.editing.comment_string.ansi_c = '//'
 
-events.connect(events.LEXER_LOADED, function(lang)
-  if lang == 'vala' then
-    buffer.tab_width = 4
-    buffer.use_tabs = false
-  elseif lang == 'lua' or lang == 'text' then
-    buffer.tab_width = 2
-    buffer.use_tabs = false
-  else
-    buffer.tab_width = 2
-    buffer.use_tabs = false
-  end
-  if toolbar.show_html_toolbar ~= nil then
-    --show vertical toolbar only in html files
-    toolbar.show_html_toolbar(lang)
-  end
-end)
-
 if toolbar then
   require('toolbar')
   require('htmltoolbar')
