@@ -499,7 +499,29 @@ end
 local function add_buffer_cfg_panel()
   add_config_tabgroup("Buffer", "Buffer configuration")
 
-  add_config_label("INDENTATION")
+  add_config_label("VIEW OPTIONS")
+  add_config_label("Buffer")
+  add_config_check("tbshoweol", "View EOL", "", false, buf_vieweol_change)
+  add_config_check("tbshowws", "View Whitespace", "", false, buf_viewws_change)
+  add_config_check("tbwrap", "Wrap mode", "", false, buf_wrapmode_change)
+  if toolbar.html_toolbar_onoff ~= nil then
+    add_config_check("tbshowhtml", "Show HTML toolbar", "", false, toolbar.html_toolbar_onoff)
+  end
+  add_config_label("View")
+  add_config_check("tbshowguid", "Show Indent Guides", "", false, view_guides_change)
+  add_config_check("tbvirtspc", "Virtual Space", "", false, view_virtspace_change)
+
+  add_config_label("EOL MODE",true)
+  if WIN32 then
+    add_config_radio("bfeol", "CR+LF (OS default)")
+    cont_config_radio("LF")
+  else
+    add_config_radio("bfeol", "CR+LF")
+    cont_config_radio("LF (OS default)")
+  end
+  set_notify_on_change("bfeol",buf_eolmode_change)
+
+  add_config_label("INDENTATION",true)
   add_config_label("Tab width")
   add_config_radio("bfindent", "Use Lexer default")
   cont_config_radio("Tab width: 2")
@@ -517,32 +539,9 @@ local function add_buffer_cfg_panel()
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Set as Lexer default", set_lexer_cfg, "Use current settings as Lexer default", "setlexercfg")
-  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.gotopos(toolbar.cfgpnl_xtext+(toolbar.cfgpnl_width/2), toolbar.cfgpnl_y)
   toolbar.cmdtext("Convert indentation", textadept.editing.convert_indentation, "Adjust current buffer indentation", "setindentation")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
-
-  add_config_label("EOL MODE",true)
-  if WIN32 then
-    add_config_radio("bfeol", "CR+LF (OS default)")
-    cont_config_radio("LF")
-  else
-    add_config_radio("bfeol", "CR+LF")
-    cont_config_radio("LF (OS default)")
-  end
-  set_notify_on_change("bfeol",buf_eolmode_change)
-
-  add_config_label("VIEW OPTIONS",true)
-  add_config_label("Buffer")
-  add_config_check("tbshoweol", "View EOL", "", false, buf_vieweol_change)
-  add_config_check("tbshowws", "View Whitespace", "", false, buf_viewws_change)
-  add_config_check("tbwrap", "Wrap mode", "", false, buf_wrapmode_change)
-  if toolbar.html_toolbar_onoff ~= nil then
-    add_config_check("tbshowhtml", "Show HTML toolbar", "", false, toolbar.html_toolbar_onoff)
-  end
-  add_config_label("View")
-  add_config_check("tbshowguid", "Show Indent Guides", "", false, view_guides_change)
-  add_config_check("tbvirtspc", "Virtual Space", "", false, view_virtspace_change)
-  add_config_separator()
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 20
 
   --show current buffer settings
   toolbar.set_buffer_cfg()
