@@ -121,6 +121,30 @@ Each toolbar can be used as you wish but the default implementation is as follow
 ![4 toolbars in action](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win12.png "4 toolbars in action")
 
 
+The configuration panel allows to set options in groups organized in tabs. The configuration settings are kept in __~/.textadept/toolbar_config__:
+```
+;===[ Toolbar ]===
+;THEME
+tbtheme:2
+;TABS
+;Tabs position
+tbtabs:2
+;Show close button
+tbtabclose:3
+;Close with double click
+tbtab2clickclose:3
+;STATUS BAR
+tbshowstatbar:true
+;VERTICAL BAR
+tbvertbar:1
+;===========
+LEXER:INDENT
+ansi_c:s4
+lua:s4
+text:s2
+```
+
+
 The _toolbar_ object adds the following functions to **textadept**:
 
 __toolbars__
