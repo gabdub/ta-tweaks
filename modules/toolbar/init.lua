@@ -225,9 +225,11 @@ if toolbar then
       elseif ntab == 4 then --lexer
         textadept.file_types.select_lexer()
       elseif ntab == 5 then --eol
-        choose_menu_opt(_L['_EOL Mode'],2)
+        --choose_menu_opt(_L['_EOL Mode'],2)
+        toolbar.toggle_buffer_configtab()
       elseif ntab == 6 then --indent
-        choose_menu_opt(_L['_Indentation'],6)
+        --choose_menu_opt(_L['_Indentation'],6)
+        toolbar.toggle_buffer_configtab()
       elseif ntab == 7 then --encoding
         choose_menu_opt(_L['E_ncoding'],5)
       end

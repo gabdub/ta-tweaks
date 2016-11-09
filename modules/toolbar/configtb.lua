@@ -54,6 +54,16 @@ function toolbar.prev_configtab()
   toolbar.gototab(-1)
 end
 
+--show/hide buffer config panel
+function toolbar.toggle_buffer_configtab()
+  if (not toolbar.config_toolbar_shown) or toolbar.cfgpnl_curgroup == 1 then
+    toolbar.toggle_showconfig()
+  end
+  if toolbar.config_toolbar_shown and toolbar.cfgpnl_curgroup ~= 1 then
+    toolbar.config_tab_click(1)
+  end
+end
+
 --add a button to show/hide the config panel
 function toolbar.add_showconfig_button()
   --add tab group if pending
@@ -185,7 +195,7 @@ local function check_clicked(name)
   end
 end
 
-local function add_config_check(name,text,tooltip,val)
+local function add_config_check(name,text,tooltip,val,notify)
   if val == nil then val=false end
   --text
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
@@ -199,6 +209,9 @@ local function add_config_check(name,text,tooltip,val)
   toolbar.cfgpnl_chkval[name]=val
   if toolbar.config_saveon then --save this check in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
+  end
+  if notify ~= nil then
+    set_notify_on_change(name, notify)
   end
 end
 
@@ -389,7 +402,7 @@ end
 
 local function get_lexer_ind_width(lexer)
   local ind= get_lexer_cfg(lexer)
-  return string.match(ind,"[st](.*)$")
+  return string.match(ind,"[st](.-)$")
 end
 
 local function set_lexer_cfg()
@@ -403,6 +416,18 @@ end
 function toolbar.set_buffer_cfg()
   toolbar.set_radio_val("bfindent", (buffer._cfg_bfindent ~= nil and buffer._cfg_bfindent or 1))
   toolbar.set_radio_val("bfusetab", (buffer._cfg_bfusetab ~= nil and buffer._cfg_bfusetab or 1))
+  local em=1
+  if buffer._cfg_bfeol ~= nil then  em= buffer._cfg_bfeol
+  elseif buffer.eol_mode == buffer.EOL_LF then em=2 end
+  toolbar.set_radio_val("bfeol", em)
+  toolbar.set_check_val("tbshoweol",buffer.view_eol)
+  toolbar.set_check_val("tbshowws", (buffer.view_ws == buffer.WS_VISIBLEALWAYS))
+  toolbar.set_check_val("tbwrap", (buffer.wrap_mode == buffer.WRAP_WHITESPACE))
+  if toolbar.html_toolbar_onoff ~= nil then
+    toolbar.set_check_val("tbshowhtml", buffer.html_toolbar_on)
+  end
+  toolbar.set_check_val("tbshowguid", (buffer.indentation_guides == buffer.IV_LOOKBOTH))
+  toolbar.set_check_val("tbvirtspc", (buffer.virtual_space_options == buffer.VS_USERACCESSIBLE))
 end
 
 --only update when the config is open
@@ -410,25 +435,26 @@ local function update_buffer_cfg()
   if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg() end
 end
 
-events.connect(events.BUFFER_AFTER_SWITCH,  update_buffer_cfg)
-events.connect(events.VIEW_AFTER_SWITCH,    update_buffer_cfg)
+events.connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
+events.connect(events.VIEW_AFTER_SWITCH,   update_buffer_cfg)
+events.connect(events.BUFFER_NEW,          update_buffer_cfg)
+events.connect(events.FILE_OPENED,         update_buffer_cfg)
 
 local function set_buffer_indent_as_cfg(updateui)
+  --indentation width
   local iw= buffer._cfg_bfindent
   if iw == 2 then       buffer.tab_width= 2
   elseif iw == 3 then   buffer.tab_width= 3
   elseif iw == 4 then   buffer.tab_width= 4
   elseif iw == 5 then   buffer.tab_width= 8
   else                  buffer.tab_width= get_lexer_ind_width(get_lexer())   end
-
+  --indentation char
   local ut= buffer._cfg_bfusetab
   if ut == 2 then       buffer.use_tabs= false
   elseif ut == 3 then   buffer.use_tabs= true
   else                  buffer.use_tabs= get_lexer_ind_use_tabs(get_lexer()) end
-
-  if updateui then
-    events.emit(events.UPDATE_UI) -- for updating statusbar
-  end
+  --update UI
+  if updateui then events.emit(events.UPDATE_UI) end
 end
 
 events.connect(events.LEXER_LOADED, set_buffer_indent_as_cfg)
@@ -439,10 +465,42 @@ local function buf_indent_change()
   set_buffer_indent_as_cfg(true)
 end
 
+local function buf_eolmode_change()
+  buffer._cfg_bfeol= toolbar.get_radio_val("bfeol")
+  --EOL mode
+  local neweol= buffer.EOL_CRLF
+  if buffer._cfg_bfeol == 2 then neweol= buffer.EOL_LF end
+  if neweol ~= buffer.eol_mode then
+    --EOL mode changed, update buffer
+    buffer.eol_mode= neweol
+    buffer:convert_eols(neweol)
+    --update UI
+    events.emit(events.UPDATE_UI)
+  end
+end
+
+local function buf_vieweol_change()
+  buffer.view_eol= toolbar.get_check_val("tbshoweol")
+end
+local function buf_viewws_change()
+  buffer.view_ws= toolbar.get_check_val("tbshowws") and buffer.WS_VISIBLEALWAYS or 0
+end
+local function buf_wrapmode_change()
+  buffer.wrap_mode = toolbar.get_check_val("tbwrap") and buffer.WRAP_WHITESPACE or 0
+end
+
+local function view_guides_change()
+  buffer.indentation_guides = toolbar.get_check_val("tbshowguid") and buffer.IV_LOOKBOTH or 0
+end
+local function view_virtspace_change()
+  buffer.virtual_space_options = toolbar.get_check_val("tbvirtspc") and buffer.VS_USERACCESSIBLE or 0
+end
+
 local function add_buffer_cfg_panel()
   add_config_tabgroup("Buffer", "Buffer configuration")
 
-  add_config_label("Indentation width")
+  add_config_label("INDENTATION")
+  add_config_label("Tab width")
   add_config_radio("bfindent", "Use Lexer default")
   cont_config_radio("Tab width: 2")
   cont_config_radio("Tab width: 3")
@@ -450,35 +508,44 @@ local function add_buffer_cfg_panel()
   cont_config_radio("Tab width: 8")
   set_notify_on_change("bfindent",buf_indent_change)
 
-  add_config_label("Indentation char",true)
+  add_config_label("Spaces/tabs")
   add_config_radio("bfusetab", "Use Lexer default")
   cont_config_radio("Spaces")
   cont_config_radio("Tabs")
   set_notify_on_change("bfusetab",buf_indent_change)
+
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Set as Lexer default", set_lexer_cfg, "Use current settings as Lexer default", "setlexercfg")
-  toolbar.set_buffer_cfg()
-end
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Convert indentation", textadept.editing.convert_indentation, "Adjust current buffer indentation", "setindentation")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 
-local function add_view_cfg_panel()
-  add_config_tabgroup("View", "View configuration")
+  add_config_label("EOL MODE",true)
+  if WIN32 then
+    add_config_radio("bfeol", "CR+LF (OS default)")
+    cont_config_radio("LF")
+  else
+    add_config_radio("bfeol", "CR+LF")
+    cont_config_radio("LF (OS default)")
+  end
+  set_notify_on_change("bfeol",buf_eolmode_change)
 
-  add_config_label("More radios")
-  add_config_radio("rad_c:1", "C radio option #1", "Radio test C1")
-  add_config_radio("rad_c:2", "C radio option #2", "Radio test C2", true)
-
-  add_config_label("Some checks",true)
-  add_config_check("chk_d", "Some option #1", "Check test 1", true)
+  add_config_label("VIEW OPTIONS",true)
+  add_config_label("Buffer")
+  add_config_check("tbshoweol", "View EOL", "", false, buf_vieweol_change)
+  add_config_check("tbshowws", "View Whitespace", "", false, buf_viewws_change)
+  add_config_check("tbwrap", "Wrap mode", "", false, buf_wrapmode_change)
+  if toolbar.html_toolbar_onoff ~= nil then
+    add_config_check("tbshowhtml", "Show HTML toolbar", "", false, toolbar.html_toolbar_onoff)
+  end
+  add_config_label("View")
+  add_config_check("tbshowguid", "Show Indent Guides", "", false, view_guides_change)
+  add_config_check("tbvirtspc", "Virtual Space", "", false, view_virtspace_change)
   add_config_separator()
-end
 
-local function add_project_cfg_panel()
-  add_config_tabgroup("Project", "Project configuration")
-  add_config_label("to do 1")
-  add_config_check("chk_a", "Some option #1", "Check test 1", false)
-  add_config_check("chk_b", "Some option #2", "Check test 2", true)
-  add_config_check("chk_c", "Some option #3", "Check test 3", false)
+  --show current buffer settings
+  toolbar.set_buffer_cfg()
 end
 
 local function add_toolbar_cfg_panel()
@@ -519,7 +586,7 @@ local function add_toolbar_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Reset editor", reload_theme, "Reset to apply the changes", "reload")
+  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload")
 end
 
 function toolbar.add_config_panel()
@@ -528,8 +595,6 @@ function toolbar.add_config_panel()
 
   toolbar.config_saveon=false --don't save this config options
   add_buffer_cfg_panel()  --BUFFER
-  add_view_cfg_panel()    --VIEW
-  add_project_cfg_panel() --PROJECT
   toolbar.config_saveon=true --resume saving
 
   add_toolbar_cfg_panel() --TOOLBAR

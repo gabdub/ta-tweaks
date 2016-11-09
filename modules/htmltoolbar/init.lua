@@ -131,8 +131,8 @@ if toolbar then
     toolbar.cmdtext("id",                 enc_html_id,          "HTML insert id: OFF",    "addid",    true)
     toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
     toolbar.addspace()
-    --modify view menu
-    local med=textadept.menu.menubar[_L['_View']]
+    --modify buffer menu
+    local med=textadept.menu.menubar[_L['_Buffer']]
     med[#med+1]= {''}
     med[#med+1]= {'View HTML Tool_Bar', toolbar.html_toolbar_onoff}
     toolbar.html_tb= true --on for now...
@@ -152,12 +152,11 @@ if toolbar then
 
   function toolbar.show_html_toolbar(lang)
     if lang ~= 'myproj' then --ignore project files
-      local on
-      if buffer.html_toolbar_on ~= nil then
-        on= buffer.html_toolbar_on  --keep buffer set
-      else --default: show only in html files
-        on= (lang == 'html')
+      if buffer.html_toolbar_on == nil then
+        --default: show only in html files
+        buffer.html_toolbar_on= (lang == 'html')
       end
+      local on= buffer.html_toolbar_on
       if on ~= toolbar.html_tb then
         toolbar.html_tb= on
         toolbar.sel_left_bar()
