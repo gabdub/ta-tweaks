@@ -412,15 +412,15 @@ if toolbar then
     toolbar.cmd("go-next",      Proj.goto_next_pos,  "Next position [Shift+F12]")
     Proj.update_go_toolbar()
     toolbar.addspace()
+    toolbar.cmd("document-new", Proj.new_file,   "New [Ctrl+N]")
   end
-  toolbar.cmd("document-new",     Proj.new_file,   "New [Ctrl+N]")
+
   toolbar.cmd("document-save",    io.save_file,    "Save [Ctrl+S]")
   toolbar.cmd("document-save-as", io.save_file_as, "Save as [Ctrl+Shift+S]")
   toolbar.addspace()
   toolbar.cmd("tog-book", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
-  if Proj then
-    toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")
-  end
+
+  if Proj then toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")  end
 
   toolbar.ready() --toolbars ready, show them
 end
