@@ -328,7 +328,7 @@ __Some examples using tabs and themes:__
 
 ![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win7.png "theme bar-th-dark")
 
-**theme: bar-th-dark with other background**
+**theme: bar-th-dark with a different background**
 
 ![theme bar-th-dark](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win8.png "theme bar-th-dark")
 
