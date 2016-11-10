@@ -3,28 +3,30 @@ ___This is a collection of my Textadept tweaks___:
 
 ___Textadept___ is a fast, minimalist, and remarkably extensible cross-platform text editor: http://foicica.com/textadept/
 
-  __goto_nearest__ (based on http://foicica.com/wiki/goto-nearest-occurrence): this module adds the following bindings:
-  * __F3__ goto nearest occurrence FORWARD
-  * __CTRL+F3__: goto nearest occurrence BACKWARD
-  * __ALT+F3__: goto nearest occurrence CHOOSE SEARCH OPTIONS
-  * __SHIFT+F3__: ASK + goto nearest occurrence FORWARD
-  * __CTRL+SHIFT+F3__: goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
-  * __SHIFT+ALT+F__: Search for text in all project files (requires project.lua)
+# goto_nearest module
+(based on http://foicica.com/wiki/goto-nearest-occurrence) this module adds the following bindings:
 
+* __F3__ goto nearest occurrence FORWARD
+* __CTRL+F3__: goto nearest occurrence BACKWARD
+* __ALT+F3__: goto nearest occurrence CHOOSE SEARCH OPTIONS
+* __SHIFT+F3__: ASK + goto nearest occurrence FORWARD
+* __CTRL+SHIFT+F3__: goto nearest occurrence TOGGLE SEARCH OPTIONS (soft <-> strict)
+* __SHIFT+ALT+F__: Search for text in all project files (requires project.lua)
 
 __Features:__
 
-  * Textadept version 8 and 9 compatible
-  * Quick search of the selected text (if not text is selected, repeat last search)
-  * All the buffers use the same 'last searched text' and search options
-  * Based on Ultra-Edit editor F3 search key
-  * Four search options:
-    * 'Word:no + Ignore case (soft match)'
-    * 'Word:no + Match case'
-    * 'Word:yes + Ignore case'
-    * 'Word:yes + Match case (strict match)'
+* Textadept version 8 and 9 compatible
+* Quick search of the selected text (if not text is selected, repeat last search)
+* All the buffers use the same 'last searched text' and search options
+* Based on Ultra-Edit editor F3 search key
+* Four search options:
+  * 'Word:no + Ignore case (soft match)'
+  * 'Word:no + Match case'
+  * 'Word:yes + Ignore case'
+  * 'Word:yes + Match case (strict match)'
 
 __Usage:__
+
 Copy _goto_nearest_ module into __~/.textadept/modules__ and add the following to your personal _init.lua_ file:
 ```lua
 require('goto_nearest')
@@ -35,12 +37,14 @@ _Optional:_
 keys.cf =  keys.sf3
 ```
 
-__ctrl_tab_mru__ : this module adds the following bindings:
+#ctrl_tab_mru module
+this module adds the following bindings:
 
 * __CTRL+TAB__: goto next buffer using a MRU list
 * __CTRL+SHIFT+TAB__: goto previous buffer
 
 __Features:__
+
 * Textadept version 8 and 9 compatible
 * Implements a more standard way to handle CTRL+TAB and CTRL+SHIFT+TAB
 * It travels the buffers in Most Recent Use order
@@ -48,12 +52,14 @@ __Features:__
 * Ignores project file and search results (_project.lua_)
 
 __Usage:__
+
 Copy _ctrl_tab_mru_ module into __~/.textadept/modules__ and add the following to your personal _init.lua_ file:
 ```lua
 require('ctrl_tab_mru')
 ```
 
-__project__ : this module adds the following bindings:
+# project module
+this module adds the following bindings:
 
 * __F4__: _(in project view)_ Toggle project file mode (edit / select)
 * __F4__: _(in a regular file)_ Go to project view
@@ -72,6 +78,7 @@ __project__ : this module adds the following bindings:
 * __CONTROL+PgDn__: Next buffer
 
 __Features:__
+
 * Textadept version 8 and 9 compatible
 * Allow to group files in projects
 * Use a simple text format (see _proj_data.lua_)
@@ -91,11 +98,13 @@ __Features:__
 * Edit menu: Trim trailing spaces
 
 __Usage:__
+
 Copy _project_ module into __~/.textadept/modules__ and the folders _themes_ and _lexers_ into __~/.textadept/__
 and add the following to your personal _init.lua_ file (or use the provided _init.lua_ file as an example):
 ```lua
 require('project')
 ```
+
 **SELECT Mode**
 
 ![select mode](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_proj_sel.png "Project in select mode")
@@ -117,9 +126,7 @@ Each toolbar can be used as you wish but the default implementation is as follow
 * #2: The horizontal bottom toolbar is used as a status bar replacement
 * #3: The vertical right toolbar is used as a configuration panel
 
-
 ![4 toolbars in action](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win12.png "4 toolbars in action")
-
 
 The _toolbar_ object adds the following functions to **textadept**:
 
@@ -181,14 +188,14 @@ __Usage:__
 * edit the current Textadept/src/textadept.c file, adding the lines shown in src/textadept.c that contains "USE_TA_TOOLBAR"
 * optionaly copy the lines that contains "UNUSED()" to supress some warnings when compiling on Win32
 * Compile Textadept: https://foicica.com/textadept/manual.html#Compiling
-* copy themes files in user's textadept folder (~/.textadept/toolbar) or choose one ZIP with icons from
-  (tatoolbar/images) and copy the icons to "Textadept/core/images/bar/" folder
-  (you can choose another icon location and set the path when calling toolbar.new())
+* copy themes files in user's textadept folder (~/.textadept/toolbar) or choose some icons from (toolbar/icons)
+  and copy them to "Textadept/core/images/bar/" folder (you can choose another icon location and set the path when calling toolbar.new())
 * copy _toolbar_ module into __~/.textadept/modules__ for theming and easy of use
 * optionaly copy _htmltoolbar_ module into __~/.textadept/modules__
 
+__Basic use:__
 
-* to create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
+* Create an empty horizontal toolbar (with 16x16 images), add this code to your init file:
 ```
 if toolbar then
   function toolbar.cmd(name,func,tooltip,icon)
@@ -217,7 +224,7 @@ if toolbar then
 end
 ```
 
-* then add some buttons:
+* Add some buttons:
 
 ```
   toolbar.cmd("document-new", buffer.new,      "New [Ctrl+N]") --icon equals name, get from images path
@@ -229,7 +236,7 @@ end
 
 NOTE: the icon images __must be PNG__ files. If only the icon name is given, the toolbar uses the images path given in the toolbar.new() 5th parameter (or "Textadept/core/images/bar" if not) and adds the name and the ".png" extension.
 
-* and some separators:
+* Add some separators:
 
 ```
   toolbar.seticon("TOOLBAR","myseparator",4) --optionally change the default separator image
@@ -238,7 +245,7 @@ NOTE: the icon images __must be PNG__ files. If only the icon name is given, the
   toolbar.addspace(0,true) --don't show an image in the middle
 ```
 
-* and code to enable/disable your buttons:
+* Add code to enable/disable your buttons:
 
 ```
   if toolbar then
@@ -275,8 +282,8 @@ __Some examples:__
 
 __Theming Features:__
 
-* Allows to have the same look and feel in different operating systems and match exactly the colors used in the editor
-* You can choose from different predefined themes or build your own (just copy one and edit it)
+* It allows to have the same look and feel on different operating systems and exactly match the colors used in the editor
+* You can choose between different predefined themes or create your own (just copy one and edit it)
 
 __Tabs Features:__
 
@@ -292,7 +299,7 @@ __Tabs Features:__
 * option to rearrange tabs by dragging
 * can have buttons on the left side
 * scroll bar buttons are shown when needed (mouse wheel can be used to scroll tabs)
-* every horizontal toolbar can have _one_ tab group (status-bar is actually a tab group)
+* every horizontal toolbar can have more than one tab group (status-bar is actually a tab group)
 * font size and y-position adjustment
 
 __Some examples using tabs and themes:__
@@ -337,9 +344,11 @@ __Some examples using tabs and themes:__
 # status bar
 
 __Features:__
+
 * Use the same theme as the toolbar
 * First field (ui.statusbartext) with tooltip support to allow read texts partially shown
-* click over a field to: goto line, select lexer, select EOL mode, select indentation and select encoding
+* Click over a field to: goto line, goto line+column, select lexer from a list, open configuration panel to
+  select EOL mode and indentation and select the current encoding from a list
 
 **default status-bar**
 
@@ -352,13 +361,13 @@ __Features:__
 
 # configuration panel
 
-The configuration panel allows to set options in groups organized in tabs.
+The configuration panel allows you to configure options in groups organized in tabs. It's the easiest way to use __tatoolbar__.
 
 ![config panel](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win13.png "config panel")
 
 The configuration settings are kept in __~/.textadept/toolbar_config__.
 
-The user can add more panels and choose what options to save (comments are added automaticaly). For example:
+The user can add more panels and choose which options to save (comments are added automatically). For example:
 ```
 ;===[ Toolbar ]===
 ;THEME
@@ -380,3 +389,40 @@ ansi_c:s4
 lua:s4
 text:s2
 ```
+
+The panel simplifies the creation of the toolbar because almost all the options are set from the tab "Toolbar":
+```
+if toolbar then
+  require('toolbar')
+  require('htmltoolbar')
+
+  toolbar.set_theme_from_config() --set the configured theme
+
+  --change theme defaults here
+  --toolbar.back[2]="ttb-back2-same"
+  --toolbar.back[2]="ttb-back2-down"
+
+  toolbar.create_from_config()  --create the configured toolbars
+
+  --add some buttons
+  if Proj then
+    toolbar.cmd("tog-projview", Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
+    toolbar.addspace(4,true)
+    toolbar.cmd("go-previous",  Proj.goto_prev_pos,  "Previous position [Shift+F11]")
+    toolbar.cmd("go-next",      Proj.goto_next_pos,  "Next position [Shift+F12]")
+    Proj.update_go_toolbar()
+    toolbar.addspace()
+  end
+  toolbar.cmd("document-new",     Proj.new_file,   "New [Ctrl+N]")
+  toolbar.cmd("document-save",    io.save_file,    "Save [Ctrl+S]")
+  toolbar.cmd("document-save-as", io.save_file_as, "Save as [Ctrl+Shift+S]")
+  toolbar.addspace()
+  toolbar.cmd("tog-book", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
+  if Proj then
+    toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")
+  end
+
+  toolbar.ready() --toolbars ready, show them
+end
+```
+
