@@ -78,7 +78,11 @@
 #define TTBI_TB_TXT_HPR1    27 //hi-pressed text button1
 #define TTBI_TB_TXT_HPR2    28 //hi-pressed text button2
 #define TTBI_TB_TXT_HPR3    29 //hi-pressed text button3
-#define TTBI_TB_N           30
+#define TTBI_TB_HINORMAL    30 //normal button back
+#define TTBI_TB_TXT_NOR1    31 //normal text button1 back
+#define TTBI_TB_TXT_NOR2    32 //normal text button2 back
+#define TTBI_TB_TXT_NOR3    33 //normal text button3 back
+#define TTBI_TB_N           34
 
 struct toolbar_img
 {

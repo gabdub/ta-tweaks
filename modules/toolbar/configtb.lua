@@ -112,6 +112,9 @@ local function add_config_start(startgroup)
   toolbar.tabwidthmin=0
   toolbar.img[1]= "ttb-csep"
   toolbar.img[4]= "ttb-ctab-back"
+  toolbar.img[31]= "ttb-back-no1"
+  toolbar.img[32]= "ttb-back-no2"
+  toolbar.img[33]= "ttb-back-no3"
   if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
   if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
   if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end

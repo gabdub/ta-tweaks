@@ -2114,9 +2114,10 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 {
   UNUSED(__);
   struct toolbar_item *p, *phi, *t, *ta;
-  int h, grayed, x, y, xa, nhide, x0, y0, wt, ht;
+  int h, grayed, x, y, xa, nhide, x0, y0, x1, wt, ht;
   struct color3doubles *color;
   struct toolbar_group *g;
+  struct toolbar_img * bback;
 
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T == NULL ){
@@ -2262,7 +2263,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
           for( p= g->list; (p != NULL); p= p->next ){
             x= x0 + p->imgx;
             y= y0 + p->imgy;
-            if( need_redraw( event, x, y, x0+p->barx2, y0+p->bary2) ){
+            if( need_redraw( event, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
               h= TTBI_NORMAL;
               grayed= 0;
               if( (p->flags & TTBF_TEXT) == 0 ){
@@ -2274,9 +2275,22 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
                     grayed= 1; //there is no disabled image, gray it
                   }
                 }
+                if( (phi != p) && ((p->flags & TTBF_SELECTABLE) != 0) ){ //draw a normal button back if not hilighted
+                  draw_img(cr, get_group_img(g,TTBI_TB_HINORMAL), x0+p->barx1, y0+p->bary1, 0 );
+                }
                 draw_img(cr, get_item_img(p,h), x, y, grayed );
               }else{
                 //text button
+                if( (phi != p) && ((p->flags & TTBF_SELECTABLE) != 0) ){ //draw a normal text button back if not hilighted
+                  h= TTBI_TB_TXT_NOR1;
+                  if( get_group_imgW(g,h) > 0 ){
+                    draw_img(cr, get_group_img(g,h), x0+p->barx1, y0+p->bary1, 0 );
+                    x1= x0 + p->barx1 + p->prew;
+                    xa= x0 + p->barx2 - p->postw;
+                    draw_fill_img(cr, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
+                    draw_img(cr, get_group_img(g,h+2), xa, y0+p->bary1, 0 );
+                  }
+                }
                 color= &(g->txttextcolN);
                 if( (p->flags & TTBF_GRAYED) != 0){
                   color= &(g->txttextcolG);

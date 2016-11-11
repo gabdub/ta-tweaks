@@ -392,7 +392,7 @@ if toolbar then
     toolbar.statcolor_hilight= 0
     --images
     toolbar.img= {}
-    for i= 1, 29 do
+    for i= 1, 33 do
       toolbar.img[i]= ""
     end
     toolbar.back= {}
