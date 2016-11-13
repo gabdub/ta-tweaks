@@ -544,7 +544,8 @@ local function add_buffer_cfg_panel()
   toolbar.cmdtext("Set as Lexer default", set_lexer_cfg, "Use current settings as Lexer default", "setlexercfg")
   toolbar.gotopos(toolbar.cfgpnl_xtext+(toolbar.cfgpnl_width/2), toolbar.cfgpnl_y)
   toolbar.cmdtext("Convert indentation", textadept.editing.convert_indentation, "Adjust current buffer indentation", "setindentation")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 20
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
 
   --show current buffer settings
   toolbar.set_buffer_cfg()
@@ -589,6 +590,8 @@ local function add_toolbar_cfg_panel()
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
 end
 
 function toolbar.add_config_panel()
