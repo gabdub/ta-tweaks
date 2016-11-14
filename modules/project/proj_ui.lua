@@ -45,26 +45,26 @@ local function proj_context_menu_init(num)
     --first time here, add project menu at the end of context menu
     Proj.cmenu_idx= #textadept.menu.context_menu +1
     --add Project to menubar (keep Help at the end)
-    n= #textadept.menu.menubar
-    textadept.menu.menubar[n+1]= textadept.menu.menubar[n]
-    textadept.menu.menubar[n]= {
-      title='Project',
-      {_L['_New'],            Proj.new_project},
-      {_L['_Open'],           Proj.open_project},
-      {_L['Open _Recent...'], Proj.open_recent_project},
-      {_L['_Close'],          Proj.close_project},
-      {''},
-      {'Project _Search',     Proj.search_in_files },
-      {'Goto _Tag',           Proj.goto_tag},
-      {'S_ave position',      Proj.store_current_pos},
-      {'_Prev position',      Proj.goto_prev_pos},
-      {'Ne_xt position',      Proj.goto_next_pos},
-    }
+    --n= #textadept.menu.menubar
+    --textadept.menu.menubar[n+1]= textadept.menu.menubar[n]
+    --textadept.menu.menubar[n]= {
+      --title='_Project',
+      --{_L['_New'],            Proj.new_project},
+      --{_L['_Open'],           Proj.open_project},
+      --{_L['Open _Recent...'], Proj.open_recent_project},
+      --{_L['_Close'],          Proj.close_project},
+      --{''},
+      --{'Project _Search',     Proj.search_in_files },
+      --{'Goto _Tag',           Proj.goto_tag},
+      --{'S_ave position',      Proj.store_current_pos},
+      --{'_Prev position',      Proj.goto_prev_pos},
+      --{'Ne_xt position',      Proj.goto_next_pos},
+    --}
 
     --modify edit menu
-    local med=textadept.menu.menubar[_L['_Edit']]
-    med[#med+1]= {''}
-    med[#med+1]= {'Trim trailing spaces', Proj.trim_trailing_spaces}
+    --local med=textadept.menu.menubar[_L['_Edit']]
+    --med[#med+1]= {''}
+    --med[#med+1]= {'Trim trailing spaces', Proj.trim_trailing_spaces}
   end
   --ok, change the context menu
   return true
@@ -682,40 +682,40 @@ function Proj.qopen_curdir()
   end
 end
 
-local function insert_menu(menu,pos,item)
-  local i= #menu
-  while i >= pos do
-    menu[i+1]=menu[i]
-    i=i-1
-  end
-  menu[pos]=item
-end
+--local function insert_menu(menu,pos,item)
+  --local i= #menu
+  --while i >= pos do
+    --menu[i+1]=menu[i]
+    --i=i-1
+  --end
+  --menu[pos]=item
+--end
 
 --replace some menu commands with the corresponding project version
-function Proj.change_menu_cmds()
-  local menu= textadept.menu.menubar[_L['_File']]
-  menu[_L['_New']][2]= Proj.new_file
-  menu[_L['_Open']][2]= Proj.open_file
-  menu[_L['Open _Recent...']][2]= Proj.open_recent_file
-  menu[_L['_Close']][2]= Proj.close_buffer
-  menu[_L['Close All']][2]= Proj.close_all_buffers
-
-  local menu= textadept.menu.tab_context_menu
-  insert_menu(menu,2,{'Close Others', Proj.close_others})
-  insert_menu(menu,3,{"Mark as don't close", Proj.keep_thisbuffer})
-  insert_menu(menu,4,{_L['Close All'], Proj.onlykeep_projopen})
-
-  menu= textadept.menu.menubar[_L['_Buffer']]
-  menu[_L['_Next Buffer']][2]= Proj.next_buffer
-  menu[_L['_Previous Buffer']][2]= Proj.prev_buffer
-  menu[_L['_Switch to Buffer...']][2]= Proj.switch_buffer
-
-  menu= textadept.menu.menubar[_L['_Tools']][_L['Quick _Open']]
-  menu[_L['Quickly Open _User Home']][2]= Proj.qopen_user
-  menu[_L['Quickly Open _Textadept Home']][2]= Proj.qopen_home
-  menu[_L['Quickly Open _Current Directory']][2]= Proj.qopen_curdir
-  menu[_L['Quickly Open Current _Project']][2]= Proj.snapopen
-end
+--function Proj.change_menu_cmds()
+  --local menu= textadept.menu.menubar[_L['_File']]
+  --menu[_L['_New']][2]= Proj.new_file
+  --menu[_L['_Open']][2]= Proj.open_file
+  --menu[_L['Open _Recent...']][2]= Proj.open_recent_file
+  --menu[_L['_Close']][2]= Proj.close_buffer
+  --menu[_L['Close All']][2]= Proj.close_all_buffers
+--
+  --local menu= textadept.menu.tab_context_menu
+  --insert_menu(menu,2,{'Close Others', Proj.close_others})
+  --insert_menu(menu,3,{"Mark as don't close", Proj.keep_thisbuffer})
+  --insert_menu(menu,4,{_L['Close All'], Proj.onlykeep_projopen})
+--
+  --menu= textadept.menu.menubar[_L['_Buffer']]
+  --menu[_L['_Next Buffer']][2]= Proj.next_buffer
+  --menu[_L['_Previous Buffer']][2]= Proj.prev_buffer
+  --menu[_L['_Switch to Buffer...']][2]= Proj.switch_buffer
+--
+  --menu= textadept.menu.menubar[_L['_Tools']][_L['Quick _Open']]
+  --menu[_L['Quickly Open _User Home']][2]= Proj.qopen_user
+  --menu[_L['Quickly Open _Textadept Home']][2]= Proj.qopen_home
+  --menu[_L['Quickly Open _Current Directory']][2]= Proj.qopen_curdir
+  --menu[_L['Quickly Open Current _Project']][2]= Proj.snapopen
+--end
 
 function Proj.search_in_files()
   if Proj.do_search_in_files then --goto_nearest module?

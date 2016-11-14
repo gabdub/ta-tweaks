@@ -132,9 +132,9 @@ if toolbar then
     toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
     toolbar.addspace()
     --modify buffer menu
-    local med=textadept.menu.menubar[_L['_Buffer']]
-    med[#med+1]= {''}
-    med[#med+1]= {'View HTML Tool_Bar', toolbar.html_toolbar_onoff}
+    --local med=textadept.menu.menubar[_L['_Buffer']]
+    --med[#med+1]= {''}
+    --med[#med+1]= {'View HTML Tool_Bar', toolbar.html_toolbar_onoff}
     toolbar.html_tb= true --on for now...
   end
 
