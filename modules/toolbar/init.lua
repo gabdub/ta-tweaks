@@ -188,20 +188,15 @@ if toolbar then
     end
   end
 
-  local function choose_menu_opt(submenu,cant)
-    local menu= textadept.menu.menubar[_L['_Buffer']]
-    local sm= menu[submenu]
-    local options= {}
-    for i=1,cant do
-      options[i]= string.gsub( sm[i][1], "_", "" )
-    end
+  local function choose_indent()
+    local options= {'UTF-8','ASCII','ISO-8859-1','UTF-16LE'}
     local button, i = ui.dialogs.filteredlist{
-      title = "Select " .. string.gsub(submenu, "_", "" ),
+      title = "Select buffer enconding",
       columns = _L['Name'],
       items = options }
     if button == 1 and i then
-      local cmd= sm[i][2]
-      if cmd then cmd() end
+      buffer:set_encoding(options[i])
+      events.emit(events.UPDATE_UI) -- for updating statusbar
     end
   end
 
@@ -224,14 +219,10 @@ if toolbar then
         end
       elseif ntab == 4 then --lexer
         textadept.file_types.select_lexer()
-      elseif ntab == 5 then --eol
-        --choose_menu_opt(_L['_EOL Mode'],2)
-        toolbar.toggle_buffer_configtab()
-      elseif ntab == 6 then --indent
-        --choose_menu_opt(_L['_Indentation'],6)
+      elseif ntab == 5 or ntab == 6 then --eol / indent
         toolbar.toggle_buffer_configtab()
       elseif ntab == 7 then --encoding
-        choose_menu_opt(_L['E_ncoding'],5)
+        choose_indent()
       end
     elseif ntoolbar == 3 then
       --config panel
