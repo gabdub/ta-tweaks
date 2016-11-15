@@ -434,7 +434,7 @@ function toolbar.set_buffer_cfg()
 end
 
 --only update when the config is open
-local function update_buffer_cfg()
+function update_buffer_cfg()
   if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg() end
 end
 
@@ -462,6 +462,21 @@ end
 
 events.connect(events.LEXER_LOADED, set_buffer_indent_as_cfg)
 
+function toolbar.setcfg_from_tabwidth()
+  if buffer.tab_width == 2 then buffer._cfg_bfindent= 2
+  elseif buffer.tab_width == 3 then buffer._cfg_bfindent= 3
+  elseif buffer.tab_width == 4 then buffer._cfg_bfindent= 4
+  elseif buffer.tab_width == 8 then buffer._cfg_bfindent= 5
+  else buffer._cfg_bfindent= 1 end
+  update_buffer_cfg()
+end
+
+function toolbar.setcfg_from_usetabs()
+  if buffer.use_tabs then buffer._cfg_bfusetab= 3
+  else buffer._cfg_bfusetab= 2 end
+  update_buffer_cfg()
+end
+
 local function buf_indent_change()
   buffer._cfg_bfindent= toolbar.get_radio_val("bfindent")
   buffer._cfg_bfusetab= toolbar.get_radio_val("bfusetab")
@@ -482,6 +497,12 @@ local function buf_eolmode_change()
   end
 end
 
+function toolbar.setcfg_from_eolmode()
+  if buffer.eol_mode == buffer.EOL_LF then buffer._cfg_bfeol= 2
+  else buffer._cfg_bfeol= 1 end
+  update_buffer_cfg()
+end
+
 local function buf_vieweol_change()
   buffer.view_eol= toolbar.get_check_val("tbshoweol")
 end
@@ -490,6 +511,10 @@ local function buf_viewws_change()
 end
 local function buf_wrapmode_change()
   buffer.wrap_mode = toolbar.get_check_val("tbwrap") and buffer.WRAP_WHITESPACE or 0
+end
+
+function toolbar.setcfg_from_view_checks()
+  update_buffer_cfg()
 end
 
 local function view_guides_change()
