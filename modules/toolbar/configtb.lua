@@ -381,6 +381,7 @@ events.connect(events.QUIT, function() toolbar.save_config() end, 1)
 local function reload_theme()
   --Reset to apply the changes
   toolbar.save_config()
+  buffer.reopen_config_panel= true
   reset()
 end
 
@@ -621,7 +622,7 @@ end
 
 function toolbar.add_config_panel()
   --create the "vertical right (config)" panel
-  add_config_start(1) --start in tabgroup #1
+  add_config_start( (buffer.reopen_config_panel and 2 or 1) ) --start panel: BUFFER / TOOLBAR
 
   toolbar.config_saveon=false --don't save this config options
   add_buffer_cfg_panel()  --BUFFER
@@ -637,8 +638,13 @@ function toolbar.add_config_panel()
     toolbar.set_radio_val("tbvertbar",1)
   end
 
-  --hide the config panel for now
+  --hide the config panel
   toolbar.show(false)
+  if buffer.reopen_config_panel then
+    --reopen it after theme apply
+    buffer.reopen_config_panel= nil
+    toolbar.toggle_showconfig()
+  end
 end
 
 --------------------------------------------------------------
