@@ -9,15 +9,14 @@ local function proj_show_sel_w_focus(buff)
   buff.margin_width_n[0] = 0
   --highlight current line as selected
   buff.caret_width= 0
-  buff.caret_line_back = 0x88acdf --property['color.base10'] -0x202020
+  buff.caret_line_back = buff.property['color.prj_sel_bar']
 end
 
---lost focus: if project is in SELECTION mode change current line
-function Proj.show_lost_focus(p_buffer)
-  if (Proj.updating_ui == 0 and buffer._project_select) or (p_buffer ~= nil) then
-    if p_buffer == nil then p_buffer= buffer end
-    -- project in SELECTION mode without focus--
-    p_buffer.caret_line_back = 0xa8ccff --property['color.base10']
+-- project in SELECTION mode without focus--
+function Proj.show_lost_focus(buff)
+  if (Proj.updating_ui == 0 and buffer._project_select) or (buff ~= nil) then
+    if buff == nil then buff= buffer end
+    buff.caret_line_back = buff.property['color.prj_sel_bar_nof']
   end
 end
 
@@ -29,7 +28,7 @@ local function proj_show_default(buff)
   buff.margin_width_n[0] = width + (not CURSES and 4 or 0)
   --return to default
   buff.caret_width= 2
-  buff.caret_line_back = 0xf5f9ff --property['color.base06']
+  buff.caret_line_back = buff.property['color.curr_line_back']
 end
 
 -----------------MENU/CONTEXT MENU-------------------
@@ -44,8 +43,10 @@ local function proj_context_menu_init(num)
   if Proj.cmenu_idx == nil then
     --first time here, add project menu at the end of context menu
     Proj.cmenu_idx= #textadept.menu.context_menu +1
+
+    --moved to proj_menu to speed up reset
     --add Project to menubar (keep Help at the end)
-    --n= #textadept.menu.menubar
+    --local n= #textadept.menu.menubar
     --textadept.menu.menubar[n+1]= textadept.menu.menubar[n]
     --textadept.menu.menubar[n]= {
       --title='_Project',
@@ -60,7 +61,6 @@ local function proj_context_menu_init(num)
       --{'_Prev position',      Proj.goto_prev_pos},
       --{'Ne_xt position',      Proj.goto_next_pos},
     --}
-
     --modify edit menu
     --local med=textadept.menu.menubar[_L['_Edit']]
     --med[#med+1]= {''}
