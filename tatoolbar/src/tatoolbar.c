@@ -2080,7 +2080,7 @@ static void draw_tabG(struct toolbar_group *G, cairo_t *cr, struct toolbar_item 
     draw_img(cr, get_group_img(G,hc), x3, y, 0 );
   }
 
-  draw_txt(cr, t->text, x+t->imgx, y+t->imgy, y, x3-x, get_group_imgH(G,TTBI_TB_NTAB2), color, G->tabfontsz, 0 );
+  draw_txt(cr, t->text, x+t->imgx, y+t->imgy, y, x3-x-t->imgx, get_group_imgH(G,TTBI_TB_NTAB2), color, G->tabfontsz, 0 );
 }
 
 /* ============================================================================= */
