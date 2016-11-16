@@ -40,6 +40,7 @@ property['color.brace_ok']        = 0x98a12a
 property['color.function']        = 0x800000
 property['color.keyword']         = 0x800000
 property['color.embedded']        = 0x8236d3
+property['color.operator']        = 0x101000
 --Diff lexer
 property['color.red']             = 0x2f32dc
 property['color.green']           = 0x006030
@@ -55,6 +56,8 @@ end
 
 -- Token styles.
 property['style.nothing'] = ''
+property['style.whitespace'] = ''
+property['style.identifier'] = ''
 property['style.class'] = 'fore:%(color.class)'
 property['style.comment'] = 'fore:%(color.comment)'
 property['style.constant'] = 'fore:%(color.constant)'
@@ -63,15 +66,13 @@ property['style.function'] = 'fore:%(color.function)'
 property['style.keyword'] = 'fore:%(color.keyword)'
 property['style.label'] = 'fore:%(color.label)'
 property['style.number'] = 'fore:%(color.number)'
-property['style.operator'] = 'fore:%(color.text_fore)'
+property['style.operator'] = 'fore:%(color.operator)'
 property['style.regex'] = 'fore:%(color.regex)'
 property['style.string'] = 'fore:%(color.string)'
 property['style.preprocessor'] = 'fore:%(color.preprocessor)'
 property['style.type'] = 'fore:%(color.type)'
 property['style.variable'] = 'fore:%(color.variable)'
-property['style.whitespace'] = ''
 property['style.embedded'] = 'fore:%(color.embedded),back:%(color.curr_line_back)'
-property['style.identifier'] = '%(style.nothing)'
 
 -- Predefined styles.
 property['style.default'] = 'font:%(font),size:%(fontsize),fore:%(color.text_fore),back:%(color.text_back)'
