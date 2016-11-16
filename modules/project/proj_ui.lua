@@ -682,15 +682,7 @@ function Proj.qopen_curdir()
   end
 end
 
---local function insert_menu(menu,pos,item)
-  --local i= #menu
-  --while i >= pos do
-    --menu[i+1]=menu[i]
-    --i=i-1
-  --end
-  --menu[pos]=item
---end
-
+--moved to proj_menu to speed up reset--
 --replace some menu commands with the corresponding project version
 --function Proj.change_menu_cmds()
   --local menu= textadept.menu.menubar[_L['_File']]
@@ -701,9 +693,9 @@ end
   --menu[_L['Close All']][2]= Proj.close_all_buffers
 --
   --local menu= textadept.menu.tab_context_menu
-  --insert_menu(menu,2,{'Close Others', Proj.close_others})
-  --insert_menu(menu,3,{"Mark as don't close", Proj.keep_thisbuffer})
-  --insert_menu(menu,4,{_L['Close All'], Proj.onlykeep_projopen})
+  --table.insert(menu,2,{'Close Others', Proj.close_others})
+  --table.insert(menu,3,{"Mark as don't close", Proj.keep_thisbuffer})
+  --table.insert(menu,4,{_L['Close All'], Proj.onlykeep_projopen})
 --
   --menu= textadept.menu.menubar[_L['_Buffer']]
   --menu[_L['_Next Buffer']][2]= Proj.next_buffer
