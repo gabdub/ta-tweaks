@@ -94,7 +94,7 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_chkval={}
   toolbar.cfgpnl_chknotify={}
   toolbar.cfgpnl_savelst={}
-  toolbar.config_saveon=true
+  toolbar.config_saveon=true  --save config options by default
 
   toolbar.new(toolbar.cfgpnl_width, 24, 16, 3, toolbar.themepath)
   toolbar.current_toolbar= 3
@@ -274,6 +274,27 @@ function toolbar.get_radio_val(name,maxnum)
   return 0
 end
 
+local function changecolor_clicked(name)
+  ui.statusbar_text= "color clicked"
+end
+
+local function add_config_color(propname, text, tooltip)
+  if tooltip == nil then tooltip="" end
+  local prop= "color."..propname
+  local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
+  local rgbcolor= ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
+  --text
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext, true)
+  --change color button
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
+  toolbar.cmd(prop, changecolor_clicked, tooltip, "colorn")
+  toolbar.setbackcolor(prop, rgbcolor, true)
+  toolbar.setthemeicon(prop, "colorh", 2)
+  toolbar.setthemeicon(prop, "colorp", 3)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+end
+
 local function _add_config_radio(name,text,tooltip,checked)
   if checked == nil then checked=false end
   if tooltip == nil then tooltip="" end
@@ -381,7 +402,7 @@ events.connect(events.QUIT, function() toolbar.save_config() end, 1)
 local function reload_theme()
   --Reset to apply the changes
   toolbar.save_config()
-  buffer.reopen_config_panel= true
+  buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
   reset()
 end
 
@@ -526,6 +547,7 @@ local function view_virtspace_change()
 end
 
 local function add_buffer_cfg_panel()
+  toolbar.config_saveon=false --don't save the config options of this panel
   add_config_tabgroup("Buffer", "Buffer configuration")
 
   add_config_label("VIEW OPTIONS")
@@ -578,6 +600,7 @@ local function add_buffer_cfg_panel()
 end
 
 local function add_toolbar_cfg_panel()
+  toolbar.config_saveon=true --save the config options of this panel
   add_config_tabgroup("Toolbar", "Toolbar configuration")
 
   add_config_label("THEME")
@@ -615,20 +638,46 @@ local function add_toolbar_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload")
+  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload1")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
+end
+
+local function add_theme_cfg_panel()
+  toolbar.config_saveon=false --don't save the config options of this panel
+  add_config_tabgroup("Theme", "Editor theme configuration")
+
+  add_config_label("COLORS")
+  add_config_color("text_fore", "Default text (fore)")
+  add_config_color("text_back", "Default text (back)")
+  add_config_color("curr_line_back", "Current line (back)")
+  add_config_color("caret", "Caret")
+  add_config_color("selection_fore", "Selection (fore)")
+  add_config_color("selection_back", "Selection (back)")
+  add_config_color("hilight", "Highlight (back)")
+  add_config_color("placeholder", "Placeholder (back)")
+  add_config_color("find", "Find (back)")
+  --add_config_color("", " (fore)")
+  --add_config_color("", " (back)")
+  --add_config_color("", " (fore)")
+  --add_config_color("", " (back)")
+  --add_config_color("", " (fore)")
+  --add_config_color("", " (back)")
+
+  add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload2")
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
   add_config_separator()
 end
 
 function toolbar.add_config_panel()
   --create the "vertical right (config)" panel
-  add_config_start( (buffer.reopen_config_panel and 2 or 1) ) --start panel: BUFFER / TOOLBAR
+  add_config_start( (buffer.reopen_config_panel or 1) ) --start panel
 
-  toolbar.config_saveon=false --don't save this config options
   add_buffer_cfg_panel()  --BUFFER
-  toolbar.config_saveon=true --resume saving
-
   add_toolbar_cfg_panel() --TOOLBAR
+  add_theme_cfg_panel()   --THEME
 
   --load config settings / set toolbar controls
   toolbar.load_config()
