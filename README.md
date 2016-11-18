@@ -162,6 +162,8 @@ __buttons__
   4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed,
   24-25-26=hilighted text button, 27-28-29=hilight as pressed text button)
+* toolbar._setbackcolor(button-name,color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a button's background color
+* toolbar._setbackcolor("GROUP"/"TOOLBAR",color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a group's or toolbar's background color
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ changes a button's tooltip
 * toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ changes a text button's text (and tooltip)
 * toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ changes the default text buttons font size and colors in the current edited toolbar

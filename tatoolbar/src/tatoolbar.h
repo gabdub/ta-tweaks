@@ -118,6 +118,7 @@ struct toolbar_item
   int maxwidth;       //max tab width
   int prew, postw;    //pre and post width (used in tabs and buttons)
   struct toolbar_img img[TTBI_NODE_N];
+  int back_color;     //-1:not set, 0x00RRGGBB
 };
 
 struct toolbar_group
@@ -195,6 +196,7 @@ struct toolbar_group
 
   //group images (use toolbar images if NULL)
   struct toolbar_img img[TTBI_TB_N];
+  int back_color;     //-1:not set, 0x00RRGGBB
 };
 
 struct toolbar_data
@@ -224,6 +226,7 @@ struct toolbar_data
 
   //toolbar images
   struct toolbar_img img[TTBI_TB_N];
+  int back_color;     //-1:not set, 0x00RRGGBB
 };
 
 struct all_toolbars_data

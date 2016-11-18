@@ -136,6 +136,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->yoff= g->xoff;
     g->xnew= g->xmargin;
     g->ynew= g->ymargin;
+    g->back_color= -1;  //not set
 
     //add the group to the end of the list
     if( T->group_last != NULL ){
@@ -221,6 +222,7 @@ static struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name
       set_text_bt_width(p);
       p->flags |= TTBF_TEXT;
     }
+    p->back_color= -1;  //not set
     if( G->isvertical ){
       G->ynew= p->bary2;
     }else{
@@ -253,6 +255,7 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
     }
     p->minwidth= G->tabminwidth;
     p->maxwidth= G->tabmaxwidth;
+    p->back_color= -1;  //not set
 
     //add the tab to the end of the list
     if( G->list_last != NULL ){
@@ -1454,6 +1457,7 @@ static void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, c
     //set defaults
     T->buttonsize= buttonsize;
     T->imgsize= imgsize;
+    T->back_color= -1;  //not set
     //auto-create the first group
     G= add_groupT(T, TTBF_GRP_AUTO);
     gtk_widget_set_size_request(T->draw, T->barwidth, T->barheight);
@@ -1478,6 +1482,31 @@ static void ttb_change_button_imgT(struct toolbar_data *T, const char *name, int
       if( set_item_img( p, nimg, img ) ){
         redraw_item(p);
       }
+    }
+  }
+}
+
+static void ttb_set_back_colorT(struct toolbar_data *T, const char *name, int color, int keepback )
+{
+  if( strcmp(name, "TOOLBAR") == 0 ){
+    T->back_color= color;
+    if( !keepback ){
+      set_toolbar_img( T, TTBI_TB_BACKGROUND, NULL );
+    }
+    redraw_toolbar(T);
+  }else if( strcmp(name, "GROUP") == 0 ){
+    if( T->curr_group != NULL ){
+      T->curr_group->back_color= color;
+      if( !keepback ){
+        set_group_img( T->curr_group, TTBI_TB_BACKGROUND, NULL );
+      }
+      redraw_group(T->curr_group);
+    }
+  }else{
+    struct toolbar_item * p= item_from_nameT(T, name);
+    if( p != NULL ){
+      p->back_color= color;
+      redraw_item(p);
     }
   }
 }
@@ -1999,6 +2028,18 @@ static void draw_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int g
   }
 }
 
+static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h )
+{
+  struct color3doubles c;
+
+  if( color != -1 ){
+    setrgbcolor( color, &c );
+    cairo_set_source_rgb(ctx, c.R, c.G, c.B );
+    cairo_rectangle(ctx, x, y, w, h);
+    cairo_fill(ctx);
+  }
+}
+
 static void draw_fill_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int w, int h )
 {
   if( pti->fname != NULL ){
@@ -2114,7 +2155,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 {
   UNUSED(__);
   struct toolbar_item *p, *phi, *t, *ta;
-  int h, grayed, x, y, xa, nhide, x0, y0, x1, wt, ht;
+  int h, grayed, x, y, xa, nhide, x0, y0, x1, wt, ht, hibackpainted;
   struct color3doubles *color;
   struct toolbar_group *g;
   struct toolbar_img * bback;
@@ -2123,6 +2164,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   if( T == NULL ){
     return FALSE;
   }
+  hibackpainted= 0;
 
   if( (T->barwidth < 0) || (T->barheight < 0) ){
     T->barwidth=  widget->allocation.width;
@@ -2132,22 +2174,23 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   }
 
   cairo_t *cr = gdk_cairo_create(widget->window);
-  //draw background image (if any)
+  //paint toolbar back color if set
+  draw_fill_color(cr, T->back_color, 0, 0, T->barwidth, T->barheight );
+  //draw toolbar background image (if any)
   draw_fill_img(cr, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
-  //draw group backgrounds (if any)
+  //draw groups back color / background (if any)
   for( g= T->group; (g != NULL); g= g->next ){
     if( (g->flags & (TTBF_HIDDEN|TTBF_GRP_TABBAR)) == 0 ){
-      if(g->img[TTBI_TB_BACKGROUND].width > 0){
+      if( need_redraw( event, g->barx1, g->bary1, g->barx2, g->bary2) ){
         x0= g->barx1;
         y0= g->bary1;
-        if( need_redraw( event, x0, y0, g->barx2, g->bary2) ){
-          wt= g->barx2 - g->barx1;
-          ht= g->bary2 - g->bary1;
-          //cairo_save(cr);
-          //cairo_rectangle(cr, x0, y0, wt, ht );
-          //cairo_clip(cr);
+        wt= g->barx2 - g->barx1;
+        ht= g->bary2 - g->bary1;
+        //paint back color if set
+        draw_fill_color(cr, g->back_color, x0, y0, wt, ht );
+        //draw background image (if any)
+        if(g->img[TTBI_TB_BACKGROUND].width > 0){
           draw_fill_img(cr, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
-          //cairo_restore(cr);
         }
       }
     }
@@ -2172,6 +2215,9 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
         h= TTBI_HILIGHT; //normal hilight (and no other button is pressed)
       }
       if( h >= 0){
+        hibackpainted= 1;
+        //paint back color if set
+        draw_fill_color(cr, phi->back_color, x, y, phi->barx2-phi->barx1, phi->bary2-phi->bary1 );
         if( (phi->flags & TTBF_TEXT) == 0 ){
           //graphic button
           draw_img(cr, get_item_img(phi,h), x, y, 0 );
@@ -2266,6 +2312,27 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
             if( need_redraw( event, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
               h= TTBI_NORMAL;
               grayed= 0;
+              //paint back color / background if set and wasn't painted by highlight
+              if( (phi != p) || (!hibackpainted) ){
+                draw_fill_color(cr, p->back_color, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1 );
+                //draw a normal button background if the button is selectable
+                if( (p->flags & TTBF_SELECTABLE) != 0 ){
+                  if( (p->flags & TTBF_TEXT) == 0 ){
+                    //graphic button
+                    draw_img(cr, get_group_img(g,TTBI_TB_HINORMAL), x0+p->barx1, y0+p->bary1, 0 );
+                  }else{
+                    //text button
+                    h= TTBI_TB_TXT_NOR1;
+                    if( get_group_imgW(g,h) > 0 ){
+                      draw_img(cr, get_group_img(g,h), x0+p->barx1, y0+p->bary1, 0 );
+                      x1= x0 + p->barx1 + p->prew;
+                      xa= x0 + p->barx2 - p->postw;
+                      draw_fill_img(cr, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
+                      draw_img(cr, get_group_img(g,h+2), xa, y0+p->bary1, 0 );
+                    }
+                  }
+                }
+              }
               if( (p->flags & TTBF_TEXT) == 0 ){
                 //graphic button
                 if( (p->flags & TTBF_GRAYED) != 0){
@@ -2275,22 +2342,9 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
                     grayed= 1; //there is no disabled image, gray it
                   }
                 }
-                if( (phi != p) && ((p->flags & TTBF_SELECTABLE) != 0) ){ //draw a normal button back if not hilighted
-                  draw_img(cr, get_group_img(g,TTBI_TB_HINORMAL), x0+p->barx1, y0+p->bary1, 0 );
-                }
                 draw_img(cr, get_item_img(p,h), x, y, grayed );
               }else{
                 //text button
-                if( (phi != p) && ((p->flags & TTBF_SELECTABLE) != 0) ){ //draw a normal text button back if not hilighted
-                  h= TTBI_TB_TXT_NOR1;
-                  if( get_group_imgW(g,h) > 0 ){
-                    draw_img(cr, get_group_img(g,h), x0+p->barx1, y0+p->bary1, 0 );
-                    x1= x0 + p->barx1 + p->prew;
-                    xa= x0 + p->barx2 - p->postw;
-                    draw_fill_img(cr, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
-                    draw_img(cr, get_group_img(g,h+2), xa, y0+p->bary1, 0 );
-                  }
-                }
                 color= &(g->txttextcolN);
                 if( (p->flags & TTBF_GRAYED) != 0){
                   color= &(g->txttextcolG);
@@ -2807,6 +2861,26 @@ static int ltoolbar_seticon(lua_State *L)
   return 0;
 }
 
+/** `toolbar.setbackcolor(name,color,[keep-background-img],[onlyinthistoolbar])` Lua function. */
+/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent */
+static int ltoolbar_setbackcolor(lua_State *L)
+{
+  int i, color, keepback;
+  const char *name= luaL_checkstring(L, 1);
+  color= lua_tointeger(L, 2);
+  keepback= lua_toboolean(L,3);
+  if( lua_toboolean(L,4) ){
+    //set back color in this toolbar only
+    ttb_set_back_colorT(current_toolbar(), name, color, keepback );
+  }else{
+    //set back color in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_set_back_colorT(toolbar_from_num(i), name, color, keepback );
+    }
+  }
+  return 0;
+}
+
 /** `toolbar.settooltip(name,tooltip,[onlyinthistoolbar])` Lua function. */
 static int ltoolbar_settooltip(lua_State *L)
 {
@@ -2968,7 +3042,8 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
   l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);	    //change next button position
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
-  l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button or TOOLBAR icon
+  l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button, GROUP or TOOLBAR icon
+  l_setcfunction(L, -1, "setbackcolor", ltoolbar_setbackcolor); //change a button, GROUP or TOOLBAR back color
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);	  //change a button tooltip
   l_setcfunction(L, -1, "settext",      ltoolbar_settext);      //change a button text
   l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
