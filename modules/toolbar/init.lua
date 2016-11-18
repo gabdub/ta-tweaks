@@ -395,6 +395,7 @@ if toolbar then
     toolbar.cfgpnl_ymargin=3
     toolbar.cfgpnl_xmargin=3
     toolbar.cfgpnl_xtext=30
+    toolbar.cfgpnl_xcontrol2=230
     toolbar.cfgpnl_xcontrol=290
     toolbar.cfgpnl_rheight=24
   end

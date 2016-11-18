@@ -278,20 +278,32 @@ local function changecolor_clicked(name)
   ui.statusbar_text= "color clicked"
 end
 
-local function add_config_color(propname, text, tooltip)
+local function add_config_color(text, foreprop, backprop, tooltip)
   if tooltip == nil then tooltip="" end
-  local prop= "color."..propname
-  local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
-  local rgbcolor= ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
   --text
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext, true)
-  --change color button
-  toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
-  toolbar.cmd(prop, changecolor_clicked, tooltip, "colorn")
-  toolbar.setbackcolor(prop, rgbcolor, true)
-  toolbar.setthemeicon(prop, "colorh", 2)
-  toolbar.setthemeicon(prop, "colorp", 3)
+  toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol2-toolbar.cfgpnl_xtext, true)
+  --change color buttons
+  if foreprop and foreprop ~= "" then
+    local prop= "color."..foreprop
+    local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
+    local rgbcolor= ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
+    toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
+    toolbar.cmd(prop, changecolor_clicked, tooltip, "colorn")
+    toolbar.setbackcolor(prop, rgbcolor, true)
+    toolbar.setthemeicon(prop, "colorh", 2)
+    toolbar.setthemeicon(prop, "colorp", 3)
+  end
+  if backprop and backprop ~= "" then
+    local prop= "color."..backprop
+    local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
+    local rgbcolor= ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
+    toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
+    toolbar.cmd(prop, changecolor_clicked, tooltip, "colorn")
+    toolbar.setbackcolor(prop, rgbcolor, true)
+    toolbar.setthemeicon(prop, "colorh", 2)
+    toolbar.setthemeicon(prop, "colorp", 3)
+  end
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
 
@@ -643,26 +655,59 @@ local function add_toolbar_cfg_panel()
   add_config_separator()
 end
 
+local function add_config_label3(tit, tit1, tit2, extrasep)
+  if extrasep then
+    add_config_separator()
+  end
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
+  toolbar.addlabel(tit1, "", toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xcontrol2,true)
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
+  toolbar.addlabel(tit2, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xcontrol2,true)
+  add_config_label(tit)
+end
+
 local function add_theme_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
-  add_config_tabgroup("Theme", "Editor theme configuration")
+  add_config_tabgroup("Color", "Color configuration")
 
-  add_config_label("COLORS")
-  add_config_color("text_fore", "Default text (fore)")
-  add_config_color("text_back", "Default text (back)")
-  add_config_color("curr_line_back", "Current line (back)")
-  add_config_color("caret", "Caret")
-  add_config_color("selection_fore", "Selection (fore)")
-  add_config_color("selection_back", "Selection (back)")
-  add_config_color("hilight", "Highlight (back)")
-  add_config_color("placeholder", "Placeholder (back)")
-  add_config_color("find", "Find (back)")
-  --add_config_color("", " (fore)")
-  --add_config_color("", " (back)")
-  --add_config_color("", " (fore)")
-  --add_config_color("", " (back)")
-  --add_config_color("", " (fore)")
-  --add_config_color("", " (back)")
+  add_config_label3("Editor", "Fore", "Back")
+  add_config_color("Default text", "text_fore", "text_back")
+  add_config_color("Caret & current line back", "caret", "curr_line_back")
+  add_config_color("Selection", "selection_fore", "selection_back")
+  add_config_color("Highlight", "", "hilight")
+  add_config_color("Placeholder", "", "placeholder")
+  add_config_color("Find", "", "find")
+  add_config_color("Call Tips", "calltips_fore","calltips_back")
+  add_config_color("Line number", "linenum_fore","linenum_back")
+  add_config_color("Markers (folding)", "", "markers")
+  add_config_color("Marker selected", "", "markers_sel")
+  add_config_color("Bookmarks", "", "bookmark")
+  add_config_color("Warnings", "", "warning")
+  add_config_color("Errors", "", "error")
+  add_config_color("Indent guide", "indentguide", "")
+
+  add_config_label3("Project", "Unfocus", "Focus", true)
+  add_config_color("Selection bar", "prj_sel_bar_nof", "prj_sel_bar")
+
+  add_config_label3("Syntax highlighting", "Fore", "", true)
+  add_config_color("Comment", "comment")
+  add_config_color("Variable", "variable")
+  add_config_color("Constant", "constant")
+  add_config_color("Number", "number")
+  add_config_color("Type", "type")
+  add_config_color("Class", "class")
+  add_config_color("Label", "label")
+  add_config_color("Pre-processor", "preprocessor")
+  add_config_color("String", "string")
+  add_config_color("Regular expression", "regex")
+  add_config_color("Matched brace", "brace_ok")
+  add_config_color("Function", "function")
+  add_config_color("Keyword", "keyword")
+  add_config_color("Embedded", "embedded")
+  add_config_color("Operator", "operator")
+
+  add_config_label3("Diff Lexer", "Del (-)", "Add (+)", true)
+  add_config_color("Changes", "red", "green")
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
