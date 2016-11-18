@@ -135,7 +135,7 @@ local function add_config_tabgroup(name,title,ngrp)
   toolbar.settab(n, name, "")
   --create a group for each tab to hide its controls
   local hidegrp=(n ~= toolbar.cfgpnl_curgroup) --only one tab group is visible at a time
-  toolbar.addgroup(7,8,0,0,hidegrp)
+  toolbar.addgroup(7,24,0,0,hidegrp) --show v-scroll when needed
   toolbar.adjust(48,24,2,1,3,3)
   toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
   if n == toolbar.cfgpnl_curgroup then

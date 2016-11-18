@@ -39,6 +39,7 @@
 #define TTBF_GRP_VAR_H      0x01000000  //this group has variable height
 #define TTBF_GRP_ITEM_W     0x02000000  //this group set width using items position
 #define TTBF_GRP_ITEM_H     0x04000000  //this group set height using items position
+#define TTBF_GRP_VSCROLL    0x08000000  //this group shows a vertical scrollbar when needed
 
 //item images
 #define TTBI_NORMAL         0  //button/separator
@@ -197,6 +198,7 @@ struct toolbar_group
   //group images (use toolbar images if NULL)
   struct toolbar_img img[TTBI_TB_N];
   int back_color;     //-1:not set, 0x00RRGGBB
+  int yvscroll;         //vertical scrollbar offset
 };
 
 struct toolbar_data

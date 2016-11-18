@@ -137,6 +137,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->xnew= g->xmargin;
     g->ynew= g->ymargin;
     g->back_color= -1;  //not set
+    g->yvscroll= 0;
 
     //add the group to the end of the list
     if( T->group_last != NULL ){
@@ -153,7 +154,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
 
 /** x/y control:
   0:allow groups before and after 1:no groups at the left/top  2:no groups at the right/bottom
-  3:exclusive row/col  +4:expand  +8:use item size */
+  3:exclusive row/col  +4:expand  +8:use item size +16:vert-scroll */
 static struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden)
 { //add a new group to a toolbar (row, col, hidden version)
   int flags= TTBF_SELECTABLE;
@@ -180,6 +181,9 @@ static struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontro
     flags |= TTBF_GRP_VAR_H;  //this group has variable height
   }else if( (ycontrol & 8) != 0 ){
     flags |= TTBF_GRP_ITEM_H; //this group set height using items position
+  }
+  if( (ycontrol & 16) != 0 ){
+    flags |= TTBF_GRP_VSCROLL; //this group shows a vertical scrollbar when needed
   }
 
   if( hidden ){
@@ -581,6 +585,7 @@ static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt
     }
   }
   //is a regular button bar
+  y += G->yvscroll;  //vertical scroll support
   for( p= G->list; (p != NULL); p= p->next ){
     //ignore non selectable or hidden things (like separators)
     if( ((p->flags & (TTBF_SELECTABLE|TTBF_HIDDEN)) == TTBF_SELECTABLE) &&
@@ -728,7 +733,7 @@ static void redraw_item( struct toolbar_item * p )
       //the group is visible
       if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT|TTBF_HIDDEN)) == 0 ){
         //redraw the area of one regular button
-        gtk_widget_queue_draw_area(p->group->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1,
+        gtk_widget_queue_draw_area(p->group->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1 - g->yvscroll,
             p->barx2 - p->barx1 +1, p->bary2 - p->bary1 +1 );
         return;
       }
@@ -1243,50 +1248,75 @@ static int get_tabtext_widthG(struct toolbar_group *G, const char * text )
   return 0;
 }
 
-static void scroll_tabsT(struct toolbar_data *T, int x, int y, int dir )
+static void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
 { //change the number of tabs not shown at the left (ignore hidden tabs)
   struct toolbar_item *t;
-  int n, nt, nh;
+  int n, nt, nh, nhide;
   struct toolbar_group * G= group_fromXYT(T, x, y);
-  if( (G != NULL) && ((G->flags & TTBF_GRP_TABBAR) != 0) ){
-    int nhide= G->nitems_scroll;
-    if((dir < 0)&&(G->nitems_scroll > 0)){
-      nh= 0;
-      nt= 0;
-      for( t= G->list, n= G->nitems_scroll-1; (n > 0)&&(t != NULL); n-- ){
-        nt++;
-        if( (t->flags & TTBF_HIDDEN) == 0 ){  //not hidden
-          nh= nt; //number of the previous visible tab
+  if( G != NULL ){
+    if( (G->flags & TTBF_GRP_TABBAR) != 0 ){
+      //TAB-BAR (H-SCROLL)
+      nhide= G->nitems_scroll;
+      if((dir < 0)&&(G->nitems_scroll > 0)){
+        nh= 0;
+        nt= 0;
+        for( t= G->list, n= G->nitems_scroll-1; (n > 0)&&(t != NULL); n-- ){
+          nt++;
+          if( (t->flags & TTBF_HIDDEN) == 0 ){  //not hidden
+            nh= nt; //number of the previous visible tab
+          }
+          t= t->next;
         }
-        t= t->next;
+        G->nitems_scroll= nh;
       }
-      G->nitems_scroll= nh;
-    }
-    if((dir > 0)&&(!G->islast_item_shown) && (G->nitems_scroll < G->nitems-1)){
-      nh= G->nitems_scroll+1;  //locate next tab
-      for( t= G->list, n= nh; (n > 0)&&(t != NULL); n-- ){
-        t= t->next;
-      }
-      if( t != NULL){
-        //skip hidden tabs
-        while( (t != NULL) && ((t->flags & TTBF_HIDDEN) != 0) ){
-          nh++;
+      if((dir > 0)&&(!G->islast_item_shown) && (G->nitems_scroll < G->nitems-1)){
+        nh= G->nitems_scroll+1;  //locate next tab
+        for( t= G->list, n= nh; (n > 0)&&(t != NULL); n-- ){
           t= t->next;
         }
         if( t != NULL){
-          G->nitems_scroll= nh;
+          //skip hidden tabs
+          while( (t != NULL) && ((t->flags & TTBF_HIDDEN) != 0) ){
+            nh++;
+            t= t->next;
+          }
+          if( t != NULL){
+            G->nitems_scroll= nh;
+          }
         }
       }
-    }
-    if( nhide != G->nitems_scroll ){
-      //update hilight
-      set_hilight_off();  //clear previous hilight
-      ttb.philight= item_fromXYT(T, x, y); //set new hilight
-      ttb.ntbhilight= T->num;
-      //update tooltip text
-      set_hilight_tooltipT(T);
-      //redraw the tabs
-      redraw_group(G);
+      if( nhide != G->nitems_scroll ){
+        //update hilight
+        set_hilight_off();  //clear previous hilight
+        ttb.philight= item_fromXYT(T, x, y); //set new hilight
+        ttb.ntbhilight= T->num;
+        //update tooltip text
+        set_hilight_tooltipT(T);
+        //redraw the tabs
+        redraw_group(G);
+      }
+
+    }else if( (G->flags & TTBF_GRP_VSCROLL) != 0 ){
+      //V-SCROLL enabled
+      nhide= G->yvscroll;
+      if( (dir > 0) && (!G->islast_item_shown) ){
+        G->yvscroll += 30;
+      }else if( (dir < 0) && (G->yvscroll > 0) ){
+        G->yvscroll -= 30;
+        if( G->yvscroll < 0 ){
+          G->yvscroll= 0;
+        }
+      }
+      if( nhide != G->yvscroll ){
+        //update hilight
+        set_hilight_off();  //clear previous hilight
+        ttb.philight= item_fromXYT(T, x, y); //set new hilight
+        ttb.ntbhilight= T->num;
+        //update tooltip text
+        set_hilight_tooltipT(T);
+        //redraw the group
+        redraw_group(G);
+      }
     }
   }
 }
@@ -2204,10 +2234,10 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   if( (phi != NULL) && ((phi->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT))==0) ){
     g= phi->group;
     x0= g->barx1;
-    y0= g->bary1;
+    y0= g->bary1 - g->yvscroll;
     x= x0+phi->barx1;
     y= y0+phi->bary1;
-    if( need_redraw(event, x, y, x0+phi->barx2, y0+phi->bary2) ){
+    if( (y >= 0) && (need_redraw(event, x, y, x0+phi->barx2, y0+phi->bary2)) ){
       h= -1;
       if(ttb.phipress == phi){
         h= TTBI_HIPRESSED; //hilight as pressed
@@ -2306,10 +2336,16 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 
         }else{
           //buttons
+          y0 -= g->yvscroll;  //vertical scroll support
+          g->islast_item_shown= 1;
           for( p= g->list; (p != NULL); p= p->next ){
             x= x0 + p->imgx;
             y= y0 + p->imgy;
-            if( need_redraw( event, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
+            if( (y0+p->bary2) > T->barheight ){
+              g->islast_item_shown= 0;
+              break;
+            }
+            if( (y0+p->bary1 >= 0) && need_redraw( event, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
               h= TTBI_NORMAL;
               grayed= 0;
               //paint back color / background if set and wasn't painted by highlight
@@ -2473,9 +2509,9 @@ static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, voi
     //don't scroll if a button is pressed (mouse still down)
     if( ttb.phipress == NULL ){
       if( (event->direction == GDK_SCROLL_UP)||(event->direction == GDK_SCROLL_LEFT) ){
-        scroll_tabsT(T, event->x, event->y, -1);
+        scroll_toolbarT(T, event->x, event->y, -1);
       }else{
-        scroll_tabsT(T, event->x, event->y, 1);
+        scroll_toolbarT(T, event->x, event->y, 1);
       }
     }
   }
@@ -2513,7 +2549,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         set_hilight_off();
 
         if( (p->flags & TTBF_SCROLL_BUT) != 0 ){
-          scroll_tabsT(T, event->x, event->y, p->num);
+          scroll_toolbarT(T, event->x, event->y, p->num);
 
         }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
           lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
