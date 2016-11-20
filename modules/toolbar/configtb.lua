@@ -308,7 +308,7 @@ local function add_config_color(text, foreprop, backprop, tooltip)
 end
 
 local function add_config_colorpicker()
-  toolbar.adjust(240,240,2,1,3,3)
+  toolbar.adjust(248,240,2,1,3,3)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmd("picker", changecolor_clicked, "", "")
   toolbar.setbackcolor("picker", -2, true)
