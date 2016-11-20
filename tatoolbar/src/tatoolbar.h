@@ -242,6 +242,15 @@ struct all_toolbars_data
   int currentntb;     //current toolbar num
 
   char * img_base;
+
+  double HSV_val;     //V value of color picker (only one for now...)
 };
+
+#define BKCOLOR_NOT_SET (-1)
+
+#define BKCOLOR_PICKER  (-2)
+#define HSV_V_DELTA     (0.05)
+#define PICKER_CELL_W   (60)    //total w=240
+#define PICKER_CELL_H   (30)    //total h=240
 
 #endif

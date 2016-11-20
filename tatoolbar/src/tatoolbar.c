@@ -136,7 +136,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->yoff= g->xoff;
     g->xnew= g->xmargin;
     g->ynew= g->ymargin;
-    g->back_color= -1;  //not set
+    g->back_color= BKCOLOR_NOT_SET;
     g->yvscroll= 0;
 
     //add the group to the end of the list
@@ -226,7 +226,7 @@ static struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name
       set_text_bt_width(p);
       p->flags |= TTBF_TEXT;
     }
-    p->back_color= -1;  //not set
+    p->back_color= BKCOLOR_NOT_SET;
     if( G->isvertical ){
       G->ynew= p->bary2;
     }else{
@@ -259,7 +259,7 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
     }
     p->minwidth= G->tabminwidth;
     p->maxwidth= G->tabmaxwidth;
-    p->back_color= -1;  //not set
+    p->back_color= BKCOLOR_NOT_SET;
 
     //add the tab to the end of the list
     if( G->list_last != NULL ){
@@ -1296,26 +1296,50 @@ static void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         redraw_group(G);
       }
 
-    }else if( (G->flags & TTBF_GRP_VSCROLL) != 0 ){
-      //V-SCROLL enabled
-      nhide= G->yvscroll;
-      if( (dir > 0) && (!G->islast_item_shown) ){
-        G->yvscroll += 30;
-      }else if( (dir < 0) && (G->yvscroll > 0) ){
-        G->yvscroll -= 30;
-        if( G->yvscroll < 0 ){
-          G->yvscroll= 0;
+    }else{
+      t= item_fromXYT(T, x, y);
+      if( t != NULL ){
+        //COLOR PICKER: change HSV: V value
+        if( t->back_color == BKCOLOR_PICKER ){
+          if( (dir < 0) && (ttb.HSV_val < 1.0) ){
+            ttb.HSV_val += HSV_V_DELTA;
+            if( ttb.HSV_val > 1.0){
+              ttb.HSV_val= 1.0;
+            }
+            redraw_item(t);
+          }
+          if( (dir > 0) && (ttb.HSV_val > 0.0) ){
+            ttb.HSV_val -= HSV_V_DELTA;
+            if( ttb.HSV_val < 0.0){
+              ttb.HSV_val= 0.0;
+            }
+            redraw_item(t);
+          }
+          return;
         }
       }
-      if( nhide != G->yvscroll ){
-        //update hilight
-        set_hilight_off();  //clear previous hilight
-        ttb.philight= item_fromXYT(T, x, y); //set new hilight
-        ttb.ntbhilight= T->num;
-        //update tooltip text
-        set_hilight_tooltipT(T);
-        //redraw the group
-        redraw_group(G);
+
+      if( (G->flags & TTBF_GRP_VSCROLL) != 0 ){
+        //V-SCROLL enabled
+        nhide= G->yvscroll;
+        if( (dir > 0) && (!G->islast_item_shown) ){
+          G->yvscroll += 30;
+        }else if( (dir < 0) && (G->yvscroll > 0) ){
+          G->yvscroll -= 30;
+          if( G->yvscroll < 0 ){
+            G->yvscroll= 0;
+          }
+        }
+        if( nhide != G->yvscroll ){
+          //update hilight after scrolling
+          set_hilight_off();  //clear previous hilight
+          ttb.philight= item_fromXYT(T, x, y); //set new hilight
+          ttb.ntbhilight= T->num;
+          //update tooltip text
+          set_hilight_tooltipT(T);
+          //redraw the group
+          redraw_group(G);
+        }
       }
     }
   }
@@ -1487,7 +1511,7 @@ static void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, c
     //set defaults
     T->buttonsize= buttonsize;
     T->imgsize= imgsize;
-    T->back_color= -1;  //not set
+    T->back_color= BKCOLOR_NOT_SET;
     //auto-create the first group
     G= add_groupT(T, TTBF_GRP_AUTO);
     gtk_widget_set_size_request(T->draw, T->barwidth, T->barheight);
@@ -2061,8 +2085,97 @@ static void draw_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int g
 static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h )
 {
   struct color3doubles c;
+  int i, j, xr, yr, dx, dy, a;
+  double v, min, max, dv;
 
-  if( color != -1 ){
+  if( color == BKCOLOR_NOT_SET ){
+    return;
+  }
+  if( color == BKCOLOR_PICKER ){
+    //== COLOR PICKER ==
+    //HSV color wheel
+    //  H   0º    60º   120º  180º  240º  300º
+    //  R   max   down  min   min   up    max
+    //  G   up    max   max   down  min   min
+    //  B   min   min   up    max   max   down
+    // max= V
+    // min= V*(1-S)
+    //X => H
+    //Y => S
+    //mouse wheel => V
+    max= ttb.HSV_val; //V [0, 1] value of color picker (only one for now...)
+    min= 0.0;
+    dx= w / PICKER_CELL_W;   //w=240
+    dy= h / PICKER_CELL_H;   //h=240
+    yr= y;
+    for( i= 0; i < (PICKER_CELL_H-1); i++){
+      xr= x;
+      c.R= max;
+      c.G= min;
+      c.B= min;
+      v= 0;
+      dv= (max - min) / ((double)(PICKER_CELL_W/6));
+      a= -1;
+      for( j= 0; j < PICKER_CELL_W; j++){
+        if( (j % (PICKER_CELL_W/6)) == 0 ){
+          v= 0;
+          a++;
+        }
+        switch( a ){
+        case 0:
+          c.G= min+v;
+          break;
+        case 1:
+          c.R= max-v;
+          c.G= max;
+          break;
+        case 2:
+          c.R= min;
+          c.B= min+v;
+          break;
+        case 3:
+          c.G= max-v;
+          c.B= max;
+          break;
+        case 4:
+          c.R= min+v;
+          c.G= min;
+          break;
+        case 5:
+          c.R= max;
+          c.B= max-v;
+          break;
+        }
+        cairo_set_source_rgb(ctx, c.R, c.G, c.B );
+        cairo_rectangle(ctx, xr, yr, dx, dy);
+        cairo_fill(ctx);
+        xr += dx;
+        v += dv;
+      }
+      yr += dy;
+      min += max / ((double)PICKER_CELL_H);
+    }
+    //last row (B/W)
+    xr= x;
+    c.R= 0;
+    c.G= 0;
+    c.B= 0;
+    dv= 1.0 / (PICKER_CELL_W-1);
+    for( j= 0; j < PICKER_CELL_W; j++){
+      cairo_set_source_rgb(ctx, c.R, c.G, c.B );
+      cairo_rectangle(ctx, xr, yr, dx, dy);
+      cairo_fill(ctx);
+      xr += dx;
+      c.R += dv;
+      if( c.R > 1.0 ){
+        c.R= 1.0;
+      }
+      c.G= c.R;
+      c.B= c.R;
+    }
+
+  }else{
+    //solid color
     setrgbcolor( color, &c );
     cairo_set_source_rgb(ctx, c.R, c.G, c.B );
     cairo_rectangle(ctx, x, y, w, h);
@@ -2237,7 +2350,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
     y0= g->bary1 - g->yvscroll;
     x= x0+phi->barx1;
     y= y0+phi->bary1;
-    if( (y >= 0) && (need_redraw(event, x, y, x0+phi->barx2, y0+phi->bary2)) ){
+    if( (y >= 0) && (need_redraw(event, x, y, x0+phi->barx2, y0+phi->bary2)) && (phi->back_color != BKCOLOR_PICKER) ){
       h= -1;
       if(ttb.phipress == phi){
         h= TTBI_HIPRESSED; //hilight as pressed
@@ -2898,7 +3011,7 @@ static int ltoolbar_seticon(lua_State *L)
 }
 
 /** `toolbar.setbackcolor(name,color,[keep-background-img],[onlyinthistoolbar])` Lua function. */
-/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent */
+/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent, -2=color-picker */
 static int ltoolbar_setbackcolor(lua_State *L)
 {
   int i, color, keepback;
@@ -3061,6 +3174,8 @@ static int ltoolbar_gototab(lua_State *L)
 /* register LUA toolbar object */
 void register_toolbar(lua_State *L)
 {
+  ttb.HSV_val= 1.0; //V value of color picker (only one for now...)
+
   lua_newtable(L);
 //toolbars
   l_setcfunction(L, -1, "new",          ltoolbar_new);	        //create a new toolbar

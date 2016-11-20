@@ -307,6 +307,15 @@ local function add_config_color(text, foreprop, backprop, tooltip)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
 
+local function add_config_colorpicker()
+  toolbar.adjust(240,240,2,1,3,3)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmd("picker", changecolor_clicked, "", "")
+  toolbar.setbackcolor("picker", -2, true)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 300
+  toolbar.adjust(48,24,2,1,3,3)
+end
+
 local function _add_config_radio(name,text,tooltip,checked)
   if checked == nil then checked=false end
   if tooltip == nil then tooltip="" end
@@ -666,7 +675,7 @@ local function add_config_label3(tit, tit1, tit2, extrasep)
   add_config_label(tit)
 end
 
-local function add_theme_cfg_panel()
+local function add_colors_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
   add_config_tabgroup("Color", "Color configuration")
 
@@ -716,13 +725,28 @@ local function add_theme_cfg_panel()
   add_config_separator()
 end
 
+local function add_picker_cfg_panel()
+  toolbar.config_saveon=false --don't save the config options of this panel
+  add_config_tabgroup("Picker", "Color picker")
+
+  add_config_label("HSV")
+  add_config_colorpicker()
+
+  add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload2")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
+end
+
 function toolbar.add_config_panel()
   --create the "vertical right (config)" panel
   add_config_start( (buffer.reopen_config_panel or 1) ) --start panel
 
   add_buffer_cfg_panel()  --BUFFER
   add_toolbar_cfg_panel() --TOOLBAR
-  add_theme_cfg_panel()   --THEME
+  add_colors_cfg_panel()  --COLORS
+  add_picker_cfg_panel()  --COLOR PICKER
 
   --load config settings / set toolbar controls
   toolbar.load_config()
