@@ -249,8 +249,11 @@ struct all_toolbars_data
 #define BKCOLOR_NOT_SET (-1)
 
 #define BKCOLOR_PICKER  (-2)
-#define HSV_V_DELTA     (0.05)
-#define PICKER_CELL_W   (60)    //total w=240
-#define PICKER_CELL_H   (30)    //total h=240
+#define HSV_V_DELTA     0.05
+#define PICKER_VSCROLLW 7     //Vscroll width
+#define PICKER_VSCROLLS 1     //Vscroll separation
+#define PICKER_VSCROLLE (PICKER_VSCROLLS+PICKER_VSCROLLW)
+#define PICKER_CELL_W   60    //total w=248 = 60x4 + 1 + 7
+#define PICKER_CELL_H   30    //total h=240 = 60x4
 
 #endif

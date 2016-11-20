@@ -2105,7 +2105,7 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
     //mouse wheel => V
     max= ttb.HSV_val; //V [0, 1] value of color picker (only one for now...)
     min= 0.0;
-    dx= w / PICKER_CELL_W;   //w=240
+    dx= (w-PICKER_VSCROLLE) / PICKER_CELL_W;   //w=248-8 = 240
     dy= h / PICKER_CELL_H;   //h=240
     yr= y;
     for( i= 0; i < (PICKER_CELL_H-1); i++){
@@ -2173,6 +2173,19 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
       c.G= c.R;
       c.B= c.R;
     }
+    //Vscroll bar
+    xr= x+w-PICKER_VSCROLLW;
+    cairo_set_source_rgb(ctx, 0.5, 0.5, 0.5 );
+    cairo_rectangle(ctx, xr, y, PICKER_VSCROLLW, h);
+    cairo_fill(ctx);
+    yr= y + h * (1-ttb.HSV_val) * (1-HSV_V_DELTA);
+    dy= h*HSV_V_DELTA;
+    cairo_set_source_rgb(ctx, 0.3, 0.3, 0.3 );
+    cairo_rectangle(ctx, xr, yr, PICKER_VSCROLLW, dy);
+    cairo_fill(ctx);
+    cairo_set_source_rgb(ctx, 0.6, 0.6, 0.6 );
+    cairo_rectangle(ctx, xr+1, yr+1, PICKER_VSCROLLW-2, dy-2);
+    cairo_fill(ctx);
 
   }else{
     //solid color
