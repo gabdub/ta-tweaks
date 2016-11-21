@@ -504,6 +504,8 @@ static struct toolbar_group * group_fromXYT(struct toolbar_data *T, int x, int y
   return NULL; //group not found
 }
 
+static int item_xoff;
+static int item_yoff;
 static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
 {
   struct toolbar_group * G;
@@ -511,6 +513,8 @@ static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt
   int nx, nhide, xc1, xc2, yc1, yc2, x, y;
   char *s;
 
+  item_xoff= 0;
+  item_yoff= 0;
   if( T == NULL ){
     return NULL; //no toolbar
   }
@@ -522,6 +526,8 @@ static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt
   //check if scroll buttons are shown in the group
   if((G->scleftx1 >= 0)&&(xt >= G->scleftx1)&&(xt <= G->scleftx2)&&
       (yt >= G->sclefty1)&&(yt <= G->sclefty2)){
+    item_xoff= xt - G->scleftx1;
+    item_yoff= yt - G->sclefty1;
     xbutton.flags= TTBF_SCROLL_BUT;
     xbutton.num= -1;
     xbutton.tooltip= NULL;
@@ -530,6 +536,8 @@ static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt
   }
   if((G->scrightx1 >= 0)&&(xt >= G->scrightx1)&&(xt <= G->scrightx2)&&
       (yt >= G->scrighty1)&&(yt <= G->scrighty2)){
+    item_xoff= xt - G->scrightx1;
+    item_yoff= yt - G->scrighty1;
     xbutton.flags= TTBF_SCROLL_BUT;
     xbutton.num= 1;
     xbutton.tooltip= NULL;
@@ -573,9 +581,13 @@ static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt
                 }else{
                   strcpy( xbutt_tooltip+6, "tab" );
                 }
+                item_xoff= x - xc1;
+                item_yoff= y - yc1;
                 return &xbutton; //close tab button
               }
             }
+            item_xoff= x;
+            item_yoff= y;
             return p; //TAB
           }
           x -= p->barx2 + G->tabxsep;
@@ -590,6 +602,8 @@ static struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt
     //ignore non selectable or hidden things (like separators)
     if( ((p->flags & (TTBF_SELECTABLE|TTBF_HIDDEN)) == TTBF_SELECTABLE) &&
         (x >= p->barx1) && (x <= p->barx2) && (y >= p->bary1) && (y <= p->bary2) ){
+      item_xoff= x - p->barx1;
+      item_yoff= y - p->bary1;
       return p; //BUTTON
     }
   }
@@ -1248,6 +1262,41 @@ static int get_tabtext_widthG(struct toolbar_group *G, const char * text )
   return 0;
 }
 
+//COLOR PICKER: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
+static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
+{
+  int redrawit= 0;
+  if( dir == 0 ){
+    //mouse down
+    double dy= (p->bary2 - p->bary1) * HSV_V_DELTA * (1-HSV_V_DELTA);
+    int xscroll= p->barx2 - p->barx1 - PICKER_VSCROLLW;
+    if( item_xoff > xscroll ){
+      //V value scroll bar: set V
+      ttb.HSV_val = 1.0 - (((int)((double)item_yoff / dy)) * HSV_V_DELTA);
+      redrawit= redraw;
+    }
+
+  }else if( (dir < 0) && (ttb.HSV_val < 1.0) ){
+    //wheel up
+    ttb.HSV_val += HSV_V_DELTA;
+    if( ttb.HSV_val > 1.0){
+      ttb.HSV_val= 1.0;
+    }
+    redrawit= redraw;
+
+  }else if( (dir > 0) && (ttb.HSV_val > 0.0) ){
+    //wheel down
+    ttb.HSV_val -= HSV_V_DELTA;
+    if( ttb.HSV_val < 0.0){
+      ttb.HSV_val= 0.0;
+    }
+    redrawit= redraw;
+  }
+  if( redrawit ){
+    redraw_item(p);
+  }
+}
+
 static void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
 { //change the number of tabs not shown at the left (ignore hidden tabs)
   struct toolbar_item *t;
@@ -1301,20 +1350,7 @@ static void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
       if( t != NULL ){
         //COLOR PICKER: change HSV: V value
         if( t->back_color == BKCOLOR_PICKER ){
-          if( (dir < 0) && (ttb.HSV_val < 1.0) ){
-            ttb.HSV_val += HSV_V_DELTA;
-            if( ttb.HSV_val > 1.0){
-              ttb.HSV_val= 1.0;
-            }
-            redraw_item(t);
-          }
-          if( (dir > 0) && (ttb.HSV_val > 0.0) ){
-            ttb.HSV_val -= HSV_V_DELTA;
-            if( ttb.HSV_val < 0.0){
-              ttb.HSV_val= 0.0;
-            }
-            redraw_item(t);
-          }
+          color_pick_ev( t, dir, 1 );
           return;
         }
       }
@@ -2623,6 +2659,12 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
     redraw_item(ttb.philight);
     //update tooltip text
     set_hilight_tooltipT(T);
+
+  }else if( (p != NULL) && (p == ttb.phipress) ){
+    //drag over the same highlight
+    if( p->back_color == BKCOLOR_PICKER ){
+      color_pick_ev( p, 0, 1 ); //update color click
+    }
   }
   return TRUE;
 }
@@ -2660,6 +2702,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       if( ttb.phipress != NULL ){
         ttb.philight= ttb.phipress; //hilight as pressed
         ttb.ntbhilight= T->num;
+        if( ttb.phipress->back_color == BKCOLOR_PICKER ){
+          color_pick_ev( ttb.phipress, 0, 0 ); //COLOR PICKER click
+        }
         redraw_item(ttb.philight);
       }
       return TRUE;
