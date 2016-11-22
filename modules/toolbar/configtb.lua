@@ -312,8 +312,14 @@ local function add_config_colorpicker()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmd("picker", changecolor_clicked, "", "")
   toolbar.setbackcolor("picker", -2, true)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 300
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 250
   toolbar.adjust(48,24,2,1,3,3)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmd("choosencolor", changecolor_clicked, "")
+  toolbar.setbackcolor("choosencolor", -3, true)
+  toolbar.setthemeicon("choosencolor", "colorh", 2)
+  toolbar.setthemeicon("choosencolor", "colorp", 3)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 50
 end
 
 local function _add_config_radio(name,text,tooltip,checked)

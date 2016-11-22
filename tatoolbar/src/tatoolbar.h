@@ -85,6 +85,18 @@
 #define TTBI_TB_TXT_NOR3    33 //normal text button3 back
 #define TTBI_TB_N           34
 
+#define BKCOLOR_NOT_SET (-1)  //background color = not set
+
+#define BKCOLOR_PICKER  (-2)  //background color = HSV color picker
+#define HSV_V_DELTA     0.05
+#define PICKER_VSCROLLW 7     //Vscroll width
+#define PICKER_VSCROLLS 1     //Vscroll separation
+#define PICKER_VSCROLLE (PICKER_VSCROLLS+PICKER_VSCROLLW)
+#define PICKER_CELL_W   60    //total w=248 = 60x4 + 1 + 7
+#define PICKER_CELL_H   30    //total h=240 = 60x4
+
+#define BKCOLOR_SEL_COLOR  (-3)  //background color = chosen color in color picker
+
 struct toolbar_img
 {
   char * fname;
@@ -231,6 +243,16 @@ struct toolbar_data
   int back_color;     //-1:not set, 0x00RRGGBB
 };
 
+struct color_picker_data
+{
+  int HSV_x;          //H value
+  int HSV_y;          //S value
+  double HSV_val;     //V value of color picker (only one for now...)
+  int HSV_rgb;        //chosen color in RGB format
+
+  struct toolbar_item * pchosen;  //item that shows the chosen color
+};
+
 struct all_toolbars_data
 {
   struct toolbar_data tbdata[NTOOLBARS]; //horizonal & vertical toolbars
@@ -243,17 +265,7 @@ struct all_toolbars_data
 
   char * img_base;
 
-  double HSV_val;     //V value of color picker (only one for now...)
+  struct color_picker_data cpick;
 };
-
-#define BKCOLOR_NOT_SET (-1)
-
-#define BKCOLOR_PICKER  (-2)
-#define HSV_V_DELTA     0.05
-#define PICKER_VSCROLLW 7     //Vscroll width
-#define PICKER_VSCROLLS 1     //Vscroll separation
-#define PICKER_VSCROLLE (PICKER_VSCROLLS+PICKER_VSCROLLW)
-#define PICKER_CELL_W   60    //total w=248 = 60x4 + 1 + 7
-#define PICKER_CELL_H   30    //total h=240 = 60x4
 
 #endif

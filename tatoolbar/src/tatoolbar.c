@@ -277,6 +277,9 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
 static void free_item_node( struct toolbar_item * p )
 {
   int i;
+  if( ttb.cpick.pchosen == p ){
+    ttb.cpick.pchosen= NULL;
+  }
   if(p->name != NULL){
     free((void*)p->name);
   }
@@ -373,6 +376,7 @@ static void free_tatoolbar( void )
   ttb.phipress= NULL;
   ttb.ntbhilight= -1;
   ttb.currentntb= 0;
+  ttb.cpick.pchosen= NULL;
 }
 
 /* ============================================================================= */
@@ -1268,32 +1272,89 @@ static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
   int redrawit= 0;
   if( dir == 0 ){
     //mouse down
-    double dy= (p->bary2 - p->bary1) * HSV_V_DELTA * (1-HSV_V_DELTA);
-    int xscroll= p->barx2 - p->barx1 - PICKER_VSCROLLW;
-    if( item_xoff > xscroll ){
+    int yscroll= p->bary2 - p->bary1;
+    double dy= yscroll * HSV_V_DELTA * (1-HSV_V_DELTA);
+    int xscroll= p->barx2 - p->barx1 - PICKER_VSCROLLE;
+    if( item_xoff >= xscroll ){
       //V value scroll bar: set V
-      ttb.HSV_val = 1.0 - (((int)((double)item_yoff / dy)) * HSV_V_DELTA);
-      redrawit= redraw;
-    }
-
-  }else if( (dir < 0) && (ttb.HSV_val < 1.0) ){
-    //wheel up
-    ttb.HSV_val += HSV_V_DELTA;
-    if( ttb.HSV_val > 1.0){
-      ttb.HSV_val= 1.0;
+      ttb.cpick.HSV_val = 1.0 - (((int)((double)item_yoff / dy)) * HSV_V_DELTA);
+    }else{
+      //new color
+      ttb.cpick.HSV_x= (item_xoff * PICKER_CELL_W) / xscroll;
+      ttb.cpick.HSV_y= (item_yoff * PICKER_CELL_H) / yscroll;
+      if( ttb.cpick.HSV_x >= PICKER_CELL_W ){
+        ttb.cpick.HSV_x= PICKER_CELL_W-1;
+      }
+      if( ttb.cpick.HSV_y >= PICKER_CELL_H ){
+        ttb.cpick.HSV_y= PICKER_CELL_H-1;
+      }
+      /* RGB from HSV */
+      if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){ //last row (B/W)
+        double dv= 255.0 / (PICKER_CELL_W-1);
+        int r= dv * ttb.cpick.HSV_x;
+        ttb.cpick.HSV_rgb= r | r << 8 | r << 16;
+      }else{
+        //HSV color wheel
+        //  H   0º    60º   120º  180º  240º  300º
+        //  R   max   down  min   min   up    max
+        //  G   up    max   max   down  min   min
+        //  B   min   min   up    max   max   down
+        // max= V
+        // min= V*(1-S)
+        int a= ttb.cpick.HSV_x / (PICKER_CELL_W/6); //H section
+        int f= ttb.cpick.HSV_x % (PICKER_CELL_W/6); //H
+        double max= ttb.cpick.HSV_val;
+        double min= max * ((double)ttb.cpick.HSV_y) / ((double)PICKER_CELL_H);
+        double v= ((max - min) * f)/(PICKER_CELL_W/6);
+        int vi= (int)((min + v) * 255.0);
+        int vd= (int)((max - v) * 255.0);
+        int maxi= (int)(max * 255.0);
+        int mini= (int)(min * 255.0);
+        if( vi > 255){
+            vi= 255;
+        }
+        if( vd > 255){
+            vd= 255;
+        }
+        if( maxi > 255){
+            maxi= 255;
+        }
+        if( mini > 255){
+            mini= 255;
+        }
+        switch(a){
+        case 0: ttb.cpick.HSV_rgb= maxi << 16 | vi   << 8 | mini;   break;
+        case 1: ttb.cpick.HSV_rgb= vd   << 16 | maxi << 8 | mini;   break;
+        case 2: ttb.cpick.HSV_rgb= mini << 16 | maxi << 8 | vi;     break;
+        case 3: ttb.cpick.HSV_rgb= mini << 16 | vd   << 8 | maxi;   break;
+        case 4: ttb.cpick.HSV_rgb= vi   << 16 | mini << 8 | maxi;   break;
+        case 5: ttb.cpick.HSV_rgb= maxi << 16 | mini << 8 | vd;     break;
+        }
+      }
     }
     redrawit= redraw;
 
-  }else if( (dir > 0) && (ttb.HSV_val > 0.0) ){
+  }else if( (dir < 0) && (ttb.cpick.HSV_val < 1.0) ){
+    //wheel up
+    ttb.cpick.HSV_val += HSV_V_DELTA;
+    if( ttb.cpick.HSV_val > 1.0){
+      ttb.cpick.HSV_val= 1.0;
+    }
+    redrawit= redraw;
+
+  }else if( (dir > 0) && (ttb.cpick.HSV_val > 0.0) ){
     //wheel down
-    ttb.HSV_val -= HSV_V_DELTA;
-    if( ttb.HSV_val < 0.0){
-      ttb.HSV_val= 0.0;
+    ttb.cpick.HSV_val -= HSV_V_DELTA;
+    if( ttb.cpick.HSV_val < 0.0){
+      ttb.cpick.HSV_val= 0.0;
     }
     redrawit= redraw;
   }
   if( redrawit ){
     redraw_item(p);
+  }
+  if( ttb.cpick.pchosen != NULL ){
+    redraw_item(ttb.cpick.pchosen); //redaw chosen color
   }
 }
 
@@ -1596,6 +1657,11 @@ static void ttb_set_back_colorT(struct toolbar_data *T, const char *name, int co
     struct toolbar_item * p= item_from_nameT(T, name);
     if( p != NULL ){
       p->back_color= color;
+      if( color == BKCOLOR_SEL_COLOR ){
+        ttb.cpick.pchosen= p; //update this item when the chosen color changes
+      }else if( ttb.cpick.pchosen == p ){
+        ttb.cpick.pchosen= NULL;
+      }
       redraw_item(p);
     }
   }
@@ -2139,7 +2205,7 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
     //X => H
     //Y => S
     //mouse wheel => V
-    max= ttb.HSV_val; //V [0, 1] value of color picker (only one for now...)
+    max= ttb.cpick.HSV_val; //V [0, 1] value of color picker (only one for now...)
     min= 0.0;
     dx= (w-PICKER_VSCROLLE) / PICKER_CELL_W;   //w=248-8 = 240
     dy= h / PICKER_CELL_H;   //h=240
@@ -2209,12 +2275,19 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
       c.G= c.R;
       c.B= c.R;
     }
+    //highligth actual selection
+    xr= x + ttb.cpick.HSV_x * dx;
+    yr= y + ttb.cpick.HSV_y * dy;
+    cairo_set_source_rgb(ctx, 0.5, 0.5, 0.5 );  /* TO DO: CHANGE color in some positions... */
+    cairo_rectangle(ctx, xr, yr, dx, dy);
+    cairo_stroke(ctx);
+
     //Vscroll bar
     xr= x+w-PICKER_VSCROLLW;
     cairo_set_source_rgb(ctx, 0.5, 0.5, 0.5 );
     cairo_rectangle(ctx, xr, y, PICKER_VSCROLLW, h);
     cairo_fill(ctx);
-    yr= y + h * (1-ttb.HSV_val) * (1-HSV_V_DELTA);
+    yr= y + h * (1-ttb.cpick.HSV_val) * (1-HSV_V_DELTA);
     dy= h*HSV_V_DELTA;
     cairo_set_source_rgb(ctx, 0.3, 0.3, 0.3 );
     cairo_rectangle(ctx, xr, yr, PICKER_VSCROLLW, dy);
@@ -2224,6 +2297,9 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
     cairo_fill(ctx);
 
   }else{
+    if( color == BKCOLOR_SEL_COLOR ){
+      color= ttb.cpick.HSV_rgb; //choosen color in HSV color picker
+    }
     //solid color
     setrgbcolor( color, &c );
     cairo_set_source_rgb(ctx, c.R, c.G, c.B );
@@ -3232,7 +3308,11 @@ static int ltoolbar_gototab(lua_State *L)
 /* register LUA toolbar object */
 void register_toolbar(lua_State *L)
 {
-  ttb.HSV_val= 1.0; //V value of color picker (only one for now...)
+  ttb.cpick.HSV_val= 1.0; //V value of color picker (only one for now...)
+  ttb.cpick.HSV_x= 0;
+  ttb.cpick.HSV_y= 0;
+  ttb.cpick.HSV_rgb= 0x00FF0000; //RED
+  ttb.cpick.pchosen= NULL;
 
   lua_newtable(L);
 //toolbars
