@@ -307,13 +307,38 @@ local function add_config_color(text, foreprop, backprop, tooltip)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
 
+local function colorpreset_clicked(name)
+  local color= tonumber(string.match(name,"preset(.*)"))
+  --ui.statusbar_text= "preset color= "..color
+  toolbar.setbackcolor("CPICKER", color)
+end
+
+local function add_color_preset( n, color )
+  toolbar.gotopos(290, toolbar.cfgpnl_y)
+  local name= "preset"..color
+  toolbar.cmd(name, colorpreset_clicked, "", "", true)
+  toolbar.setbackcolor(name, color, true)
+  toolbar.setthemeicon(name, "colorh", 2)
+  toolbar.setthemeicon(name, "colorp", 3)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 31
+end
+
 local function add_config_colorpicker()
   toolbar.adjust(250,242,2,1,3,3)
-  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.gotopos(20, toolbar.cfgpnl_y)
   toolbar.cmd("picker", changecolor_clicked, "", "")
   toolbar.setbackcolor("picker", -2, true)  --COLOR PICKER=-2
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 250
+  local ynext= toolbar.cfgpnl_y + 250
   toolbar.adjust(48,24,2,1,3,3)
+  add_color_preset(1,0xff0000)
+  add_color_preset(2,0xffff00)
+  add_color_preset(3,0x00ff00)
+  add_color_preset(4,0x00ffff)
+  add_color_preset(5,0x0000ff)
+  add_color_preset(6,0xff00ff)
+  add_color_preset(7,0x000000)
+  add_color_preset(8,0xffffff)
+  toolbar.cfgpnl_y= ynext
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmd("choosencolor", changecolor_clicked, "")
   toolbar.setbackcolor("choosencolor", -3, true)  --CHOSEN COLOR=-3
@@ -735,7 +760,7 @@ local function add_picker_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
   add_config_tabgroup("Picker", "Color picker")
 
-  add_config_label("HSV")
+  add_config_label3("HSV","","Preset")
   add_config_colorpicker()
 
   add_config_separator()

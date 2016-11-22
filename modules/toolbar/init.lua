@@ -5,6 +5,7 @@ if toolbar then
   local events, events_connect = events, events.connect
   local tbglobalicon="TOOLBAR"
   toolbar.cmds={}
+  toolbar.cmds_n={}
 
   --select a toolbar as current
   function toolbar.sel_toolbar_n(ntb, ngrp)
@@ -30,9 +31,9 @@ if toolbar then
   end
 
   --define a toolbar button
-  function toolbar.cmd(name,func,tooltip,icon)
+  function toolbar.cmd(name,func,tooltip,icon,passname)
     toolbar.addbutton(name,tooltip)
-    toolbar.cmds[name]= func
+    if passname then toolbar.cmds_n[name]= func else toolbar.cmds[name]= func end
     if icon == nil then
       toolbar.setthemeicon(name,name) --no icon: use 'name' from theme
     elseif string.match(icon,"%.png") == nil then
@@ -124,7 +125,9 @@ if toolbar then
   end
 
   events_connect("toolbar_clicked", function(buttonname,ntoolbar)
-    if toolbar.cmds[buttonname] ~= nil then
+    if toolbar.cmds_n[buttonname] ~= nil then
+      toolbar.cmds_n[buttonname](buttonname) --pass the name of the button
+    elseif toolbar.cmds[buttonname] ~= nil then
       --is a config checkbox?
       if toolbar.cfgpnl_chkval ~= nil and toolbar.cfgpnl_chkval[buttonname] ~= nil then
         toolbar.cmds[buttonname](buttonname) --pass the name of the checkbox

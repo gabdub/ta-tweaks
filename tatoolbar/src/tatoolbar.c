@@ -14,6 +14,7 @@ static int get_group_imgW( struct toolbar_group *G, int nimg );
 static int get_group_imgH( struct toolbar_group *G, int nimg );
 static void set_hilight_off( void );
 static void set_hilight_tooltipT( struct toolbar_data *T );
+static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold );
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -277,6 +278,9 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
 static void free_item_node( struct toolbar_item * p )
 {
   int i;
+  if( ttb.cpick.ppicker == p ){
+    ttb.cpick.ppicker= NULL;
+  }
   if( ttb.cpick.pchosen == p ){
     ttb.cpick.pchosen= NULL;
   }
@@ -376,6 +380,7 @@ static void free_tatoolbar( void )
   ttb.phipress= NULL;
   ttb.ntbhilight= -1;
   ttb.currentntb= 0;
+  ttb.cpick.ppicker= NULL;
   ttb.cpick.pchosen= NULL;
 }
 
@@ -1376,6 +1381,74 @@ static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
   }
 }
 
+static void set_color_pick_rgb( int color )
+{
+  int a, v, r, g, b, max, min;
+  ttb.cpick.HSV_rgb= color;
+  r= (color >> 16) & 0xFF;
+  g= (color >> 8) & 0xFF;
+  b= color & 0xFF;
+  max= r;
+  min= r;
+  if( g > max ){
+    max= g;
+  }else{
+    min= g;
+  }
+  if( b > max ){
+    max= b;
+  }else if( b < min ){
+    min= b;
+  }
+  if( max == min ){
+    //black and white (last row)
+    ttb.cpick.HSV_x= (r * (PICKER_CELL_W-1)) / 255;
+    ttb.cpick.HSV_y= PICKER_CELL_H-1;
+    ttb.cpick.HSV_val= 1.0; //any V value
+  }else{
+    //color
+    a= 0;
+    if( r == max ){
+      if( b == min ){
+        v= g - min; //a=0
+      }else{
+        a= 5;
+        v= max - b;
+      }
+    }else if( g == max ){
+      if( b == min ){
+        a= 1;
+        v= max - r;
+      }else{
+        a= 2;
+        v= b - min;
+      }
+    }else if( r == min ){
+      a= 3;
+      v= max - g;
+    }else{
+      a= 4;
+      v= r - min;
+    }
+    v= (v * (PICKER_CELL_W/6))/(max - min);
+    ttb.cpick.HSV_x= (a*(PICKER_CELL_W/6)) + v;
+    if( ttb.cpick.HSV_x >= PICKER_CELL_W){
+      ttb.cpick.HSV_x= PICKER_CELL_W-1;
+    }
+    ttb.cpick.HSV_y= (min * PICKER_CELL_H) / max;
+    if( ttb.cpick.HSV_y >= PICKER_CELL_H-1 ){
+      ttb.cpick.HSV_y= PICKER_CELL_H-2;
+    }
+    ttb.cpick.HSV_val= ((double)max) / 255.0; //V= max
+  }
+  if( ttb.cpick.ppicker != NULL ){
+    redraw_item(ttb.cpick.ppicker); //redraw the color picker item
+  }
+  if( ttb.cpick.pchosen != NULL ){
+    redraw_item(ttb.cpick.pchosen); //redraw the chosen color item
+  }
+}
+
 static void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
 { //change the number of tabs not shown at the left (ignore hidden tabs)
   struct toolbar_item *t;
@@ -1675,6 +1748,11 @@ static void ttb_set_back_colorT(struct toolbar_data *T, const char *name, int co
     struct toolbar_item * p= item_from_nameT(T, name);
     if( p != NULL ){
       p->back_color= color;
+      if( color == BKCOLOR_PICKER ){
+        ttb.cpick.ppicker= p; //where is the color picker
+      }else if( ttb.cpick.ppicker == p ){
+        ttb.cpick.ppicker= NULL;
+      }
       if( color == BKCOLOR_SEL_COLOR ){
         ttb.cpick.pchosen= p; //update this item when the chosen color changes
       }else if( ttb.cpick.pchosen == p ){
@@ -2207,6 +2285,7 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
   struct color3doubles c;
   int i, j, xr, yr, dx, dy, a, hp;
   double v, min, max, dv;
+  char str[16];
 
   if( color == BKCOLOR_NOT_SET ){
     return;
@@ -2329,14 +2408,33 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
     cairo_fill(ctx);
 
   }else{
+    str[0]= 0;
     if( color == BKCOLOR_SEL_COLOR ){
       color= ttb.cpick.HSV_rgb; //choosen color in HSV color picker
+      sprintf( str, "%06X", color );
     }
     //solid color
     setrgbcolor( color, &c );
     cairo_set_source_rgb(ctx, c.R, c.G, c.B );
     cairo_rectangle(ctx, x, y, w, h);
     cairo_fill(ctx);
+    if( str[0] != 0 ){
+      c.R= 0;
+      if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){
+        //last row (B/W)
+        if( ttb.cpick.HSV_x < PICKER_CELL_W/2 ){
+          c.R= 1;
+        }
+      }else{
+        //color
+        if( ttb.cpick.HSV_val < 0.7 ){
+          c.R= 1;
+        }
+      }
+      c.G= c.R;
+      c.B= c.R;
+      draw_txt(ctx, str, x+4, y+16, y, w-8, h, &c, 10, 0 );
+    }
   }
 }
 
@@ -3177,12 +3275,17 @@ static int ltoolbar_seticon(lua_State *L)
 }
 
 /** `toolbar.setbackcolor(name,color,[keep-background-img],[onlyinthistoolbar])` Lua function. */
-/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent, -2=color-picker */
+/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent, -2=color-picker -3=chosen color */
+/** name= "CPICKER" = set color picker current color */
 static int ltoolbar_setbackcolor(lua_State *L)
 {
   int i, color, keepback;
   const char *name= luaL_checkstring(L, 1);
   color= lua_tointeger(L, 2);
+  if( strcmp(name, "CPICKER") == 0 ){ //set color picker current color
+    set_color_pick_rgb( color );
+    return 0;
+  }
   keepback= lua_toboolean(L,3);
   if( lua_toboolean(L,4) ){
     //set back color in this toolbar only
@@ -3344,6 +3447,7 @@ void register_toolbar(lua_State *L)
   ttb.cpick.HSV_x= 0;
   ttb.cpick.HSV_y= 0;
   ttb.cpick.HSV_rgb= 0x00FF0000; //RED
+  ttb.cpick.ppicker= NULL;
   ttb.cpick.pchosen= NULL;
 
   lua_newtable(L);

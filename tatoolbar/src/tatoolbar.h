@@ -252,6 +252,7 @@ struct color_picker_data
   double HSV_val;     //[0.0 .. 1.0] V value of color picker
 
   int HSV_rgb;        //chosen color in RGB format
+  struct toolbar_item * ppicker;  //item that shows the color picker or NULL
   struct toolbar_item * pchosen;  //item that shows the chosen color or NULL
 };
 
