@@ -1269,70 +1269,42 @@ static int get_tabtext_widthG(struct toolbar_group *G, const char * text )
 //COLOR PICKER: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
 static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
 {
-  int redrawit= 0;
+  int x, y;
+  int change= 0;
   if( dir == 0 ){
     //mouse down
-    int yscroll= p->bary2 - p->bary1;
+    y= item_yoff - PICKER_MARG_TOP;
+    if( y < 0 ){
+      y= 0;
+    }
+    int yscroll= p->bary2 - p->bary1 - (PICKER_MARG_TOP+PICKER_MARG_BOTT);  //h=242-2= 240
     double dy= yscroll * HSV_V_DELTA * (1-HSV_V_DELTA);
-    int xscroll= p->barx2 - p->barx1 - PICKER_VSCROLLE;
+    int xscroll= p->barx2 - p->barx1 - PICKER_VSCROLLW;
     if( item_xoff >= xscroll ){
       //V value scroll bar: set V
-      ttb.cpick.HSV_val = 1.0 - (((int)((double)item_yoff / dy)) * HSV_V_DELTA);
+      ttb.cpick.HSV_val = 1.0 - (((int)((double)y / dy)) * HSV_V_DELTA);
+      if( ttb.cpick.HSV_val > 1.0 ){
+        ttb.cpick.HSV_val= 1.0;
+      }
+      if( ttb.cpick.HSV_val < 0.0 ){
+        ttb.cpick.HSV_val= 0.0;
+      }
     }else{
       //new color
-      ttb.cpick.HSV_x= (item_xoff * PICKER_CELL_W) / xscroll;
-      ttb.cpick.HSV_y= (item_yoff * PICKER_CELL_H) / yscroll;
+      x= item_xoff - PICKER_MARG_LEFT;
+      if( x < 0 ){
+        x= 0;
+      }
+      ttb.cpick.HSV_x= (x * PICKER_CELL_W) / (xscroll - (PICKER_MARG_LEFT+PICKER_MARG_RIGHT));
+      ttb.cpick.HSV_y= (y * PICKER_CELL_H) / yscroll;
       if( ttb.cpick.HSV_x >= PICKER_CELL_W ){
         ttb.cpick.HSV_x= PICKER_CELL_W-1;
       }
       if( ttb.cpick.HSV_y >= PICKER_CELL_H ){
         ttb.cpick.HSV_y= PICKER_CELL_H-1;
       }
-      /* RGB from HSV */
-      if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){ //last row (B/W)
-        double dv= 255.0 / (PICKER_CELL_W-1);
-        int r= dv * ttb.cpick.HSV_x;
-        ttb.cpick.HSV_rgb= r | r << 8 | r << 16;
-      }else{
-        //HSV color wheel
-        //  H   0º    60º   120º  180º  240º  300º
-        //  R   max   down  min   min   up    max
-        //  G   up    max   max   down  min   min
-        //  B   min   min   up    max   max   down
-        // max= V
-        // min= V*(1-S)
-        int a= ttb.cpick.HSV_x / (PICKER_CELL_W/6); //H section
-        int f= ttb.cpick.HSV_x % (PICKER_CELL_W/6); //H
-        double max= ttb.cpick.HSV_val;
-        double min= max * ((double)ttb.cpick.HSV_y) / ((double)PICKER_CELL_H);
-        double v= ((max - min) * f)/(PICKER_CELL_W/6);
-        int vi= (int)((min + v) * 255.0);
-        int vd= (int)((max - v) * 255.0);
-        int maxi= (int)(max * 255.0);
-        int mini= (int)(min * 255.0);
-        if( vi > 255){
-            vi= 255;
-        }
-        if( vd > 255){
-            vd= 255;
-        }
-        if( maxi > 255){
-            maxi= 255;
-        }
-        if( mini > 255){
-            mini= 255;
-        }
-        switch(a){
-        case 0: ttb.cpick.HSV_rgb= maxi << 16 | vi   << 8 | mini;   break;
-        case 1: ttb.cpick.HSV_rgb= vd   << 16 | maxi << 8 | mini;   break;
-        case 2: ttb.cpick.HSV_rgb= mini << 16 | maxi << 8 | vi;     break;
-        case 3: ttb.cpick.HSV_rgb= mini << 16 | vd   << 8 | maxi;   break;
-        case 4: ttb.cpick.HSV_rgb= vi   << 16 | mini << 8 | maxi;   break;
-        case 5: ttb.cpick.HSV_rgb= maxi << 16 | mini << 8 | vd;     break;
-        }
-      }
     }
-    redrawit= redraw;
+    change= 1;
 
   }else if( (dir < 0) && (ttb.cpick.HSV_val < 1.0) ){
     //wheel up
@@ -1340,7 +1312,7 @@ static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
     if( ttb.cpick.HSV_val > 1.0){
       ttb.cpick.HSV_val= 1.0;
     }
-    redrawit= redraw;
+    change= 1;
 
   }else if( (dir > 0) && (ttb.cpick.HSV_val > 0.0) ){
     //wheel down
@@ -1348,13 +1320,59 @@ static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
     if( ttb.cpick.HSV_val < 0.0){
       ttb.cpick.HSV_val= 0.0;
     }
-    redrawit= redraw;
+    change= 1;
   }
-  if( redrawit ){
-    redraw_item(p);
-  }
-  if( ttb.cpick.pchosen != NULL ){
-    redraw_item(ttb.cpick.pchosen); //redaw chosen color
+  if( change ){
+    /* update RGB from HSV */
+    if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){
+      //last row (B/W)
+      double dv= 255.0 / (PICKER_CELL_W-1);
+      int r= dv * ttb.cpick.HSV_x;
+      ttb.cpick.HSV_rgb= r | r << 8 | r << 16;
+    }else{
+      //HSV color wheel
+      //  H   0º    60º   120º  180º  240º  300º
+      //  R   max   down  min   min   up    max
+      //  G   up    max   max   down  min   min
+      //  B   min   min   up    max   max   down
+      // max= V
+      // min= V*(1-S)
+      int a= ttb.cpick.HSV_x / (PICKER_CELL_W/6); //H section
+      int f= ttb.cpick.HSV_x % (PICKER_CELL_W/6); //H
+      double max= ttb.cpick.HSV_val;
+      double min= max * ((double)ttb.cpick.HSV_y) / ((double)PICKER_CELL_H);
+      double v= ((max - min) * f)/(PICKER_CELL_W/6);
+      int vi= (int)((min + v) * 255.0);
+      int vd= (int)((max - v) * 255.0);
+      int maxi= (int)(max * 255.0);
+      int mini= (int)(min * 255.0);
+      if( vi > 255){
+          vi= 255;
+      }
+      if( vd > 255){
+          vd= 255;
+      }
+      if( maxi > 255){
+          maxi= 255;
+      }
+      if( mini > 255){
+          mini= 255;
+      }
+      switch(a){
+      case 0: ttb.cpick.HSV_rgb= maxi << 16 | vi   << 8 | mini;   break;
+      case 1: ttb.cpick.HSV_rgb= vd   << 16 | maxi << 8 | mini;   break;
+      case 2: ttb.cpick.HSV_rgb= mini << 16 | maxi << 8 | vi;     break;
+      case 3: ttb.cpick.HSV_rgb= mini << 16 | vd   << 8 | maxi;   break;
+      case 4: ttb.cpick.HSV_rgb= vi   << 16 | mini << 8 | maxi;   break;
+      case 5: ttb.cpick.HSV_rgb= maxi << 16 | mini << 8 | vd;     break;
+      }
+    }
+    if( redraw ){
+      redraw_item(p); //redraw color picker only if asked
+    }
+    if( ttb.cpick.pchosen != NULL ){
+      redraw_item(ttb.cpick.pchosen); //always redraw the chosen color
+    }
   }
 }
 
@@ -2187,7 +2205,7 @@ static void draw_img( cairo_t *ctx, struct toolbar_img *pti, int x, int y, int g
 static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h )
 {
   struct color3doubles c;
-  int i, j, xr, yr, dx, dy, a;
+  int i, j, xr, yr, dx, dy, a, hp;
   double v, min, max, dv;
 
   if( color == BKCOLOR_NOT_SET ){
@@ -2207,11 +2225,12 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
     //mouse wheel => V
     max= ttb.cpick.HSV_val; //V [0, 1] value of color picker (only one for now...)
     min= 0.0;
-    dx= (w-PICKER_VSCROLLE) / PICKER_CELL_W;   //w=248-8 = 240
-    dy= h / PICKER_CELL_H;   //h=240
-    yr= y;
+    hp= h-(PICKER_MARG_TOP+PICKER_MARG_BOTT);
+    dx= (w-(PICKER_MARG_LEFT+PICKER_MARG_RIGHT+PICKER_VSCROLLW)) / PICKER_CELL_W;   //w=250-10 = 240
+    dy= hp / PICKER_CELL_H;   //h=242-2= 240
+    yr= y + PICKER_MARG_TOP;
     for( i= 0; i < (PICKER_CELL_H-1); i++){
-      xr= x;
+      xr= x + PICKER_MARG_LEFT;
       c.R= max;
       c.G= min;
       c.B= min;
@@ -2258,7 +2277,7 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
       min += max / ((double)PICKER_CELL_H);
     }
     //last row (B/W)
-    xr= x;
+    xr= x + PICKER_MARG_LEFT;
     c.R= 0;
     c.G= 0;
     c.B= 0;
@@ -2276,19 +2295,32 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
       c.B= c.R;
     }
     //highligth actual selection
-    xr= x + ttb.cpick.HSV_x * dx;
-    yr= y + ttb.cpick.HSV_y * dy;
-    cairo_set_source_rgb(ctx, 0.5, 0.5, 0.5 );  /* TO DO: CHANGE color in some positions... */
+    xr= x + PICKER_MARG_LEFT + ttb.cpick.HSV_x * dx;
+    yr= y + PICKER_MARG_TOP + ttb.cpick.HSV_y * dy;
+    cairo_set_line_width(ctx,1);
+    c.R= 0;
+    if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){
+      //last row (B/W)
+      if( ttb.cpick.HSV_x < PICKER_CELL_W/2 ){
+        c.R= 1;
+      }
+    }else{
+      //color
+      if( ttb.cpick.HSV_val < 0.7 ){
+        c.R= 1;
+      }
+    }
+    cairo_set_source_rgb(ctx, c.R, c.R, c.R );
     cairo_rectangle(ctx, xr, yr, dx, dy);
     cairo_stroke(ctx);
 
     //Vscroll bar
     xr= x+w-PICKER_VSCROLLW;
     cairo_set_source_rgb(ctx, 0.5, 0.5, 0.5 );
-    cairo_rectangle(ctx, xr, y, PICKER_VSCROLLW, h);
+    cairo_rectangle(ctx, xr, y+PICKER_MARG_TOP, PICKER_VSCROLLW, hp);
     cairo_fill(ctx);
-    yr= y + h * (1-ttb.cpick.HSV_val) * (1-HSV_V_DELTA);
-    dy= h*HSV_V_DELTA;
+    yr= y + PICKER_MARG_TOP + hp * (1-ttb.cpick.HSV_val) * (1-HSV_V_DELTA);
+    dy= hp * HSV_V_DELTA;
     cairo_set_source_rgb(ctx, 0.3, 0.3, 0.3 );
     cairo_rectangle(ctx, xr, yr, PICKER_VSCROLLW, dy);
     cairo_fill(ctx);

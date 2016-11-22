@@ -89,11 +89,13 @@
 
 #define BKCOLOR_PICKER  (-2)  //background color = HSV color picker
 #define HSV_V_DELTA     0.05
-#define PICKER_VSCROLLW 7     //Vscroll width
-#define PICKER_VSCROLLS 1     //Vscroll separation
-#define PICKER_VSCROLLE (PICKER_VSCROLLS+PICKER_VSCROLLW)
-#define PICKER_CELL_W   60    //total w=248 = 60x4 + 1 + 7
-#define PICKER_CELL_H   30    //total h=240 = 60x4
+#define PICKER_VSCROLLW   8   //Vscroll width
+#define PICKER_MARG_TOP   1
+#define PICKER_MARG_BOTT  1
+#define PICKER_MARG_LEFT  1
+#define PICKER_MARG_RIGHT 1   //Vscroll separation
+#define PICKER_CELL_W   60    //total w=250 = 60x4 + 1 + 1 + 8
+#define PICKER_CELL_H   30    //total h=242 = 60x4 + 1 + 1
 
 #define BKCOLOR_SEL_COLOR  (-3)  //background color = chosen color in color picker
 
@@ -245,12 +247,12 @@ struct toolbar_data
 
 struct color_picker_data
 {
-  int HSV_x;          //H value
-  int HSV_y;          //S value
-  double HSV_val;     //V value of color picker (only one for now...)
-  int HSV_rgb;        //chosen color in RGB format
+  int HSV_x;          //(0..PICKER_CELL_W-1) => H value
+  int HSV_y;          //(0..PICKER_CELL_H-1) => S value
+  double HSV_val;     //[0.0 .. 1.0] V value of color picker
 
-  struct toolbar_item * pchosen;  //item that shows the chosen color
+  int HSV_rgb;        //chosen color in RGB format
+  struct toolbar_item * pchosen;  //item that shows the chosen color or NULL
 };
 
 struct all_toolbars_data
@@ -265,7 +267,7 @@ struct all_toolbars_data
 
   char * img_base;
 
-  struct color_picker_data cpick;
+  struct color_picker_data cpick; //only one global color picker
 };
 
 #endif
