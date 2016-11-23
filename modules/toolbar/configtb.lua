@@ -56,11 +56,11 @@ end
 
 --show/hide buffer config panel
 function toolbar.toggle_buffer_configtab()
-  if (not toolbar.config_toolbar_shown) or toolbar.cfgpnl_curgroup == 1 then
-    toolbar.toggle_showconfig()
+  if (not toolbar.config_toolbar_shown) or toolbar.cfgpnl_curgroup == toolbar.buff_panel then
+    toolbar.toggle_showconfig() --show/hide
   end
-  if toolbar.config_toolbar_shown and toolbar.cfgpnl_curgroup ~= 1 then
-    toolbar.config_tab_click(1)
+  if toolbar.config_toolbar_shown and toolbar.cfgpnl_curgroup ~= toolbar.buff_panel then
+    toolbar.config_tab_click(toolbar.buff_panel) --activate buffer panel
   end
 end
 
@@ -147,6 +147,7 @@ local function add_config_tabgroup(name,title,ngrp)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";===[ "..name.." ]==="
   end
+  return n
 end
 
 local function add_config_separator()
@@ -274,8 +275,27 @@ function toolbar.get_radio_val(name,maxnum)
   return 0
 end
 
-local function changecolor_clicked(name)
-  ui.statusbar_text= "color clicked"
+local function get_rgbcolor_prop(prop)
+  if buffer.property[prop] == nil then
+    return 0
+  end
+  local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
+  return ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
+end
+
+local function changeprop_clicked(name)
+  toolbar.edit_color_prop=name
+  toolbar.edit_curgroup= toolbar.cfgpnl_curgroup
+  toolbar.enable("picker_ok", true)
+  toolbar.enable("picker_cancel", true)
+  toolbar.settext("edproptit", "Edit property:", "", true)
+  toolbar.settext("edproptxt", name, "", true)
+  local oldcolor= get_rgbcolor_prop(name)
+  toolbar.setbackcolor("CPICKER", oldcolor )
+  toolbar.setbackcolor("oldcolor", oldcolor, true)
+  if toolbar.cfgpnl_curgroup ~= toolbar.picker_panel then
+    toolbar.config_tab_click(toolbar.picker_panel) --activate picker panel
+  end
 end
 
 local function add_config_color(text, foreprop, backprop, tooltip)
@@ -286,21 +306,17 @@ local function add_config_color(text, foreprop, backprop, tooltip)
   --change color buttons
   if foreprop and foreprop ~= "" then
     local prop= "color."..foreprop
-    local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
-    local rgbcolor= ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
     toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
-    toolbar.cmd(prop, changecolor_clicked, tooltip, "colorn")
-    toolbar.setbackcolor(prop, rgbcolor, true)
+    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
+    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
     toolbar.setthemeicon(prop, "colorh", 2)
     toolbar.setthemeicon(prop, "colorp", 3)
   end
   if backprop and backprop ~= "" then
     local prop= "color."..backprop
-    local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
-    local rgbcolor= ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
     toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
-    toolbar.cmd(prop, changecolor_clicked, tooltip, "colorn")
-    toolbar.setbackcolor(prop, rgbcolor, true)
+    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
+    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
     toolbar.setthemeicon(prop, "colorh", 2)
     toolbar.setthemeicon(prop, "colorp", 3)
   end
@@ -309,7 +325,6 @@ end
 
 local function colorpreset_clicked(name)
   local color= tonumber(string.match(name,"preset(.*)"))
-  --ui.statusbar_text= "preset color= "..color
   toolbar.setbackcolor("CPICKER", color)
 end
 
@@ -323,10 +338,14 @@ local function add_color_preset( n, color )
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 31
 end
 
+local function picker_clicked()
+  ui.statusbar_text= "picker clicked"
+end
+
 local function add_config_colorpicker()
   toolbar.adjust(250,242,2,1,3,3)
   toolbar.gotopos(20, toolbar.cfgpnl_y)
-  toolbar.cmd("picker", changecolor_clicked, "", "")
+  toolbar.cmd("picker", picker_clicked, "", "")
   toolbar.setbackcolor("picker", -2, true)  --COLOR PICKER=-2
   local ynext= toolbar.cfgpnl_y + 250
   toolbar.adjust(48,24,2,1,3,3)
@@ -339,12 +358,6 @@ local function add_config_colorpicker()
   add_color_preset(7,0x000000)
   add_color_preset(8,0xffffff)
   toolbar.cfgpnl_y= ynext
-  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmd("choosencolor", changecolor_clicked, "")
-  toolbar.setbackcolor("choosencolor", -3, true)  --CHOSEN COLOR=-3
-  toolbar.setthemeicon("choosencolor", "colorh", 2)
-  toolbar.setthemeicon("choosencolor", "colorp", 3)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 50
 end
 
 local function _add_config_radio(name,text,tooltip,checked)
@@ -600,7 +613,7 @@ end
 
 local function add_buffer_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
-  add_config_tabgroup("Buffer", "Buffer configuration")
+  toolbar.buff_panel= add_config_tabgroup("Buffer", "Buffer configuration")
 
   add_config_label("VIEW OPTIONS")
   add_config_label("Buffer")
@@ -653,7 +666,7 @@ end
 
 local function add_toolbar_cfg_panel()
   toolbar.config_saveon=true --save the config options of this panel
-  add_config_tabgroup("Toolbar", "Toolbar configuration")
+  toolbar.toolbar_panel= add_config_tabgroup("Toolbar", "Toolbar configuration")
 
   add_config_label("THEME")
   add_config_radio("tbtheme", "bar-sm-light", "Light theme with small tabs", true)
@@ -708,7 +721,7 @@ end
 
 local function add_colors_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
-  add_config_tabgroup("Color", "Color configuration")
+  toolbar.colors_panel= add_config_tabgroup("Color", "Color configuration")
 
   add_config_label3("Editor", "Fore", "Back")
   add_config_color("Default text", "text_fore", "text_back")
@@ -756,18 +769,83 @@ local function add_colors_cfg_panel()
   add_config_separator()
 end
 
+local function picker_cancel()
+  if toolbar.edit_curgroup and toolbar.cfgpnl_curgroup ~= toolbar.edit_curgroup then
+    toolbar.config_tab_click(toolbar.edit_curgroup) --return to original panel
+  end
+  toolbar.edit_curgroup= nil --end edit
+  toolbar.enable("picker_ok", false)
+  toolbar.enable("picker_cancel", false)
+  toolbar.settext("edproptit", "", "", true)
+  toolbar.settext("edproptxt", "", "", true)
+end
+
+local function picker_ok()
+  if toolbar.edit_curgroup ~= nil then
+    --get picker color
+    --set property: toolbar.edit_color_prop
+  end
+  picker_cancel()
+end
+
+local function oldcolor_clicked()
+  toolbar.setbackcolor("CPICKER", get_rgbcolor_prop(toolbar.edit_color_prop))
+end
+
 local function add_picker_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
-  add_config_tabgroup("Picker", "Color picker")
+  toolbar.picker_panel= add_config_tabgroup("Picker", "Color picker")
 
-  add_config_label3("HSV","","Preset")
+  add_config_label("HSV")
   add_config_colorpicker()
+
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmd("choosencolor", picker_clicked, "")
+  toolbar.setbackcolor("choosencolor", -3, true)  --CHOSEN COLOR=-3
+  toolbar.setthemeicon("choosencolor", "colorh", 2)
+  toolbar.setthemeicon("choosencolor", "colorp", 3)
+
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmd("oldcolor", oldcolor_clicked, "")
+  toolbar.edit_color_prop= "color.text_back"
+  toolbar.setbackcolor("oldcolor", get_rgbcolor_prop(toolbar.edit_color_prop), true)
+  toolbar.setthemeicon("oldcolor", "colorh", 2)
+  toolbar.setthemeicon("oldcolor", "colorp", 3)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
+
+  toolbar.gotopos(toolbar.cfgpnl_xtext-4, toolbar.cfgpnl_y)
+  toolbar.addlabel("", "", 0, true, false, "edproptit")
+  toolbar.gotopos(toolbar.cfgpnl_width/2-4, toolbar.cfgpnl_y)
+  toolbar.addlabel("", "", toolbar.cfgpnl_width, true, true, "edproptxt")  --edited prop (set later)
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload2")
+  toolbar.cmdtext("Change", picker_ok, "Accept the new color", "picker_ok")
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Cancel", picker_cancel, "Keep the old color", "picker_cancel")
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
   add_config_separator()
+  picker_cancel()
+
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 10
+  add_config_label("TYPER")
+  add_config_label("Order")
+  add_config_radio("ctypeorder", "RRGGBB", "", true)
+  cont_config_radio("BBGGRR")
+  add_config_label("Format")
+  add_config_radio("ctypeformat", "0xhhhhhh", "", true)
+  cont_config_radio("#hhhhhh")
+  cont_config_radio("decimal")
+
+  add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Type", picker_type, "Type the selected color", "picker_type")
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Copy", picker_copy, "Copy the selected color to the clipboard", "picker_copy")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
+
 end
 
 function toolbar.add_config_panel()

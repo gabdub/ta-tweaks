@@ -845,8 +845,8 @@ static int set_text_bt_width(struct toolbar_item * p )
       //expand button (center text)
       p->imgx += (p->barx1 + p->minwidth - p->barx2)/2;
       p->barx2= p->barx1+p->minwidth;
-
-    }else if( (p->maxwidth > 0) && (p->barx2 > (p->barx1+p->maxwidth)) ){
+    }
+    if( (p->maxwidth > 0) && (p->barx2 > (p->barx1+p->maxwidth)) ){
       //reduce button (trimm text)
       p->barx2= p->barx1+p->maxwidth;
     }
@@ -1774,18 +1774,24 @@ static void ttb_change_button_tooltipT(struct toolbar_data *T, const char *name,
 
 static void ttb_change_button_textT(struct toolbar_data *T, const char *name, const char *text )
 {
-  int dif;
+  int dif, y1, y2, x;
   struct toolbar_item * p= item_from_nameT(T, name);
   struct toolbar_group * G;
   if( p != NULL ){
     G= p->group;
+    y1= p->bary1;
+    y2= p->bary2;
+    x= p->barx2;
     p->text= chg_alloc_str(p->text, text);
     dif= set_text_bt_width(p);
     if( dif != 0){
       redraw_begG(G);
-      //button width changed, update all buttons to the right
+      //button width changed, update all buttons to the right on the same line
       p= p->next;
       while( p != NULL ){
+        if( (y1 < p->bary2) || (y2 > p->bary1) || (p->barx1 < x) ){
+            break;
+        }
         p->barx1 += dif;
         p->barx2 += dif;
         p->imgx += dif;
