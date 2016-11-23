@@ -3443,6 +3443,13 @@ static int ltoolbar_gototab(lua_State *L)
   return 0;
 }
 
+/** `toolbar.getpickcolor()` Lua function. */
+static int ltoolbar_getpickcolor(lua_State *L)
+{
+  lua_pushinteger(L,ttb.cpick.HSV_rgb);
+  return 1;
+}
+
 /* ============================================================================= */
 /*                          CALLED FROM TA                                       */
 /* ============================================================================= */
@@ -3488,6 +3495,8 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab num
   l_setcfunction(L, -1, "tabwidth",     ltoolbar_tabwidth);     //set tab num tabwidth (varible/fixed)
   l_setcfunction(L, -1, "gototab",      ltoolbar_gototab);      //generate a click in tab: -1:prev,1:next,0:first,2:last
+//get
+  l_setcfunction(L, -1, "getpickcolor", ltoolbar_getpickcolor); //return (RGB) current selected color in picker
 
   lua_setglobal(L, "toolbar");
 }

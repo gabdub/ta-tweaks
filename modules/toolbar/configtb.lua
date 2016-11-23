@@ -792,6 +792,25 @@ local function oldcolor_clicked()
   toolbar.setbackcolor("CPICKER", get_rgbcolor_prop(toolbar.edit_color_prop))
 end
 
+local function picker_type()
+  local col= toolbar.getpickcolor() --RGB
+  if toolbar.get_radio_val("ctypeorder") == 2 then
+    col=((col >> 16) & 0xFF) | (col & 0x00FF00) | ((col << 16) & 0xFF0000)
+  end
+  local scol
+  if toolbar.get_radio_val("ctypeformat") == 3 then
+    scol=string.format('%d', col) --decimal
+  else
+    scol=string.format('%06X', col) --hex
+    if toolbar.get_radio_val("ctypeformat") == 1 then
+      scol="0x"..scol
+    else
+      scol="#"..scol
+    end
+  end
+  buffer.add_text(buffer, scol)
+end
+
 local function add_picker_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
   toolbar.picker_panel= add_config_tabgroup("Picker", "Color picker")
