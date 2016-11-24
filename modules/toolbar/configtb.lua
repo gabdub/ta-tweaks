@@ -887,7 +887,7 @@ local function oldcolor_clicked()
   toolbar.setbackcolor("CPICKER", get_rgbcolor_prop(toolbar.edit_color_prop))
 end
 
-local function picker_type()
+local function picker_type(toclipboard)
   local col= toolbar.getpickcolor() --RGB
   if toolbar.get_radio_val("ctypeorder") == 2 then
     col=rgb_2_bgr(col)
@@ -903,7 +903,15 @@ local function picker_type()
       scol="#"..scol
     end
   end
-  buffer.add_text(buffer, scol)
+  if toclipboard then
+    buffer:copy_text(scol)
+  else
+    buffer.add_text(buffer, scol)
+  end
+end
+
+local function picker_copy()
+  picker_type(true)
 end
 
 local function add_picker_cfg_panel()
