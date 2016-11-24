@@ -2,6 +2,7 @@ toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
 toolbar.cfgpnl_chkval={}
 toolbar.cfgpnl_chknotify={}
 toolbar.cfgpnl_lexer_indent={}
+toolbar.cfgpnl_colors={}
 toolbar.cfgpnl_savelst={}
 toolbar.config_saveon=false
 toolbar.config_change=false
@@ -93,6 +94,7 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_curgroup= startgroup
   toolbar.cfgpnl_chkval={}
   toolbar.cfgpnl_chknotify={}
+  toolbar.cfgpnl_colors={}
   toolbar.cfgpnl_savelst={}
   toolbar.config_saveon=true  --save config options by default
 
@@ -275,12 +277,37 @@ function toolbar.get_radio_val(name,maxnum)
   return 0
 end
 
+local function rgb_2_bgr(col)
+  return ((col >> 16) & 0xFF) | (col & 0x00FF00) | ((col << 16) & 0xFF0000)
+end
+
+--string color in 0xBBGGRR order
+function toolbar.get_colorprop_val(prop)
+  local col= toolbar.cfgpnl_colors[prop]
+  if col == nil then col= '0x000000' end
+  return col
+end
+
+--int color in 0xRRGGBB order
 local function get_rgbcolor_prop(prop)
-  if buffer.property[prop] == nil then
-    return 0
+  local propval= toolbar.get_colorprop_val(prop)
+  local v= string.match(propval,"0x(.*)")
+  if v then propval= v end
+  return rgb_2_bgr(tonumber(propval,16))
+end
+
+--string color in 0xBBGGRR order
+function toolbar.set_colorprop_val(prop,color,dontset_toolbar)
+  toolbar.cfgpnl_colors[prop]= color
+  if not dontset_toolbar then
+    toolbar.setbackcolor(prop,get_rgbcolor_prop(prop)) --update button background
   end
-  local propval= tonumber(buffer.property[prop]) --color in 0xBBGGRR order
-  return ((propval >> 16) & 0xFF) | (propval & 0x00FF00) | ((propval << 16) & 0xFF0000)
+end
+
+ --int color in 0xRRGGBB order
+local function set_rgbcolor_prop(prop,rgb)
+  toolbar.config_change=true
+  toolbar.set_colorprop_val(prop, string.format('0x%06X', rgb_2_bgr(rgb)))
 end
 
 local function changeprop_clicked(name)
@@ -311,6 +338,9 @@ local function add_config_color(text, foreprop, backprop, tooltip)
     toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
     toolbar.setthemeicon(prop, "colorh", 2)
     toolbar.setthemeicon(prop, "colorp", 3)
+    if toolbar.config_saveon then --save this color property in the config file
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
+    end
   end
   if backprop and backprop ~= "" then
     local prop= "color."..backprop
@@ -319,6 +349,9 @@ local function add_config_color(text, foreprop, backprop, tooltip)
     toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
     toolbar.setthemeicon(prop, "colorh", 2)
     toolbar.setthemeicon(prop, "colorp", 3)
+    if toolbar.config_saveon then --save this color property in the config file
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
+    end
   end
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
@@ -397,6 +430,47 @@ local function cont_config_radio(text,tooltip,checked)
   _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
 end
 
+local function load_colors_from_theme(dontask)
+  local rname,rnum
+  if dontask or ui.dialogs.msgbox{
+      title = "Get theme's colors",
+      text = 'All colors will be overwritten',
+      informative_text = 'Do you want to proceed?',
+      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+    } == 1 then
+    local f = io.open(toolbar.themepath.."colors.cfg", 'rb')
+    if f then
+      for line in f:lines() do
+        rname,rnum= string.match(line, "([^;]-):(.+)$")
+        if rname then
+          if string.match(rname,'color%..*') then
+            toolbar.set_colorprop_val(rname,rnum)
+          end
+        end
+      end
+      f:close()
+    end
+  end
+end
+
+local function save_colors_in_TAtheme()
+  local f = io.open(_USERHOME..'/themes/colors.lua', 'wb')
+  if f then
+    local savedata = {}
+    local n=1
+    savedata[n] = "local p= buffer.property"
+    for _,optname in ipairs(toolbar.cfgpnl_savelst) do
+      local cname= string.match(optname, "color%.(.+)$")
+      if cname then --only save color properties: color.name
+        n=n+1
+        savedata[n] = "p['"..optname.."']="..toolbar.get_colorprop_val(optname)
+      end
+    end
+    f:write(table.concat(savedata, '\n'))
+    f:close()
+  end
+end
+
 function toolbar.save_config()
   if toolbar.config_change then
     local f = io.open(toolbar.CONFIG_FILE, 'wb')
@@ -412,8 +486,14 @@ function toolbar.save_config()
             --radio: name:index
             savedata[n] = rname..":"..toolbar.get_radio_val(rname)
           else
-            --check: name=true/false
-            savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
+            local cname= string.match(optname, "color%.(.+)$")
+            if cname then
+              --color property: color.name
+              savedata[n] = optname..':'..toolbar.get_colorprop_val(optname)
+            else
+              --check: name=true/false
+              savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
+            end
           end
         end
       end
@@ -430,6 +510,7 @@ function toolbar.save_config()
 end
 
 function toolbar.load_config(dontset_toolbar)
+  local colors= false
   if dontset_toolbar == nil then dontset_toolbar=false end
   toolbar.cfgpnl_lexer_indent={}
   local readlexer= false
@@ -449,7 +530,12 @@ function toolbar.load_config(dontset_toolbar)
           elseif rnum == 'false' then
             toolbar.set_check_val(rname,false,dontset_toolbar)
           else
-            toolbar.set_radio_val(rname,rnum,dontset_toolbar)
+            if string.match(rname,'color%..*') then
+              toolbar.set_colorprop_val(rname,rnum,dontset_toolbar)
+              colors=true
+            else
+              toolbar.set_radio_val(rname,rnum,dontset_toolbar)
+            end
           end
         end
       end
@@ -457,6 +543,9 @@ function toolbar.load_config(dontset_toolbar)
     f:close()
   end
   toolbar.config_change= false
+  if not colors and not dontset_toolbar and toolbar.themepath then --no colors in config, use theme default
+    load_colors_from_theme(true)
+  end
 end
 
 --on init load the configuration file but don't set the toolbar yet
@@ -469,6 +558,11 @@ local function reload_theme()
   toolbar.save_config()
   buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
   reset()
+end
+
+local function save_colors_reset()
+  save_colors_in_TAtheme()
+  reload_theme()
 end
 
 local function get_lexer()
@@ -720,7 +814,7 @@ local function add_config_label3(tit, tit1, tit2, extrasep)
 end
 
 local function add_colors_cfg_panel()
-  toolbar.config_saveon=false --don't save the config options of this panel
+  toolbar.config_saveon=true --save the config options of this panel
   toolbar.colors_panel= add_config_tabgroup("Color", "Color configuration")
 
   add_config_label3("Editor", "Fore", "Back")
@@ -764,7 +858,9 @@ local function add_colors_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload2")
+  toolbar.cmdtext("Apply changes", save_colors_reset, "Accept the changes", "reload2")
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Get theme's colors", load_colors_from_theme, "Set default colors from theme", "themecolors")
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
   add_config_separator()
 end
@@ -782,8 +878,7 @@ end
 
 local function picker_ok()
   if toolbar.edit_curgroup ~= nil then
-    --get picker color
-    --set property: toolbar.edit_color_prop
+    set_rgbcolor_prop(toolbar.edit_color_prop, toolbar.getpickcolor())
   end
   picker_cancel()
 end
@@ -795,7 +890,7 @@ end
 local function picker_type()
   local col= toolbar.getpickcolor() --RGB
   if toolbar.get_radio_val("ctypeorder") == 2 then
-    col=((col >> 16) & 0xFF) | (col & 0x00FF00) | ((col << 16) & 0xFF0000)
+    col=rgb_2_bgr(col)
   end
   local scol
   if toolbar.get_radio_val("ctypeformat") == 3 then
@@ -812,7 +907,7 @@ local function picker_type()
 end
 
 local function add_picker_cfg_panel()
-  toolbar.config_saveon=false --don't save the config options of this panel
+  toolbar.config_saveon=false --don't save the config options of this part of the panel
   toolbar.picker_panel= add_config_tabgroup("Picker", "Color picker")
 
   add_config_label("HSV")
@@ -848,6 +943,7 @@ local function add_picker_cfg_panel()
   picker_cancel()
 
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 10
+  toolbar.config_saveon=true --save the config options of this part of the panel
   add_config_label("TYPER")
   add_config_label("Order")
   add_config_radio("ctypeorder", "RRGGBB", "", true)
@@ -864,7 +960,6 @@ local function add_picker_cfg_panel()
   toolbar.cmdtext("Copy", picker_copy, "Copy the selected color to the clipboard", "picker_copy")
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
   add_config_separator()
-
 end
 
 function toolbar.add_config_panel()
