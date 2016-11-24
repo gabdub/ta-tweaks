@@ -2,52 +2,7 @@ local buffer = buffer
 local property, property_int = buffer.property, buffer.property_int
 
 --COLORS--
---current line
-property['color.curr_line_back']  = 0xf5f9ff
-property['color.caret']           = 0x362b00
---default text
-property['color.text_fore']       = 0x101000
-property['color.text_back']       = 0xd6e7ff
---selection
-property['color.selection_fore']  = 0x905090
-property['color.selection_back']  = 0x88acdf
-property['color.hilight']         = 0xa8ccff
-property['color.placeholder']     = 0x88acdf
-property['color.find']            = 0xa8ccff
---calltips
-property['color.calltips_fore']   = 0x0a70ff
-property['color.calltips_back']   = 0x362b00
---linenum/markers
-property['color.linenum_fore']    = 0x0a70ff
-property['color.linenum_back']    = 0xb8dcff
-property['color.markers']         = 0x6D6D3E --folding
-property['color.markers_sel']     = 0x0a70ff
-property['color.bookmark']        = 0x015aee
-property['color.warning']         = 0x0089b5
-property['color.error']           = 0x2f32dc
-property['color.indentguide']     = 0x837b65
---project
-property['color.prj_sel_bar']     = 0x88acdf --with focus
-property['color.prj_sel_bar_nof'] = 0xa8ccff --without focus
---syntax highlighting
-property['color.comment']         = 0x6D6D3E
-property['color.variable']        = 0x2f32dc
-property['color.constant']        = 0x164bcb
-property['color.number']          = 0x164bcb
-property['color.type']            = 0x164bcb
-property['color.class']           = 0x0089b5
-property['color.label']           = 0x0089b5
-property['color.preprocessor']    = 0x0089b5
-property['color.string']          = 0x006030
-property['color.regex']           = 0x98a12a
-property['color.brace_ok']        = 0x98a12a
-property['color.function']        = 0x800000
-property['color.keyword']         = 0x800000
-property['color.embedded']        = 0x8236d3
-property['color.operator']        = 0x101000
---Diff lexer
-property['color.red']             = 0x2f32dc
-property['color.green']           = 0x006030
+dofile(_USERHOME..'/themes/colors.lua')
 
 --Default font
 property['font'], property['fontsize'] = 'Ubuntu Mono', 13
