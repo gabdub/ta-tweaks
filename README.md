@@ -162,8 +162,10 @@ __buttons__
   4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed,
   24-25-26=hilighted text button, 27-28-29=hilight as pressed text button)
-* toolbar._setbackcolor(button-name,color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a button's background color
-* toolbar._setbackcolor("GROUP"/"TOOLBAR",color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a group's or toolbar's background color
+* toolbar._setbackcolor(button-name,color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a button's background color (-1=transparent, -2=color-picker, -3=chosen color)
+* toolbar._setbackcolor("GROUP"/"TOOLBAR",color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a group's or toolbar's background color (-1=transparent)
+* toolbar._setbackcolor("CPICKER",color)_ selects a color in the color picker control
+* toolbar._getpickcolor()_ gets the selected color in the color picker control
 * toolbar._settooltip(button-name,tooltip,[onlyinthistoolbar])_ changes a button's tooltip
 * toolbar._settext(button-name,text,[tooltip],[onlyinthistoolbar])_ changes a text button's text (and tooltip)
 * toolbar._textfont(fontsize,fontyoffset,NORMcol,GRAYcol)_ changes the default text buttons font size and colors in the current edited toolbar
@@ -365,7 +367,9 @@ __Features:__
 
 The configuration panel allows you to configure options in groups organized in tabs. It's the easiest way to use __tatoolbar__.
 
-![config panel](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win13.png "config panel")
+![config panel 1](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win13.png "config panel 1")
+
+![config panel 2](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win14.png "config panel 2")
 
 The configuration settings are kept in __~/.textadept/toolbar_config__.
 
@@ -385,6 +389,20 @@ tbtab2clickclose:3
 tbshowstatbar:true
 ;VERTICAL BAR
 tbvertbar:1
+;===[ Color ]===
+;Editor
+color.text_fore:0x101000
+color.text_back:0xd6e7ff
+color.caret:0x362b00
+......
+;Diff Lexer
+color.red:0x2f32dc
+color.green:0x006030
+;TYPER
+;Order
+ctypeorder:1
+;Format
+ctypeformat:1
 ;===========
 LEXER:INDENT
 ansi_c:s4
@@ -428,3 +446,9 @@ if toolbar then
 end
 ```
 
+Color properties are saved in **~/.textadept/themes/colors.lua** and can be loaded inside the theme file using:
+```
+--COLORS--
+dofile(_USERHOME..'/themes/colors.lua')
+```
+(see ~/.textadept/themes/ggg.lua)
