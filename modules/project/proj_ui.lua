@@ -559,7 +559,7 @@ function Proj.toggle_projview()
       end
       Proj.update_projview()
     end
-    Proj.goto_filesview()
+    Proj.goto_filesview(true)
   end
 end
 

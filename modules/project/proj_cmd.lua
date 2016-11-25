@@ -359,7 +359,7 @@ function Proj.new_project()
   Proj.show_lost_focus(buffer)
   --update ui
   Proj.updating_ui= 1
-  Proj.goto_filesview() --change to files
+  Proj.goto_filesview(true) --change to files
   Proj.updating_ui= 0
   -- project in SELECTION mode without focus--
   --local p_buffer = Proj.get_projectbuffer(true)
@@ -401,7 +401,7 @@ function Proj.open_project(filename)
 
     --update ui
     Proj.updating_ui= 1
-    Proj.goto_filesview() --change to files
+    Proj.goto_filesview(true) --change to files
     Proj.updating_ui= 0
     -- project in SELECTION mode without focus--
     local p_buffer = Proj.get_projectbuffer(true)

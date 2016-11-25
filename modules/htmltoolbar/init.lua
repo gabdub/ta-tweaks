@@ -140,9 +140,7 @@ if toolbar then
   end
 
   function toolbar.html_toolbar_onoff()
-    if Proj.get_projectbuffer(false) then
-      Proj.goto_filesview() --change to files view if needed
-    end
+    Proj.goto_filesview() --change to files view if needed
     if buffer.html_toolbar_on == true then
       buffer.html_toolbar_on= false
     else

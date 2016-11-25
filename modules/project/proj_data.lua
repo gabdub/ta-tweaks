@@ -202,7 +202,7 @@ events.connect(events.INITIALIZED, function()
         Proj.is_visible= Proj._read_is_visible  --keep 0 is hidden
       end
       --start in files view
-      Proj.goto_filesview()
+      Proj.goto_filesview(true)
       --check that at least there's one regular buffer
       local rbuf = Proj.getFirstRegularBuf()
       if rbuf == nil then
@@ -574,9 +574,11 @@ function Proj.goto_projview(prjv)
   my_goto_view(pref)
 end
 
-function Proj.goto_filesview()
+function Proj.goto_filesview(dontprjcheck)
   --goto the view for editing files, split views if needed
-  Proj.goto_projview(Proj.PRJV_FILES)
+  if dontprjcheck or Proj.get_projectbuffer(false) ~= nil then
+    Proj.goto_projview(Proj.PRJV_FILES)
+  end
 end
 
 --open the selected file
@@ -658,7 +660,7 @@ function Proj.snapopen()
     return
   end
   if p_buffer.proj_files ~= nil then
-    Proj.goto_filesview() --change to files view if needed
+    Proj.goto_filesview(true) --change to files view if needed
     local utf8_list = {}
     for row= 1, #p_buffer.proj_files do
       local file= p_buffer.proj_files[row]
@@ -746,7 +748,7 @@ function Proj.onlykeep_projopen(keepone)
   if Proj.get_projectbuffer(false) ~= nil then
     --close search results
     Proj.close_search_view()
-    Proj.goto_filesview() --change to files view if needed
+    Proj.goto_filesview(true) --change to files view if needed
   elseif not keepone then
      io.close_all_buffers()
      return
@@ -769,9 +771,7 @@ function Proj.onlykeep_projopen(keepone)
 end
 
 function Proj.keep_thisbuffer()
-  if Proj.get_projectbuffer(false) ~= nil then
-    Proj.goto_filesview() --change to files view if needed
-  end
+  Proj.goto_filesview() --change to files view if needed
   --keep this buffer
   buffer._dont_close= true
 end
@@ -794,7 +794,7 @@ function Proj.goto_buffer(nb)
     Proj.goto_searchview()
   else
     --activate files view
-    Proj.goto_filesview()
+    Proj.goto_filesview(true)
     if TA_MAYOR_VER < 9 then
       view:goto_buffer(nb)
     else
