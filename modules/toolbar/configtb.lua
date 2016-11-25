@@ -914,6 +914,66 @@ local function picker_copy()
   picker_type(true)
 end
 
+--remove blanks and CR/LF
+local function str_trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+local function picker_get(fromclipboard)
+  local text
+  if fromclipboard then
+    text= str_trim(ui.clipboard_text)
+  else
+    local s, e = buffer.selection_start, buffer.selection_end
+    if s == e then
+      s, e = buffer:word_start_position(s), buffer:word_end_position(s)
+    end
+    text= str_trim(buffer:text_range(s, e))
+  end
+  if text and text ~= "" then
+    local hex= false
+    local v= string.match(text,"0x(%x+)")
+    if v then
+      text=v
+      hex= true
+    else
+      v= string.match(text,"#(%x+)")
+      if v then
+        text=v
+        hex= true
+      else
+        v= string.match(text,"^(%x+)$")
+      end
+    end
+    if v then
+      if not hex and v == string.match(text,"^(%d+)$") then
+        --all digits are decimal, use radio to decide
+        if toolbar.get_radio_val("ctypeformat") ~= 3 then
+          hex= true --not decimal
+        end
+      end
+      local color
+      if hex then color=tonumber(v,16) else color=tonumber(v) end
+      if toolbar.get_radio_val("ctypeorder") == 2 then
+        color=rgb_2_bgr(color) --convert from BGR to RGB
+      end
+      toolbar.setbackcolor("CPICKER", color)
+      ui.statusbar_text= 'imported color= '..v
+      return
+    end
+    if string.len(text) > 30 then
+      text= string.sub(text,1,30).."..."
+    end
+    ui.statusbar_text= 'Invalid color format, text='..text
+  else
+    ui.statusbar_text= 'Empty text'
+  end
+end
+
+local function picker_paste()
+  picker_get(true)
+end
+
 local function add_picker_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this part of the panel
   toolbar.picker_panel= add_config_tabgroup("Picker", "Color picker")
@@ -966,6 +1026,16 @@ local function add_picker_cfg_panel()
   toolbar.cmdtext("Type", picker_type, "Type the selected color", "picker_type")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("Copy", picker_copy, "Copy the selected color to the clipboard", "picker_copy")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
+
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 10
+  add_config_label("IMPORT")
+  add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("From text", picker_get, "Import from the selected text", "picker_get")
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("From clipboard", picker_paste, "Import from the clipboard", "picker_paste")
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
   add_config_separator()
 end
