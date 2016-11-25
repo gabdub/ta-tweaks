@@ -990,7 +990,7 @@ local function add_picker_cfg_panel()
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmd("oldcolor", oldcolor_clicked, "")
   toolbar.edit_color_prop= "color.text_back"
-  toolbar.setbackcolor("oldcolor", get_rgbcolor_prop(toolbar.edit_color_prop), true)
+  toolbar.setbackcolor("oldcolor", 0, true) --set later
   toolbar.setthemeicon("oldcolor", "colorh", 2)
   toolbar.setthemeicon("oldcolor", "colorp", 3)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
@@ -1051,6 +1051,7 @@ function toolbar.add_config_panel()
 
   --load config settings / set toolbar controls
   toolbar.load_config()
+  toolbar.setbackcolor("oldcolor", get_rgbcolor_prop(toolbar.edit_color_prop), true)
 
   --check: hide toolbar + htmltoolbar => force 1 row
   if toolbar.get_radio_val("tbvertbar") == 3 and toolbar.add_html_toolbar ~= nil then
