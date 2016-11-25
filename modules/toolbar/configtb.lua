@@ -361,18 +361,19 @@ local function colorpreset_clicked(name)
   toolbar.setbackcolor("CPICKER", color)
 end
 
-local function add_color_preset( n, color )
+local function add_color_preset( n, color, bkcolor )
+  if not bkcolor then bkcolor=color end
   toolbar.gotopos(290, toolbar.cfgpnl_y)
   local name= "preset"..color
   toolbar.cmd(name, colorpreset_clicked, "", "", true)
-  toolbar.setbackcolor(name, color, true)
+  toolbar.setbackcolor(name, bkcolor, true)
   toolbar.setthemeicon(name, "colorh", 2)
   toolbar.setthemeicon(name, "colorp", 3)
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 31
 end
 
 local function picker_clicked()
-  ui.statusbar_text= "picker clicked"
+  --ui.statusbar_text= "picker clicked"
 end
 
 local function add_config_colorpicker()
@@ -382,11 +383,11 @@ local function add_config_colorpicker()
   toolbar.setbackcolor("picker", -2, true)  --COLOR PICKER=-2
   local ynext= toolbar.cfgpnl_y + 250
   toolbar.adjust(48,24,2,1,3,3)
-  add_color_preset(1,0xff0000)
+  add_color_preset(1,0xff0000,-4) --shows RED   value (scroll wheel to edit)
   add_color_preset(2,0xffff00)
-  add_color_preset(3,0x00ff00)
+  add_color_preset(3,0x00ff00,-5) --shows GREEN value (scroll wheel to edit)
   add_color_preset(4,0x00ffff)
-  add_color_preset(5,0x0000ff)
+  add_color_preset(5,0x0000ff,-6) --shows BLUE  value (scroll wheel to edit)
   add_color_preset(6,0xff00ff)
   add_color_preset(7,0x000000)
   add_color_preset(8,0xffffff)

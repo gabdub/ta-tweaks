@@ -97,7 +97,10 @@
 #define PICKER_CELL_W   60    //total w=250 = 60x4 + 1 + 1 + 8
 #define PICKER_CELL_H   30    //total h=242 = 60x4 + 1 + 1
 
-#define BKCOLOR_SEL_COLOR  (-3)  //background color = chosen color in color picker
+#define BKCOLOR_SEL_COLOR  (-3)  //background color = chosen color in color picker, shows the color in hex
+#define BKCOLOR_SEL_COL_R  (-4)  //background color = RED, shows the chosen color, RED part in hex
+#define BKCOLOR_SEL_COL_G  (-5)  //same with GREEN part (scroll-wheel to edit)
+#define BKCOLOR_SEL_COL_B  (-6)  //same with BLUE part
 
 struct toolbar_img
 {
@@ -254,6 +257,9 @@ struct color_picker_data
   int HSV_rgb;        //chosen color in RGB format
   struct toolbar_item * ppicker;  //item that shows the color picker or NULL
   struct toolbar_item * pchosen;  //item that shows the chosen color or NULL
+  struct toolbar_item * pchosenR; //item that shows the RED part of the chosen color or NULL
+  struct toolbar_item * pchosenG; //same for the GREEN part
+  struct toolbar_item * pchosenB; //same for the BLUE part
 };
 
 struct all_toolbars_data

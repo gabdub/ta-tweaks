@@ -284,6 +284,15 @@ static void free_item_node( struct toolbar_item * p )
   if( ttb.cpick.pchosen == p ){
     ttb.cpick.pchosen= NULL;
   }
+  if( ttb.cpick.pchosenR == p ){
+    ttb.cpick.pchosenR= NULL;
+  }
+  if( ttb.cpick.pchosenG == p ){
+    ttb.cpick.pchosenG= NULL;
+  }
+  if( ttb.cpick.pchosenB == p ){
+    ttb.cpick.pchosenB= NULL;
+  }
   if(p->name != NULL){
     free((void*)p->name);
   }
@@ -382,6 +391,9 @@ static void free_tatoolbar( void )
   ttb.currentntb= 0;
   ttb.cpick.ppicker= NULL;
   ttb.cpick.pchosen= NULL;
+  ttb.cpick.pchosenR= NULL;
+  ttb.cpick.pchosenG= NULL;
+  ttb.cpick.pchosenB= NULL;
 }
 
 /* ============================================================================= */
@@ -1271,6 +1283,22 @@ static int get_tabtext_widthG(struct toolbar_group *G, const char * text )
   return 0;
 }
 
+static void redraw_chosen_color( void )
+{
+  if( ttb.cpick.pchosen != NULL ){
+    redraw_item(ttb.cpick.pchosen); //redraw the chosen color
+  }
+  if( ttb.cpick.pchosenR != NULL ){ //idem color "parts"
+    redraw_item(ttb.cpick.pchosenR);
+  }
+  if( ttb.cpick.pchosenG != NULL ){
+    redraw_item(ttb.cpick.pchosenG);
+  }
+  if( ttb.cpick.pchosenB != NULL ){
+    redraw_item(ttb.cpick.pchosenB);
+  }
+}
+
 //COLOR PICKER: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
 static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
 {
@@ -1375,9 +1403,7 @@ static void color_pick_ev( struct toolbar_item *p, int dir, int redraw )
     if( redraw ){
       redraw_item(p); //redraw color picker only if asked
     }
-    if( ttb.cpick.pchosen != NULL ){
-      redraw_item(ttb.cpick.pchosen); //always redraw the chosen color
-    }
+    redraw_chosen_color(); //always redraw the chosen color
   }
 }
 
@@ -1444,8 +1470,34 @@ static void set_color_pick_rgb( int color )
   if( ttb.cpick.ppicker != NULL ){
     redraw_item(ttb.cpick.ppicker); //redraw the color picker item
   }
-  if( ttb.cpick.pchosen != NULL ){
-    redraw_item(ttb.cpick.pchosen); //redraw the chosen color item
+  redraw_chosen_color(); //redraw the chosen color item
+}
+
+//scroll wheel over a color "part"
+static void color_part_ev( struct toolbar_item *p, int dir )
+{
+  int rgb= ttb.cpick.HSV_rgb;
+  int mask= 0x0000FF; //blue
+  int val=  0x000001;
+  switch( p->back_color ){
+//    case BKCOLOR_SEL_COL_B:
+//      break;
+    case BKCOLOR_SEL_COL_G:
+      mask= 0x00FF00; //green
+      val=  0x000100;
+      break;
+    case BKCOLOR_SEL_COL_R:
+      mask= 0xFF0000; //red
+      val=  0x010000;
+      break;
+  }
+  if( (dir > 0) && ((rgb & mask) != mask) ){
+    rgb += val; //part +1
+  }else if( (dir < 0) && ((rgb & mask) != 0) ){
+    rgb -= val;  //part -1
+  }
+  if( rgb != ttb.cpick.HSV_rgb ){
+    set_color_pick_rgb( rgb );
   }
 }
 
@@ -1503,6 +1555,12 @@ static void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         //COLOR PICKER: change HSV: V value
         if( t->back_color == BKCOLOR_PICKER ){
           color_pick_ev( t, dir, 1 );
+          return;
+        }
+        //COLOR PARTS: red, green, blue
+        if( (t->back_color == BKCOLOR_SEL_COL_R) || (t->back_color == BKCOLOR_SEL_COL_G) ||
+            (t->back_color == BKCOLOR_SEL_COL_B) ){
+          color_part_ev( t, dir );
           return;
         }
       }
@@ -1757,6 +1815,21 @@ static void ttb_set_back_colorT(struct toolbar_data *T, const char *name, int co
         ttb.cpick.pchosen= p; //update this item when the chosen color changes
       }else if( ttb.cpick.pchosen == p ){
         ttb.cpick.pchosen= NULL;
+      }
+      if( color == BKCOLOR_SEL_COL_R ){
+        ttb.cpick.pchosenR= p; //update this item when the chosen color changes
+      }else if( ttb.cpick.pchosenR == p ){
+        ttb.cpick.pchosenR= NULL;
+      }
+      if( color == BKCOLOR_SEL_COL_G ){
+        ttb.cpick.pchosenG= p; //update this item when the chosen color changes
+      }else if( ttb.cpick.pchosenG == p ){
+        ttb.cpick.pchosenG= NULL;
+      }
+      if( color == BKCOLOR_SEL_COL_B ){
+        ttb.cpick.pchosenB= p; //update this item when the chosen color changes
+      }else if( ttb.cpick.pchosenB == p ){
+        ttb.cpick.pchosenB= NULL;
       }
       redraw_item(p);
     }
@@ -2290,7 +2363,7 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
 {
   struct color3doubles c;
   int i, j, xr, yr, dx, dy, a, hp;
-  double v, min, max, dv;
+  double v, min, max, dv, tcol;
   char str[16];
 
   if( color == BKCOLOR_NOT_SET ){
@@ -2391,8 +2464,9 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
       }
     }else{
       //color
-      if( ttb.cpick.HSV_val < 0.7 ){
-        c.R= 1;
+      if( (ttb.cpick.HSV_val < 0.7) ||
+          (((ttb.cpick.HSV_rgb & 0xff) > 0x80) && (ttb.cpick.HSV_rgb & 0xff00) < 0x8000) ){
+        c.R= 1; //white over dark colors
       }
     }
     cairo_set_source_rgb(ctx, c.R, c.R, c.R );
@@ -2415,9 +2489,33 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
 
   }else{
     str[0]= 0;
+    tcol= 1; //text color= black (0) or white (1)
     if( color == BKCOLOR_SEL_COLOR ){
       color= ttb.cpick.HSV_rgb; //choosen color in HSV color picker
       sprintf( str, "%06X", color );
+      tcol= 0; //black
+      if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){
+        //last row (B/W)
+        if( ttb.cpick.HSV_x < PICKER_CELL_W/2 ){
+          tcol= 1; //white over dark grays
+        }
+      }else{
+        //color
+        if( (ttb.cpick.HSV_val < 0.7) ||
+            (((ttb.cpick.HSV_rgb & 0xff) > 0x80) && (ttb.cpick.HSV_rgb & 0xff00) < 0x8000) ){
+          tcol= 1; //white over dark colors
+        }
+      }
+    }else if( color == BKCOLOR_SEL_COL_R ){
+      color= 0xFF0000; //RED
+      sprintf( str, "%02X", (ttb.cpick.HSV_rgb >> 16) & 0xFF );
+    }else if( color == BKCOLOR_SEL_COL_G ){
+      color= 0x00FF00; //GREEN
+      sprintf( str, "%02X", (ttb.cpick.HSV_rgb >> 8) & 0xFF );
+      tcol= 0; //black text
+    }else if( color == BKCOLOR_SEL_COL_B ){
+      color= 0x0000FF; //BLUE
+      sprintf( str, "%02X", ttb.cpick.HSV_rgb & 0xFF );
     }
     //solid color
     setrgbcolor( color, &c );
@@ -2425,20 +2523,7 @@ static void draw_fill_color( cairo_t *ctx, int color, int x, int y, int w, int h
     cairo_rectangle(ctx, x, y, w, h);
     cairo_fill(ctx);
     if( str[0] != 0 ){
-      c.R= 0;
-      if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){
-        //last row (B/W)
-        if( ttb.cpick.HSV_x < PICKER_CELL_W/2 ){
-          c.R= 1;
-        }
-      }else{
-        //color
-        if( ttb.cpick.HSV_val < 0.7 ){
-          c.R= 1;
-        }
-      }
-      c.G= c.R;
-      c.B= c.R;
+      c.R= tcol;  c.G= tcol;   c.B= tcol;
       draw_txt(ctx, str, x+4, y+16, y, w-8, h, &c, 10, 0 );
     }
   }
@@ -3281,7 +3366,8 @@ static int ltoolbar_seticon(lua_State *L)
 }
 
 /** `toolbar.setbackcolor(name,color,[keep-background-img],[onlyinthistoolbar])` Lua function. */
-/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent, -2=color-picker -3=chosen color */
+/** name= button name or "TOOLBAR" or "GROUP", color=RRGGBB,-1=transparent, -2=color-picker
+ -3=chosen color, -4=chosen red, -5=chosen green, -6=chosen blue */
 /** name= "CPICKER" = set color picker current color */
 static int ltoolbar_setbackcolor(lua_State *L)
 {
@@ -3462,6 +3548,9 @@ void register_toolbar(lua_State *L)
   ttb.cpick.HSV_rgb= 0x00FF0000; //RED
   ttb.cpick.ppicker= NULL;
   ttb.cpick.pchosen= NULL;
+  ttb.cpick.pchosenR= NULL;
+  ttb.cpick.pchosenG= NULL;
+  ttb.cpick.pchosenB= NULL;
 
   lua_newtable(L);
 //toolbars

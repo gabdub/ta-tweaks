@@ -162,7 +162,8 @@ __buttons__
   4=tabs background, 5-6-7=normal-tab, 8-9-10=disabled-tab, 11-12-13=hilighted tab, 14-15-16=active tab,
   17-19=tab-scroll-left, 18-20=tab-scroll-right, 21-22=close tab, 23=tab changed,
   24-25-26=hilighted text button, 27-28-29=hilight as pressed text button)
-* toolbar._setbackcolor(button-name,color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a button's background color (-1=transparent, -2=color-picker, -3=chosen color)
+* toolbar._setbackcolor(button-name,color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a button's background color
+  (-1=transparent, -2=color-picker, -3=chosen color, -4=chosen-red, -5=chosen-green, -6=chosen-blue)
 * toolbar._setbackcolor("GROUP"/"TOOLBAR",color,[keep-background-img],[onlyinthistoolbar])_ sets/changes a group's or toolbar's background color (-1=transparent)
 * toolbar._setbackcolor("CPICKER",color)_ selects a color in the color picker control
 * toolbar._getpickcolor()_ gets the selected color in the color picker control
@@ -410,7 +411,7 @@ lua:s4
 text:s2
 ```
 
-The panel simplifies the creation of the toolbar because almost all the options are set from the tab "Toolbar":
+The panel simplifies the creation of the toolbar because almost all the options are set from the "Toolbar" tab:
 ```
 if toolbar then
   require('toolbar')
