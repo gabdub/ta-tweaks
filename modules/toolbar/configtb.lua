@@ -431,14 +431,18 @@ local function cont_config_radio(text,tooltip,checked)
   _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
 end
 
-local function load_colors_from_theme(dontask)
-  local rname,rnum
-  if dontask or ui.dialogs.msgbox{
-      title = "Get theme's colors",
+local function confirm_color_overwrite(title,dontask)
+  return dontask or (ui.dialogs.msgbox{
+      title = title,
       text = 'All colors will be overwritten',
       informative_text = 'Do you want to proceed?',
       icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-    } == 1 then
+    } == 1)
+end
+
+local function load_colors_from_theme(dontask)
+  local rname,rnum
+  if confirm_color_overwrite("Get theme's colors", dontask) then
     local f = io.open(toolbar.themepath.."colors.cfg", 'rb')
     if f then
       for line in f:lines() do
@@ -450,8 +454,35 @@ local function load_colors_from_theme(dontask)
         end
       end
       f:close()
+      toolbar.save_colors_reset() --apply now
     end
   end
+end
+
+local function save_theme_colors(dontask)
+  if confirm_color_overwrite("Save this colors as theme's default", dontask) then
+    local f = io.open(toolbar.themepath.."colors.cfg", 'wb')
+    if f then
+      local savedata = {}
+      local n=1
+      for _,optname in ipairs(toolbar.cfgpnl_savelst) do
+        local cname= string.match(optname, "color%.(.+)$")
+        if cname then --only save color properties: color.name
+          savedata[n] = optname..":"..toolbar.get_colorprop_val(optname)
+          n=n+1
+        end
+      end
+      f:write(table.concat(savedata, '\n'))
+      f:close()
+    end
+  end
+end
+
+local function reload_theme()
+  --Reset to apply the changes
+  toolbar.save_config()
+  buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
+  reset()
 end
 
 local function save_colors_in_TAtheme()
@@ -469,6 +500,74 @@ local function save_colors_in_TAtheme()
     end
     f:write(table.concat(savedata, '\n'))
     f:close()
+  end
+end
+
+function toolbar.save_colors_reset()
+  save_colors_in_TAtheme()
+  reload_theme()
+end
+
+local function reload_colors(dontask)
+  local rname,rnum
+  if confirm_color_overwrite("Reload current colors", dontask) then
+    local f = io.open(_USERHOME..'/themes/colors.lua', 'rb')
+    if f then
+      for line in f:lines() do
+        rname,rnum= string.match(line, ".-'(color%..-)'%]=(.+)$")
+        if rname and rnum then
+          toolbar.set_colorprop_val(rname,rnum)
+        end
+      end
+      f:close()
+    end
+  end
+end
+
+local base0X_prop= {
+['0']= {'text_back', 'selection_fore', 'linenum_back'},
+['1']= {'curr_line_back', 'prj_sel_bar'},
+['2']= {'text_fore', 'selection_back', 'operator'},
+['3']= {'indentguide'},
+['4']= {'markers,comment'},
+['5']= {'calltips_fore', 'linenum_fore', 'markers_sel'},
+['6']= {'prj_sel_bar_nof'},
+['7']= {'caret', 'calltips_back'},
+['8']= {'error', 'variable', 'red'},
+['9']= {'constant', 'number', 'type'},
+['A']= {'class', 'label', 'preprocessor', 'warning'},
+['B']= {'string', 'green'},
+['C']= {'regex', 'brace_ok'},
+['D']= {'bookmark'},
+['E']= {'function', 'keyword'},
+['F']= {'hilight', 'placeholder', 'find', 'embedded'}
+}
+
+local function import_color_scheme()
+  local rname,rnum
+  if confirm_color_overwrite("Import a color scheme file", dontask) then
+    local scheme= ui.dialogs.fileselect{
+      title = 'Open scheme file',
+      with_directory = _USERHOME..'/themes',
+      width = CURSES and ui.size[1] - 2 or nil,
+      with_extension = {'yml'}, select_multiple = false }
+    if scheme then
+      local f = io.open(scheme, 'rb')
+      if f then
+        for line in f:lines() do --format: base0B: "33ff00"
+          basen,rr,gg,bb= string.match(line, '^base0(%x).-%"(%x%x)(%x%x)(%x%x)%"')
+          if basen and rr and gg and bb then
+            bgr= "0x"..bb..gg..rr
+            local props=base0X_prop[basen]
+            for _,p in ipairs(props) do
+              toolbar.set_colorprop_val("color."..p,bgr)
+            end
+          end
+        end
+        f:close()
+      end
+      toolbar.save_colors_reset() --apply now
+    end
   end
 end
 
@@ -553,18 +652,6 @@ end
 --events.connect(events.INITIALIZED, function() toolbar.load_config(true) end)
 -- Save configuration changes on quit
 events.connect(events.QUIT, function() toolbar.save_config() end, 1)
-
-local function reload_theme()
-  --Reset to apply the changes
-  toolbar.save_config()
-  buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
-  reset()
-end
-
-local function save_colors_reset()
-  save_colors_in_TAtheme()
-  reload_theme()
-end
 
 local function get_lexer()
   local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
@@ -859,9 +946,19 @@ local function add_colors_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", save_colors_reset, "Accept the changes", "reload2")
+  toolbar.cmdtext("Apply changes", toolbar.save_colors_reset, "Accept the changes", "reload2")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Get theme's colors", load_colors_from_theme, "Set default colors from theme", "themecolors")
+  toolbar.cmdtext("Discard changes", reload_colors, "Reload current colors", "reload3")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  add_config_separator()
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Restore theme's palette", load_colors_from_theme, "Set default colors from theme", "getthemecolors")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Save as theme's palette", save_theme_colors, "Save this colors as theme's default", "savethemecolors")
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Import a base-16 file (scheme.yml)", import_color_scheme, "Import a color scheme file (github: chriskempson/base16-builder)", "impscheme")
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
   add_config_separator()
 end
