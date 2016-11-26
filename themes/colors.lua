@@ -35,5 +35,6 @@ p['color.function']=0x800000
 p['color.keyword']=0x800000
 p['color.embedded']=0x8236d3
 p['color.operator']=0x101000
+p['color.yellow']=0x00D7D7
 p['color.red']=0x2f32dc
 p['color.green']=0x006030
