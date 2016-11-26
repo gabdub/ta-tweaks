@@ -325,34 +325,29 @@ local function changeprop_clicked(name)
   end
 end
 
-local function add_config_color(text, foreprop, backprop, tooltip)
+local function add_cfg_prop(propname, x, tooltip)
+  if propname ~= "" then
+    local prop= "color."..propname
+    toolbar.gotopos(x, toolbar.cfgpnl_y)
+    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
+    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
+    toolbar.setthemeicon(prop, "colorh", 2)
+    toolbar.setthemeicon(prop, "colorp", 3)
+    if toolbar.config_saveon then --save this color property in the config file
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
+    end
+  end
+end
+
+local function add_config_color(text, foreprop, backprop, tooltip, extraprop)
   if tooltip == nil then tooltip="" end
   --text
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol2-toolbar.cfgpnl_xtext, true)
   --change color buttons
-  if foreprop and foreprop ~= "" then
-    local prop= "color."..foreprop
-    toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
-    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
-    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
-    toolbar.setthemeicon(prop, "colorh", 2)
-    toolbar.setthemeicon(prop, "colorp", 3)
-    if toolbar.config_saveon then --save this color property in the config file
-      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
-    end
-  end
-  if backprop and backprop ~= "" then
-    local prop= "color."..backprop
-    toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
-    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
-    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
-    toolbar.setthemeicon(prop, "colorh", 2)
-    toolbar.setthemeicon(prop, "colorp", 3)
-    if toolbar.config_saveon then --save this color property in the config file
-      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
-    end
-  end
+  if extraprop then add_cfg_prop(extraprop, toolbar.cfgpnl_xcontrol3, tooltip) end
+  if foreprop  then add_cfg_prop(foreprop,  toolbar.cfgpnl_xcontrol2, tooltip) end
+  if backprop  then add_cfg_prop(backprop,  toolbar.cfgpnl_xcontrol,  tooltip) end
   toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
 end
 
@@ -942,7 +937,7 @@ local function add_colors_cfg_panel()
   add_config_color("Operator", "operator")
 
   add_config_label3("Diff Lexer", "Del (-)", "Add (+)", true)
-  add_config_color("Changes", "red", "green")
+  add_config_color("Changes", "red", "green", "", "yellow")
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)

@@ -13,20 +13,20 @@ local hidden = token('hidden', '::' * l.nonnewline^0)
 local style_hidden = 'notvisible'
 
 local group1 = token('group1', '[' * (l.nonnewline - ']')^0 * ']' )
-local style_group1 = 'fore:#400000,bold'
+local style_group1 = 'fore:$(color.variable),bold'
 
 local group2 = token('group2', '(' * (l.nonnewline - ')')^0 * ')' )
-local style_group2 = 'fore:#000040,bold'
+local style_group2 = 'fore:$(color.function),bold'
 
 local group3 = token('group3', '<' * (l.nonnewline - '>')^0 * '>' )
-local style_group3 = 'fore:#000080,bold'
+local style_group3 = 'fore:$(color.type),bold'
 
 local extension = token('extension', '.' * l.word^0 )
-local style_extension = 'fore:#005050,italics'
+local style_extension = 'fore:$(color.comment),italics'
 
 --search view
 local search_line = token('search_line', '@' * l.space^0 * l.digit^1 * ':' * l.nonnewline^0)
-local style_search_line = 'fore:#606060'
+local style_search_line = 'fore:$(color.comment)'
 
 
 M._rules = {
