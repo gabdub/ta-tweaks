@@ -151,7 +151,7 @@ function Proj.add_all_files()
         flist[ #flist+1 ]= file
       end
     end
-    Proj.add_files(p_buffer, flist)
+    Proj.add_files(p_buffer, flist, false)
   else
     ui.statusbar_text='Project not found'
   end
@@ -161,9 +161,13 @@ end
 function Proj.add_dir_files(dir)
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
+    local defdir
+    if #p_buffer.proj_files > 0 then
+      defdir= p_buffer.proj_grp_path[1]
+    end
     dir = dir or ui.dialogs.fileselect{
       title = 'Add all files from a Directory', select_only_directories = true,
-      with_directory = (buffer.filename or ''):match('^.+[/\\]') or
+      with_directory = defdir or (buffer.filename or ''):match('^.+[/\\]') or
                        lfs.currentdir()
     }
     if not dir then return end
@@ -200,7 +204,7 @@ function Proj.add_dir_files(dir)
       end
       if word == "" then
         --all files / dirs
-        Proj.add_files(p_buffer, flist)
+        Proj.add_files(p_buffer, flist, true) --sort and group files with the same path
       else
         --filtered by extensions
         extlist= {}
@@ -214,7 +218,7 @@ function Proj.add_dir_files(dir)
             flist2[#flist2+1]= f
           end
         end
-        Proj.add_files(p_buffer, flist2)
+        Proj.add_files(p_buffer, flist2, true) --sort and group files with the same path
       end
     end
   else
@@ -222,8 +226,15 @@ function Proj.add_dir_files(dir)
   end
 end
 
+local function file_sort(filea,fileb)
+  local pa,fa,ea = Proj.splitfilename(filea)
+  local pb,fb,eb = Proj.splitfilename(fileb)
+  if pa == pb then return fa < fb end
+  return pa < pb
+end
+
 --add a list of files to the project (check for duplicates)
-function Proj.add_files(p_buffer, flist)
+function Proj.add_files(p_buffer, flist, groupfiles)
   local finprj= {}
   local n_inprj= 0
   for _,file in ipairs(flist) do
@@ -276,12 +287,34 @@ function Proj.add_files(p_buffer, flist)
       save_ro= p_buffer.read_only
       p_buffer.read_only= false
       row= nil
-      for i= 1, #flist do
+      local curpath
+      local defdir= p_buffer.proj_grp_path[1]
+      if groupfiles then --sort and group files with the same path
+        table.sort(flist, file_sort)
+      end
+      for i,file in ipairs(flist) do
         if all or finprj[i] == false then
-          file= flist[i]
           path,fn,ext = Proj.splitfilename(file)
-          --TODO: reduce the path if possible using project root
-          p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
+          if groupfiles then
+            --add file with relative path
+            if curpath == nil or curpath ~= path then
+              curpath= path
+              local ph=path
+              --remove default proyect base
+              if defdir and string.sub(ph,1,string.len(defdir)) == defdir then
+                ph= string.sub(ph,string.len(defdir)+1)
+                if ph ~= "" then
+                  local lastch= string.sub(ph,-1) --remove "\" or "/" end
+                  if lastch == "\\" or lastch == "/" then ph= string.sub(ph,1,string.len(ph)-1) end
+                end
+              end
+              p_buffer:append_text( '\n (' .. ph .. ')::' .. path .. '::')
+            end
+            p_buffer:append_text( '\n  ' .. fn)
+          else
+            --add files with absolute path
+            p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
+          end
           --add the new line to the proj. file list
           row= #p_buffer.proj_files+1
           p_buffer.proj_files[row]= file
