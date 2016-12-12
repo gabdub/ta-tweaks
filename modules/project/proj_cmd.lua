@@ -237,13 +237,16 @@ end
 function Proj.add_files(p_buffer, flist, groupfiles)
   local finprj= {}
   local n_inprj= 0
-  for _,file in ipairs(flist) do
-    --check if already in the project
-    local in_prj= (Proj.locate_file(p_buffer, file) ~= nil)
-    finprj[ #finprj+1]= in_prj
-    if in_prj then n_inprj= n_inprj+1 end
-  end
   if #flist > 0 then
+    if groupfiles then --sort and group files with the same path
+      table.sort(flist, file_sort)
+    end
+    for _,file in ipairs(flist) do
+      --check if already in the project
+      local in_prj= (Proj.locate_file(p_buffer, file) ~= nil)
+      finprj[ #finprj+1]= in_prj
+      if in_prj then n_inprj= n_inprj+1 end
+    end
     --if some files are already in the project, ask for confirmation
     if n_inprj == 1 then
       info= '1 file is'
@@ -289,9 +292,6 @@ function Proj.add_files(p_buffer, flist, groupfiles)
       row= nil
       local curpath
       local defdir= p_buffer.proj_grp_path[1]
-      if groupfiles then --sort and group files with the same path
-        table.sort(flist, file_sort)
-      end
       for i,file in ipairs(flist) do
         if all or finprj[i] == false then
           path,fn,ext = Proj.splitfilename(file)
