@@ -67,6 +67,7 @@ this module adds the following bindings:
 * __F5__: _(in project view)_ Refresh syntax highlighting + project folding
 * __CTRL+H__: _(in project view)_ Show the complete path of the file in the selected row
 * __CTRL+SHIFT+O__: Snapopen project files
+* __ALT+O__: Open a file using the selected text or the text under the cursor
 * __F11__: Search for a word in the project CTAG file (save current position)
 * __SHIFT+F11__: Navigate to previous position
 * __SHIFT+F12__: Navigate to next position

@@ -717,11 +717,71 @@ function Proj.search_in_files()
   end
 end
 
+local function str_trim(s)
+  return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+local function file_exists(fn)
+  local f, err = io.open(fn, 'rb')
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
+
+--open a file using the selected text or the text under the cursor
+function Proj.open_cursor_file()
+  Proj.goto_filesview() --change to files view if needed
+  local s, e = buffer.selection_start, buffer.selection_end
+  if s == e then
+    --suggest current word
+    local savewc= buffer.word_chars
+    buffer.word_chars= savewc .. ".\\/:"
+    s, e = buffer:word_start_position(s,true), buffer:word_end_position(s,true)
+    buffer.word_chars= savewc
+  end
+  local fn= str_trim(buffer:text_range(s, e))  --remove trailing \n
+  local isabspath= fn:match('^/') or fn:match('^\\') or fn:match('^.*:\\')
+  if not isabspath then
+    --relative path, add this buffer dir
+    local dir=(buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir()
+    fn= dir..fn
+    --replace "/dir/../" with "/"  and "\dir\..\" with "\"
+    while true do
+      local a,b= fn:match('(.*)/.-/%.%./(.*)')
+      if a and b then
+        fn= a.."/"..b
+      else
+        a,b= fn:match('(.*)\\.-\\%.%.\\(.*)')
+        if a and b then
+          fn= a.."\\"..b
+        else
+          a,b= fn:match('(.*)\\.-\\%.%./(.*)')
+          if a and b then
+            fn= a.."\\"..b
+          else
+            break
+          end
+        end
+      end
+    end
+  end
+  if file_exists(fn) then
+    ui.statusbar_text= "Open: "..fn
+    io.open_file(fn)
+  else
+    ui.statusbar_text= fn.." not found"
+    io.open_file()
+  end
+end
+
 --------------------------------------------------------------
 -- Control+W=         close buffer
 -- Control+Shift+W=   close all buffers
 -- Control+H=         show project current row properties
 -- Control+O =        open file
+-- Alt+O =            open file using the selected text or the text under the cursor
 -- Control+Alt+O =    open recent file
 -- Control+N=         new buffer
 -- Control+Shift+O =  project snap open
@@ -737,6 +797,7 @@ keys.cw = Proj.close_buffer
 keys.cW = Proj.close_all_buffers
 keys.ch = Proj.show_doc
 keys.co = Proj.open_file
+keys.ao = Proj.open_cursor_file
 keys.cao= Proj.open_recent_file
 keys.cn=  Proj.new_file
 keys.cO = Proj.snapopen
