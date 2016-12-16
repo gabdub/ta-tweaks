@@ -55,6 +55,50 @@ keys.a0 = function()
   type_before_after("/* ============================================================================= */\n", "")
 end
 
+-- Alt+9 = MULTILINE TYPER
+-- [BEFORE]....[AFTER]
+-- [EMPTY]
+keys.a9 = function()
+  local n1=1
+  local n2=buffer.line_count
+  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
+    --if something is selected use selected line range
+    n1=buffer:line_from_position(buffer.selection_n_start[0])+1
+    n2=buffer:line_from_position(buffer.selection_n_end[0])+1
+  end
+
+  local button, inputs = ui.dialogs.inputbox{
+    title = 'Quick-type',
+    informative_text = {'Multiline Typer', 'Before begin:', 'After end:', 'Empty lines:', 'From line:', 'To line:'},
+    text = {"","","",n1,n2}
+  }
+  if button == 1 then
+    n1=tonumber(inputs[4])-1
+    n2=tonumber(inputs[5])-1
+    if n2 >= n1 then
+      local totne= 0
+      local totem= 0
+      buffer:begin_undo_action()
+      if n1 < 0 then n1=0 end
+      if n2 > buffer.line_count-1 then n2=buffer.line_count-1 end
+      for i= n1, n2 do
+        buffer:goto_line(i)
+        if buffer:get_line(i):match('^[\r\n]*$') then
+          buffer.add_text(buffer, inputs[3])
+          totem=totem+1
+        else
+          buffer.add_text(buffer, inputs[1])
+          buffer.goto_pos(buffer, buffer.line_end_position[i])
+          buffer.add_text(buffer, inputs[2])
+          totne=totne+1
+        end
+      end
+      buffer:end_undo_action()
+      ui.statusbar_text= "Modified lines: "..totem.." empty, "..totne.." non empty"
+    end
+  end
+end
+
 -- Ctrl+, = ($=cursor position) GOTO MAIN C-BLOCK BEG
 --$nnnnnnnnn
 --{
