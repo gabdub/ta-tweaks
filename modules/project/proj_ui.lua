@@ -744,21 +744,13 @@ function Proj.open_cursor_file()
   local fn= str_trim(buffer:text_range(s, e))  --remove trailing blanks (like \n)
   local isabspath= fn:match('^/') or fn:match('^\\') or fn:match('^.*:\\')
   if not isabspath then
-    --relative path, add this buffer dir
-    local dir=(buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir()
-    fn= dir..fn
+    --relative path: add buffer dir
+    fn= ((buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir())..fn
     --replace aaaa"/dir/../"bbbb" with aaaa"/"bbbb
     while true do
       local a,b= fn:match('(.*)[/\\][^./\\]-[/\\]%.%.[/\\](.*)')
-      if a and b then
-        if WIN32 then
-          fn= a.."\\"..b
-        else
-          fn= a.."/"..b
-        end
-      else
-        break
-      end
+      if a and b then fn= a..(WIN32 and "\\" or "/")..b
+      else break end
     end
   end
   if file_exists(fn) then
