@@ -737,33 +737,27 @@ function Proj.open_cursor_file()
   if s == e then
     --suggest current word
     local savewc= buffer.word_chars
-    buffer.word_chars= savewc .. ".\\/:"
+    buffer.word_chars= savewc .. ".\\/:-"
     s, e = buffer:word_start_position(s,true), buffer:word_end_position(s,true)
     buffer.word_chars= savewc
   end
-  local fn= str_trim(buffer:text_range(s, e))  --remove trailing \n
+  local fn= str_trim(buffer:text_range(s, e))  --remove trailing blanks (like \n)
   local isabspath= fn:match('^/') or fn:match('^\\') or fn:match('^.*:\\')
   if not isabspath then
     --relative path, add this buffer dir
     local dir=(buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir()
     fn= dir..fn
-    --replace "/dir/../" with "/"  and "\dir\..\" with "\"
+    --replace aaaa"/dir/../"bbbb" with aaaa"/"bbbb
     while true do
-      local a,b= fn:match('(.*)/.-/%.%./(.*)')
+      local a,b= fn:match('(.*)[/\\][^./\\]-[/\\]%.%.[/\\](.*)')
       if a and b then
-        fn= a.."/"..b
-      else
-        a,b= fn:match('(.*)\\.-\\%.%.\\(.*)')
-        if a and b then
+        if WIN32 then
           fn= a.."\\"..b
         else
-          a,b= fn:match('(.*)\\.-\\%.%./(.*)')
-          if a and b then
-            fn= a.."\\"..b
-          else
-            break
-          end
+          fn= a.."/"..b
         end
+      else
+        break
       end
     end
   end
@@ -772,7 +766,7 @@ function Proj.open_cursor_file()
     io.open_file(fn)
   else
     ui.statusbar_text= fn.." not found"
-    io.open_file()
+    io.open_file() --show open dialog
   end
 end
 
