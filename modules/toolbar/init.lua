@@ -168,7 +168,9 @@ if toolbar then
             --project buffer: force project view
             local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
             my_goto_view(projv)
-          elseif buf._type == Proj.PRJT_SEARCH then
+            return
+          end
+          if buf._type == Proj.PRJT_SEARCH then
             --project search
             if Proj.search_vn ~= nil then
               my_goto_view(Proj.search_vn)
@@ -177,16 +179,16 @@ if toolbar then
               Proj.goto_searchview()
               Proj.search_vn= _VIEWS[view]
             end
-          else
-            --normal file: check we are not in project view
-            Proj.goto_filesview() --change to files view if needed
-            if TA_MAYOR_VER < 9 then
-              view.goto_buffer(view, _BUFFERS[buf], false)
-            else
-              view.goto_buffer(view, buf)
-            end
+            return
           end
+		  --normal file: check we are not in project view
+		  Proj.goto_filesview() --change to files view if needed
         end
+      end
+      if TA_MAYOR_VER < 9 then
+        view.goto_buffer(view, _BUFFERS[buf], false)
+      else
+        view.goto_buffer(view, buf)
       end
     end
   end
