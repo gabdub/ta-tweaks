@@ -118,6 +118,16 @@ require('project')
 
 ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
 
+
+# quicktype
+this module adds the following bindings:
+
+* __ALT+1 ALT+2 ALT+3 ALT+4 ALT+5 ALT+0__: type some C snippets that I frequently use
+* __ALT+9__: multiline typer = type some text at the beginning / end of each text line
+* __CONTROL+, CONTROL+.__: Goto previous/next lua function/C-block begin
+* __CONTROL+; CONTROL+:__: Goto previous/next lua function end/C-block end
+
+
 # tatoolbar
 This code adds 4 toolbars to textadept (__compiling is required__):
 
