@@ -99,15 +99,24 @@ keys.a9 = function()
   end
 end
 
+local function get_lexer()
+  local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
+  return buffer:private_lexer_call(GETLEXERLANGUAGE):match('^[^/]+')
+end
+
 -- Ctrl+, = ($=cursor position) GOTO MAIN C-BLOCK BEG
 --$nnnnnnnnn
 --{
 --....
 --}
+--LUA version: $[....]function[ mm.www](
 keys["c,"] = function()
+  local sbeg='^{'
+  local lexer= get_lexer()
+  if lexer == 'lua' then sbeg='^.*function%s*[%w_.]*%(' end
   for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
-    if buffer:get_line(i):match('^{') then
-      if i > 0 then i= i-1 end
+    if buffer:get_line(i):match(sbeg) then
+      if lexer ~= 'lua' then if i > 0 then i= i-1 end end
       buffer:ensure_visible_enforce_policy(i)
       buffer:goto_line(i)
       return
@@ -121,9 +130,13 @@ end
 --{
 --....
 --$}
+--LUA version: $end
 keys["c."] = function()
+  local send='^}'
+  local lexer= get_lexer()
+  if lexer == 'lua' then send='^end' end
   for i = buffer:line_from_position(buffer.current_pos) + 1, buffer.line_count, 1 do
-    if buffer:get_line(i):match('^}') then
+    if buffer:get_line(i):match(send) then
       buffer:ensure_visible_enforce_policy(i)
       buffer:goto_line(i)
       return
