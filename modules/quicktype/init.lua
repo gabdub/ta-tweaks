@@ -104,43 +104,69 @@ local function get_lexer()
   return buffer:private_lexer_call(GETLEXERLANGUAGE):match('^[^/]+')
 end
 
--- Ctrl+, = ($=cursor position) GOTO MAIN C-BLOCK BEG
---$nnnnnnnnn
+local function find_line(fmatch,dirf,roff)
+  local r
+  local curr= buffer:line_from_position(buffer.current_pos)
+  if dirf then --forward
+    for i = curr +1 -roff, buffer.line_count, 1 do
+      if buffer:get_line(i):match(fmatch) then
+        r=i+roff
+        break
+      end
+    end
+  else  --backward
+    for i = curr -1 -roff, 0, -1 do
+      if buffer:get_line(i):match(fmatch) then
+        r=i+roff
+        break
+      end
+    end
+  end
+  if r then
+    if r < 0 then r= 0 end
+    buffer:ensure_visible_enforce_policy(r)
+    buffer:goto_line(r)
+    return true
+  end
+  return false
+end
+
+-- Ctrl+, = GOTO previous FUNCTION/C-BLOCK BEG
+-- Ctrl., = GOTO next     FUNCTION/C-BLOCK BEG
+--$nnnnnnnnn  ($=cursor position)
 --{
 --....
 --}
 --LUA version: $[....]function[ mm.www](
-keys["c,"] = function()
+local function find_begin(dirf)
   local sbeg='^{'
+  local roff=-1
   local lexer= get_lexer()
-  if lexer == 'lua' then sbeg='^.*function%s*[%w_.]*%(' end
-  for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
-    if buffer:get_line(i):match(sbeg) then
-      if lexer ~= 'lua' then if i > 0 then i= i-1 end end
-      buffer:ensure_visible_enforce_policy(i)
-      buffer:goto_line(i)
-      return
-    end
+  if lexer == 'lua' then
+    sbeg='^.*function%s*[%w_.]*%('
+    roff=0
   end
-  ui.statusbar_text= 'main block begin: not found'
+  if not find_line(sbeg,dirf,roff) then
+    ui.statusbar_text= 'main block begin: not found'
+  end
 end
+keys["c,"] = function() find_begin(false) end
+keys["c."] = function() find_begin(true) end
 
--- Ctrl+. = ($=cursor position) GOTO MAIN C-BLOCK END
+-- Ctrl+; = GOTO previous FUNCTION/C-BLOCK END
+-- Ctrl.: = GOTO next     FUNCTION/C-BLOCK END
 --nnnnnnnnn
 --{
 --....
---$}
+--$}          ($=cursor position)
 --LUA version: $end
-keys["c."] = function()
+local function find_end(dirf)
   local send='^}'
   local lexer= get_lexer()
   if lexer == 'lua' then send='^end' end
-  for i = buffer:line_from_position(buffer.current_pos) + 1, buffer.line_count, 1 do
-    if buffer:get_line(i):match(send) then
-      buffer:ensure_visible_enforce_policy(i)
-      buffer:goto_line(i)
-      return
-    end
+  if not find_line(send,dirf,0) then
+    ui.statusbar_text= 'main block end: not found'
   end
-  ui.statusbar_text= 'main block end: not found'
 end
+keys["c;"] = function() find_end(false) end
+keys["c:"] = function() find_end(true) end
