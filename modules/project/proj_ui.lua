@@ -730,7 +730,30 @@ local function file_exists(fn)
   return false
 end
 
+local function try_open(fn)
+  if file_exists(fn) then
+    ui.statusbar_text= "Open: "..fn
+    io.open_file(fn)
+    return true
+  end
+  return false
+end
+
+local function try_open_partner(mext, listext)
+  local fc= buffer.filename
+  if fc then
+    fc= fc:match(mext)
+    if fc then
+      for _,newext in pairs(listext) do
+        if try_open(fc..newext) then return true end
+      end
+    end
+  end
+  return false
+end
+
 --open a file using the selected text or the text under the cursor
+--or change buffer extension {c,cpp} <--> {h,hpp} or ask
 function Proj.open_cursor_file()
   Proj.goto_filesview() --change to files view if needed
   local s, e = buffer.selection_start, buffer.selection_end
@@ -753,12 +776,17 @@ function Proj.open_cursor_file()
       else break end
     end
   end
-  if file_exists(fn) then
-    ui.statusbar_text= "Open: "..fn
-    io.open_file(fn)
-  else
-    ui.statusbar_text= fn.." not found"
-    io.open_file() --show open dialog
+  if not try_open(fn) then
+    if not try_open_partner('^(.+)%.c$', {'.h', '.hpp'}) then
+      if not try_open_partner('^(.+)%.cpp$', {'.hpp', '.h'}) then
+        if not try_open_partner('^(.+)%.h$', {'.c', '.cpp'}) then
+          if not try_open_partner('^(.+)%.hpp$', {'.cpp', '.c'}) then
+            ui.statusbar_text= fn.." not found"
+            io.open_file() --show open dialog
+          end
+        end
+      end
+    end
   end
 end
 
@@ -768,6 +796,7 @@ end
 -- Control+H=         show project current row properties
 -- Control+O =        open file
 -- Alt+O =            open file using the selected text or the text under the cursor
+--                    or change buffer extension {c,cpp} <--> {h,hpp} or ask
 -- Control+Alt+O =    open recent file
 -- Control+N=         new buffer
 -- Control+Shift+O =  project snap open
