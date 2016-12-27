@@ -722,10 +722,12 @@ local function str_trim(s)
 end
 
 local function file_exists(fn)
-  local f, err = io.open(fn, 'rb')
-  if f then
-    f:close()
-    return true
+  if fn:match('[^\\/]+$') then
+    local f, err = io.open(fn, 'rb')
+    if f then
+      f:close()
+      return true
+    end
   end
   return false
 end
