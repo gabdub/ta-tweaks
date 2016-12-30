@@ -427,6 +427,19 @@ static struct toolbar_data * toolbar_from_widget(GtkWidget *widget)
   return NULL;  //toolbar not found
 }
 
+static struct toolbar_data * toolbar_from_popup(GtkWidget *widget)
+{
+  int i;
+  if( widget != NULL ){
+    for( i= POPUP_FIRST; i < NTOOLBARS; i++ ){
+      if( widget == ttb.tbdata[i].win ){
+        return &(ttb.tbdata[i]);
+      }
+    }
+  }
+  return NULL;  //toolbar not found
+}
+
 static struct toolbar_group * group_from_numT(struct toolbar_data *T, int ngrp)
 {
   struct toolbar_group * g;
@@ -3543,19 +3556,19 @@ static int ltoolbar_getpickcolor(lua_State *L)
 /* ============================================================================= */
 /*                          TOOLBAR POPUPS                                       */
 /* ============================================================================= */
-static int popup_focus_in_ev(GtkWidget*_, GdkEventAny*__, void*___) {
-  UNUSED(_); UNUSED(__); UNUSED(___);
-  return FALSE;
-}
-
-static int popup_focus_out_ev(GtkWidget*_, GdkEventAny*__, void*___) {
-  UNUSED(_); UNUSED(__); UNUSED(___);
+static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *__, void*___) {
+  UNUSED(_); UNUSED(__);
+  struct toolbar_data *T= toolbar_from_popup(widget);
+  if( T != NULL ){
+    lL_event(lua, "popup_close", LUA_TNUMBER, T->num, -1);
+    return TRUE;
+  }
   return FALSE;
 }
 
 static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
   UNUSED(_);
-  struct toolbar_data *T= toolbar_from_widget(widget);
+  struct toolbar_data *T= toolbar_from_popup(widget);
   if( (T != NULL) && (event->keyval == GDK_Escape) ){
     lL_event(lua, "popup_close", LUA_TNUMBER, T->num, -1);
     return TRUE;
@@ -3566,22 +3579,30 @@ static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
 static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
 {
   struct toolbar_data *T;
-  if((ntb < 4) || (ntb >= NTOOLBARS)){
-    ntb= 4;
+  if((ntb < POPUP_FIRST) || (ntb >= NTOOLBARS)){
+    ntb= POPUP_FIRST;
   }
   T= &ttb.tbdata[ntb];
   if( show ){
     //SHOW POPUP
     if( T->win == NULL ){
-      T->win= gtk_window_new( GTK_WINDOW_POPUP );
+      T->win= gtk_window_new( GTK_WINDOW_TOPLEVEL );
       if( T->win != NULL ){
         T->barwidth= w;
         T->barheight= h;
         //connect to parent
         gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(ttb.tbdata[0].draw->window) );
+        gtk_window_set_resizable (GTK_WINDOW(T->win), FALSE);
+        gtk_window_set_decorated (GTK_WINDOW(T->win), FALSE);
+        gtk_window_set_skip_taskbar_hint (GTK_WINDOW(T->win), TRUE);
+        gtk_window_set_skip_pager_hint (GTK_WINDOW(T->win), TRUE);
+
+        gtk_window_set_accept_focus( GTK_WINDOW(T->win), TRUE );
         gtk_window_set_default_size(GTK_WINDOW(T->win), T->barwidth, T->barheight );
         gtk_window_move(GTK_WINDOW(T->win), x, y );
-        signal(T->win, "focus-in-event",  popup_focus_in_ev);
+
+        gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK);
+
         signal(T->win, "focus-out-event", popup_focus_out_ev);
         signal(T->win, "key-press-event", popup_keypress_ev);
 
@@ -3590,6 +3611,7 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
         create_tatoolbar(vbox, ntb);
         gtk_widget_show_all(T->win);
         show_toolbar( T, 1 );
+        gtk_widget_grab_focus(T->win);
       }
     }
   }else{
@@ -3605,7 +3627,7 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
 /** `toolbar.popup(ntoolbar, show, x, y, width, height)` Lua function. */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
-  int ntb= 4;
+  int ntb= POPUP_FIRST;
   int show= 1;
   if( lua_isnumber(L,1) ){
     ntb= lua_tointeger(L, 1);

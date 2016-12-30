@@ -12,6 +12,7 @@
 //ntoolbar=3: VERTICAL    (right)
 //ntoolbar=4: VERTICAL    (POPUP)
 #define STAT_TOOLBAR      2
+#define POPUP_FIRST       4
 #define NTOOLBARS         5
 
 // toolbar -> group -> items

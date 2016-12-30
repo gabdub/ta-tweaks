@@ -740,5 +740,17 @@ if toolbar then
     toolbar.create(tabpos,nvertcols,statbar,true)
   end
 
+  --create the popup toolbar
+  local function closepopup()
+    toolbar.popup(4,false) --hide popup
+  end
+  function toolbar.create_popup()
+    --popup test
+    toolbar.new(50, toolbar.butsize, toolbar.imgsize, 4, toolbar.themepath)
+    toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
+    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
+  end
+  events_connect("popup_close", closepopup)
+
   toolbar.set_defaults()
 end
