@@ -3556,7 +3556,7 @@ static int ltoolbar_getpickcolor(lua_State *L)
 /* ============================================================================= */
 /*                          TOOLBAR POPUPS                                       */
 /* ============================================================================= */
-static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *__, void*___) {
+static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
   UNUSED(_); UNUSED(__);
   struct toolbar_data *T= toolbar_from_popup(widget);
   if( T != NULL ){
