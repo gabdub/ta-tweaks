@@ -10,8 +10,9 @@
 //ntoolbar=1: VERTICAL    (left)
 //ntoolbar=2: HORIZONTAL  (bottom)
 //ntoolbar=3: VERTICAL    (right)
+//ntoolbar=4: VERTICAL    (POPUP)
 #define STAT_TOOLBAR      2
-#define NTOOLBARS         4
+#define NTOOLBARS         5
 
 // toolbar -> group -> items
 
@@ -220,9 +221,10 @@ struct toolbar_group
 
 struct toolbar_data
 {
-  GtkWidget *draw;    //(GtkWidget *drawing_area of this toolbar)
-  int num;            //number of toolbar
-  int isvertical;     //is a vertical toolbar (#1=yes)
+  GtkWidget * win;      //POPUP Window or NULL
+  GtkWidget * draw;     //(GtkWidget *drawing_area of this toolbar)
+  int num;              //number of toolbar
+  int isvertical;       //is a vertical toolbar (#1=yes)
   int isvisible;
 
   struct toolbar_group * group;

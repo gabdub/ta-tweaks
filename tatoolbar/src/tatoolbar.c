@@ -16,6 +16,8 @@ static void set_hilight_off( void );
 static void set_hilight_tooltipT( struct toolbar_data *T );
 static void draw_txt( cairo_t *ctx, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold );
 
+void create_tatoolbar( GtkWidget *vbox, int ntoolbar );
+
 /* ============================================================================= */
 /*                                DATA                                           */
 /* ============================================================================= */
@@ -901,7 +903,7 @@ static void set_tabwidth(struct toolbar_item * p)
           cairo_t *cr = gdk_cairo_create(G->toolbar->draw->window);
           cairo_set_font_size(cr, G->tabfontsz);
           cairo_text_extents( cr, p->text, &ext );
-          p->textwidth= (int) ext.width;
+          p->textwidth= (int) ext.width +1; //+1 to see the antialiasing complete
           cairo_destroy(cr);
         }
         p->barx2= p->prew + p->textwidth + p->postw;
@@ -1760,7 +1762,9 @@ static void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, c
     T->back_color= BKCOLOR_NOT_SET;
     //auto-create the first group
     G= add_groupT(T, TTBF_GRP_AUTO);
-    gtk_widget_set_size_request(T->draw, T->barwidth, T->barheight);
+    if( T->draw != NULL ){
+        gtk_widget_set_size_request(T->draw, T->barwidth, T->barheight);
+    }
   }
 }
 
@@ -3089,12 +3093,12 @@ static void show_toolbar(struct toolbar_data *T, int show)
 /* ============================================================================= */
 /*                                 LUA FUNCTIONS                                 */
 /* ============================================================================= */
-static int intluadef(lua_State *L, int ncolor, int defcol )
+static int intluadef(lua_State *L, int npos, int defval )
 {
-  if( !lua_isnone(L, ncolor) ){
-    return lua_tointeger(L, ncolor);
+  if( !lua_isnone(L, npos) ){
+    return lua_tointeger(L, npos);
   }
-  return defcol;
+  return defval;
 }
 
 //----- TOOLBARS -----
@@ -3537,6 +3541,85 @@ static int ltoolbar_getpickcolor(lua_State *L)
 }
 
 /* ============================================================================= */
+/*                          TOOLBAR POPUPS                                       */
+/* ============================================================================= */
+static int popup_focus_in_ev(GtkWidget*_, GdkEventAny*__, void*___) {
+  UNUSED(_); UNUSED(__); UNUSED(___);
+  return FALSE;
+}
+
+static int popup_focus_out_ev(GtkWidget*_, GdkEventAny*__, void*___) {
+  UNUSED(_); UNUSED(__); UNUSED(___);
+  return FALSE;
+}
+
+static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
+  UNUSED(_);
+  struct toolbar_data *T= toolbar_from_widget(widget);
+  if( (T != NULL) && (event->keyval == GDK_Escape) ){
+    lL_event(lua, "popup_close", LUA_TNUMBER, T->num, -1);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
+{
+  struct toolbar_data *T;
+  if((ntb < 4) || (ntb >= NTOOLBARS)){
+    ntb= 4;
+  }
+  T= &ttb.tbdata[ntb];
+  if( show ){
+    //SHOW POPUP
+    if( T->win == NULL ){
+      T->win= gtk_window_new( GTK_WINDOW_POPUP );
+      if( T->win != NULL ){
+        T->barwidth= w;
+        T->barheight= h;
+        //connect to parent
+        gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(ttb.tbdata[0].draw->window) );
+        gtk_window_set_default_size(GTK_WINDOW(T->win), T->barwidth, T->barheight );
+        gtk_window_move(GTK_WINDOW(T->win), x, y );
+        signal(T->win, "focus-in-event",  popup_focus_in_ev);
+        signal(T->win, "focus-out-event", popup_focus_out_ev);
+        signal(T->win, "key-press-event", popup_keypress_ev);
+
+        GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
+        gtk_container_add(GTK_CONTAINER(T->win), vbox);
+        create_tatoolbar(vbox, ntb);
+        gtk_widget_show_all(T->win);
+        show_toolbar( T, 1 );
+      }
+    }
+  }else{
+    //HIDE POPUP
+    if( T->win != NULL ){
+      show_toolbar( T, 0 );
+      gtk_widget_destroy( T->win );
+      T->win= NULL;
+    }
+  }
+}
+
+/** `toolbar.popup(ntoolbar, show, x, y, width, height)` Lua function. */
+static int ltoolbar_popup(lua_State *L)
+{ //show popup toolbar
+  int ntb= 4;
+  int show= 1;
+  if( lua_isnumber(L,1) ){
+    ntb= lua_tointeger(L, 1);
+  }
+  if( lua_isboolean(L,2) ){
+    if( !lua_toboolean(L,2) ){
+      show= 0;
+    }
+  }
+  ttb_show_popup( ntb, show, intluadef(L, 3, 100), intluadef(L, 4, 100), intluadef(L, 5, 100), intluadef(L, 6, 100) );
+  return 0;
+}
+
+/* ============================================================================= */
 /*                          CALLED FROM TA                                       */
 /* ============================================================================= */
 /* register LUA toolbar object */
@@ -3586,6 +3669,8 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "gototab",      ltoolbar_gototab);      //generate a click in tab: -1:prev,1:next,0:first,2:last
 //get
   l_setcfunction(L, -1, "getpickcolor", ltoolbar_getpickcolor); //return (RGB) current selected color in picker
+//popup
+  l_setcfunction(L, -1, "popup",        ltoolbar_popup);        //show a popup toolbar
 
   lua_setglobal(L, "toolbar");
 }
@@ -3637,24 +3722,32 @@ int toolbar_set_statusbar_text(const char *text, int bar)
 }
 
 /* create a DRAWING-AREA for each toolbar */
-//ntoolbar=0: HORIZONTAL
-//ntoolbar=1: VERTICAL
-//ntoolbar=2: HORIZONTAL
-//ntoolbar=3: VERTICAL
+//ntoolbar=0: HORIZONTAL  (top)
+//ntoolbar=1: VERTICAL    (left)
+//ntoolbar=2: HORIZONTAL  (bottom)
+//ntoolbar=3: VERTICAL    (right)
+//ntoolbar=4: VERTICAL    (POPUP)
 void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
 {
+  struct toolbar_data *T;
   GtkWidget * drawing_area;
 
   if( ntoolbar < NTOOLBARS ){
     drawing_area = gtk_drawing_area_new();
-    ttb.tbdata[ntoolbar].draw= drawing_area;
-    ttb.tbdata[ntoolbar].num=  ntoolbar;
-    ttb.tbdata[ntoolbar].isvertical= ((ntoolbar == 1)||(ntoolbar == 3));
-    ttb.tbdata[ntoolbar].isvisible= 0;
-    if( ttb.tbdata[ntoolbar].isvertical ){
-      gtk_widget_set_size_request(drawing_area, 1, -1);
+    T= &ttb.tbdata[ntoolbar];
+    T->draw= drawing_area;
+    T->num=  ntoolbar;
+    T->isvertical= ((ntoolbar != 0)&&(ntoolbar != 2));
+    T->isvisible= 0;
+    if( ntoolbar >= 4 ){
+      //POPUP
+      gtk_widget_set_size_request(drawing_area, T->barwidth, T->barheight );
     }else{
-      gtk_widget_set_size_request(drawing_area, -1, 1);
+      if( T->isvertical ){
+        gtk_widget_set_size_request(drawing_area, 1, -1);
+      }else{
+        gtk_widget_set_size_request(drawing_area, -1, 1);
+      }
     }
     gtk_widget_set_events(drawing_area, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
       GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
