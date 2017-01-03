@@ -3625,10 +3625,15 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
 }
 
 /** `toolbar.popup(ntoolbar, show, x, y, width, height)` Lua function. */
+/** `toolbar.popup(ntoolbar, show, button-name, button-corner, width, height)` Lua function. */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
   int ntb= POPUP_FIRST;
   int show= 1;
+  int x= 100;
+  int y= 100;
+  int w= 100;
+  int h= 100;
   if( lua_isnumber(L,1) ){
     ntb= lua_tointeger(L, 1);
   }
@@ -3637,7 +3642,46 @@ static int ltoolbar_popup(lua_State *L)
       show= 0;
     }
   }
-  ttb_show_popup( ntb, show, intluadef(L, 3, 100), intluadef(L, 4, 100), intluadef(L, 5, 100), intluadef(L, 6, 100) );
+  w= intluadef(L, 5, 100);
+  h= intluadef(L, 6, 100);
+  if( lua_isstring(L,3) ){
+    struct toolbar_item * p=  NULL;
+    int i;
+    for( i= 0; i < NTOOLBARS; i++){
+      p= item_from_nameT(toolbar_from_num(i), lua_tostring(L, 3));
+      if( p != NULL ){
+        break;
+      }
+    }
+    if( p != NULL ){
+      int wx, wy, loc;
+      x= 0; y= 0;
+      gdk_window_get_origin( p->group->toolbar->draw->window, &x, &y );
+      x += p->group->barx1;
+      y += p->group->bary1;
+      loc= intluadef(L, 4, 0);
+      wx= loc & 7;
+      switch( wx ){
+        case 0:   x += p->barx1-w-1;              break;  //left
+        case 1:   x += p->barx1;                  break;
+        case 2:   x += (p->barx1+p->barx2-w-1)/2; break;  //center
+        case 3:   x += p->barx2-w-1;              break;
+        default:  x += p->barx2;                  break;  //right
+      }
+      wy= (loc >> 3) & 7;
+      switch( wy ){
+        case 0:   y += p->bary1-h-1;              break;  //top
+        case 1:   y += p->bary1;                  break;
+        case 2:   y += (p->bary1+p->bary2-h)/2;   break;  //center
+        case 3:   y += p->bary2-h;                break;
+        default:  y += p->bary2;                  break;  //bottom
+      }
+    }
+  }else{
+    x= intluadef(L, 3, 100);
+    y= intluadef(L, 4, 100);
+  }
+  ttb_show_popup( ntb, show, x, y, w, h );
   return 0;
 }
 
