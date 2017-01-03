@@ -848,7 +848,8 @@ static int set_text_bt_width(struct toolbar_item * p )
   int diff= 0;
   struct toolbar_group *G= p->group;
   if( p->text != NULL ){
-    cr = gdk_cairo_create(G->toolbar->draw->window);
+    //use toolbar #0 to measure text (pop-ups may not have a window yet)
+    cr = gdk_cairo_create(ttb.tbdata[0].draw->window); //G->toolbar->draw->window);
     cairo_set_font_size(cr, G->txtfontsz);
     cairo_text_extents( cr, p->text, &ext );
     p->textwidth= (int) ext.width;
@@ -913,7 +914,8 @@ static void set_tabwidth(struct toolbar_item * p)
       // and breaks the editor update mecanism (this works fine under LINUX, though)
       // so, fixed width is used for this fields
           cairo_text_extents_t ext;
-          cairo_t *cr = gdk_cairo_create(G->toolbar->draw->window);
+          //use toolbar #0 to measure text (pop-ups may not have a window yet)
+          cairo_t *cr = gdk_cairo_create(ttb.tbdata[0].draw->window); //G->toolbar->draw->window);
           cairo_set_font_size(cr, G->tabfontsz);
           cairo_text_extents( cr, p->text, &ext );
           p->textwidth= (int) ext.width +1; //+1 to see the antialiasing complete
@@ -1289,7 +1291,8 @@ static int get_tabtext_widthG(struct toolbar_group *G, const char * text )
 { //return the width of the given text
   if( (G != NULL) && (text != NULL) && (*text != 0) ){
     cairo_text_extents_t ext;
-    cairo_t *cr = gdk_cairo_create(G->toolbar->draw->window);
+    //use toolbar #0 to measure text (pop-ups may not have a window yet)
+    cairo_t *cr = gdk_cairo_create(ttb.tbdata[0].draw->window); //G->toolbar->draw->window);
     cairo_set_font_size(cr, G->tabfontsz);
     cairo_text_extents( cr, text, &ext );
     cairo_destroy(cr);
@@ -3787,6 +3790,21 @@ int toolbar_set_statusbar_text(const char *text, int bar)
   return 1; //update the regular status bar
 }
 
+struct toolbar_data * init_tatoolbar( int ntoolbar, GtkWidget * drawing_area, int clearall )
+{
+  struct toolbar_data *T= NULL;
+  if( ntoolbar < NTOOLBARS ){
+    T= &ttb.tbdata[ntoolbar];
+    if( clearall ){
+        memset( T, 0, sizeof(struct toolbar_data));
+    }
+    T->num=  ntoolbar;
+    T->isvertical= ((ntoolbar != 0)&&(ntoolbar != 2));
+    T->draw= drawing_area;
+  }
+  return T;
+}
+
 /* create a DRAWING-AREA for each toolbar */
 //ntoolbar=0: HORIZONTAL  (top)
 //ntoolbar=1: VERTICAL    (left)
@@ -3797,18 +3815,23 @@ void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
 {
   struct toolbar_data *T;
   GtkWidget * drawing_area;
+  int i;
+
+  if( ntoolbar == 0 ){ //create first toolbar => init pop-ups
+    for( i= POPUP_FIRST; i < NTOOLBARS; i++ ){
+      init_tatoolbar( i, NULL, 1 ); //no drawing area yet
+    }
+  }
 
   if( ntoolbar < NTOOLBARS ){
     drawing_area = gtk_drawing_area_new();
-    T= &ttb.tbdata[ntoolbar];
-    T->draw= drawing_area;
-    T->num=  ntoolbar;
-    T->isvertical= ((ntoolbar != 0)&&(ntoolbar != 2));
-    T->isvisible= 0;
-    if( ntoolbar >= 4 ){
-      //POPUP
+    if( ntoolbar >= POPUP_FIRST ){
+      //POP-UP
+      T= init_tatoolbar( ntoolbar, drawing_area, 0 );   //already cleared
       gtk_widget_set_size_request(drawing_area, T->barwidth, T->barheight );
     }else{
+      //TOOLBAR
+      T= init_tatoolbar( ntoolbar, drawing_area, 1 );
       if( T->isvertical ){
         gtk_widget_set_size_request(drawing_area, 1, -1);
       }else{

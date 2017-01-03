@@ -66,8 +66,7 @@ if toolbar then
   if Proj then toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")  end
 
   local function showpopup()
-    --toolbar.popup(4,true,300,150,200,400) --show popup
-    toolbar.popup(4,true,"window-new",12,200,400)
+    toolbar.show_popup("window-new",33)
   end
   toolbar.cmd("window-new", showpopup, "TEST show popup")
   toolbar.create_popup()
