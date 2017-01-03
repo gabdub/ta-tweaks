@@ -3594,7 +3594,7 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
         T->barwidth= w;
         T->barheight= h;
         //connect to parent
-        gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(ttb.tbdata[0].draw->window) );
+        gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(window) ); //GTK_WINDOW(ttb.tbdata[0].draw->window) );
         gtk_window_set_resizable (GTK_WINDOW(T->win), FALSE);
         gtk_window_set_decorated (GTK_WINDOW(T->win), FALSE);
         gtk_window_set_skip_taskbar_hint (GTK_WINDOW(T->win), TRUE);
@@ -3623,6 +3623,7 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
       show_toolbar( T, 0 );
       gtk_widget_destroy( T->win );
       T->win= NULL;
+      T->draw= NULL;
     }
   }
 }
