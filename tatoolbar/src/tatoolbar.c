@@ -112,6 +112,11 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->txttexty= -1;
     setrgbcolor( 0x808080, &g->txttextcolG); //gray
 
+    g->toolbar= T;        //set parent
+    g->num= T->ngroups;   //number of group (0..)
+    g->flags= flg;
+    T->ngroups++;
+    g->isvertical= T->isvertical; //is a vertical group
     if( g->isvertical ){
       g->xmargin= 1;
       g->ymargin= 2;
@@ -119,11 +124,6 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
       g->xmargin= 2;
       g->ymargin= 1;
     }
-    g->toolbar= T;        //set parent
-    g->num= T->ngroups;   //number of group (0..)
-    g->flags= flg;
-    T->ngroups++;
-    g->isvertical= T->isvertical; //is a vertical group
     //hide scroolbar buttons
     g->islast_item_shown= 1;
     g->scleftx1= -1;
@@ -1187,7 +1187,7 @@ static void update_layoutT( struct toolbar_data *T)
             n++;    //var horz size
           }
           if( (g->flags & TTBF_GRP_VAR_H) == 0 ){
-            hh= (g->bary2 - g->bary1);  //fixed ver size
+            hh= (g->bary2 - g->bary1);  //fixed vert size
             if( h < hh ){
               h= hh;
             }
@@ -1285,6 +1285,99 @@ static void update_group_sizeG( struct toolbar_group *G, int redraw )
     //redraw the group/toolbar
     redraw_endG(G);
   }
+}
+
+//set T->barwidth / T->barheight to show all fixed size groups
+static void calc_popup_sizeT( struct toolbar_data *T)
+{
+  struct toolbar_group *g, *gs, *ge;
+  int tw, th, w, h, ww, hh, xmar, ymar;
+
+  th= 0;
+  tw= 0;
+  if( T->isvertical ){   //---vertical toolbar---
+    gs= T->group;
+    while( gs != NULL ){
+      ge= find_colendG(gs); //process one COLUMN at a time
+      g= gs;
+      w= 0;
+      h= 0;
+      xmar= 0;
+      ymar= 0;
+      while( g != NULL ){
+        if( (g->flags & TTBF_HIDDEN) == 0 ){
+          if( (g->flags & TTBF_GRP_VAR_H) == 0 ){
+            h += (g->bary2 - g->bary1); //fixed vert size
+          }else{
+            h += 60; //minimal variable vertical size - TODO: configure this
+          }
+          if( (g->flags & TTBF_GRP_VAR_W) == 0 ){
+            ww= (g->barx2 - g->barx1);  //fixed horz size
+          }else{
+            ww= 100; //minimal variable horizontal size - TODO: configure this
+          }
+          if( ww > w ){
+            w= ww;
+          }
+          xmar= g->xmargin; //margin of the last group
+          ymar= g->ymargin;
+        }
+        if( g == ge ){
+          break; //last group of this col
+        }
+        g= g->next;
+      }
+      w += xmar;    //add right/bottom margin = left/top margin of last group
+      h += ymar;
+      tw += w;      //add widest item in the column
+      if( h > th ){
+        th= h;      //tallest column
+      }
+      gs= ge->next; //see next column
+    }
+  }else{        //---horizontal toolbar---
+    gs= T->group;
+    while( gs != NULL ){
+      ge= find_rowendG(gs); //process one ROW at a time
+      g= gs;
+      w= 0;
+      h= 0;
+      xmar= 0;
+      ymar= 0;
+      while( g != NULL ){
+        if( (g->flags & TTBF_HIDDEN) == 0 ){
+          if( (g->flags & TTBF_GRP_VAR_W) == 0 ){
+            w += (g->barx2 - g->barx1); //fixed horz size
+          }else{
+            w += 100; //minimal variable horizontal size - TODO: configure this
+          }
+          if( (g->flags & TTBF_GRP_VAR_H) == 0 ){
+            hh= (g->bary2 - g->bary1);  //fixed vert size
+          }else{
+            hh= 60; //minimal variable vertical size - TODO: configure this
+          }
+          if( hh > h ){
+            h= hh;
+          }
+          xmar= g->xmargin; //margin of the last group
+          ymar= g->ymargin;
+        }
+        if( g == ge ){
+          break; //last group of this row
+        }
+        g= g->next;
+      }
+      w += xmar;    //add right/bottom margin = left/top margin of last group
+      h += ymar;
+      th += h;      //add tallest item in the row
+      if( w > tw ){
+        tw= w;      //widest row
+      }
+      gs= ge->next;   //see next row
+    }
+  }
+  T->barheight= th;
+  T->barwidth= tw;
 }
 
 static int get_tabtext_widthG(struct toolbar_group *G, const char * text )
@@ -3632,22 +3725,35 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
 /** `toolbar.popup(ntoolbar, show, button-name, button-corner, width, height)` Lua function. */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
+  struct toolbar_data * T;
   int ntb= POPUP_FIRST;
   int show= 1;
   int x= 100;
   int y= 100;
-  int w= 100;
-  int h= 100;
+  int w= 0;
+  int h= 0;
   if( lua_isnumber(L,1) ){
     ntb= lua_tointeger(L, 1);
+    if((ntb < POPUP_FIRST) || (ntb >= NTOOLBARS)){
+        ntb= POPUP_FIRST;
+    }
   }
   if( lua_isboolean(L,2) ){
     if( !lua_toboolean(L,2) ){
       show= 0;
     }
   }
-  w= intluadef(L, 5, 100);
-  h= intluadef(L, 6, 100);
+  T= toolbar_from_num(ntb);
+  //set T->barwidth / T->barheight to show all fixed size groups
+  calc_popup_sizeT( T );
+  w= intluadef(L, 5, 10);
+  if( w < T->barwidth ){
+    w= T->barwidth;
+  }
+  h= intluadef(L, 6, 10);
+  if( h < T->barheight ){
+    h= T->barheight;
+  }
   if( lua_isstring(L,3) ){
     struct toolbar_item * p=  NULL;
     int i;

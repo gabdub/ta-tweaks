@@ -745,14 +745,18 @@ if toolbar then
     toolbar.popup(4,false) --hide popup
   end
   function toolbar.create_popup()
-    toolbar.new(50, toolbar.butsize, toolbar.imgsize, 4, toolbar.themepath)
+    toolbar.new(24, 24, 16, 4, toolbar.themepath)
+    toolbar.addgroup(8,8,0,0)
+    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
     toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
     toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
-    toolbar.cmdtext("New", closepopup, "TEST new close", "nnn")
+    toolbar.cmdtext("New", closepopup, "", "n1")
+    toolbar.cmdtext("Open", closepopup, "", "n2")
+    toolbar.cmdtext("Open recent...", closepopup, "", "n3")
   end
-  function toolbar.show_popup(btname,relpos,toggle)
-    toolbar.popup(4,true,btname,relpos,200,400)
+  function toolbar.show_popup(btname,relpos)
+    toolbar.popup(4,true,btname,relpos)
   end
   events_connect("popup_close", closepopup)
 
