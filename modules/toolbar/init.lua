@@ -386,6 +386,7 @@ if toolbar then
     toolbar.statfont_yoffset=-2
     toolbar.statcolor_normal= 0x202020
     toolbar.statcolor_hilight= 0
+    toolbar.popup_back= 0x000000
     --images
     toolbar.img= {}
     for i= 1, 33 do
@@ -438,7 +439,8 @@ if toolbar then
            getCfgNum( line, 'tabwidthmin')      or
            getCfgNum( line, 'tabwidthmax')      or
            getCfgNum( line, 'statcolor_normal') or
-           getCfgNum( line, 'statcolor_hilight') then
+           getCfgNum( line, 'statcolor_hilight') or
+           getCfgNum( line, 'popup_back') then
 
         elseif line:find('^toolbar_img:') then
           img, i = line:match('^toolbar_img:(.-),(.+)$')
@@ -745,10 +747,12 @@ if toolbar then
     toolbar.popup(4,false) --hide popup
   end
   function toolbar.create_popup()
-    toolbar.new(24, 24, 16, 4, toolbar.themepath)
+    toolbar.new(50, 24, 16, 4, toolbar.themepath)
     toolbar.addgroup(8,8,0,0)
+    toolbar.adjust(24,24,3,3,4,4)
     toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-    toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
+    --toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
+    toolbar.setbackcolor(tbglobalicon,toolbar.popup_back,fase,true)
     toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
     toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
     toolbar.cmdtext("New", closepopup, "", "n1")
