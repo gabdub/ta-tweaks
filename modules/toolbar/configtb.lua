@@ -851,15 +851,6 @@ local function add_buffer_cfg_panel()
   pnly_add(21)
   add_config_separator()
 
-  pnly_newrow()
-  add_config_label("About ta-toolbar", true)
-  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.addlabel("Version: "..toolbar.getversion(), "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
-  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
-  toolbar.cmdtext("@ github", open_tatoolbar_web, "Visit "..tatoobarweb, "openttbweb")
-  pnly_add(21)
-  add_config_separator()
-
   --show current buffer settings
   toolbar.set_buffer_cfg()
 end
@@ -900,10 +891,20 @@ local function add_toolbar_cfg_panel()
     --NO HTML quicktype toolbar, add "HIDE" option
     cont_config_radio("Hide")
   end
+  toolbar.config_saveon=false --end of config save options of this panel
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload1")
+  pnly_add(21)
+  add_config_separator()
+
+  pnly_newrow()
+  add_config_label("About ta-toolbar", true)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.addlabel("Version: "..toolbar.getversion(), "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("@ github", open_tatoolbar_web, "Visit "..tatoobarweb, "openttbweb")
   pnly_add(21)
   add_config_separator()
 end
