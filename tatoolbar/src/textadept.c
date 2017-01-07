@@ -290,7 +290,7 @@ static int lL_event(lua_State *L, const char *name, ...) {
 }
 
 #ifdef USE_TA_TOOLBAR
-#include "tatoolbar.c"
+#include "ta_glue.c"
 #endif
 
 #if GTK

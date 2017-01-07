@@ -152,11 +152,19 @@ local function add_config_tabgroup(name,title,ngrp)
   return n
 end
 
+local function pnly_add( val )
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + val
+end
+
+local function pnly_newrow()
+  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+end
+
 local function add_config_separator()
   toolbar.gotopos(0, toolbar.cfgpnl_y+2)
   toolbar.addspace()
   --add extra separation (1/2 row)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight/2
+  pnly_add(toolbar.cfgpnl_rheight/2)
 end
 
 local function add_config_label(text,extrasep,notbold)
@@ -165,7 +173,7 @@ local function add_config_label(text,extrasep,notbold)
   end
   toolbar.gotopos(toolbar.cfgpnl_xmargin, toolbar.cfgpnl_y)
   toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,not notbold)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+  pnly_newrow()
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";"..text
   end
@@ -211,7 +219,7 @@ local function add_config_check(name,text,tooltip,val,notify)
   toolbar.cmd(name, check_clicked, tooltip, (val and "check1" or "check0"))
   toolbar.setthemeicon(name, "check-hi", 2)
   toolbar.setthemeicon(name, "check-pr", 3)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+  pnly_newrow()
   toolbar.cfgpnl_chkval[name]=val
   if toolbar.config_saveon then --save this check in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
@@ -348,7 +356,7 @@ local function add_config_color(text, foreprop, backprop, tooltip, extraprop)
   if extraprop then add_cfg_prop(extraprop, toolbar.cfgpnl_xcontrol3, tooltip) end
   if foreprop  then add_cfg_prop(foreprop,  toolbar.cfgpnl_xcontrol2, tooltip) end
   if backprop  then add_cfg_prop(backprop,  toolbar.cfgpnl_xcontrol,  tooltip) end
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+  pnly_newrow()
 end
 
 local function colorpreset_clicked(name)
@@ -364,7 +372,7 @@ local function add_color_preset( n, color, bkcolor )
   toolbar.setbackcolor(name, bkcolor, true)
   toolbar.setthemeicon(name, "colorh", 2)
   toolbar.setthemeicon(name, "colorp", 3)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 31
+  pnly_add(31)
 end
 
 local function picker_clicked()
@@ -400,7 +408,7 @@ local function _add_config_radio(name,text,tooltip,checked)
   toolbar.cmd(name, radio_clicked, tooltip, (checked and "radio1" or "radio0"))
   toolbar.setthemeicon(name, "radio-hi", 2)
   toolbar.setthemeicon(name, "radio-pr", 3)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+  pnly_newrow()
   toolbar.cfgpnl_chkval[name]=checked
 end
 
@@ -788,6 +796,12 @@ local function view_virtspace_change()
   buffer.virtual_space_options = toolbar.get_check_val("tbvirtspc") and buffer.VS_USERACCESSIBLE or 0
 end
 
+local tatoobarweb= "https://github.com/gabdub/ta-tweaks"
+local function open_tatoolbar_web()
+  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
+  spawn(string.format('%s "%s"', cmd, tatoobarweb))
+end
+
 local function add_buffer_cfg_panel()
   toolbar.config_saveon=false --don't save the config options of this panel
   toolbar.buff_panel= add_config_tabgroup("Buffer", "Buffer configuration")
@@ -834,7 +848,16 @@ local function add_buffer_cfg_panel()
   toolbar.cmdtext("Set as Lexer default", set_lexer_cfg, "Use current settings as Lexer default", "setlexercfg")
   toolbar.gotopos(toolbar.cfgpnl_xtext+(toolbar.cfgpnl_width/2), toolbar.cfgpnl_y)
   toolbar.cmdtext("Convert indentation", textadept.editing.convert_indentation, "Adjust current buffer indentation", "setindentation")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
+  add_config_separator()
+
+  pnly_newrow()
+  add_config_label("About ta-toolbar", true)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.addlabel("Version: "..toolbar.getversion(), "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("@ github", open_tatoolbar_web, "Visit "..tatoobarweb, "openttbweb")
+  pnly_add(21)
   add_config_separator()
 
   --show current buffer settings
@@ -881,7 +904,7 @@ local function add_toolbar_cfg_panel()
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload1")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
   add_config_separator()
 end
 
@@ -944,17 +967,17 @@ local function add_colors_cfg_panel()
   toolbar.cmdtext("Apply changes", toolbar.save_colors_reset, "Accept the changes", "reload2")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("Discard changes", reload_colors, "Reload current colors", "reload3")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Restore theme's palette", load_colors_from_theme, "Set default colors from theme", "getthemecolors")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
+  pnly_add(30)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Save as theme's palette", save_theme_colors, "Save this colors as theme's default", "savethemecolors")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
+  pnly_add(30)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Import a base-16 file (scheme.yml)", import_color_scheme, "Import a color scheme file (github: chriskempson/base16-builder)", "impscheme")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
   add_config_separator()
 end
 
@@ -1086,24 +1109,24 @@ local function add_picker_cfg_panel()
   toolbar.setbackcolor("oldcolor", 0, true) --set later
   toolbar.setthemeicon("oldcolor", "colorh", 2)
   toolbar.setthemeicon("oldcolor", "colorp", 3)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 30
+  pnly_add(30)
 
   toolbar.gotopos(toolbar.cfgpnl_xtext-4, toolbar.cfgpnl_y)
   toolbar.addlabel("", "", 0, true, false, "edproptit")
   toolbar.gotopos(toolbar.cfgpnl_width/2-4, toolbar.cfgpnl_y)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, true, true, "edproptxt")  --edited prop (set later)
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + toolbar.cfgpnl_rheight
+  pnly_newrow()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Change", picker_ok, "Accept the new color", "picker_ok")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("Cancel", picker_cancel, "Keep the old color", "picker_cancel")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
   add_config_separator()
   picker_cancel()
 
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 10
+  pnly_add(10)
   toolbar.config_saveon=true --save the config options of this part of the panel
   add_config_label("TYPER")
   add_config_label("Order")
@@ -1119,17 +1142,17 @@ local function add_picker_cfg_panel()
   toolbar.cmdtext("Type", picker_type, "Type the selected color", "picker_type")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("Copy", picker_copy, "Copy the selected color to the clipboard", "picker_copy")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
   add_config_separator()
 
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 10
+  pnly_add(10)
   add_config_label("IMPORT")
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("From text", picker_get, "Import from the selected text", "picker_get")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("From clipboard", picker_paste, "Import from the clipboard", "picker_paste")
-  toolbar.cfgpnl_y= toolbar.cfgpnl_y + 21
+  pnly_add(21)
   add_config_separator()
 end
 
