@@ -555,11 +555,19 @@ local accelerators= {
 local function key_name(acc)
   local mods, key = acc:match('^([cams]*)(.+)$')
   local kname = (mods:find('m') and "Meta+" or "") ..
-                (mods:find('c') and "Control+" or "") ..
+                (mods:find('c') and "Ctrl+" or "") ..
                 (mods:find('a') and "Alt+" or "") ..
-                (mods:find('s') and "Shift+" or "") ..
-                string.upper(key)
-  return kname
+                (mods:find('s') and "Shift+" or "")
+  local ku=string.upper(key)
+  local lu=string.upper(key)
+  if ku == lu then
+    if ku == " " then ku= "Space"
+    elseif ku == "\t" then ku= "Tab"
+    elseif ku == "\n" then ku= "Return" end
+  elseif ku == key then
+    kname= kname.."Shift+"
+  end
+  return kname..ku
 end
 
 local function getaccelerator(cmd)
@@ -585,13 +593,13 @@ function actions.select_command()
   --TO DO: add actions in order
     local label = v[1]
     items[#items + 1] = label:gsub('_([^_])', '%1')
+    items[#items + 1] = k
     items[#items + 1] = getaccelerator(k)
-    --items[#items + 1] = key_shortcuts[tostring(menu[i][2])] or ''
     commands[#commands + 1] = v[2]
   end
   local button, i = ui.dialogs.filteredlist{
-    title = _L['Run Command'], columns = {_L['Command'], _L['Key Command']},
-    items = items, width = CURSES and ui.size[1] - 2 or nil
+    title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Command']},
+    items = items, width = CURSES and ui.size[1] - 2 or 800
   }
   if button ~= 1 or not i then return end
   assert(type(commands[i]) == 'function', _L['Unknown command:']..' '..tostring(commands[i]))
