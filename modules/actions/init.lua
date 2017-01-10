@@ -560,14 +560,15 @@ local function key_name(acc)
                 (mods:find('s') and "Shift+" or "")
   local ku=string.upper(key)
   local lu=string.lower(key)
-  if ku == lu then
+  if ku == lu then --only symbols and numbers
     if ku == " " then ku= "Space"
     elseif ku == "\t" then ku= "Tab"
-    elseif ku == "\n" then ku= "Return" end
+    elseif ku == "\n" then ku= "Return"
+    else ku= "["..ku.."]" end
   elseif ku == key then
     mname= mname.."Shift+" --upper case letter: add shift
   end
-  return mname.."["..ku.."]"
+  return mname..ku
 end
 
 local function getaccelerator(cmd)
@@ -591,15 +592,43 @@ end
 -- Prompts the user to select a menu command to run.
 -- @name select_command
 function actions.select_command()
-  local items, commands = {}, {}
-  for k,v in pairs(actions.list) do
-  --TO DO: add actions in order
-    local label = v[1]
-    items[#items + 1] = label:gsub('_([^_])', '%1')
-    items[#items + 1] = k
-    items[#items + 1] = getaccelerator(k)
-    commands[#commands + 1] = v[2]
+  local items, commands, actioninmenu = {}, {}, {}
+  local function build_command_tables(menu)
+    for i = 1, #menu do
+      local mit= menu[i]
+      if mit.title then --submenu
+        build_command_tables(mit)
+      else
+        for j = 1, #mit do
+          k= mit[j]
+          if k ~= SEPARATOR then
+            local v= actions.list[k]
+            if v ~= nil then
+              actioninmenu[k]= true
+              local label = menu.title and menu.title..': '..v[1] or v[1]
+              items[#items + 1] = label:gsub('_([^_])', '%1')
+              items[#items + 1] = k
+              items[#items + 1] = getaccelerator(k)
+              commands[#commands + 1] = v[2]
+            end
+          end
+        end
+      end
+    end
   end
+  build_command_tables(proj_menubar)
+
+  --add actions not used in menus
+  for k,v in pairs(actions.list) do
+    if not actioninmenu[k] then
+      local label = v[1]
+      items[#items + 1] = label:gsub('_([^_])', '%1')
+      items[#items + 1] = k
+      items[#items + 1] = getaccelerator(k)
+      commands[#commands + 1] = v[2]
+    end
+  end
+
   local button, i = ui.dialogs.filteredlist{
     title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Command']},
     items = items, width = CURSES and ui.size[1] - 2 or 800,
