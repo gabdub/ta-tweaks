@@ -547,8 +547,8 @@ local accelerators= {
 --"prev_position",          "",         "",         "",
 
 --HELP
-  "show_manual",            "f1",         "f1",         "f1",
-  "show_luadoc",            "sf1",        "sf1",        "sf1",
+  "show_manual",            "f1",       "f1",       "f1",
+  "show_luadoc",            "sf1",      "sf1",      "sf1",
 --"about",                  "",         "",         "",
 }
 
@@ -559,7 +559,7 @@ local function key_name(acc)
                 (mods:find('a') and "Alt+" or "") ..
                 (mods:find('s') and "Shift+" or "")
   local ku=string.upper(key)
-  local lu=string.upper(key)
+  local lu=string.lower(key)
   if ku == lu then
     if ku == " " then ku= "Space"
     elseif ku == "\t" then ku= "Tab"
@@ -599,7 +599,8 @@ function actions.select_command()
   end
   local button, i = ui.dialogs.filteredlist{
     title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Command']},
-    items = items, width = CURSES and ui.size[1] - 2 or 800
+    items = items, width = CURSES and ui.size[1] - 2 or 800,
+    button1 = _L['Run Command'], button2 = _L['_Cancel']
   }
   if button ~= 1 or not i then return end
   assert(type(commands[i]) == 'function', _L['Unknown command:']..' '..tostring(commands[i]))
