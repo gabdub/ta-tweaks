@@ -307,6 +307,9 @@ actions.list = {
     end},
 }
 
+---
+-- The default main menubar.
+---
 local proj_menubar = {
   {
     title = _L['_File'],
@@ -396,6 +399,24 @@ local proj_menubar = {
     {"show_manual","show_luadoc",SEPARATOR,
      "about"}
   }
+}
+
+---
+-- The default right-click context menu.
+---
+local default_context_menu = {
+  {"undo","redo",SEPARATOR,
+   "cut","copy","paste","delete_char",SEPARATOR,
+   "selectall"}
+}
+
+---
+-- The default tabbar context menu.
+---
+local default_tab_context_menu = {
+  {"close",SEPARATOR,
+   "save","saveas",SEPARATOR,
+   "reload"}
 }
 
 local accelerators= {
