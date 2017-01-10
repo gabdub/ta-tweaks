@@ -554,7 +554,7 @@ local accelerators= {
 
 local function key_name(acc)
   local mods, key = acc:match('^([cams]*)(.+)$')
-  local kname = (mods:find('m') and "Meta+" or "") ..
+  local mname = (mods:find('m') and (OSX and "Meta+" or "Alt+") or "") ..
                 (mods:find('c') and "Ctrl+" or "") ..
                 (mods:find('a') and "Alt+" or "") ..
                 (mods:find('s') and "Shift+" or "")
@@ -565,9 +565,9 @@ local function key_name(acc)
     elseif ku == "\t" then ku= "Tab"
     elseif ku == "\n" then ku= "Return" end
   elseif ku == key then
-    kname= kname.."Shift+"
+    mname= mname.."Shift+" --upper case letter: add shift
   end
-  return kname..ku
+  return mname.."["..ku.."]"
 end
 
 local function getaccelerator(cmd)
@@ -576,6 +576,9 @@ local function getaccelerator(cmd)
     if cmd == accelerators[i] then
       local k= accelerators[i+col]
       if type(k) == 'table' then
+        if k[1] == "++" then
+          return key_name(k[2]).." "..key_name(k[3])
+        end
         k= k[1]
       end
       return key_name(k)
