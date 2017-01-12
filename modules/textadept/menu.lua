@@ -466,7 +466,7 @@ function actions.select_command()
       end
     end
   end
-  --add action used un menus
+  --add actions used in menus
   build_command_tables(actions.menubar)
 
   --add actions not used in menus
@@ -539,7 +539,6 @@ events.connect(events.INITIALIZED, set_menu_bar)
 events.connect(events.MENU_CLICKED, function(menu_id)
   local act = actions.action_fromid[menu_id]
   if act then
-    ui.statusbar_text= act
   	local action = actions.list[act][2]
   	assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(action))
   	action()
