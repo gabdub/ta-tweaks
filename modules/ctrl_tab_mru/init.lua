@@ -171,6 +171,7 @@ if #_BUFFERS > 0 then
 end
 
 --------------------------------------------------------------
+if actions then actions.free_accelerator({"c\t","cs\t"}) end
 -- Control+TAB            goto next MRU buffer
 -- Control+Shift+TAB      goto prev MRU buffer
 keys['c\t'] = function() mru_ctrl_tab_handler(false) end

@@ -131,10 +131,12 @@ if toolbar then
     toolbar.cmdtext("id",                 enc_html_id,          "HTML insert id: OFF",    "addid",    true)
     toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
     toolbar.addspace()
-    --modify buffer menu: moved to proj_menu to speed up reset
-    --local med=textadept.menu.menubar[_L['_Buffer']]
-    --med[#med+1]= {''}
-    --med[#med+1]= {'View HTML Tool_Bar', toolbar.html_toolbar_onoff}
+
+    if actions then
+      actions.add("view_htmltb", 'View HTML Tool_Bar', toolbar.html_toolbar_onoff)
+      local med= actions.getmenu_fromtitle(_L['_Buffer'])
+      if med then med[#med+1]= {"", "view_htmltb"} end
+    end
     toolbar.html_tb= false --hide for now...
     toolbar.show(false)
   end

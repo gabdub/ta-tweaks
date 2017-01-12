@@ -32,89 +32,79 @@ local function proj_show_default(buff)
 end
 
 -----------------MENU/CONTEXT MENU-------------------
+---
+-- The right-click context menu
+---
+local proj_context_menu = {
+  { --#1
+    {"undo","redo",SEPARATOR,
+     "cut","copy","paste","delete_char",SEPARATOR,
+     "selectall"
+    },
+    {
+      title = '_Project',
+      {"open_projsel","open_projectdir",SEPARATOR,
+       "toggle_editproj","toggle_viewproj",SEPARATOR,
+       "adddirfiles_proj","search_project"}
+    }
+  },
+  { --#2
+    {"undo","redo",SEPARATOR,
+     "cut","copy","paste","delete_char",SEPARATOR,
+     "selectall"
+    },
+    {
+      title = '_Project',
+      {"_end_editproj"}
+    }
+  },
+  { --#3
+    {"undo","redo",SEPARATOR,
+     "cut","copy","paste","delete_char",SEPARATOR,
+     "selectall"
+    },
+    {
+      title = '_Project',
+      {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
+       "search_project","goto_tag","save_position","next_position","prev_position",SEPARATOR,
+       "toggle_viewproj"}
+    }
+  }
+}
+
+local ctxmenus= {}
+
 --init desired project context menu
 local function proj_context_menu_init(num)
   if CURSES or Proj.cmenu_num == num then
     --CURSES or the menu is already set, don't change the context menu
-    return false
+    return
   end
   Proj.cmenu_num= num
 
-  if Proj.cmenu_idx == nil then
-    --first time here, add project menu at the end of context menu
-    Proj.cmenu_idx= #textadept.menu.context_menu +1
-
-    --moved to proj_menu to speed up reset
-    --add Project to menubar (keep Help at the end)
-    --local n= #textadept.menu.menubar
-    --textadept.menu.menubar[n+1]= textadept.menu.menubar[n]
-    --textadept.menu.menubar[n]= {
-      --title='_Project',
-      --{_L['_New'],            Proj.new_project},
-      --{_L['_Open'],           Proj.open_project},
-      --{_L['Open _Recent...'], Proj.open_recent_project},
-      --{_L['_Close'],          Proj.close_project},
-      --{''},
-      --{'Project _Search',     Proj.search_in_files },
-      --{'Goto _Tag',           Proj.goto_tag},
-      --{'S_ave position',      Proj.store_current_pos},
-      --{'_Prev position',      Proj.goto_prev_pos},
-      --{'Ne_xt position',      Proj.goto_next_pos},
-    --}
-    --modify edit menu
-    --local med=textadept.menu.menubar[_L['_Edit']]
-    --med[#med+1]= {''}
-    --med[#med+1]= {'Trim trailing spaces', Proj.trim_trailing_spaces}
+  if #ctxmenus == 0 then
+    --first time here, create all the project context menus
+    for i=1,#proj_context_menu do
+      ctxmenus[i]= create_uimenu_fromactions(proj_context_menu[i])
+    end
   end
   --ok, change the context menu
-  return true
+  ui.context_menu = ctxmenus[num]
 end
 
 -- set project context menu in SELECTION mode --
 local function proj_contextm_sel()
-  if proj_context_menu_init(1) then
-    textadept.menu.context_menu[ Proj.cmenu_idx ]= {
-      title='Project',
-      {_L['_Open'] .. ' file  [Enter]', Proj.open_sel_file},
-      {'_Snapopen',                     Proj.snapopen},
-      {''},
-      {_L['_Edit'] .. ' project',       Proj.change_proj_ed_mode},
-      {'_Hide/show project',            Proj.toggle_projview},
-      {''},
-      {'Add files from a _Dir',         Proj.add_dir_files},
-      {'_Project Search',               Proj.search_in_files },
-    }
-  end
+  proj_context_menu_init(1)
 end
 
 -- set project context menu in EDIT mode --
 local function proj_contextm_edit()
-  if proj_context_menu_init(2) then
-    textadept.menu.context_menu[ Proj.cmenu_idx ]= {
-      title='Project',
-      {'_End edit',   Proj.change_proj_ed_mode}
-    }
-  end
+  proj_context_menu_init(2)
 end
 
 -- set project context menu for a regular file --
 local function proj_contextm_file()
-  if proj_context_menu_init(3) then
-    textadept.menu.context_menu[ Proj.cmenu_idx ]= {
-      title='Project',
-      {'_Add this file',        Proj.add_this_file},
-      {'Add all open _Files',   Proj.add_all_files},
-      {'Add files from a _Dir', Proj.add_dir_files},
-      {''},
-      {'Project _Search',       Proj.search_in_files },
-      {'Goto _Tag',             Proj.goto_tag},
-      {'S_ave position',        Proj.store_current_pos},
-      {'_Prev position',        Proj.goto_prev_pos},
-      {'Ne_xt position',        Proj.goto_next_pos},
-      {''},
-      {'_Hide/show project',    Proj.toggle_projview},
-    }
-  end
+  proj_context_menu_init(3)
 end
 
 ------------------PROJECT CONTROL-------------------
@@ -581,7 +571,7 @@ function Proj.update_projview()
 end
 
 -- refresh syntax highlighting + project folding
-local function refresh_proj_hilight()
+function Proj.refresh_hilight()
   if buffer._project_select ~= nil then
     Proj.toggle_selectionmode()
     Proj.toggle_selectionmode()
@@ -682,33 +672,6 @@ function Proj.qopen_curdir()
   end
 end
 
---moved to proj_menu to speed up reset--
---replace some menu commands with the corresponding project version
---function Proj.change_menu_cmds()
-  --local menu= textadept.menu.menubar[_L['_File']]
-  --menu[_L['_New']][2]= Proj.new_file
-  --menu[_L['_Open']][2]= Proj.open_file
-  --menu[_L['Open _Recent...']][2]= Proj.open_recent_file
-  --menu[_L['_Close']][2]= Proj.close_buffer
-  --menu[_L['Close All']][2]= Proj.close_all_buffers
---
-  --local menu= textadept.menu.tab_context_menu
-  --table.insert(menu,2,{'Close Others', Proj.close_others})
-  --table.insert(menu,3,{"Mark as don't close", Proj.keep_thisbuffer})
-  --table.insert(menu,4,{_L['Close All'], Proj.onlykeep_projopen})
---
-  --menu= textadept.menu.menubar[_L['_Buffer']]
-  --menu[_L['_Next Buffer']][2]= Proj.next_buffer
-  --menu[_L['_Previous Buffer']][2]= Proj.prev_buffer
-  --menu[_L['_Switch to Buffer...']][2]= Proj.switch_buffer
---
-  --menu= textadept.menu.menubar[_L['_Tools']][_L['Quick _Open']]
-  --menu[_L['Quickly Open _User Home']][2]= Proj.qopen_user
-  --menu[_L['Quickly Open _Textadept Home']][2]= Proj.qopen_home
-  --menu[_L['Quickly Open _Current Directory']][2]= Proj.qopen_curdir
-  --menu[_L['Quickly Open Current _Project']][2]= Proj.snapopen
---end
-
 function Proj.search_in_files()
   if Proj.do_search_in_files then --goto_nearest module?
     Proj.do_search_in_files()
@@ -792,39 +755,3 @@ function Proj.open_cursor_file()
   end
 end
 
---------------------------------------------------------------
--- Control+W=         close buffer
--- Control+Shift+W=   close all buffers
--- Control+H=         show project current row properties
--- Control+O =        open file
--- Alt+O =            open file using the selected text or the text under the cursor
---                    or change buffer extension {c,cpp} <--> {h,hpp} or ask
--- Control+Alt+O =    open recent file
--- Control+N=         new buffer
--- Control+Shift+O =  project snap open
--- Control+Shift+Alt+O = open current directory
--- Control+U =        quick open user folder
--- F4 =               toggle project between selection and EDIT modes
--- SHIFT+F4 =         toggle project visibility
--- F5 =               refresh syntax highlighting + project folding
--- Control+B=         switch buffer
--- Control+PgUp=      previous buffer
--- Control+PgDn=      next buffer
-keys.cw = Proj.close_buffer
-keys.cW = Proj.close_all_buffers
-keys.ch = Proj.show_doc
-keys.co = Proj.open_file
-keys.ao = Proj.open_cursor_file
-keys.cao= Proj.open_recent_file
-keys.cn=  Proj.new_file
-keys.cO = Proj.snapopen
-keys.caO= Proj.qopen_curdir
-keys.cu = Proj.qopen_user
-keys.f4 = Proj.change_proj_ed_mode
-keys.sf4= Proj.toggle_projview
-keys.f5 = refresh_proj_hilight
-keys.cb = Proj.switch_buffer
-keys['cpgup'] = Proj.prev_buffer
-keys['cpgdn'] = Proj.next_buffer
-keys['apgup'] = Proj.first_buffer
-keys['apgdn'] = Proj.last_buffer

@@ -1185,6 +1185,7 @@ function toolbar.add_config_panel()
 end
 
 --------------------------------------------------------------
+if actions then actions.free_accelerator({"f9","sf9"}) end
 -- F9            show config panel / next config tab
 -- SHIFT+F9      show config panel / prev config tab
 keys['f9']= toolbar.next_configtab

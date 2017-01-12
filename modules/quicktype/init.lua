@@ -1,3 +1,5 @@
+if actions then actions.free_accelerator({"a1","a2","a3","a4","a5","a0","a9", "c,", "c.", "c;", "c:"}) end
+
 local function type_before_after(before,after)
   if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
     --if something is selected use enclose (left the cursor at the end)
@@ -132,7 +134,7 @@ local function find_line(fmatch,dirf,roff)
 end
 
 -- Ctrl+, = GOTO previous FUNCTION/C-BLOCK BEG
--- Ctrl., = GOTO next     FUNCTION/C-BLOCK BEG
+-- Ctrl+. = GOTO next     FUNCTION/C-BLOCK BEG
 --$nnnnnnnnn  ($=cursor position)
 --{
 --....

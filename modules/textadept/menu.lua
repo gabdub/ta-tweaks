@@ -40,15 +40,15 @@ actions.list = {
   --default "object" = "file" / "buffer"
   --status() nil or 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled
 --FILE
-  ["new"]=                  {_L['_New'], Proj.new_file},
-  ["open"]=                 {_L['_Open'], Proj.open_file},
-  ["recent"]=               {_L['Open _Recent...'], Proj.open_recent_file},
+  ["new"]=                  {_L['_New'], buffer.new},
+  ["open"]=                 {_L['_Open'], io.open_file},
+  ["recent"]=               {_L['Open _Recent...'], io.open_recent_file},
   ["reload"]=               {_L['Re_load'], io.reload_file},
   ["save"]=                 {_L['_Save'], io.save_file},
   ["saveas"]=               {_L['Save _As'], io.save_file_as},
   ["saveall"]=              {_L['Save All'], io.save_all_files},
-  ["close"]=                {_L['_Close'], Proj.close_buffer},
-  ["closeall"]=             {_L['Close All'], Proj.close_all_buffers},
+  ["close"]=                {_L['_Close'], io.close_buffer},
+  ["closeall"]=             {_L['Close All'], io.close_all_buffers},
   ["session_load"]=         {_L['Loa_d Session...'], textadept.session.load},
   ["session_save"]=         {_L['Sav_e Session...'], textadept.session.save},
   ["quit"]=                 {_L['_Quit'], quit},
@@ -77,7 +77,6 @@ actions.list = {
   ["filterthrough"]=        {_L['_Filter Through'], function()
       ui.command_entry.enter_mode('filter_through', 'bash')
     end},
-  ["trim_trailingspaces"]=  {'Trim trailing spaces', Proj.trim_trailing_spaces},
 
 --EDIT + SELECT
   ["sel_matchbrace"]=       {_L['Select to _Matching Brace'], function()
@@ -203,10 +202,14 @@ actions.list = {
   ["goto_bookmark"]=        {_L['_Goto Bookmark...'], textadept.bookmarks.goto_mark},
 
 --TOOLS + QUICK OPEN
-  ["open_userhome"]=        {_L['Quickly Open _User Home'], Proj.qopen_user},
-  ["open_textadepthome"]=   {_L['Quickly Open _Textadept Home'], Proj.qopen_home},
-  ["open_currentdir"]=      {_L['Quickly Open _Current Directory'], Proj.qopen_curdir},
-  ["open_projectdir"]=      {_L['Quickly Open Current _Project'], Proj.snapopen},
+  ["open_userhome"]=        {_L['Quickly Open _User Home'], function() io.quick_open(_USERHOME) end},
+  ["open_textadepthome"]=   {_L['Quickly Open _Textadept Home'], function() io.quick_open(_HOME) end},
+  ["open_currentdir"]=      {_L['Quickly Open _Current Directory'], function()
+        if buffer.filename then
+          io.quick_open(buffer.filename:match('^(.+)[/\\]'))
+        end
+      end},
+  ["open_projectdir"]=      {_L['Quickly Open Current _Project'], io.quick_open},
 
 --TOOLS + SNIPPETS
   ["insert_snippet"]=       {_L['_Insert Snippet...'], textadept.snippets._select},
@@ -215,9 +218,9 @@ actions.list = {
   ["cancel_snippet"]=       {_L['_Cancel Snippet'], textadept.snippets._cancel_current},
 
 --BUFFER
-  ["next_buffer"]=          {_L['_Next Buffer'], Proj.next_buffer},
-  ["prev_buffer"]=          {_L['_Previous Buffer'], Proj.prev_buffer},
-  ["switch_buffer"]=        {_L['_Switch to Buffer...'], Proj.switch_buffer},
+  ["next_buffer"]=          {_L['_Next Buffer'], function() view:goto_buffer(1) end},
+  ["prev_buffer"]=          {_L['_Previous Buffer'], function() view:goto_buffer(-1) end},
+  ["switch_buffer"]=        {_L['_Switch to Buffer...'], ui.switch_buffer},
   ["toggle_view_oel"]=      {_L['Toggle View _EOL'], function()
       buffer.view_eol = not buffer.view_eol
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
@@ -285,17 +288,6 @@ actions.list = {
   ["zoom_out"]=             {_L['Zoom _Out'], buffer.zoom_out},
   ["reset_zoom"]=           {_L['_Reset Zoom'], function() buffer.zoom = 0 end},
 
---PROJECT
-  ["new_project"]=          {_L['_New'],            Proj.new_project},
-  ["open_project"]=         {_L['_Open'],           Proj.open_project},
-  ["recent_project"]=       {_L['Open _Recent...'], Proj.open_recent_project},
-  ["close_project"]=        {_L['_Close'],          Proj.close_project},
-  ["search_project"]=       {'Project _Search',     Proj.search_in_files },
-  ["goto_tag"]=             {'Goto _Tag',           Proj.goto_tag},
-  ["save_position"]=        {'S_ave position',      Proj.store_current_pos},
-  ["next_position"]=        {'Ne_xt position',      Proj.goto_next_pos},
-  ["prev_position"]=        {'_Prev position',      Proj.goto_prev_pos},
-
 --HELP
   ["show_manual"]=          {_L['Show _Manual'], function() open_page(_HOME..'/doc/manual.html') end},
   ["show_luadoc"]=          {_L['Show _LuaDoc'], function() open_page(_HOME..'/doc/api.html') end},
@@ -307,10 +299,18 @@ actions.list = {
     end},
 }
 
+--add a new action to the list
+function actions.add(name, menutext, exec, icon, status)
+  actions.list[name]= {menutext, exec, icon, status}
+  local id= #actions.action_fromid +1
+  actions.action_fromid[id]= name
+  actions.id_fromaction[name]= id
+end
+
 ---
--- The default main menubar.
+-- The main menubar
 ---
-local proj_menubar = {
+actions.menubar = {
   {
     title = _L['_File'],
     {"new","open","recent","reload","save","saveas","saveall",SEPARATOR,
@@ -335,8 +335,7 @@ local proj_menubar = {
        "enclose_xmltags","enclose_xmltag","enclose_singlequotes","enclose_doublequotes",
        "enclose_parentheses","enclose_brackets","enclose_braces",SEPARATOR,
        "moveup_sellines","movedown_sellines"},
-    },
-    {SEPARATOR,"trim_trailingspaces"}
+    }
   },
   {
     title = _L['_Search'],
@@ -390,11 +389,6 @@ local proj_menubar = {
      "zoom_in","zoom_out","reset_zoom"}
   },
   {
-    title='_Project',
-    {"new_project","open_project","recent_project","close_project",SEPARATOR,
-     "search_project","goto_tag","save_position","next_position","prev_position"}
-  },
-  {
     title = _L['_Help'],
     {"show_manual","show_luadoc",SEPARATOR,
      "about"}
@@ -402,218 +396,53 @@ local proj_menubar = {
 }
 
 ---
--- The default right-click context menu.
+-- The right-click context menu
 ---
-local default_context_menu = {
+actions.context_menu = {
   {"undo","redo",SEPARATOR,
    "cut","copy","paste","delete_char",SEPARATOR,
    "selectall"}
 }
 
 ---
--- The default tabbar context menu.
+-- The tabbar context menu
 ---
-local default_tab_context_menu = {
+actions.tab_context_menu = {
   {"close",SEPARATOR,
    "save","saveas",SEPARATOR,
    "reload"}
 }
 
-local accelerators= {
---FILE                      WIN/LINUX   OSX         CURSES
-  "new",                    "cn",       "mn",       "cmn",
-  "open",                   "co",       "mo",       "co",
-  "recent",                 "cao",      "cmo",      "cmo",
-  "reload",                 "cO",       "mO",       "mo",
-  "save",                   "cs",       "ms",       "cs",
-  "saveas",                 "cS",       "mS",       "cmS",
---"saveall",                "",         "",         "",
-  "close",                  "cw",       "mw",       "cw",
-  "closeall",               "cW",       "mW",       "cmW",
---"session_load",           "",         "",         "",
---"session_save",           "",         "",         "",
-  "quit",                   "cq",       "mq",       "cq",
-
---EDIT
-  "undo",                   "cz",       "mz",       {"cz","mz"}, --^Z suspends in some terminals
-  "redo",                   {"cy","cZ"},"my",       {"cy","cZ"},
-  "cut",                    "cx",       "mx",       "cx",
-  "copy",                   "cc",       "mc",       "cc",
-  "paste",                  "cv",       "mv",       "cv",
-  "duplicate_line",         "cd",       "md",       "",
-  "delete_char",            "del",      "del",      "del",
-  "delete_word",            "adel",     "cdel",     "mdel",
-  "selectall",              "ca",       "ma",       "ca",
-  "match_brace",            "cm",       "cm",       "mm",
-  "complete_word",          "c\n",      "cesc",     "c\n", --curses + Win32:c\n + LINUX:cmj
-  "highlight_word",         "caH",      "mH",       "",
-  "toggle_comment",         "c/",       "m/",       "m/",
-  "transpose_chars",        "ct",       "ct",       "ct",
-  "join_lines",             "cJ",       "cj",       "mj",
-  "filterthrough",          "c|",       "c\\",      "m|",
-  "sel_matchbrace",         "cM",       "cM",       "mM",
-  "sel_betweenxmltag",      "c<",       "m<",       "m<",
-  "sel_xmltag",             "c>",       "m>",       "",
-  "sel_singlequotes",       "c'",       "m'",       "m'",
-  "sel_doublequotes",       'c"',       'm"',       'm"',
-  "sel_parentheses",        "c(",       "m(",       "m(",
-  "sel_brackets",           "c[",       "m[",       "m[",
-  "sel_braces",             "c{",       "m{",       "m{",
-  "sel_word",               "cD",       "mD",       "mW",
-  "sel_line",               "cN",       "mN",       "mN",
-  "sel_paragraph",          "cP",       "mP",       "mP",
-  "upper_sel",              "cau",      "cu",       "cmu",
-  "lower_sel",              "caU",      "cU",       "cml",
-  "enclose_xmltags",        "a<",       "c<",       "m>",
-  "enclose_xmltag",         "a>",       "c>",       "",
-  "enclose_singlequotes",   "a'",       "c'",       "",
-  "enclose_doublequotes",   'a"',       'c"',       '',
-  "enclose_parentheses",    "a(",       "c(",       "m)",
-  "enclose_brackets",       "a[",       "c[",       "m]",
-  "enclose_braces",         "a{",       "c{",       "m}",
-  "moveup_sellines",        "csup",     "csup",     "csup",
-  "movedown_sellines",      "csdown",   "csdown",   "csdown",
---"trim_trailingspaces",    "",         "",         "",
-
---SEARCH
-  "find",                   "cf",       "mf",       {"mf","mF"}, --mf is used by some GUI terminals
-  "find_next",              {"f3","cg"},"mg",       "mg",
-  "find_prev",              {"sf3","cG"},"mG",      "mG",
-  "replace",                "car",      "cr",       "mr",
-  "replaceall",             "caR",      "cR",       "mR",
--- Find Next is   "an" when find pane is focused in GUI
--- Find Prev is   "ap" when find pane is focused in GUI
--- Replace is     "ar" when find pane is focused in GUI
--- Replace All is "aa" when find pane is focused in GUI
-  "find_increment",         "caf",      "cmf",      "cmf",
-  "find_infiles",           "cF",       "mF",       "",
-  "next_filefound",         "cag",      "cmg",      "",
-  "prev_filefound",         "caG",      "cmG",      "",
-  "goto_line",              "cj",       "mj",       "mj",
-
---TOOLS
-  "toggle_commandentry",    "ce",       "me",       "mc",
-  "run_command",            "cE",       "mE",       "mC",
-  "run",                    "cr",       "mr",       "cr",
-  "compile",                "cR",       "mR",       "cmr",
-  "set_runargs",            "cB",       "mB",       "cmb",
-  "build",                  "cA",       "mA",       "",
-  "stop_run",               "cX",       "mX",       "cmx",
-  "next_error",             "cae",      "cme",      "mx",
-  "prev_error",             "caE",      "cmE",      "mX",
-  "toggle_bookmark",        "cf2",      "mf2",      "f1",
-  "clear_bookmarks",        "csf2",     "msf2",     "f6",
-  "next_bookmark",          "f2",       "f2",       "f2",
-  "prev_bookmark",          "sf2",      "sf2",      "f3",
-  "goto_bookmark",          "af2",      "af2",      "f4",
-  "open_userhome",          "cu",       "mu",       "mu",
---"open_textadepthome",     "",         "",         "",
-  "open_currentdir",        "caO",      "cmO",      "mO",
-  "open_projectdir",        "caP",      "cmP",      "cmp",
-  "insert_snippet",         "ck",       "a\t",      "mk",
-  "expand_snippet",         "\t",       "\t",       "\t",
-  "prev_snipplaceholder",   "s\t",      "s\t",      "s\t",
-  "cancel_snippet",         "cK",       "as\t",     "mK",
-  "complete_symbol",        "c ",       "aesc",     "c@",
-  "show_documentation",     "ch",       "mh",       {"mh","mH"}, --mh is used by some GUI terminals
-  "show_style",             "ci",       "mi",       "mI",
-
---BUFFER
-  "next_buffer",            "c\t",      "c\t",      "mn",
-  "prev_buffer",            "cs\t",     "cs\t",     "mp",
-  "switch_buffer",          "cb",       "mb",       {"mb","mB"}, --mb is used by some GUI terminals
---"set_tab_2",              "",         "",         "",
---"set_tab_3",              "",         "",         "",
---"set_tab_4",              "",         "",         "",
---"set_tab_8",              "",         "",         "",
-  "toggle_usetabs",         "caT",      "cT",       {"mt","mT"}, --mt is used by some GUI terminals
-  "convert_indentation",    "cai",      "ci",       "mi",
---"set_eol_crlf",           "",         "",         "",
---"set_eol_lf",             "",         "",         "",
---"set_enc_utf8",           "",         "",         "",
---"set_enc_ascii",          "",         "",         "",
---"set_enc_8859",           "",         "",         "",
---"set_enc_utf16",          "",         "",         "",
-  "toggle_view_oel",        "ca\n",     "c\n",      "c\n",
-  "toggle_view_wrap",       "ca\\",     "c\\",      "c\\",
-  "toggle_view_ws",         "caS",      "cS",       "cS",
-  "select_lexer",           "cL",       "mL",       "mL",
-  "refresh_syntax",         "f5",       "f5",       {"f5","cl"},
-
---VIEW
-  "next_view",              "can",      "ca\t",     {"++","cmv","n"},   --cmv n
-  "prev_view",              "cap",      "cas\t",    {"++","cmv","p"},   --cmv p
-  "split_view_h",           "cas",      "cs",       {"++","cmv","s"},   --cmv s
-  "split_view_v",           "cav",      "cv",       {"++","cmv","v"},   --cmv v
-  "unsplit_view",           "caw",      "cw",       {"++","cmv","w"},   --cmv w
-  "unsplit_allviews",       "caW",      "cW",       {"++","cmv","W"},   --cmv W
-  "grow_view",              {"ca+","ca="},{"c+","c="},{"++","cmv","+","cmv","="}, --cmv + / cmv =
-  "shrink_view",            "ca-",      "c-",       {"++","cmv","-"},   --cmv -
-  "toggle_fold",            "c*",       "m*",       "m*",
-  "toggle_view_indguides",  "caI",      "cI",       "",
-  "toggle_virtualspace",    "caV",      "cV",       "",
-  "zoom_in",                "c=",       "m=",       "m=",
-  "zoom_out",               "c-",       "m-",       "m-",
-  "reset_zoom",             "c0",       "m0",       "m0",
-
---PROJECT
---"new_project",            "",         "",         "",
---"open_project",           "",         "",         "",
---"recent_project",         "",         "",         "",
---"close_project",          "",         "",         "",
---"search_project",         "",         "",         "",
---"goto_tag",               "",         "",         "",
---"save_position",          "",         "",         "",
---"next_position",          "",         "",         "",
---"prev_position",          "",         "",         "",
-
---HELP
-  "show_manual",            "f1",       "f1",       "f1",
-  "show_luadoc",            "sf1",      "sf1",      "sf1",
---"about",                  "",         "",         "",
-}
-
-local function key_name(acc)
-  local mods, key = acc:match('^([cams]*)(.+)$')
-  local mname = (mods:find('m') and (OSX and "Meta+" or "Alt+") or "") ..
-                (mods:find('c') and "Ctrl+" or "") ..
-                (mods:find('a') and "Alt+" or "") ..
-                (mods:find('s') and "Shift+" or "")
-  local ku=string.upper(key)
-  local lu=string.lower(key)
-  if ku == lu then --only symbols and numbers
-    if ku == " " then ku= "Space"
-    elseif ku == "\t" then ku= "Tab"
-    elseif ku == "\n" then ku= "Return"
-    else ku= "["..ku.."]" end
-  elseif ku == key then
-    mname= mname.."Shift+" --upper case letter: add shift
+function actions.getmenu_fromtitle(tit)
+  for i=1,#actions.menubar do
+    if actions.menubar[i].title == tit then return actions.menubar[i] end
   end
-  return mname..ku
+  return nil
 end
 
-local function getaccelerator(cmd)
-  local col= not CURSES and (OSX and 2 or 1) or 3
-  for i=1, #accelerators, 4 do
-    if cmd == accelerators[i] then
-      local k= accelerators[i+col]
-      if type(k) == 'table' then
-        if k[1] == "++" then
-          return key_name(k[2]).." "..key_name(k[3])
-        end
-        k= k[1]
-      end
-      return key_name(k)
-    end
+--list of actions (index= ID)
+actions.action_fromid = {}
+--list of actions (index= action)
+actions.id_fromaction = {}
+
+local function load_action_lists()
+  actions.action_fromid = {}
+  actions.id_fromaction = {}
+  local id= 1
+  for acc,_ in pairs(actions.list) do
+    actions.action_fromid[id]= acc
+    actions.id_fromaction[acc]= id
+    id=id+1
   end
-  return ""
 end
+load_action_lists()
 
 ---
 -- Prompts the user to select a menu command to run.
 -- @name select_command
 function actions.select_command()
   local items, commands, actioninmenu = {}, {}, {}
+
   local function build_command_tables(menu)
     for i = 1, #menu do
       local mit= menu[i]
@@ -629,7 +458,7 @@ function actions.select_command()
               local label = menu.title and menu.title..': '..v[1] or v[1]
               items[#items + 1] = label:gsub('_([^_])', '%1')
               items[#items + 1] = k
-              items[#items + 1] = getaccelerator(k)
+              items[#items + 1] = actions.getaccelkeyname(k)
               commands[#commands + 1] = v[2]
             end
           end
@@ -637,7 +466,8 @@ function actions.select_command()
       end
     end
   end
-  build_command_tables(proj_menubar)
+  --add action used un menus
+  build_command_tables(actions.menubar)
 
   --add actions not used in menus
   for k,v in pairs(actions.list) do
@@ -645,7 +475,7 @@ function actions.select_command()
       local label = v[1]
       items[#items + 1] = label:gsub('_([^_])', '%1')
       items[#items + 1] = k
-      items[#items + 1] = getaccelerator(k)
+      items[#items + 1] = actions.getaccelkeyname(k)
       commands[#commands + 1] = v[2]
     end
   end
@@ -660,3 +490,58 @@ function actions.select_command()
   commands[i]()
 end
 
+local function gen_menu_table(menu)
+  local gtkmenu = {}
+  gtkmenu.title = menu.title
+  for i = 1, #menu do
+    local mit= menu[i]
+    if mit.title then --submenu
+      gtkmenu[#gtkmenu + 1] = gen_menu_table(mit)
+    else
+      for j = 1, #mit do
+        k= mit[j]
+        local label= ""
+        local menu_id= 0
+        local key= 0
+        local mods= 0
+        if k ~= SEPARATOR then
+          local v= actions.list[k]
+          if v ~= nil then
+            label = v[1]
+            menu_id= actions.id_fromaction[k]
+            key, mods = actions.get_gdkkey(k)
+          end
+        end
+        gtkmenu[#gtkmenu + 1] = {label, menu_id, key, mods}
+      end
+    end
+  end
+  return gtkmenu
+end
+
+function create_uimenu_fromactions(actions)
+  return ui.menu(gen_menu_table(actions))
+end
+
+local function set_menu_bar()
+  local _menubar = {}
+  for i = 1, #actions.menubar do
+    _menubar[#_menubar + 1] = create_uimenu_fromactions(actions.menubar[i])
+  end
+  ui.menubar = _menubar
+  actions.def_context_menu = create_uimenu_fromactions(actions.context_menu)
+  ui.context_menu= actions.def_context_menu
+  ui.tab_context_menu = create_uimenu_fromactions(actions.tab_context_menu)
+end
+events.connect(events.INITIALIZED, set_menu_bar)
+
+-- Performs the appropriate action when clicking a menu item.
+events.connect(events.MENU_CLICKED, function(menu_id)
+  local act = actions.action_fromid[menu_id]
+  if act then
+    ui.statusbar_text= act
+  	local action = actions.list[act][2]
+  	assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(action))
+  	action()
+  end
+end)

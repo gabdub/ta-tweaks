@@ -191,9 +191,13 @@ if Proj then  --Project module?
   function Proj.do_search_in_files()
     find_text_in_project(true)
   end
-  keys.aF = Proj.do_search_in_files
+  if actions then
+    actions.free_accelerator("aF")
+    actions.accelerators["search_project"]="aF"
+  end
 end
 --------------------------------------------------------------
+if actions then actions.free_accelerator({"f3","cf3","af3","sf3","csf3","cg","cf"}) end
 -- F3 =               goto nearest occurrence FORWARD
 -- Control+F3 =       goto nearest occurrence BACKWARD
 -- Alt+F3 =           goto nearest occurrence CHOOSE SEARCH OPTIONS

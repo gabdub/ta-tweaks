@@ -282,13 +282,16 @@ function Proj.remove_search_from_pos_table()
 end
 
 --------------------------------------------------------------
+if actions then
+  actions.free_accelerator({"f11","sf11","sf12","cf11","cf12"})
 -- F11          goto Tag
 -- Shift+F11    goto previous position
 -- Shift+F12    goto next position
 -- Control+F11  store current position
 -- Control+F12  clear all positions
-keys.f11  = Proj.goto_tag
-keys.sf11 = Proj.goto_prev_pos
-keys.sf12 = Proj.goto_next_pos
-keys.cf11 = Proj.store_current_pos
+  actions.accelerators["goto_tag"]="f11"
+  actions.accelerators["prev_position"]="sf11"
+  actions.accelerators["next_position"]="sf12"
+  actions.accelerators["save_position"]="cf11"
+end
 keys.cf12 = Proj.clear_pos_table

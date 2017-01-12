@@ -162,9 +162,6 @@ events.connect(events.INITIALIZED, function()
   --Proj.init_ready = true
   Proj.updating_ui= 0
 
-  --replace some menu commands with the corresponding project version
-  Proj.change_menu_cmds()
-
   Proj.is_visible= 1  --0:hidden  1:shown in selection mode  2:shown in edit mode
   Proj.edit_width= 600
   Proj.select_width= 200
