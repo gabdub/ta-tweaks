@@ -508,8 +508,14 @@ local function gen_menu_table(menu)
           local v= actions.list[k]
           if v ~= nil then
             label = v[1]
+            local lb=label:match('(.-) %[Return]')
+            if lb then
+              label= lb
+              key= 0xFF0D
+            else
+              key, mods = actions.get_gdkkey(k)
+            end
             menu_id= actions.id_fromaction[k]
-            key, mods = actions.get_gdkkey(k)
           end
         end
         gtkmenu[#gtkmenu + 1] = {label, menu_id, key, mods}

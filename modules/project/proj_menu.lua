@@ -52,7 +52,7 @@ if actions then
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.keep_thisbuffer)
   actions.add("onlykeepproj",        _L['Close All'],         Proj.onlykeep_projopen)
-  actions.add("open_projsel",        _L['_Open'] .. ' file  [Enter]', Proj.open_sel_file)
+  actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
   actions.add("toggle_editproj",     _L['_Edit'] .. ' project', Proj.change_proj_ed_mode)
   --"_end_editproj" = "toggle_editproj" with different text menu
   actions.add("_end_editproj",       '_End edit',             Proj.change_proj_ed_mode)
@@ -79,12 +79,14 @@ if actions then
      "reload"}
   }
 
-  actions.free_accelerator({"ao","f4","sf4","cpgup","cpgdn","apgup","apgdn"})
+  actions.free_accelerator({"ao","f4","sf4","cpgup","cpgdn","apgup","apgdn","cO","caP"})
   actions.accelerators["toggle_editproj"]="f4"
   actions.accelerators["_end_editproj"]="f4" --(alias)
   actions.accelerators["toggle_viewproj"]="sf4"
   actions.accelerators["prev_buffer"]="cpgup"
   actions.accelerators["next_buffer"]="cpgdn"
+  actions.accelerators["open_projectdir"]="cO"
+  actions.accelerators["open_textadepthome"]="caP"
 end
 keys.ao = Proj.open_cursor_file
 keys['apgup'] = Proj.first_buffer
