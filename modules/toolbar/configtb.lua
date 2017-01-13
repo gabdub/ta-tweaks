@@ -533,7 +533,7 @@ local base0X_prop= {
 ['2']= {'text_fore', 'selection_back', 'operator'},
 ['3']= {'indentguide'},
 ['4']= {'markers,comment'},
-['5']= {'calltips_fore', 'linenum_fore', 'markers_sel'},
+['5']= {'calltips_fore', 'linenum_fore', 'markers_sel', 'prj_open_mark'},
 ['6']= {'prj_sel_bar_nof'},
 ['7']= {'caret', 'calltips_back'},
 ['8']= {'error', 'variable', 'red'},
@@ -942,6 +942,7 @@ local function add_colors_cfg_panel()
 
   add_config_label3("Project", "Unfocus", "Focus", true)
   add_config_color("Selection bar", "prj_sel_bar_nof", "prj_sel_bar")
+  add_config_color("Open file mark", "prj_open_mark")
 
   add_config_label3("Syntax highlighting", "Fore", "", true)
   add_config_color("Comment", "comment")
