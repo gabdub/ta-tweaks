@@ -440,7 +440,7 @@ load_action_lists()
 ---
 -- Prompts the user to select a menu command to run.
 -- @name select_command
-function actions.select_command()
+function actions.select_command(infile)
   local items, commands, actioninmenu = {}, {}, {}
 
   local function build_command_tables(menu)
@@ -480,14 +480,22 @@ function actions.select_command()
     end
   end
 
-  local button, i = ui.dialogs.filteredlist{
-    title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Command']},
-    items = items, width = CURSES and ui.size[1] - 2 or 800,
-    button1 = _L['Run Command'], button2 = _L['_Cancel']
-  }
-  if button ~= 1 or not i then return end
-  assert(type(commands[i]) == 'function', _L['Unknown command:']..' '..tostring(commands[i]))
-  commands[i]()
+  if infile then
+    actions.list["new"][2]()  --new buffer
+    for i=1,#items,3 do
+      local ln=string.format("%-45s %-25s %s\n", items[i], items[i+1], items[i+2])
+      buffer:append_text(ln)
+    end
+  else
+    local button, i = ui.dialogs.filteredlist{
+      title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Command']},
+      items = items, width = CURSES and ui.size[1] - 2 or 800,
+      button1 = _L['Run Command'], button2 = _L['_Cancel']
+    }
+    if button ~= 1 or not i then return end
+    assert(type(commands[i]) == 'function', _L['Unknown command:']..' '..tostring(commands[i]))
+    commands[i]()
+  end
 end
 
 local function gen_menu_table(menu)

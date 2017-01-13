@@ -6,6 +6,15 @@ TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
+function Winfo(msg,info)
+  ui.dialogs.msgbox{
+    title = 'Information',
+    text = msg,
+    informative_text = info,
+    icon = 'gtk-dialog-info', button1 = _L['_OK']
+  }
+end
+
 function my_goto_view(view)
   if TA_MAYOR_VER < 9 then
     ui.goto_view(view)
@@ -28,6 +37,12 @@ require('project')
 require('goto_nearest')
 require('ctrl_tab_mru')
 require('quicktype')
+
+--cf5 "List commands in a new buffer"
+if actions then
+  actions.free_accelerator("cf5")
+  keys.cf5= function() actions.select_command(true) end
+end
 
 textadept.file_types.extensions.mas = 'mas'
 textadept.editing.comment_string.ansi_c = '//'
