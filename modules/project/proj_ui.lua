@@ -37,26 +37,15 @@ end
 ---
 local proj_context_menu = {
   { --#1
-    {"undo","redo",SEPARATOR,
-     "cut","copy","paste","delete_char",SEPARATOR,
-     "selectall"
-    },
-    {
-      title = '_Project',
-      {"open_projsel","open_projectdir",SEPARATOR,
+    {"open_projsel","open_projectdir",SEPARATOR,
        "toggle_editproj","toggle_viewproj",SEPARATOR,
        "adddirfiles_proj","search_project"}
-    }
   },
   { --#2
     {"undo","redo",SEPARATOR,
      "cut","copy","paste","delete_char",SEPARATOR,
-     "selectall"
-    },
-    {
-      title = '_Project',
-      {"_end_editproj"}
-    }
+     "selectall",SEPARATOR,
+     "_end_editproj"}
   },
   { --#3
     {"undo","redo",SEPARATOR,
