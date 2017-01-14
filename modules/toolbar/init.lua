@@ -1,4 +1,7 @@
 if toolbar then
+  if actions then
+    require('toolbar.actions')
+  end
   --config panel on toolbar #3
   require('toolbar.configtb')
 
