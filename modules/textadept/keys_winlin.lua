@@ -1,38 +1,43 @@
+------------ WIN32 & LINUX KEYS ------------
+-- GUI key bindings
+--
+-- Unassigned keys (~ denotes keys reserved by the operating system):
+-- c:       C         H I            p  Q     T ~ V     Y  _   ) ] }   +
+-- a:  aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ_   ) ] }  *+-/=\n\s
+-- ca: aAbBcCdD   F      jJkKlLmM N    qQ    t       xXy zZ_"'()[]{}<>*  /   \s
+--
+-- CTRL = 'c' (Control ^)
+-- ALT = 'a' (Alt)
+-- META = [unused]
+-- SHIFT = 's' (Shift ⇧)
+--
+-- CURSES key bindings
+--
+-- Key bindings available depend on your implementation of curses.
+--
+-- For ncurses (Linux, Mac OSX, BSD):
+--   * The only Control keys recognized are 'ca'-'cz', 'c@', 'c\\', 'c]', 'c^',
+--     and 'c_'.
+--   * Control+Shift and Control+Meta+Shift keys are not recognized.
+--   * Modifiers for function keys F1-F12 are not recognized.
+-- For pdcurses (Win32):
+--   * Control+Shift+Letter keys are not recognized. Other Control+Shift keys
+--     are.
+--
+-- Unassigned keys (~ denotes keys reserved by the operating system):
+-- c:        g~~   ~            ~
+-- cm:   cd  g~~ k ~   q  t    yz
+-- m:          e          J            qQ  sS    vVw   yY  _          +
+-- Note: m[befhstv] may be used by Linux/BSD GUI terminals for menu access.
+--
+-- CTRL = 'c' (Control ^)
+-- ALT = [unused]
+-- META = 'm' (Alt)
+-- SHIFT = 's' (Shift ⇧)
 local keys = keys
 
--- Movement commands.
-if CURSES then
-  keys['c^'] = function() buffer.selection_mode = 0 end
-  keys['c]'] = buffer.swap_main_anchor_caret
-  keys.cf, keys.cb = buffer.char_right, buffer.char_left
-  keys.cn, keys.cp = buffer.line_down, buffer.line_up
-  keys.ca, keys.ce = buffer.vc_home, buffer.line_end
-  keys.mA, keys.mE = buffer.vc_home_extend, buffer.line_end_extend
-  keys.mU, keys.mD = buffer.page_up_extend, buffer.page_down_extend
-  keys.cma, keys.cme = buffer.document_start, buffer.document_end
-  keys.cd, keys.md = buffer.clear, keys.mdel
-  keys.ck = function()
-    buffer:line_end_extend()
-    buffer:cut()
-  end
-end
-
-if CURSES then
-  -- UTF-8 input.
-  keys.utf8_input = {
-    ['\n'] = function()
-      return ui.command_entry.finish_mode(function(code)
-        buffer:add_text(utf8.char(tonumber(code, 16)))
-      end)
-    end
-  }
-  keys['mu'] = function()
-    ui.command_entry.enter_mode('utf8_input')
-  end
-end
-
 local default_accelerators= {
---FILE                      WIN/LINUX      CURSES
+--FILE                      GUI            CURSES
   "new",                    "cn",          "cmn",
   "open",                   "co",          "co",
   "recent",                 "cao",         "cmo",
@@ -185,9 +190,37 @@ local function load_accel_lists()
 end
 load_accel_lists()
 
+-- Movement commands.
+if CURSES then
+  keys['c^'] = function() buffer.selection_mode = 0 end
+  keys['c]'] = buffer.swap_main_anchor_caret
+  keys.cf, keys.cb = buffer.char_right, buffer.char_left
+  keys.cn, keys.cp = buffer.line_down, buffer.line_up
+  keys.ca, keys.ce = buffer.vc_home, buffer.line_end
+  keys.mA, keys.mE = buffer.vc_home_extend, buffer.line_end_extend
+  keys.mU, keys.mD = buffer.page_up_extend, buffer.page_down_extend
+  keys.cma, keys.cme = buffer.document_start, buffer.document_end
+  keys.cd, keys.md = buffer.clear, keys.mdel
+  keys.ck = function()
+    buffer:line_end_extend()
+    buffer:cut()
+  end
+  -- UTF-8 input.
+  keys.utf8_input = {
+    ['\n'] = function()
+      return ui.command_entry.finish_mode(function(code)
+        buffer:add_text(utf8.char(tonumber(code, 16)))
+      end)
+    end
+  }
+  keys['mu'] = function()
+    ui.command_entry.enter_mode('utf8_input')
+  end
+
 --complete_word=   CURSES: Win32: c\n + LINUX:cmj
 --complete_symbol= CURSES: Win32:"c " + LINUX:c@
-if CURSES and WIN32 then
-  actions.accelerators["complete_word"]=   "c\n"
-  actions.accelerators["complete_symbol"]= "c "
+  if WIN32 then
+    actions.accelerators["complete_word"]=   "c\n"
+    actions.accelerators["complete_symbol"]= "c "
+  end
 end

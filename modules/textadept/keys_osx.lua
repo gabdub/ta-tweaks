@@ -1,39 +1,43 @@
+------------ OSX ------------
+-- GUI key bindings
+--
+-- Unassigned keys (~ denotes keys reserved by the operating system):
+-- m:       C        ~  I JkK  ~M    p  ~    tT   V    yY  _   ) ] }   +   ~~\n
+-- c:      cC D    gG H  J K L    oO  qQ             xXyYzZ_   ) ] }  *  /
+-- cm: aAbBcC~D   F  ~HiIjJkKlL~MnN  p q~rRsStTuUvVwWxXyYzZ_"'()[]{}<>*+-/=\t\n
+--
+-- CTRL = 'c' (Control ^)
+-- ALT = 'a' (Alt/option ⌥)
+-- META = 'm' (Command ⌘)
+-- SHIFT = 's' (Shift ⇧)
+-- ADD = ''
+-- Command, Option, Shift, and 'a' = 'amA'
+-- Command, Shift, and '\t' = 'ms\t'
+--
+-- CURSES key bindings
+--
+-- Key bindings available depend on your implementation of curses.
+--
+-- For ncurses (Linux, Mac OSX, BSD):
+--   * The only Control keys recognized are 'ca'-'cz', 'c@', 'c\\', 'c]', 'c^',
+--     and 'c_'.
+--   * Control+Shift and Control+Meta+Shift keys are not recognized.
+--   * Modifiers for function keys F1-F12 are not recognized.
+--
+-- Unassigned keys (~ denotes keys reserved by the operating system):
+-- c:        g~~   ~            ~
+-- cm:   cd  g~~ k ~   q  t    yz
+-- m:          e          J            qQ  sS    vVw   yY  _          +
+-- Note: m[befhstv] may be used by Linux/BSD GUI terminals for menu access.
+--
+-- CTRL = 'c' (Control ^)
+-- ALT = [unused]
+-- META = 'm' (Alt)
+-- SHIFT = 's' (Shift ⇧)
 local keys = keys
 
--- Movement commands.
-keys.cf, keys.cF = buffer.char_right, buffer.char_right_extend
-keys.cmf, keys.cmF = buffer.word_right, buffer.word_right_extend
-keys.cb, keys.cB = buffer.char_left, buffer.char_left_extend
-keys.cmb, keys.cmB = buffer.word_left, buffer.word_left_extend
-keys.cn, keys.cN = buffer.line_down, buffer.line_down_extend
-keys.cp, keys.cP = buffer.line_up, buffer.line_up_extend
-keys.ca, keys.cA = buffer.vc_home, buffer.vc_home_extend
-keys.ce, keys.cE = buffer.line_end, buffer.line_end_extend
-keys.aright, keys.aleft = buffer.word_right, buffer.word_left
-keys.cd = buffer.clear
-keys.ck = function()
-  buffer:line_end_extend()
-  buffer:cut()
-end
-keys.cl = buffer.vertical_centre_caret
--- GTK-OSX reports Fn-key as a single keycode which confuses Scintilla. Do
--- not propagate it.
-keys.fn = function() return true end
-
--- UTF-8 input.
-keys.utf8_input = {
-  ['\n'] = function()
-    return ui.command_entry.finish_mode(function(code)
-      buffer:add_text(utf8.char(tonumber(code, 16)))
-    end)
-  end
-}
-keys['mU'] = function()
-  ui.command_entry.enter_mode('utf8_input')
-end
-
 local default_accelerators= {
---FILE                      OSX             CURSES
+--FILE                      GUI             CURSES
   "new",                    "mn",           "mn",
   "open",                   "mo",           "mo",
   "recent",                 "cmo",          "cmo",
@@ -122,11 +126,11 @@ local default_accelerators= {
 --"open_textadepthome",     "",             "",
   "open_currentdir",        "cmO",          "cmO",
   "open_projectdir",        "cmP",          "cmP",
-  "insert_snippet",         "a\t",          "a\t",
+  "insert_snippet",         "a\t",          "m\t",
   "expand_snippet",         "\t",           "\t",
   "prev_snipplaceholder",   "s\t",          "s\t",
   "cancel_snippet",         "as\t",         "mK",
-  "complete_symbol",        "aesc",         "aesc",
+  "complete_symbol",        "aesc",         "mesc",
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
   "show_style",             "mi",           "mi",
 
@@ -169,8 +173,8 @@ local default_accelerators= {
   "reset_zoom",             "m0",           "m0",
 
 --HELP
-  "show_manual",            "f1",           "f1",
-  "show_luadoc",            "sf1",          "sf1"
+  "show_manual",            "f1",           "",
+  "show_luadoc",            "sf1",          ""
 --"about",                  "",             ""
 }
 
@@ -185,3 +189,35 @@ local function load_accel_lists()
   end
 end
 load_accel_lists()
+
+-- Movement commands.
+keys.cf, keys.cF = buffer.char_right, buffer.char_right_extend
+keys.cmf, keys.cmF = buffer.word_right, buffer.word_right_extend
+keys.cb, keys.cB = buffer.char_left, buffer.char_left_extend
+keys.cmb, keys.cmB = buffer.word_left, buffer.word_left_extend
+keys.cn, keys.cN = buffer.line_down, buffer.line_down_extend
+keys.cp, keys.cP = buffer.line_up, buffer.line_up_extend
+keys.ca, keys.cA = buffer.vc_home, buffer.vc_home_extend
+keys.ce, keys.cE = buffer.line_end, buffer.line_end_extend
+keys.aright, keys.aleft = buffer.word_right, buffer.word_left
+keys.cd = buffer.clear
+keys.ck = function()
+  buffer:line_end_extend()
+  buffer:cut()
+end
+keys.cl = buffer.vertical_centre_caret
+-- GTK-OSX reports Fn-key as a single keycode which confuses Scintilla. Do
+-- not propagate it.
+keys.fn = function() return true end
+
+-- UTF-8 input.
+keys.utf8_input = {
+  ['\n'] = function()
+    return ui.command_entry.finish_mode(function(code)
+      buffer:add_text(utf8.char(tonumber(code, 16)))
+    end)
+  end
+}
+keys['mU'] = function()
+  ui.command_entry.enter_mode('utf8_input')
+end

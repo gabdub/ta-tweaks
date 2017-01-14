@@ -53,7 +53,7 @@ end
 
 local function key_name(kcode)
   local mods, key = kcode:match('^([cams]*)(.+)$')
-  local mname = (mods:find('m') and (OSX and "Meta+" or "Alt+") or "") ..
+  local mname = (mods:find('m') and (CURSES and "Alt+" or "Cmd+") or "") ..
                 (mods:find('c') and "Ctrl+" or "") ..
                 (mods:find('a') and "Alt+" or "") ..
                 (mods:find('s') and "Shift+" or "")
