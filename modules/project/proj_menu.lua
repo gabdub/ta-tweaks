@@ -38,6 +38,7 @@ if actions then
   ls["switch_buffer"][2]=       Proj.switch_buffer
   ls["refresh_syntax"][2]=      Proj.refresh_hilight
 
+  --"toggle_viewproj" = '_Hide/show project'
   local function tpv_status()
     return (Proj.get_projectbuffer() and 0 or 8) --8=disabled
   end
@@ -68,7 +69,7 @@ if actions then
   end
 
   --add new PROJECT actions
-  actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces)
+  actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces, "dialog-ok")
   actions.add("new_project",         _L['_New'],              Proj.new_project)
   actions.add("open_project",        _L['_Open'],             Proj.open_project)
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
@@ -76,8 +77,8 @@ if actions then
   actions.add("search_project",      'Project _Search',       Proj.search_in_files)
   actions.add("goto_tag",            'Goto _Tag',             Proj.goto_tag)
   actions.add("save_position",       'S_ave position',        Proj.store_current_pos)
-  actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos)
-  actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos)
+  actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos, "go-previous", Proj.goprev_status)
+  actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos, "go-next", Proj.gonext_status)
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.keep_thisbuffer)
   actions.add("onlykeepproj",        _L['Close All'],         Proj.onlykeep_projopen)

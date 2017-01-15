@@ -172,10 +172,18 @@ function Proj.goto_current_pos()
   end
 end
 
+function Proj.goprev_status() --go prev position
+  return ((jump_list.pos >= 1) and 0 or 8) --8=disabled
+end
+
+function Proj.gonext_status() --go next position
+  return ((jump_list.pos < #jump_list) and 0 or 8) --8=disabled
+end
+
 function Proj.update_go_toolbar()
   if toolbar then
-    toolbar.enable("go-previous", (jump_list.pos >= 1) )
-    toolbar.enable("go-next", (jump_list.pos < #jump_list))
+    actions.updateaction("prev_position")
+    actions.updateaction("next_position")
   end
 end
 

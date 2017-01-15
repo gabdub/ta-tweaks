@@ -65,20 +65,19 @@ if toolbar then
   if Proj then
     toolbar.addaction("toggle_viewproj")
     toolbar.addspace(4,true)
-    toolbar.cmd("go-previous",  Proj.goto_prev_pos,  "Previous position [Shift+F11]")
-    toolbar.cmd("go-next",      Proj.goto_next_pos,  "Next position [Shift+F12]")
-    Proj.update_go_toolbar()
+    toolbar.addaction("prev_position")
+    toolbar.addaction("next_position")
     toolbar.addspace()
-    toolbar.cmd("document-new",     Proj.new_file,   "New [Ctrl+N]")
+    toolbar.addaction("new")
   end
 
-  toolbar.cmd("document-save",    io.save_file,    "Save [Ctrl+S]")
-  toolbar.cmd("document-save-as", io.save_file_as, "Save as [Ctrl+Shift+S]")
+  toolbar.addaction("save")
+  toolbar.addaction("saveas")
   toolbar.addspace()
 
-  toolbar.cmd("tog-book", textadept.bookmarks.toggle, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
+  toolbar.addaction("toggle_bookmark")
 
-  if Proj then toolbar.cmd("trimsp", Proj.trim_trailing_spaces, "Trim trailing spaces","dialog-ok")  end
+  if Proj then toolbar.addaction("trim_trailingspaces") end
 
   local function showpopup()
     toolbar.show_popup("window-new",33)

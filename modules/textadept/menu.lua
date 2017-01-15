@@ -309,7 +309,7 @@ actions.list = {
 
 --add a new action to the list
 function actions.add(name, menutext, exec, icon, status, butttext)
-  actions.list[name]= {menutext, exec, icon, status}
+  actions.list[name]= {menutext, exec}
   local id= #actions.action_fromid +1
   actions.action_fromid[id]= name
   actions.id_fromaction[name]= id
