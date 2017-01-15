@@ -63,7 +63,7 @@ if toolbar then
 
   --add some buttons
   if Proj then
-    toolbar.cmd("tog-projview", Proj.toggle_projview,"Hide project [Shift+F4]", "ttb-proj-o")
+    toolbar.addaction("toggle_viewproj")
     toolbar.addspace(4,true)
     toolbar.cmd("go-previous",  Proj.goto_prev_pos,  "Previous position [Shift+F11]")
     toolbar.cmd("go-next",      Proj.goto_next_pos,  "Next position [Shift+F12]")
