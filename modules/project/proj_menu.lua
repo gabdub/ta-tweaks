@@ -38,6 +38,35 @@ if actions then
   ls["switch_buffer"][2]=       Proj.switch_buffer
   ls["refresh_syntax"][2]=      Proj.refresh_hilight
 
+  local function tpv_status()
+    return (Proj.get_projectbuffer() and 0 or 8) --8=disabled
+  end
+  local function tpv_icon()
+    local ena= Proj.get_projectbuffer()
+    if ena then
+      if Proj.is_visible == 0 then      --0:hidden
+        return "ttb-proj-c"
+      end
+      if Proj.is_visible == 2 then      --2:shown in edit mode
+        return "ttb-proj-e"
+      end
+    end
+    return "ttb-proj-o"  --1:shown in selection mode (or disabled)
+  end
+  local function tpv_text()
+    local ena= Proj.get_projectbuffer()
+    if ena then
+      if Proj.is_visible == 0 then      --0:hidden
+        return "Show project"
+      end
+      if Proj.is_visible == 2 then      --2:shown in edit mode
+        return "End edit mode"
+      end
+      return "Hide project"  --1:shown in selection mode
+    end
+    return "No project is open"  --disabled
+  end
+
   --add new PROJECT actions
   actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces)
   actions.add("new_project",         _L['_New'],              Proj.new_project)
@@ -56,7 +85,7 @@ if actions then
   actions.add("toggle_editproj",     _L['_Edit'] .. ' project', Proj.change_proj_ed_mode)
   --"_end_editproj" = "toggle_editproj" with different text menu
   actions.add("_end_editproj",       '_End edit',             Proj.change_proj_ed_mode)
-  actions.add("toggle_viewproj",     '_Hide/show project',    Proj.toggle_projview)
+  actions.add("toggle_viewproj",     '_Hide/show project',    Proj.toggle_projview, tpv_icon, tpv_status, tpv_text)
   actions.add("addthisfiles_proj",   '_Add this file',        Proj.add_this_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)

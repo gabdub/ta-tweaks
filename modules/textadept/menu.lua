@@ -35,10 +35,18 @@ local function open_page(url)
   spawn(string.format('%s "%s"', cmd, not OSX and url or 'file://'..url))
 end
 
+--action's icon (string or function that returns a string) (index = action)
+actions.icons= {}
+
+--status() nil or 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled
+actions.status= {}
+
+--action's button text (string or function that returns a string) (index = action)
+--nil = use menu text without "_"
+actions.buttontext= {}
+
 actions.list = {
-  --["action_object"]={"menu-text", exec(), ["icon"], [status()]}
-  --default "object" = "file" / "buffer"
-  --status() nil or 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled
+  --["action_object"]={"menu-text", exec(), ["button text"]}
 --FILE
   ["new"]=                  {_L['_New'], buffer.new},
   ["open"]=                 {_L['_Open'], io.open_file},
@@ -300,11 +308,14 @@ actions.list = {
 }
 
 --add a new action to the list
-function actions.add(name, menutext, exec, icon, status)
+function actions.add(name, menutext, exec, icon, status, butttext)
   actions.list[name]= {menutext, exec, icon, status}
   local id= #actions.action_fromid +1
   actions.action_fromid[id]= name
   actions.id_fromaction[name]= id
+  if icon then actions.icons[name]=icon end
+  if status then actions.status[name]=status end
+  if butttext then actions.buttontext[name]=butttext end
 end
 
 ---
@@ -428,6 +439,9 @@ actions.id_fromaction = {}
 local function load_action_lists()
   actions.action_fromid = {}
   actions.id_fromaction = {}
+  actions.icons= {}
+  actions.status= {}
+  actions.buttontext= {}
   local id= 1
   for acc,_ in pairs(actions.list) do
     actions.action_fromid[id]= acc

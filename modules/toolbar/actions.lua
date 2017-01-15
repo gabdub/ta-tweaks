@@ -137,9 +137,59 @@ local default_icons= {
 }
 
 local function load_icons()
-  actions.icons= {}
   for i=1, #default_icons, 2 do
     actions.icons[default_icons[i]]=default_icons[i+1]
   end
 end
 load_icons()
+
+function actions.gettooltip(action)
+  local text=""
+  local bt= actions.buttontext[action]
+  if bt then
+    if type(bt)=='function' then text= bt() else text=bt end
+  else
+    --no buttontext, see actions.list
+    bt= actions.list[action]
+    if bt then  --use button text from menu
+      if #bt < 3 then --no button-text, generate it from menu text
+        bt[3]= bt[1]:gsub('_([^_])', '%1')
+      end
+      text= bt[3]
+    end
+  end
+  --add the accelerator (if any)
+  local acc= actions.getaccelkeyname(action)
+  if acc and acc ~= "" then text= text.." ["..acc.."]" end
+  return text
+end
+
+local function updatestatus(action)
+  local status= actions.status[action]
+  if type(status) == 'function' then
+    toolbar.enable(action, status() < 8) --(status +8= disabled)
+  end
+end
+
+--add and action button to the toolbar
+function toolbar.addaction(action,passname)
+  local func= actions.list[action][2]
+  local tooltip= actions.gettooltip(action)
+  local icon= actions.icons[action]
+  if type(icon) == 'function' then icon=icon() end
+  toolbar.cmd(action,func,tooltip,icon,passname)
+  updatestatus(action)
+end
+
+--update dynamic parts of action button: status, icon, tooltip
+function actions.updateaction(action)
+  local bt= actions.buttontext[action]
+  if type(bt)=='function' then --dynamic tooltip?
+    toolbar.settooltip(action, actions.gettooltip(action)) --update
+  end
+  local icon= actions.icons[action]
+  if type(icon) == 'function' then --dynamic icon?
+    toolbar.setthemeicon(action, icon()) --update
+  end
+  updatestatus(action)
+end

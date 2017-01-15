@@ -486,12 +486,7 @@ end
 
 local function ena_toggle_projview()
   local ena= Proj.get_projectbuffer(true)
-  if toolbar then
-    local b="tog-projview"
-    toolbar.enable(b, ena) --gray button
-    --not enabled: "GRAYED" selection mode icon
-    if not ena then toolbar.setthemeicon(b, "ttb-proj-o") end
-  end
+  if toolbar then actions.updateaction("toggle_viewproj") end
   return ena
 end
 
@@ -544,19 +539,7 @@ end
 
 function Proj.update_projview()
   --update toggle project view button
-  if ena_toggle_projview() and toolbar then
-    local b="tog-projview"
-    if Proj.is_visible == 2 then      --2:shown in edit mode
-      toolbar.setthemeicon(b, "ttb-proj-e")
-      toolbar.settooltip(b, "End edit mode [Shift+F4]")
-    elseif Proj.is_visible == 1 then  --1:shown in selection mode
-      toolbar.setthemeicon(b, "ttb-proj-o")
-      toolbar.settooltip(b, "Hide project [Shift+F4]")
-    else                              --0:hidden
-      toolbar.setthemeicon(b, "ttb-proj-c")
-      toolbar.settooltip(b, "Show project [Shift+F4]")
-    end
-  end
+  if toolbar then actions.updateaction("toggle_viewproj") end
 end
 
 -- refresh syntax highlighting + project folding
