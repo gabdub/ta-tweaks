@@ -20,11 +20,13 @@ local enc = textadept.editing.enclose
 local function set_indentation(i)
   buffer.tab_width = i
   events.emit(events.UPDATE_UI) -- for updating statusbar
+  if toolbar then toolbar.setcfg_from_tabwidth() end --update config panel
 end
 local function set_eol_mode(mode)
   buffer.eol_mode = mode
   buffer:convert_eols(mode)
   events.emit(events.UPDATE_UI) -- for updating statusbar
+  if toolbar then toolbar.setcfg_from_eolmode() end --update config panel
 end
 local function set_encoding(encoding)
   buffer:set_encoding(encoding)
@@ -38,8 +40,33 @@ end
 --action's icon (string or function that returns a string) (index = action)
 actions.icons= {}
 
---status() nil or 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled
-actions.status= {}
+--status() nil or 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled +16=first-radio
+actions.status= {
+  --checks
+  ["toggle_view_oel"]=  function() return (buffer.view_eol and 1 or 2) end,
+  ["toggle_view_wrap"]= function() return (buffer.wrap_mode == buffer.WRAP_WHITESPACE and 1 or 2) end,
+  ["toggle_view_ws"]=   function() return (buffer.view_ws == buffer.WS_VISIBLEALWAYS and 1 or 2) end,
+  ["toggle_usetabs"]=   function() return (buffer.use_tabs and 1 or 2) end,
+  ["toggle_view_indguides"]= function() return(buffer.indentation_guides == buffer.IV_LOOKBOTH and 1 or 2) end,
+  ["toggle_virtualspace"]= function() return(buffer.virtual_space_options == buffer.VS_USERACCESSIBLE and 1 or 2) end,
+
+  --radios
+  ["set_tab_2"]= function() return(buffer.tab_width == 2 and 19 or 20) end, --first-radio
+  ["set_tab_3"]= function() return(buffer.tab_width == 3 and 3 or 4) end,
+  ["set_tab_4"]= function() return(buffer.tab_width == 4 and 3 or 4) end,
+  ["set_tab_8"]= function() return(buffer.tab_width == 8 and 3 or 4) end,
+
+  ["set_eol_crlf"]= function() return(buffer.eol_mode == buffer.EOL_CRLF and 19 or 20) end, --first-radio
+  ["set_eol_lf"]=   function() return(buffer.eol_mode == buffer.EOL_LF   and 3 or 4) end,
+
+  ["set_enc_utf8"]=  function() return(buffer.encoding == 'UTF-8'      and 19 or 20) end, --first-radio
+  ["set_enc_ascii"]= function() return(buffer.encoding == 'ASCII'      and 3 or 4) end,
+  ["set_enc_8859"]=  function() return(buffer.encoding == 'ISO-8859-1' and 3 or 4) end,
+  ["set_enc_utf16"]= function() return(buffer.encoding == 'UTF-16LE'   and 3 or 4) end,
+}
+
+--list of actions used in menus that requiere status update
+actions.usedwithstatus= {}
 
 --action's button text (string or function that returns a string) (index = action)
 --nil = use menu text without "_"
@@ -229,15 +256,15 @@ actions.list = {
   ["next_buffer"]=          {_L['_Next Buffer'], function() view:goto_buffer(1) end},
   ["prev_buffer"]=          {_L['_Previous Buffer'], function() view:goto_buffer(-1) end},
   ["switch_buffer"]=        {_L['_Switch to Buffer...'], ui.switch_buffer},
-  ["toggle_view_oel"]=      {_L['Toggle View _EOL'], function()
+  ["toggle_view_oel"]=      {_L['Toggle View _EOL'], function() --check
       buffer.view_eol = not buffer.view_eol
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
-  ["toggle_view_wrap"]=     {_L['Toggle _Wrap Mode'], function()
+  ["toggle_view_wrap"]=     {_L['Toggle _Wrap Mode'], function() --check
       buffer.wrap_mode = buffer.wrap_mode == 0 and buffer.WRAP_WHITESPACE or 0
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
-  ["toggle_view_ws"]=       {_L['Toggle View White_space'], function()
+  ["toggle_view_ws"]=       {_L['Toggle View White_space'], function() --check
       buffer.view_ws = buffer.view_ws == 0 and buffer.WS_VISIBLEALWAYS or 0
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
@@ -245,11 +272,11 @@ actions.list = {
   ["refresh_syntax"]=       {_L['_Refresh Syntax Highlighting'], function() buffer:colourise(0, -1) end},
 
 --BUFFER + INDENTATION
-  ["set_tab_2"]=            {_L['Tab width: _2'], function() set_indentation(2) end},
-  ["set_tab_3"]=            {_L['Tab width: _3'], function() set_indentation(3) end},
-  ["set_tab_4"]=            {_L['Tab width: _4'], function() set_indentation(4) end},
-  ["set_tab_8"]=            {_L['Tab width: _8'], function() set_indentation(8) end},
-  ["toggle_usetabs"]=       {_L['_Toggle Use Tabs'], function()
+  ["set_tab_2"]=            {_L['Tab width: _2'], function() set_indentation(2) end}, --radio group
+  ["set_tab_3"]=            {_L['Tab width: _3'], function() set_indentation(3) end}, --radio
+  ["set_tab_4"]=            {_L['Tab width: _4'], function() set_indentation(4) end}, --radio
+  ["set_tab_8"]=            {_L['Tab width: _8'], function() set_indentation(8) end}, --radio
+  ["toggle_usetabs"]=       {_L['_Toggle Use Tabs'], function() --check
       buffer.use_tabs = not buffer.use_tabs
       events.emit(events.UPDATE_UI) -- for updating statusbar
       if toolbar then toolbar.setcfg_from_usetabs() end --update config panel
@@ -257,14 +284,14 @@ actions.list = {
   ["convert_indentation"]=  {_L['_Convert Indentation'], textadept.editing.convert_indentation},
 
 --BUFFER + EOL MODE
-  ["set_eol_crlf"]=         {_L['CRLF'], function() set_eol_mode(buffer.EOL_CRLF) end},
-  ["set_eol_lf"]=           {_L['LF'], function() set_eol_mode(buffer.EOL_LF) end},
+  ["set_eol_crlf"]=         {_L['CRLF'], function() set_eol_mode(buffer.EOL_CRLF) end},         --radio group
+  ["set_eol_lf"]=           {_L['LF'], function() set_eol_mode(buffer.EOL_LF) end},             --radio
 
 --BUFFER + ENCODING
-  ["set_enc_utf8"]=         {_L['_UTF-8 Encoding'], function() set_encoding('UTF-8') end},
-  ["set_enc_ascii"]=        {_L['_ASCII Encoding'], function() set_encoding('ASCII') end},
-  ["set_enc_8859"]=         {_L['_ISO-8859-1 Encoding'], function() set_encoding('ISO-8859-1') end},
-  ["set_enc_utf16"]=        {_L['UTF-1_6 Encoding'], function() set_encoding('UTF-16LE') end},
+  ["set_enc_utf8"]=         {_L['_UTF-8 Encoding'], function() set_encoding('UTF-8') end},            --radio group
+  ["set_enc_ascii"]=        {_L['_ASCII Encoding'], function() set_encoding('ASCII') end},            --radio
+  ["set_enc_8859"]=         {_L['_ISO-8859-1 Encoding'], function() set_encoding('ISO-8859-1') end},  --radio
+  ["set_enc_utf16"]=        {_L['UTF-1_6 Encoding'], function() set_encoding('UTF-16LE') end},        --radio
 
 --VIEW
   ["next_view"]=            {_L['_Next View'], function() ui.goto_view(1) end},
@@ -282,12 +309,12 @@ actions.list = {
   ["toggle_fold"]=          {_L['Toggle Current _Fold'], function()
       buffer:toggle_fold(buffer:line_from_position(buffer.current_pos))
     end},
-  ["toggle_view_indguides"]={_L['Toggle Show In_dent Guides'], function()
+  ["toggle_view_indguides"]={_L['Toggle Show In_dent Guides'], function() --check
       local off = buffer.indentation_guides == 0
       buffer.indentation_guides = off and buffer.IV_LOOKBOTH or 0
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
-  ["toggle_virtualspace"]=  {_L['Toggle _Virtual Space'], function()
+  ["toggle_virtualspace"]=  {_L['Toggle _Virtual Space'], function() --check
       local off = buffer.virtual_space_options == 0
       buffer.virtual_space_options = off and buffer.VS_USERACCESSIBLE or 0
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
@@ -316,6 +343,7 @@ function actions.add(name, menutext, exec, icon, status, butttext)
   if icon then actions.icons[name]=icon end
   if status then actions.status[name]=status end
   if butttext then actions.buttontext[name]=butttext end
+  return id
 end
 
 ---
@@ -440,7 +468,6 @@ local function load_action_lists()
   actions.action_fromid = {}
   actions.id_fromaction = {}
   actions.icons= {}
-  actions.status= {}
   actions.buttontext= {}
   local id= 1
   for acc,_ in pairs(actions.list) do
@@ -540,6 +567,18 @@ local function gen_menu_table(menu)
             menu_id= actions.id_fromaction[k]
           end
         end
+        local st= actions.status[k]
+        if st and toolbar then --toolbar allows to show checks, radio and disable items
+          actions.usedwithstatus[k]= menu_id
+          local status= st() & (7+16) --ignore disable flag (8)
+          if status == 1 or status == 2 then
+            label= "\t"..label --add check mark to menuitem
+          elseif (status & 16) > 0 then
+            label= "\b"..label --add radio-button to menuitem (group's first)
+          elseif status == 3 or status == 4 then
+            label= "\n"..label --add radio-button to menuitem (same group)
+          end
+        end
         gtkmenu[#gtkmenu + 1] = {label, menu_id, key, mods}
       end
     end
@@ -565,10 +604,30 @@ events.connect(events.INITIALIZED, set_menu_bar)
 
 -- Performs the appropriate action when clicking a menu item.
 events.connect(events.MENU_CLICKED, function(menu_id)
+  if actions.ignoreclickevent then return end
   local act = actions.action_fromid[menu_id]
   if act then
-  	local action = actions.list[act][2]
-  	assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(action))
-  	action()
+    local action = actions.list[act][2]
+    assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(action))
+    action()
   end
 end)
+
+function actions.setmenustatus(menuid, status)
+  if toolbar then
+    actions.ignoreclickevent= true  --ignore menu click events while updating
+    toolbar.menustatus(menuid, status)
+    actions.ignoreclickevent= false
+  end
+end
+
+--update all the actions used in menus
+function actions.update_menuitems()
+  if toolbar then
+    actions.ignoreclickevent= true  --ignore menu click events while updating
+    for action,menu_id in pairs(actions.usedwithstatus) do
+      toolbar.menustatus(menu_id, actions.status[action]() )
+    end
+    actions.ignoreclickevent= false
+  end
+end

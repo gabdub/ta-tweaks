@@ -708,6 +708,8 @@ end
 --only update when the config is open
 function update_buffer_cfg()
   if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg() end
+  --update actions in menus
+  actions.update_menuitems()
 end
 
 events.connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
@@ -730,6 +732,8 @@ local function set_buffer_indent_as_cfg(updateui)
   else                  buffer.use_tabs= get_lexer_ind_use_tabs(get_lexer()) end
   --update UI
   if updateui then events.emit(events.UPDATE_UI) end
+  --update actions in menus
+  actions.update_menuitems()
 end
 
 events.connect(events.LEXER_LOADED, set_buffer_indent_as_cfg)
@@ -767,6 +771,8 @@ local function buf_eolmode_change()
     --update UI
     events.emit(events.UPDATE_UI)
   end
+  --update actions in menus
+  actions.update_menuitems()
 end
 
 function toolbar.setcfg_from_eolmode()
@@ -777,23 +783,39 @@ end
 
 local function buf_vieweol_change()
   buffer.view_eol= toolbar.get_check_val("tbshoweol")
+  --update actions in menus
+  actions.update_menuitems()
 end
 local function buf_viewws_change()
   buffer.view_ws= toolbar.get_check_val("tbshowws") and buffer.WS_VISIBLEALWAYS or 0
+  --update actions in menus
+  actions.update_menuitems()
 end
 local function buf_wrapmode_change()
   buffer.wrap_mode = toolbar.get_check_val("tbwrap") and buffer.WRAP_WHITESPACE or 0
+  --update actions in menus
+  actions.update_menuitems()
 end
 
 function toolbar.setcfg_from_view_checks()
   update_buffer_cfg()
 end
 
+function toolbar.setcfg_from_buff_checks()
+  if toolbar.html_toolbar_onoff ~= nil then
+    toolbar.set_check_val("tbshowhtml", buffer.html_toolbar_on)
+  end
+end
+
 local function view_guides_change()
   buffer.indentation_guides = toolbar.get_check_val("tbshowguid") and buffer.IV_LOOKBOTH or 0
+  --update actions in menus
+  actions.update_menuitems()
 end
 local function view_virtspace_change()
   buffer.virtual_space_options = toolbar.get_check_val("tbvirtspc") and buffer.VS_USERACCESSIBLE or 0
+  --update actions in menus
+  actions.update_menuitems()
 end
 
 local tatoobarweb= "https://github.com/gabdub/ta-tweaks"

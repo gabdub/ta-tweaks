@@ -8,6 +8,7 @@
 static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 //pre-def
 static void create_tatoolbar( GtkWidget *vbox, int ntoolbar );
+static void setmenuitemstatus( int menu_id, int status);
 
 /* ============================================================================= */
 /*                                 LUA FUNCTIONS                                 */
@@ -1160,6 +1161,14 @@ static int ltoolbar_popup(lua_State *L)
   return 0;
 }
 
+/** `toolbar.menustatus(menu_id, status)` Lua function. */
+/** status: 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled */
+static int ltoolbar_menustatus(lua_State *L)
+{
+  setmenuitemstatus(lua_tointeger(L, 1), lua_tointeger(L, 2));
+  return 0;
+}
+
 /* ============================================================================= */
 /*                          FUNCTIONS CALLED FROM TA                             */
 /* ============================================================================= */
@@ -1207,6 +1216,8 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "getversion",   ltoolbar_getversion);   //return string ta-toolbar version
   //popup
   l_setcfunction(L, -1, "popup",        ltoolbar_popup);        //show a popup toolbar
+  //menuitem
+  l_setcfunction(L, -1, "menustatus",   ltoolbar_menustatus);   //change menu item status
   //toolbar object
   lua_setglobal(L, "toolbar");
 }
@@ -1354,8 +1365,118 @@ void show_toolbar(struct toolbar_data *T, int show)
   }
 }
 
+/* ============================================================================= */
+/* MENUITEMS: check, radio and enable support  */
+#define NMENUITS_PAGE   500
+struct defmenuitems {
+  int menuid;
+  GtkWidget * menuit;
+};
+struct pagemenuitems {
+  struct pagemenuitems * next;
+  int n;
+  struct defmenuitems p[NMENUITS_PAGE];
+};
+static struct pagemenuitems * mitems_list= NULL;
+
+static GtkWidget * get_defmenuitem( int id )
+{ //get GtkWidget * from ID
+  struct pagemenuitems * m;
+  int i;
+  for( m= mitems_list; (m != NULL); m= m->next){
+    for(i= 0; i < m->n; i++ ){
+      if( m->p[i].menuid == id ){
+        return m->p[i].menuit;
+      }
+    }
+  }
+  return NULL; //not found
+}
+
+static void add_defmenuitem( GtkWidget * mit, int id )
+{
+  struct pagemenuitems *m, *a;
+  int i;
+  a= NULL;
+  for( m= mitems_list; (m != NULL); m= m->next){
+    for(i= 0; i < m->n; i++ ){
+      if( m->p[i].menuid == id ){
+        m->p[i].menuit= mit; //overwrite
+        return;
+      }
+    }
+    a= m;
+  }
+  //not found, add at the end
+  if( (a == NULL) || (a->n == NMENUITS_PAGE) ){
+    //none or last page full: add a new page
+    m= (struct pagemenuitems *) malloc( sizeof(struct pagemenuitems));
+    if( m == NULL ){
+      return;
+    }
+    m->next= NULL;
+    m->n= 0;
+    if( a == NULL ){
+      mitems_list= m;
+    }else{
+      a->next= m;
+    }
+  }else{
+    m= a; //add at the end of last page
+  }
+  i= m->n;
+  m->p[i].menuid= id;
+  m->p[i].menuit= mit;
+  m->n= i+1;
+}
+
+static GSList *radiogroup = NULL;
+GtkWidget * newmenuitem(const char *label, int menu_id)
+{
+  static GtkWidget * it;
+  if( *label == 0 ){ //no label = separator
+    return gtk_separator_menu_item_new();
+  }
+  if( *label == '\t' ){ //begins with TAB = check item
+    it= gtk_check_menu_item_new_with_mnemonic(label+1);
+  }else if( *label == '\b' ){ //begins with BACKSP = first radio item of a radio group
+    it= gtk_radio_menu_item_new_with_mnemonic(NULL,label+1);
+    radiogroup= gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (it));
+  }else if( *label == '\n' ){ //begins with NEWLINE = radio item of the same radio group
+    it= gtk_radio_menu_item_new_with_mnemonic(radiogroup,label+1);
+    radiogroup= gtk_radio_menu_item_get_group (GTK_RADIO_MENU_ITEM (it));
+  }else{
+    it= gtk_menu_item_new_with_mnemonic(label); //normal item
+  }
+  add_defmenuitem( it, menu_id); //record all menuitems in a list
+  return it;
+}
+
+//status: 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled
+static void setmenuitemstatus( int menu_id, int status)
+{
+  int n= status & 7;
+  GtkWidget * it= get_defmenuitem(menu_id);
+  if( it != NULL ){
+    if( (n == 1)||(n == 3) ){
+      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (it), TRUE);
+    }else if( (n == 2)||(n == 4) ){
+      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (it), FALSE);
+    }
+    gtk_widget_set_sensitive(it,(status & 8) == 0); //enabled
+  }
+}
+
 /* destroy all toolbars */
 void kill_tatoolbar( void )
-{ //free all toolbars data
+{
+  struct pagemenuitems * m;
+  //free all toolbars data
   free_tatoolbar();
+  //free meneitems list
+  while( mitems_list != NULL ){
+    m= mitems_list;
+    mitems_list= mitems_list->next;
+    free(m);
+  }
 }

@@ -133,7 +133,8 @@ if toolbar then
     toolbar.addspace()
 
     if actions then
-      actions.add("view_htmltb", 'View HTML Tool_Bar', toolbar.html_toolbar_onoff)
+      toolbar.idviewhtmltb= actions.add("view_htmltb", 'View HTML Tool_Bar', toolbar.html_toolbar_onoff) --check
+      actions.status["view_htmltb"]= function() return (buffer.html_toolbar_on and 1 or 2) end
       local med= actions.getmenu_fromtitle(_L['_Buffer'])
       if med then med[#med+1]= {"", "view_htmltb"} end
     end
@@ -162,6 +163,9 @@ if toolbar then
         toolbar.html_tb= on
         toolbar.sel_left_bar()
         toolbar.show(on)
+        --check menuitem
+        if toolbar.idviewhtmltb then actions.setmenustatus(toolbar.idviewhtmltb, (on and 1 or 2)) end
+        if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
       end
     end
   end

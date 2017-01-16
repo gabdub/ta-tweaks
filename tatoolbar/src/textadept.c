@@ -834,8 +834,12 @@ static void l_pushmenu(lua_State *L, int index, GCallback callback,
         int menu_id = l_rawgetiint(L, -1, 2);
         int key = l_rawgetiint(L, -1, 3), modifiers = l_rawgetiint(L, -1, 4);
         if (label) {
+#ifdef USE_TA_TOOLBAR
+          menu_item = newmenuitem(label, menu_id);
+#else
           menu_item = (*label) ? gtk_menu_item_new_with_mnemonic(label)
                                : gtk_separator_menu_item_new();
+#endif
           if (*label && key > 0)
               gtk_widget_add_accelerator(menu_item, "activate", accel, key,
                                          modifiers, GTK_ACCEL_VISIBLE);
