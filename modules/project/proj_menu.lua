@@ -27,7 +27,7 @@ if actions then
   ls["open"][2]=                Proj.open_file
   ls["recent"][2]=              Proj.open_recent_file
   ls["close"][2]=               Proj.close_buffer
-  ls["closeall"][2]=            Proj.close_all_buffers
+  ls["closeall"][2]=            Proj.onlykeep_projopen --Proj.close_all_buffers
   ls["open_userhome"][2]=       Proj.qopen_user
   ls["open_textadepthome"][2]=  Proj.qopen_home
   ls["open_currentdir"][2]=     Proj.qopen_curdir
@@ -81,7 +81,7 @@ if actions then
   actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos, "go-next", Proj.gonext_status)
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.keep_thisbuffer)
-  actions.add("onlykeepproj",        _L['Close All'],         Proj.onlykeep_projopen)
+  --actions.add("onlykeepproj",      _L['Close All'],         Proj.onlykeep_projopen) --"closeall"="onlykeepproj"
   actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
   actions.add("toggle_editproj",     _L['_Edit'] .. ' project', Proj.change_proj_ed_mode)
   --"_end_editproj" = "toggle_editproj" with different text menu
@@ -104,7 +104,7 @@ if actions then
 
   --replace tab context menu
   actions.tab_context_menu = {
-    {"close","close_others","dont_close","onlykeepproj",SEPARATOR,
+    {"close","close_others","dont_close","closeall",SEPARATOR,
      "save","saveas",SEPARATOR,
      "reload"}
   }
