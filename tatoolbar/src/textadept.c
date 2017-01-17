@@ -1452,6 +1452,10 @@ static int lreset(lua_State *L) {
   l_setglobalview(L, focused_view);
   l_setglobaldoc(L, SS(focused_view, SCI_GETDOCPOINTER, 0, 0));
   lua_pushnil(L), lua_setglobal(L, "arg");
+#ifdef USE_TA_TOOLBAR
+  //free menuitems list before reloading menus
+  clear_menuitem_list();
+#endif
   lL_dofile(L, "init.lua"), lL_event(L, "initialized", -1);
   lua_getfield(L, LUA_REGISTRYINDEX, "ta_arg"), lua_setglobal(L, "arg");
   lL_event(L, "reset_after", -1);

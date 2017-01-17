@@ -1162,7 +1162,7 @@ static int ltoolbar_popup(lua_State *L)
 }
 
 /** `toolbar.menustatus(menu_id, status)` Lua function. */
-/** status: 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled */
+/** status: 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled, (+16=radio is group-first) */
 static int ltoolbar_menustatus(lua_State *L)
 {
   setmenuitemstatus(lua_tointeger(L, 1), lua_tointeger(L, 2));
@@ -1379,35 +1379,27 @@ struct pagemenuitems {
 };
 static struct pagemenuitems * mitems_list= NULL;
 
-static GtkWidget * get_defmenuitem( int id )
-{ //get GtkWidget * from ID
-  struct pagemenuitems * m;
-  int i;
-  for( m= mitems_list; (m != NULL); m= m->next){
-    for(i= 0; i < m->n; i++ ){
-      if( m->p[i].menuid == id ){
-        return m->p[i].menuit;
-      }
-    }
-  }
-  return NULL; //not found
-}
-
-static void add_defmenuitem( GtkWidget * mit, int id )
+//record all menuitems
+static void add_defmenuitem( GtkWidget * mit, int id)
 {
   struct pagemenuitems *m, *a;
   int i;
   a= NULL;
+  //NOTE: the same ID can be defined in the main menu and in several context-menus
+  //for( m= mitems_list; (m != NULL); m= m->next){
+  //  for(i= 0; i < m->n; i++ ){
+  //    if( m->p[i].menuid == id ){
+  //      m->p[i].menuit= mit; //overwrite
+  //      return;
+  //    }
+  //  }
+  //  a= m;
+  //} //not found, add at the end
+  //just find the last page
   for( m= mitems_list; (m != NULL); m= m->next){
-    for(i= 0; i < m->n; i++ ){
-      if( m->p[i].menuid == id ){
-        m->p[i].menuit= mit; //overwrite
-        return;
-      }
-    }
     a= m;
   }
-  //not found, add at the end
+
   if( (a == NULL) || (a->n == NMENUITS_PAGE) ){
     //none or last page full: add a new page
     m= (struct pagemenuitems *) malloc( sizeof(struct pagemenuitems));
@@ -1448,35 +1440,51 @@ GtkWidget * newmenuitem(const char *label, int menu_id)
   }else{
     it= gtk_menu_item_new_with_mnemonic(label); //normal item
   }
-  add_defmenuitem( it, menu_id); //record all menuitems in a list
+  add_defmenuitem( it, menu_id); //record all menuitems
   return it;
 }
 
-//status: 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled
+//status: 0=enabled, 1=checked, 2=unchecked, 3=radio-checked, 4=radio-unchecked, +8=disabled, (+16=radio is group-first)
 static void setmenuitemstatus( int menu_id, int status)
 {
-  int n= status & 7;
-  GtkWidget * it= get_defmenuitem(menu_id);
-  if( it != NULL ){
-    if( (n == 1)||(n == 3) ){
-      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (it), TRUE);
-    }else if( (n == 2)||(n == 4) ){
-      gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (it), FALSE);
+  GtkWidget * it;
+  struct pagemenuitems * m;
+  int i;
+  for( m= mitems_list; (m != NULL); m= m->next){
+    for(i= 0; i < m->n; i++ ){
+      if( m->p[i].menuid == menu_id ){
+        it= m->p[i].menuit;
+        int n= status & 7;
+        if( (n == 1)||(n == 3) ){
+          gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM (it), TRUE);
+        }else if( (n == 2)||(n == 4) ){
+          gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM (it), FALSE);
+        }
+        if( (status & 8) == 8 ){
+          gtk_widget_set_sensitive(it,FALSE); //disabled
+        }else{
+          gtk_widget_set_sensitive(it,TRUE);  //enabled
+        }
+      }
     }
-    gtk_widget_set_sensitive(it,(status & 8) == 0); //enabled
+  }
+}
+
+void clear_menuitem_list( void )
+{ //free menuitems list
+  struct pagemenuitems * m;
+  while( mitems_list != NULL ){
+    m= mitems_list;
+    mitems_list= mitems_list->next;
+    free(m);
   }
 }
 
 /* destroy all toolbars */
 void kill_tatoolbar( void )
 {
-  struct pagemenuitems * m;
   //free all toolbars data
   free_tatoolbar();
-  //free meneitems list
-  while( mitems_list != NULL ){
-    m= mitems_list;
-    mitems_list= mitems_list->next;
-    free(m);
-  }
+  //free menuitems list
+  clear_menuitem_list();
 }

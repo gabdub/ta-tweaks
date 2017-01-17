@@ -167,7 +167,7 @@ end
 local function updatestatus(action)
   local status= actions.status[action]
   if type(status) == 'function' then
-    toolbar.enable(action, status() < 8) --(status +8= disabled)
+    toolbar.enable(action,((status() & 8) == 0)) --(status +8= disabled)
   end
 end
 
