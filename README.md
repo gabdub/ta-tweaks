@@ -129,15 +129,21 @@ this module adds the following bindings:
 
 
 # tatoolbar
-This code adds 4 toolbars to textadept (__compiling is required__):
+This code adds toolbars to textadept (__compiling is required__):
 
 Each toolbar can be used as you wish but the default implementation is as follows:
 * #0: The horizontal top toolbar is used to shown buttons and tabs
 * #1: The vertical left toolbar is used to shown buttons
 * #2: The horizontal bottom toolbar is used as a status bar replacement
 * #3: The vertical right toolbar is used as a configuration panel
+* #4: Pop-up toolbar
 
 ![4 toolbars in action](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win12.png "4 toolbars in action")
+
+Tatoolbar also allows to gray and check menu items:
+
+![Menu changes](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ttbmenu.png "Menu changes")
+
 
 The _toolbar_ object adds the following functions to **textadept**:
 
