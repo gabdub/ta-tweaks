@@ -667,6 +667,7 @@ if toolbar then
       toolbar.tabwidth(3,s) --"Col: 999"
       toolbar.tabwidth(4,s) --"actionscript"
       toolbar.tabwidth(5,s) --"CRLF"
+      s= "Tabuladores: 8" --Spanish translation is longer
       toolbar.tabwidth(6,s) --"Spaces: 8"
       toolbar.tabwidth(7,s) --"ISO-8859-1"
       toolbar.show(true)
