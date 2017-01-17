@@ -184,8 +184,6 @@ function Proj.update_go_toolbar()
   if toolbar then
     actions.updateaction("prev_position")
     actions.updateaction("next_position")
-    --update all the actions used in menus
-    actions.update_menuitems()
   end
 end
 

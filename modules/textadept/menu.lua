@@ -590,7 +590,7 @@ function create_uimenu_fromactions(actions)
   return ui.menu(gen_menu_table(actions))
 end
 
-local function set_menu_bar()
+local function load_app_menus()
   local _menubar = {}
   for i = 1, #actions.menubar do
     _menubar[#_menubar + 1] = create_uimenu_fromactions(actions.menubar[i])
@@ -599,8 +599,10 @@ local function set_menu_bar()
   actions.def_context_menu = create_uimenu_fromactions(actions.context_menu)
   ui.context_menu= actions.def_context_menu
   ui.tab_context_menu = create_uimenu_fromactions(actions.tab_context_menu)
+  --update actions in menus (gray/check/radio all menuitems)
+  actions.update_menuitems()
 end
-events.connect(events.INITIALIZED, set_menu_bar)
+events.connect(events.INITIALIZED, load_app_menus)
 
 -- Performs the appropriate action when clicking a menu item.
 events.connect(events.MENU_CLICKED, function(menu_id)

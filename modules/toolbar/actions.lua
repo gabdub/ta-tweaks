@@ -167,7 +167,11 @@ end
 local function updatestatus(action)
   local status= actions.status[action]
   if type(status) == 'function' then
-    toolbar.enable(action,((status() & 8) == 0)) --(status +8= disabled)
+    local st= status()
+    --update toolbar
+    toolbar.enable(action,((st & 8) == 0)) --(status & 8= disabled)
+    --and menus
+    actions.setmenustatus( actions.id_fromaction[action], st)
   end
 end
 
