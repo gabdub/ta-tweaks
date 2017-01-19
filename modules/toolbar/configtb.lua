@@ -9,20 +9,17 @@ toolbar.config_change=false
 
 function toolbar.toggle_showconfig()
   --toggle shown state
-  local b="showconfig"
   if toolbar.config_toolbar_shown then
     toolbar.config_toolbar_shown= false
-    toolbar.setthemeicon(b, "visualization")
-    toolbar.settooltip(b, "Show configuration panel [F9]")
     -- Save configuration changes
     toolbar.save_config()
   else
     toolbar.config_toolbar_shown= true
-    toolbar.setthemeicon(b, "ttb-proj-c")
-    toolbar.settooltip(b, "Hide configuration panel [Esc]")
     --update current buffer config
     toolbar.set_buffer_cfg()
   end
+  --update icon/menu
+  actions.updateaction("toggle_viewcfgpanel")
   toolbar.sel_config_bar()
   toolbar.show(toolbar.config_toolbar_shown)
 end
@@ -71,7 +68,8 @@ function toolbar.add_showconfig_button()
   toolbar.addpending()
   --add a group of buttons after tabs
   toolbar.addrightgroup()
-  toolbar.cmd("showconfig", toolbar.toggle_showconfig, "Show configuration panel [F9]", "visualization")
+  --toolbar.cmd("showconfig", toolbar.toggle_showconfig, "Show configuration panel [F9]", "visualization")
+  toolbar.addaction("toggle_viewcfgpanel")
 end
 
 function toolbar.config_tab_click(ntab)
@@ -1210,10 +1208,30 @@ end
 --------------------------------------------------------------
 -- F9            show config panel / next config tab
 -- SHIFT+F9      show config panel / prev config tab
-if actions then
-  actions.add("next_cfgpanel", 'Open config panel / goto next tab',     toolbar.next_configtab, "f9")
-  actions.add("prev_cfgpanel", 'Open config panel / goto previous tab', toolbar.prev_configtab, "sf9")
-else
-  keys['f9']= toolbar.next_configtab
-  keys['sf9']= toolbar.prev_configtab
+actions.add("next_cfgpanel", 'Open config panel / goto next tab',     toolbar.next_configtab, "f9")
+actions.add("prev_cfgpanel", 'Open config panel / goto previous tab', toolbar.prev_configtab, "sf9")
+
+--"toggle_viewcfgpanel" = 'Hide/show Config panel'
+local function tcv_status()
+  return (toolbar.config_toolbar_shown and 1 or 2) --check
+end
+local function tcv_icon()
+  if toolbar.config_toolbar_shown then
+    return "ttb-proj-c"
+  end
+  return "visualization"
+end
+local function tcv_text()
+  if toolbar.config_toolbar_shown then
+    return "Hide configuration panel"
+  end
+  return "Show configuration panel"
+end
+actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, "f10", tcv_icon, tcv_status, tcv_text)
+
+--add VIEWCONFIGPANEL at the end of the VIEW menu
+local m_vi= actions.getmenu_fromtitle(_L['_View'])
+if m_vi then
+  local m=m_vi[#m_vi]
+  m[#m+1]= "toggle_viewcfgpanel"
 end

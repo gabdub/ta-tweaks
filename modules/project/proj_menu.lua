@@ -46,7 +46,7 @@ if actions then
 
   --"toggle_viewproj" = '_Hide/show project'
   local function tpv_status()
-    return (Proj.get_projectbuffer() and 0 or 8) --8=disabled
+    return (Proj.get_projectbuffer() and (Proj.is_visible == 0 and 2 or 1) or 10) --1=checked 2=unchecked 8=disabled
   end
   local function tpv_icon()
     local ena= Proj.get_projectbuffer()
@@ -96,7 +96,7 @@ if actions then
   actions.add("_end_editproj",       '_End edit',             Proj.change_proj_ed_mode)
   actions.accelerators["_end_editproj"]="f4" --(alias)
 
-  actions.add("toggle_viewproj",     '_Hide/show project',    Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
+  actions.add("toggle_viewproj",     'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
   actions.add("addthisfiles_proj",   '_Add this file',        Proj.add_this_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)
@@ -128,6 +128,10 @@ if actions then
     table.insert(m1, 1, "first_buffer")
     table.insert(m1, 2, "last_buffer")
   end
+
+  --add VIEWPROJECT at the end of the VIEW menu
+  local m_vi= actions.getmenu_fromtitle(_L['_View'])
+  if m_vi then m_vi[#m_vi+1]= {SEPARATOR,"toggle_viewproj"} end
 
     --replace tab context menu
   actions.tab_context_menu = {

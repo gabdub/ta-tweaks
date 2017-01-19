@@ -133,10 +133,13 @@ if toolbar then
     toolbar.addspace()
 
     if actions then
-      toolbar.idviewhtmltb= actions.add("view_htmltb", 'View HTML Tool_Bar', toolbar.html_toolbar_onoff, nil, nil, function()
+      toolbar.idviewhtmltb= actions.add("toggle_viewhtmltb", 'Show HTML Tool_Bar', toolbar.html_toolbar_onoff, "sf10", nil, function()
         return (buffer.html_toolbar_on and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(_L['_Buffer'])
-      if med then med[#med+1]= {"", "view_htmltb"} end
+      local med= actions.getmenu_fromtitle(_L['_View'])
+      if med then
+        local m=med[#med]
+        m[#m+1]= "toggle_viewhtmltb"
+      end
     end
     toolbar.html_tb= false --hide for now...
     toolbar.show(false)
