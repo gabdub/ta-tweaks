@@ -606,13 +606,7 @@ events.connect(events.INITIALIZED, load_app_menus)
 
 -- Performs the appropriate action when clicking a menu item.
 events.connect(events.MENU_CLICKED, function(menu_id)
-  if actions.ignoreclickevent then return end
-  local act = actions.action_fromid[menu_id]
-  if act then
-    local action = actions.list[act][2]
-    assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(action))
-    action()
-  end
+  if not actions.ignoreclickevent then actions.run_id(menu_id) end
 end)
 
 function actions.setmenustatus(menuid, status)
