@@ -133,8 +133,8 @@ if toolbar then
     toolbar.addspace()
 
     if actions then
-      toolbar.idviewhtmltb= actions.add("view_htmltb", 'View HTML Tool_Bar', toolbar.html_toolbar_onoff) --check
-      actions.status["view_htmltb"]= function() return (buffer.html_toolbar_on and 1 or 2) end
+      toolbar.idviewhtmltb= actions.add("view_htmltb", 'View HTML Tool_Bar', toolbar.html_toolbar_onoff, nil, nil, function()
+        return (buffer.html_toolbar_on and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_Buffer'])
       if med then med[#med+1]= {"", "view_htmltb"} end
     end

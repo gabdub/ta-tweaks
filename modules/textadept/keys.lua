@@ -111,41 +111,49 @@ function actions.get_gdkkey(action)
   return code, modifiers
 end
 
-function actions.run(act_name)
-  if act_name then
-    local action= actions.list[act_name]
-    assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(act_name))
-    action()
+--run an action (act: action-name=string, action-id=number, {act}=1 item table)
+function actions.run(act)
+  local ret
+  if type(act) == 'table' then act=act[1] end
+  if type(act) == 'number' then act=actions.action_fromid[act] end
+  if act then
+    local action= actions.list[act][2]
+    assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(act))
+    ret=action()
   end
-end
-
-function actions.run_id(act_id)
-  actions.run( actions.action_fromid[act_id] )
+  return ret
 end
 
 --set accelerator keys
 local function setacceleratorskeys()
-  for acc,k in pairs(actions.accelerators) do
-    --local runacc= function() actions.run(acc) end
+  for act,k in pairs(actions.accelerators) do
+    --run the connected action
+    local runact= function() return actions.run({act}) end
     if type(k) == 'table' then
       if k[1] == "++" then  --dual level keys: {"++","cmv","w"} OR {"++","cmv","+","cmv","="}
         for i=2, #k, 2 do
           if keys[k[i]] == nil then keys[k[i]]= {} end
-          keys[k[i]][k[i+1]]= actions.list[acc][2]
+          keys[k[i]][k[i+1]]= runact
         end
       else
         --more than one accelerator for the same action
         for i=1, #k do
-          keys[k[i]]= actions.list[acc][2]
+          keys[k[i]]= runact
         end
       end
     else
-      keys[k]= actions.list[acc][2]
+      keys[k]= runact
     end
   end
 end
 
 events.connect(events.INITIALIZED, setacceleratorskeys)
+
+--set action accelerator
+function actions.setkey(act,key)
+  actions.free_accelerator(key)
+  actions.accelerators[act]= key
+end
 
 -- Modes.
 keys.filter_through = {

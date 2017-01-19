@@ -335,7 +335,7 @@ actions.list = {
 }
 
 --add a new action to the list
-function actions.add(name, menutext, exec, icon, status, butttext)
+function actions.add(name, menutext, exec, keyacc, icon, status, butttext)
   actions.list[name]= {menutext, exec}
   local id= #actions.action_fromid +1
   actions.action_fromid[id]= name
@@ -343,6 +343,7 @@ function actions.add(name, menutext, exec, icon, status, butttext)
   if icon then actions.icons[name]=icon end
   if status then actions.status[name]=status end
   if butttext then actions.buttontext[name]=butttext end
+  if keyacc then actions.setkey(name,keyacc) end
   return id
 end
 
@@ -454,7 +455,14 @@ actions.tab_context_menu = {
 
 function actions.getmenu_fromtitle(tit)
   for i=1,#actions.menubar do
-    if actions.menubar[i].title == tit then return actions.menubar[i] end
+    local menu= actions.menubar[i]
+    if menu.title == tit then return menu end
+    if type(menu) == 'table' then
+      --submenu (only one level checked)
+      for j=1,#menu do
+        if menu[j].title == tit then return menu[j] end
+      end
+    end
   end
   return nil
 end
@@ -606,7 +614,7 @@ events.connect(events.INITIALIZED, load_app_menus)
 
 -- Performs the appropriate action when clicking a menu item.
 events.connect(events.MENU_CLICKED, function(menu_id)
-  if not actions.ignoreclickevent then actions.run_id(menu_id) end
+  if not actions.ignoreclickevent then actions.run(menu_id) end
 end)
 
 function actions.setmenustatus(menuid, status)

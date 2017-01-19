@@ -197,20 +197,33 @@ if Proj then  --Project module?
   end
 end
 --------------------------------------------------------------
-if actions then actions.free_accelerator({"f3","cf3","af3","sf3","csf3","cg","cf"}) end
 -- F3 =               goto nearest occurrence FORWARD
 -- Control+F3 =       goto nearest occurrence BACKWARD
 -- Alt+F3 =           goto nearest occurrence CHOOSE SEARCH OPTIONS
 -- Shift+F3 =         ASK + goto nearest occurrence FORWARD
 -- Alt+Shift+F =      search in project files
 -- Control+Shift+F3 = goto nearest occurrence TOGGLE SEARCH OPTIONS
-keys.f3 =   function() goto_nearest_occurrence(false) end
-keys.cf3 =  function() goto_nearest_occurrence(true) end
-keys.af3 =  function() goto_nearest_config(true) end
-keys.sf3 =  function() goto_nearest_occurrence(false, true) end
-keys.csf3 = function() goto_nearest_config(false) end
--- Control+G =    goto-line
-keys.cg = goto_line_col
--- Control+F =    Shift+F3
-keys.cf = keys.sf3
+if actions then
+  actions.add("match_next", 'Goto nearest match forward',       function() goto_nearest_occurrence(false) end, "f3")
+  actions.add("match_prev", 'Goto nearest match backwards',     function() goto_nearest_occurrence(true) end,  "cf3")
+  actions.add("match_config","Config 'Goto nearest match'",     function() goto_nearest_config(true) end,      "af3")
+  actions.add("match_ask",  'Goto nearest match',               function() goto_nearest_occurrence(false, true) end, {"cf","sf3"})
+  actions.add("match_mode",  "Strict/soft 'Goto nearest match'",function() goto_nearest_config(false) end,     "csf3")
 
+  actions.add("goto_line_col", "Goto line / column", function() goto_line_col(true) end, "cG")
+
+  --use the goto-nearest friendly version of some actions
+  actions.list["goto_line"][2]= goto_line_col
+  actions.setkey("goto_line","cg")
+
+else
+  keys.f3 =   function() goto_nearest_occurrence(false) end
+  keys.cf3 =  function() goto_nearest_occurrence(true) end
+  keys.af3 =  function() goto_nearest_config(true) end
+  keys.sf3 =  function() goto_nearest_occurrence(false, true) end
+  keys.csf3 = function() goto_nearest_config(false) end
+  -- Control+G =    goto-line
+  keys.cg = goto_line_col
+  -- Control+F =    Shift+F3
+  keys.cf = keys.sf3
+end

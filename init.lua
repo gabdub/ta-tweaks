@@ -40,8 +40,7 @@ require('quicktype')
 
 --cf5 "List commands in a new buffer"
 if actions then
-  actions.free_accelerator("cf5")
-  keys.cf5= function() actions.select_command(true) end
+  actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
 end
 
 textadept.file_types.extensions.mas = 'mas'

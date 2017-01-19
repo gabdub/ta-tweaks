@@ -1208,8 +1208,12 @@ function toolbar.add_config_panel()
 end
 
 --------------------------------------------------------------
-if actions then actions.free_accelerator({"f9","sf9"}) end
 -- F9            show config panel / next config tab
 -- SHIFT+F9      show config panel / prev config tab
-keys['f9']= toolbar.next_configtab
-keys['sf9']= toolbar.prev_configtab
+if actions then
+  actions.add("next_cfgpanel", 'Open config panel / goto next tab',     toolbar.next_configtab, "f9")
+  actions.add("prev_cfgpanel", 'Open config panel / goto previous tab', toolbar.prev_configtab, "sf9")
+else
+  keys['f9']= toolbar.next_configtab
+  keys['sf9']= toolbar.prev_configtab
+end

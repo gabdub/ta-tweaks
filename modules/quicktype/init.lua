@@ -18,26 +18,26 @@ end
 --      $:
 --
 -- */
-keys.a1 = function()
+local function qt_cfun_comm()
   type_before_after("/*\n    ", ":\n      \n*/\n")
 end
 
 -- Alt+2 = ($=cursor position) TYPE
 -- /* $ */
-keys.a2 = function()
+local function qt_c_comm()
   type_before_after("/* ", " */")
 end
 
 -- Alt+3 = ($=cursor position) TYPE
 -- #define $
-keys.a3 = function()
+local function qt_c_define()
   type_before_after("#define ", "")
 end
 
 
 -- Alt+4 = ($=cursor position) TYPE
 -- /* TO DO: $ */
-keys.a4 = function()
+local function qt_c_todo()
   type_before_after("/* TO DO: ", " */")
 end
 
@@ -46,21 +46,21 @@ end
 --      |
 --     \|/   */
 -- $
-keys.a5 = function()
+local function qt_c_switchcont()
   type_before_after("/*    |\n      |\n     \\|/   */\n", "")
 end
 
 -- Alt+0 = ($=cursor position) TYPE
 -- /* ==....== */
 -- $
-keys.a0 = function()
+local function qt_c_sep_line()
   type_before_after("/* ============================================================================= */\n", "")
 end
 
 -- Alt+9 = MULTILINE TYPER
 -- [BEFORE]....[AFTER]
 -- [EMPTY]
-keys.a9 = function()
+local function multiline_typer()
   local n1=1
   local n2=buffer.line_count
   if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
@@ -152,8 +152,6 @@ local function find_begin(dirf)
     ui.statusbar_text= 'main block begin: not found'
   end
 end
-keys["c,"] = function() find_begin(false) end
-keys["c."] = function() find_begin(true) end
 
 -- Ctrl+; = GOTO previous FUNCTION/C-BLOCK END
 -- Ctrl.: = GOTO next     FUNCTION/C-BLOCK END
@@ -170,5 +168,31 @@ local function find_end(dirf)
     ui.statusbar_text= 'main block end: not found'
   end
 end
-keys["c;"] = function() find_end(false) end
-keys["c:"] = function() find_end(true) end
+
+if actions then
+  actions.add("prev_block_beg", 'Goto previous block begin', function() find_begin(false) end, "c,")
+  actions.add("next_block_beg", 'Goto next block begin',     function() find_begin(true)  end, "c.")
+  actions.add("prev_block_end", 'Goto previous block end',   function() find_end(false) end,   "c;")
+  actions.add("next_block_end", 'Goto next block end',       function() find_end(true)  end,   "c:")
+
+  actions.add("type_cfun_comm",'Quicktype: C function comment',   qt_cfun_comm,   "a1")
+  actions.add("type_c_comm",   'Quicktype: C comment',            qt_c_comm,      "a2")
+  actions.add("type_c_define", 'Quicktype: C define',             qt_c_define,    "a3")
+  actions.add("type_c_todo",   'Quicktype: C TODO',               qt_c_todo,      "a4")
+  actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
+  actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
+  actions.add("multiline_typer",'Multiline typer',                multiline_typer,"a9")
+else
+  keys["c,"] = function() find_begin(false) end
+  keys["c."] = function() find_begin(true) end
+  keys["c;"] = function() find_end(false) end
+  keys["c:"] = function() find_end(true) end
+
+  keys.a1 = qt_cfun_comm
+  keys.a2 = qt_c_comm
+  keys.a3 = qt_c_define
+  keys.a4 = qt_c_todo
+  keys.a5 = qt_c_switchcont
+  keys.a0 = qt_c_sep_line
+  keys.a9 = multiline_typer
+end
