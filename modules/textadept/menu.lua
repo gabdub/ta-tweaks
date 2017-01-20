@@ -5,14 +5,14 @@ local SEPARATOR = ""
 
 -- The following buffer functions need to be constantized in order for menu
 -- items to identify the key associated with the functions.
-local menu_buffer_functions = {
-  'undo', 'redo', 'cut', 'copy', 'paste', 'line_duplicate', 'clear',
-  'select_all', 'upper_case', 'lower_case', 'move_selected_lines_up',
-  'move_selected_lines_down', 'zoom_in', 'zoom_out', 'colourise'
-}
-for i = 1, #menu_buffer_functions do
-  buffer[menu_buffer_functions[i]] = buffer[menu_buffer_functions[i]]
-end
+--local menu_buffer_functions = {
+  --'undo', 'redo', 'cut', 'copy', 'paste', 'line_duplicate', 'clear',
+  --'select_all', 'upper_case', 'lower_case', 'move_selected_lines_up',
+  --'move_selected_lines_down', 'zoom_in', 'zoom_out', 'colourise'
+--}
+--for i = 1, #menu_buffer_functions do
+  --buffer[menu_buffer_functions[i]] = buffer[menu_buffer_functions[i]]
+--end
 
 -- Commonly used functions in menu commands.
 local sel_enc = textadept.editing.select_enclosed
