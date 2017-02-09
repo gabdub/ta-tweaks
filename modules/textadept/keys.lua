@@ -155,7 +155,7 @@ local function check_dirty()
   if record_dirty then
     if ui.dialogs.msgbox{
       title = 'Macro overwrite confirmation',
-      text = "The last recorder macro wasn't saved",
+      text = "The last recorded macro wasn't saved",
       informative_text = 'Do you want to overwrite it?',
       icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
     } ~= 1 then return false end
