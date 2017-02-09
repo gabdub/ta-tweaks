@@ -127,8 +127,8 @@ local default_accelerators= {
   "open_currentdir",        "caO",          "mO",
   "open_projectdir",        "caP",          "cmp",
   "insert_snippet",         "ck",           "mk",
-  "expand_snippet",         "\t",           "\t",
-  "prev_snipplaceholder",   "s\t",          "s\t",
+  "tab_key",                "\t",           "\t",
+  "shift_tab_key",          "s\t",          "s\t",
   "cancel_snippet",         "cK",           "mK",
   "complete_symbol",        "c ",           "c@", --CURSES: Win32:"c " + LINUX:c@
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
@@ -176,6 +176,35 @@ local default_accelerators= {
   "show_manual",            "f1",           "",
   "show_luadoc",            "sf1",          "",
 --"about",                  "",             "",
+
+--MOVE CURSOR
+  "left",                   "left",         "left",
+  "right",                  "right",        "right",
+  "up",                     "up",           "up",
+  "down",                   "down",         "down",
+  "home",                   "home",         "home",
+  "end",                    "end",          "end",
+  "word_left",              "cleft",        "cleft",
+  "word_right",             "cright",       "cright",
+  "doc_start",              "chome",        "chome",
+  "doc_end",                "cend",         "cend",
+--SELECTION
+  "sel_left",               "sleft",        "sleft",
+  "sel_right",              "sright",       "sright",
+  "sel_up",                 "sup",          "sup",
+  "sel_down",               "sdown",        "sdown",
+  "sel_home",               "shome",        "shome",
+  "sel_end",                "send",         "send",
+  "sel_word_left",          "csleft",       "csleft",
+  "sel_word_right",         "csright",      "csright",
+  "sel_doc_start",          "cshome",       "cshome",
+  "sel_doc_end",            "csend",        "csend",
+--DELETE
+  "del_back",               "\b",           "\b",
+  "del",                    "del",          "del",
+  "del_word_left",          "c\b",          "c\b",
+  "del_word_right",         "cdel",         "cdel",
+
 }
 
 local function load_accel_lists()

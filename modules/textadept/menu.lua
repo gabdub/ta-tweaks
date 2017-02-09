@@ -3,17 +3,6 @@ actions= {}
 local _L = _L
 local SEPARATOR = ""
 
--- The following buffer functions need to be constantized in order for menu
--- items to identify the key associated with the functions.
---local menu_buffer_functions = {
-  --'undo', 'redo', 'cut', 'copy', 'paste', 'line_duplicate', 'clear',
-  --'select_all', 'upper_case', 'lower_case', 'move_selected_lines_up',
-  --'move_selected_lines_down', 'zoom_in', 'zoom_out', 'colourise'
---}
---for i = 1, #menu_buffer_functions do
-  --buffer[menu_buffer_functions[i]] = buffer[menu_buffer_functions[i]]
---end
-
 -- Commonly used functions in menu commands.
 local sel_enc = textadept.editing.select_enclosed
 local enc = textadept.editing.enclose
@@ -37,6 +26,16 @@ local function open_page(url)
   spawn(string.format('%s "%s"', cmd, not OSX and url or 'file://'..url))
 end
 
+local function tab_key()
+  if textadept.snippets._insert() ~= nil then
+    buffer.tab()
+  end
+end
+local function shift_tab_key()
+  if textadept.snippets._previous() ~= nil then
+    buffer.back_tab()
+  end
+end
 --action's icon (string or function that returns a string) (index = action)
 actions.icons= {}
 
@@ -332,20 +331,39 @@ actions.list = {
         icon_file = _HOME..'/core/images/ta_64x64.png'
       })
     end},
-}
 
---add a new action to the list
-function actions.add(name, menutext, exec, keyacc, icon, status, butttext)
-  actions.list[name]= {menutext, exec}
-  local id= #actions.action_fromid +1
-  actions.action_fromid[id]= name
-  actions.id_fromaction[name]= id
-  if icon then actions.icons[name]=icon end
-  if status then actions.status[name]=status end
-  if butttext then actions.buttontext[name]=butttext end
-  if keyacc then actions.setkey(name,keyacc) end
-  return id
-end
+--MOVE CURSOR
+  ["left"]=                 {'Move cursor: left',       buffer.char_left},
+  ["right"]=                {'Move cursor: right',      buffer.char_right},
+  ["up"]=                   {'Move cursor: up',         buffer.line_up},
+  ["down"]=                 {'Move cursor: down',       buffer.line_down},
+  ["home"]=                 {'Move cursor: home',       buffer.vc_home},
+  ["end"]=                  {'Move cursor: end',        buffer.line_end},
+  ["word_left"]=            {'Move cursor: word left',  buffer.word_left},
+  ["word_right"]=           {'Move cursor: word right', buffer.word_right},
+  ["tab"]=                  {'Tab/Indent',              buffer.tab},
+  ["back_tab"]=             {'Shift+Tab/Unindent',      buffer.back_tab},
+  ["tab_key"]=              {'Tab/Indent/Expand Snippet/Next Placeholder',           tab_key},
+  ["shift_tab_key"]=        {'Shift+Tab/Unindent/Previous snippet placeholder',      shift_tab_key},
+  ["doc_start"]=            {'Move cursor: document start', buffer.document_start},
+  ["doc_end"]=              {'Move cursor: document end', buffer.document_end},
+--SELECTION
+  ["sel_left"]=             {'Extend selection: left',  buffer.char_left_extend},
+  ["sel_right"]=            {'Extend selection: right', buffer.char_right_extend},
+  ["sel_up"]=               {'Extend selection: up',    buffer.line_up_extend},
+  ["sel_down"]=             {'Extend selection: down',  buffer.line_down_extend},
+  ["sel_home"]=             {'Extend selection: home',  buffer.vc_home_extend},
+  ["sel_end"]=              {'Extend selection: end',   buffer.line_end_extend},
+  ["sel_word_left"]=        {'Extend selection: word left',  buffer.word_left_extend},
+  ["sel_word_right"]=       {'Extend selection: word right', buffer.word_right_extend},
+  ["sel_doc_start"]=        {'Extend selection: document start', buffer.document_start_extend},
+  ["sel_doc_end"]=          {'Extend selection: document end', buffer.document_end_extend},
+--DELETE
+  ["del_back"]=             {'Delete: back char',       buffer.delete_back},
+  ["del"]=                  {'Delete: char',            buffer.clear},
+  ["del_word_left"]=        {'Delete: word left',       buffer.del_word_left},
+  ["del_word_right"]=       {'Delete: word right',      buffer.del_word_right},
+}
 
 ---
 -- The main menubar
@@ -398,6 +416,11 @@ actions.menubar = {
     {
       title = _L['_Snippets'],
       {"insert_snippet","expand_snippet","prev_snipplaceholder","cancel_snippet"}
+    },
+    {
+      title = '_Macro',
+      {"toggle_macrorec","load_macrorec",SEPARATOR,
+      "play_macrorec","dump_macrorec","save_macrorec"}
     },
     {SEPARATOR,"complete_symbol","show_documentation","show_style"}
   },
@@ -508,7 +531,7 @@ function actions.select_command(infile)
               items[#items + 1] = label:gsub('_([^_])', '%1')
               items[#items + 1] = k
               items[#items + 1] = actions.getaccelkeyname(k)
-              commands[#commands + 1] = v[2]
+              commands[#commands + 1]= k
             end
           end
         end
@@ -525,14 +548,14 @@ function actions.select_command(infile)
       items[#items + 1] = label:gsub('_([^_])', '%1')
       items[#items + 1] = k
       items[#items + 1] = actions.getaccelkeyname(k)
-      commands[#commands + 1] = v[2]
+      commands[#commands + 1]= k
     end
   end
 
   if infile then
-    actions.list["new"][2]()  --new buffer
+    actions.run("new")  --new buffer
     for i=1,#items,3 do
-      local ln=string.format("%-45s %-25s %s\n", items[i], items[i+1], items[i+2])
+      local ln=string.format("%-60s %-25s %s\n", items[i], items[i+1], items[i+2])
       buffer:append_text(ln)
     end
   else
@@ -541,9 +564,7 @@ function actions.select_command(infile)
       items = items, width = CURSES and ui.size[1] - 2 or 800,
       button1 = _L['Run Command'], button2 = _L['_Cancel']
     }
-    if button ~= 1 or not i then return end
-    assert(type(commands[i]) == 'function', _L['Unknown command:']..' '..tostring(commands[i]))
-    commands[i]()
+    if button == 1 and i then actions.run(commands[i]) end
   end
 end
 

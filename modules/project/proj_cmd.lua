@@ -406,7 +406,7 @@ end
 
 --open an existing project file
 function Proj.open_project(filename)
-  prjfile= filename or ui.dialogs.fileselect{
+  local prjfile= filename or ui.dialogs.fileselect{
     title = 'Open Project File',
     with_directory = (buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir(),
     width = CURSES and ui.size[1] - 2 or nil,

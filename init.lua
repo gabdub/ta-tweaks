@@ -76,6 +76,9 @@ if toolbar then
 
   toolbar.addaction("toggle_bookmark")
 
+  toolbar.addaction("toggle_macrorec")
+  toolbar.addaction("play_macrorec")
+
   if Proj then toolbar.addaction("trim_trailingspaces") end
 
   local function showpopup()
