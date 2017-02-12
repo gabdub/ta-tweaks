@@ -203,9 +203,9 @@ local function mrectog_icon()
   return (actions.recording and "media-playback-stop" or "media-record")
 end
 local function mrectog_text()
-  return (actions.recording and "_Stop macro recording" or "Start macro recording")
+  return (actions.recording and "Stop macro recording" or "Start macro recording")
 end
-actions.add("toggle_macrorec", 'Start/stop macro recording', mrec_toggle, "cf7", mrectog_icon, nil, mrectog_text)
+actions.add("toggle_macrorec", '_Start/stop macro recording', mrec_toggle, "cf7", mrectog_icon, nil, mrectog_text)
 
 local function mrec_play()
   if actions.recording then
