@@ -1,6 +1,6 @@
 # ta-tweaks
 
-This is a collection of my Textadept tweaks:
+This is a collection of my Textadept tweaks.
 
 Textadept is a fast, minimalist, and remarkably extensible cross-platform text editor: http://foicica.com/textadept/
 
