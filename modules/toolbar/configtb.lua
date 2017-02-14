@@ -1227,7 +1227,7 @@ local function tcv_text()
   end
   return "Show configuration panel"
 end
-actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, "f10", tcv_icon, tcv_status, tcv_text)
+actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, "cf9", tcv_icon, tcv_status, tcv_text)
 
 --add VIEWCONFIGPANEL at the end of the VIEW menu
 local m_vi= actions.getmenu_fromtitle(_L['_View'])
