@@ -14,7 +14,8 @@ Textadept is a fast, minimalist, and remarkably extensible cross-platform text e
 * [quicktype](https://github.com/gabdub/ta-tweaks/wiki/quicktype-module) module types some C snippets that I frequently use + Multiline typer + Goto previous/next lua function/C-block begin/end
 * [project](https://github.com/gabdub/ta-tweaks/wiki/project-module) module allows to group files in projects. One view is used to show the project files as a vertical list. It allows to search into project files (the results are shown in another view),
   CTAG file search and RUN commands from the project tree view.
-  ![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
+
+![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
 
 ***
 
