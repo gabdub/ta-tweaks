@@ -20,8 +20,8 @@ Textadept is a fast, minimalist, and remarkably extensible cross-platform text e
 This code adds some toolbars to textadept (__compiling is required__):
 
 Each toolbar can be used as you wish but the default implementation is as follows:
-* #0: The horizontal top toolbar is used to shown buttons and tabs
-* #1: The vertical left toolbar is used to shown buttons
+* #0: The horizontal top toolbar is used to show buttons and tabs
+* #1: The vertical left toolbar is used to show buttons
 * #2: The horizontal bottom toolbar is used as a status bar replacement
 * #3: The vertical right toolbar is used as a configuration panel
 * #4: Pop-up toolbar
