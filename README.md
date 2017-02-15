@@ -8,6 +8,7 @@ Textadept is a fast, minimalist, and remarkably extensible cross-platform text e
 
 # Module list:
 
+* [actions](https://github.com/gabdub/ta-tweaks/wiki/actions) module unify function calling from menus, keyboard accelerators and toolbar buttons / control the state of menus and toolbar buttons: checked, radio-checked and disabled / can be macro recorded, played and saved / allow to change toolbar buttons text and icon dynamically
 * [ctrl_tab_mru](https://github.com/gabdub/ta-tweaks/wiki/ctrl_tab_mru-module) module implements a more standard way to handle CTRL+TAB and CTRL+SHIFT+TAB
 * [goto_nearest](https://github.com/gabdub/ta-tweaks/wiki/goto_nearest-module) module allows quick search of the selected text. All the buffers use the same 'last searched text' and search options (based on Ultra-Edit editor's F3)
 * [quicktype](https://github.com/gabdub/ta-tweaks/wiki/quicktype-module) module types some C snippets that I frequently use + Multiline typer + Goto previous/next lua function/C-block begin/end
