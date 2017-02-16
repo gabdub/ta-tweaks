@@ -177,11 +177,11 @@ end
 
 --add and action button to the toolbar
 function toolbar.addaction(action,passname)
-  local func= actions.list[action][2]
+  local runact= function() return actions.run({action}) end
   local tooltip= actions.gettooltip(action)
   local icon= actions.icons[action]
   if type(icon) == 'function' then icon=icon() end
-  toolbar.cmd(action,func,tooltip,icon,passname)
+  toolbar.cmd(action,runact,tooltip,icon,passname)
   updatestatus(action)
 end
 
