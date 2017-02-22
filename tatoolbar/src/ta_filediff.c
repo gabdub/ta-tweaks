@@ -186,9 +186,9 @@ static void check_longest_chain( struct line_info * list1, int n1, struct line_i
 //count the number of chars that are the same in both strings and if this number is bigger that the current
 //longest chain, set this string as the current best option.
 //NOTE: if more than one string has the same "longest" length, the first is used.
-static void check_longest_string( char * s1, int n1, char * s2, int n2, char **best1, char **best2, int * longest )
+static void check_longest_string( const char * s1, int n1, const char * s2, int n2, const char **best1, const char **best2, int * longest )
 {
-  char *s, *d;
+  const char *s, *d;
   int len;
 
   //find the longest string match
@@ -308,10 +308,11 @@ static void link_modifications( struct line_info * list1, struct line_info *list
 }
 
 //compare both strings an emit the position and lenght of strings that are only in line1
-static void emit_line_diff( char * f1beg, char * line1, int n1, char * f2beg, char *line2, int n2, t_pushint pfunc )
+static void emit_line_diff( const char * f1beg, const char * line1, int n1, const char * f2beg, const char *line2, int n2, t_pushint pfunc )
 {
   int n, no, longest, ns1, ns2;
-  char *bl, *bo, *l, *o;
+  const char *l, *o;
+  const char *bl, *bo;
 
   if( (n1 > 0) && (n2 > 0) ){
     //find the longest common string
