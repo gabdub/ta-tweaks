@@ -4,6 +4,8 @@
 /* ============================================================================= */
 #include "ta_toolbar.h"
 
+#include "ta_filediff.h"
+
 //from textadept.c
 static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 //pre-def
@@ -1170,6 +1172,51 @@ static int ltoolbar_menustatus(lua_State *L)
 }
 
 /* ============================================================================= */
+/*                          FILE DIFF                                            */
+/* ============================================================================= */
+/** `filediff.setfile(num, filecontent)` Lua function. */
+/** num= 1...MAXFILEDIFF */
+static int lfilediff_setfile(lua_State *L)
+{
+  fdiff_setfile(lua_tointeger(L, 1), lua_tostring(L, 2));
+  return 0;
+}
+
+static int val_position;
+static lua_State *Lstate;
+static void pushint_intable( int val )
+{
+  lua_pushinteger(Lstate, val);
+  lua_rawseti(Lstate, -2, val_position++);
+}
+
+/** `filediff.getdiff(num, dlist)` Lua function. */
+/** num= 1...MAXFILEDIFF, returns an int array with "dlist" */
+/** dlist= 1 : (line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file) */
+/** dlist= 2 : (char pos from, len) chars that are only in file #num (inserted in #num = deleted in the other file) */
+/** NOTE: char ranges (dlist=2) are generated only for 1 line ranges (that lines are excluded from dlist=1) */
+static int lfilediff_getdiff(lua_State *L)
+{
+  lua_newtable(L);
+  Lstate= L;
+  val_position= 1;
+  fdiff_getdiff(lua_tointeger(L, 1), lua_tointeger(L, 2), pushint_intable );
+  return 1;
+}
+
+
+/** `filediff.strdiff(str1, str2)` Lua function. */
+/** returns an int array with (char pos from, len) chars that are only in str1 (inserted in str1 = deleted in str2) */
+static int lfilediff_strdiff(lua_State *L)
+{
+  lua_newtable(L);
+  Lstate= L;
+  val_position= 1;
+  fdiff_strdiff(lua_tostring(L, 1), lua_tostring(L, 2), pushint_intable );
+  return 1;
+}
+
+/* ============================================================================= */
 /*                          FUNCTIONS CALLED FROM TA                             */
 /* ============================================================================= */
 /* register LUA toolbar object */
@@ -1220,6 +1267,15 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "menustatus",   ltoolbar_menustatus);   //change menu item status
   //toolbar object
   lua_setglobal(L, "toolbar");
+
+  //register "filediff" functions
+  lua_newtable(L);
+  //file diff
+  l_setcfunction(L, -1, "setfile",      lfilediff_setfile);	    //load a file to compare
+  l_setcfunction(L, -1, "getdiff",      lfilediff_getdiff);     //get file differences (int array)
+  l_setcfunction(L, -1, "strdiff",      lfilediff_strdiff);     //compare to strings
+  //filediff object
+  lua_setglobal(L, "filediff");
 }
 
 /* status bar text changed */
@@ -1487,4 +1543,7 @@ void kill_tatoolbar( void )
   free_tatoolbar();
   //free menuitems list
   clear_menuitem_list();
+
+  //free all filediff memory
+  fdiff_killall();
 }

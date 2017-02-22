@@ -41,6 +41,22 @@ require('quicktype')
 --cf5 "List commands in a new buffer"
 if actions then
   actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
+
+  actions.add("difftest", "Test diff cmd", function()
+    actions.run("new")  --new buffer
+    local s1= "televisor sorpresa"
+    local s2= "string sor de prueba sorteo"
+    buffer:append_text(s1.." => "..s2.."\n")
+    local r= filediff.strdiff( s1, s2 )
+    for i=1,#r,3 do
+      buffer:append_text("F"..r[i].." = "..r[i+1].." - "..r[i+2].."\n")
+    end
+    buffer:append_text(s2.." => "..s1.."\n")
+    r= filediff.strdiff( s2, s1 )
+    for i=1,#r,3 do
+      buffer:append_text("F"..r[i].." = "..r[i+1].." - "..r[i+2].."\n")
+    end
+  end, "f6")
 end
 
 textadept.file_types.extensions.mas = 'mas'

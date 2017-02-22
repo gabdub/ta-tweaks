@@ -203,6 +203,9 @@ textadept_rc.o: textadept.rc ; $(CROSS)$(WINDRES) $< $@
 ta_toolbar.o: ta_toolbar.c
 	$(CROSS)$(CC) -c $(CFLAGS) $< -o $@
 
+ta_filediff.o: ta_filediff.c
+	$(CROSS)$(CC) -c $(CFLAGS) $< -o $@
+
 # Target-specific variables.
 
 $(lexlpeg_objs): sci_flags += -DLPEG_LEXER -DNO_SCITE -Wno-long-long
@@ -229,11 +232,11 @@ lutf8libjit.o: LUA_CFLAGS += -Ilua/src
 # Executables.
 
 textadept: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) scintilla-marshal.o \
-           $(regex_objs) LexLPeg.o textadept.o ta_toolbar.o $(lua_objs) $(lua_lib_objs) \
+           $(regex_objs) LexLPeg.o textadept.o ta_toolbar.o ta_filediff.o $(lua_objs) $(lua_lib_objs) \
            lspawn.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
 textadeptjit: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) scintilla-marshal.o \
-              $(regex_objs) LexLPegjit.o textadeptjit.o ta_toolbar.o $(luajit_lib_objs) \
+              $(regex_objs) LexLPegjit.o textadeptjit.o ta_toolbar.o ta_filediff.o $(luajit_lib_objs) \
               $(libluajit) lspawnjit.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
 textadept-curses: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o $(regex_objs) \
@@ -248,12 +251,12 @@ textadeptjit-curses: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o $(regex_objs) \
                      $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
 textadept.exe: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) scintilla-marshal.o \
-               $(regex_objs) LexLPeg.o textadept.o ta_toolbar.o textadept_rc.o $(lua_objs) \
+               $(regex_objs) LexLPeg.o textadept.o ta_toolbar.o ta_filediff.o textadept_rc.o $(lua_objs) \
                $(lua_lib_objs) lspawn.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
 textadeptjit.exe: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) \
                   scintilla-marshal.o $(regex_objs) LexLPegjit.o \
-                  textadeptjit.o ta_toolbar.o textadept_rc.o $(luajit_lib_objs) \
+                  textadeptjit.o ta_toolbar.o ta_filediff.o textadept_rc.o $(luajit_lib_objs) \
                   $(libluajit) lspawnjit.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
 textadept-curses.exe: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o \
