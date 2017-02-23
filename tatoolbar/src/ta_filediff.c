@@ -182,32 +182,6 @@ static void check_longest_chain( struct line_info * list1, int n1, struct line_i
   }
 }
 
-/* ============================================================================= */
-//count the number of chars that are the same in both strings and if this number is bigger that the current
-//longest chain, set this string as the current best option.
-//NOTE: if more than one string has the same "longest" length, the first is used.
-static void check_longest_string( const char * s1, int n1, const char * s2, int n2, const char **best1, const char **best2, int * longest )
-{
-  const char *s, *d;
-  int len;
-
-  //find the longest string match
-  if( n1 > n2 ){
-    n1= n2;
-  }
-  s= s1;
-  d= s2;
-  len= 0;
-  while( (len < n1) && (*s++ == *d++) ){
-    len++;
-  }
-  if( len > *longest ){
-    *best1= s1;
-    *best2= s2;
-    *longest= len;
-  }
-}
-
 //compare list1 and list2 lists (only up to n1 and n2 lines)
 //using the first longest match, split the lists in 3 parts and repit...
 //set line's "otherline" equal to the matching line number in the other list
@@ -307,10 +281,24 @@ static void link_modifications( struct line_info * list1, struct line_info *list
   }
 }
 
+/* ============================================================================= */
+//get longest common prefix length
+static int get_common_len( const char * s1, int n1, const char * s2, int n2 )
+{
+  int len= 0;
+  if( n1 > n2 ){
+    n1= n2;
+  }
+  while( (len < n1) && (*s1++ == *s2++) ){
+    len++;
+  }
+  return len;
+}
+
 //compare both strings an emit the position and lenght of strings that are only in line1
 static void emit_line_diff( const char * f1beg, const char * line1, int n1, const char * f2beg, const char *line2, int n2, t_pushint pfunc )
 {
-  int n, no, longest, ns1, ns2;
+  int n, no, longest, ns1, ns2, len, dist;
   const char *l, *o;
   const char *bl, *bo;
 
@@ -321,7 +309,28 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
     bo= NULL;
     for( l= line1, n= n1; (n > longest); n--, l++ ){
       for( o= line2, no= n2; (no > longest); no--, o++ ){
-        check_longest_string( l, n, o, no, &bl, &bo, &longest );
+        //if the common prefix is bigger that the current longest chain, set this string as the current best option
+        len= get_common_len( l, n, o, no );
+        if( len > 0 ){
+          if( len > longest ){
+            bl= l;
+            bo= o;
+            longest= len;
+          }else if( len == longest ){
+            //if more than one string has the same "longest" length, choose one
+            //NOTE: this try to get the same results when the lines are permuted
+            dist= l -line1; //dist= max(distance from string begin to match)
+            if( dist < o - line2){
+              dist= o -line2;
+            }
+            if( (bl-line1 > dist) || (bo-line2 > dist) ){
+              //this option is "near" to the string beging
+              bl= l;
+              bo= o;
+              longest= len;
+            }
+          }
+        }
       }
     }
     //a common string split the line in 3 logical parts: "before", "match" and "after"
