@@ -58,6 +58,7 @@ if actions then
     for i=1,#r,3 do
       buffer:append_text("F"..r[i].." = "..r[i+1].." - "..r[i+2].."\n")
     end
+    buffer:set_save_point()
   end, "f6")
   actions.add("fdiff_old", "Load current file buffer as the OLD version", function()
     filediff.setfile(2, buffer:get_text())
@@ -67,8 +68,19 @@ if actions then
   end, "cf6")
   actions.add("fdiff_test", "File diff TEST", function()
     actions.run("new")  --new buffer
-    local r= filediff.getdiff( 1, 1 )
-    buffer:append_text("--ONLY IN NEW FILE (+)--\n")
+    local r= filediff.getdiff( 1, 0 )
+    buffer:append_text("--RAW F1 - NEW FILE--\n")
+    for i=1,#r,3 do
+      buffer:append_text("F1 "..r[i]..": "..r[i+1].." - "..r[i+2].."\n")
+    end
+    r= filediff.getdiff( 2, 0 )
+    buffer:append_text("--RAW F2 - OLD FILE--\n")
+    for i=1,#r,3 do
+      buffer:append_text("F2 "..r[i]..": "..r[i+1].." - "..r[i+2].."\n")
+    end
+
+    r= filediff.getdiff( 1, 1 )
+    buffer:append_text("\n--ONLY IN NEW FILE (+)--\n")
     for i=1,#r,2 do
       buffer:append_text("F1 L "..r[i].." - "..r[i+1].."\n")
     end
@@ -97,6 +109,7 @@ if actions then
     for i=1,#r,3 do
       buffer:append_text("F"..r[i].." pos= "..r[i+1].." n= "..r[i+2].."\n")
     end
+    buffer:set_save_point()
   end, "af6")
 end
 

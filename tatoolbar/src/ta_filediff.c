@@ -110,8 +110,6 @@ static int get_common_chain_len( struct line_info * list1, int n1, struct line_i
 {
   struct line_info * l= list1;
   struct line_info * o= list2;
-  char *s1= l->line;
-  char *s2= o->line;
   int sz= 0;
   int len= 0;
   int n;
@@ -133,7 +131,7 @@ static int get_common_chain_len( struct line_info * list1, int n1, struct line_i
   }
   if( (len > 0) && (len >= longest) ){
     //this chain could to be the new longest, check the strings to be sure
-    if( strncmp( s1, s2, sz) != 0 ){
+    if( strncmp( list1->line, list2->line, sz) != 0 ){
       //some of the hash colide so this chain is not that long...
       //recalculate the chain len comparing line strings (slower)
       if( len == longest ){
@@ -163,7 +161,7 @@ static int get_common_chain_len( struct line_info * list1, int n1, struct line_i
 static void listcompare( struct line_info * list1, int n1, struct line_info *list2, int n2 )
 {
   struct line_info * l, *o, *bl, *bo, *p;
-  int n, no, nl, longest, ns1, ns2, bpl, bpo, len, dist, ln;
+  int n, no, i, longest, ns1, ns2, bpl, bpo, len, dist, ln;
   unsigned long h1;
 
   if( (list1 == NULL) || (n1 == 0) || (list2 == NULL) || (n2 == 0) ){
@@ -184,14 +182,14 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
         len= get_common_chain_len( l, n, o, no, longest );
         if( len > 0 ){
           if( len == longest ){
-            //only replace the best match for one with the same length if this option is nearear the top
+            //only replace the best match for one with the same length if this option is nearear the block start
             //NOTE: this try to get the same results when the files are permuted
-            dist= n1-n; //dist= max(distance from file begin to match)
+            dist= n1-n; //dist= max(distance from block start to match)
             if( dist < n2-no){
               dist= n2-no;
             }
             if( (bpl <= dist) && (bpo <= dist) ){
-              len= 0; //this option is not "nearer" to the lines start, keep the actual one
+              len= 0; //this option is not "nearer" to the block start, keep the actual one
             }
           }
           if( len >= longest ){
@@ -208,11 +206,11 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
             bpo= n2-no;
             //link line numbers in one file with the line numbers in the other
             ln= bo->linenum;
-            for( p= bl, n= len; (p != NULL)&& (n > 0); p= p->next, n-- ){
+            for( p= bl, i= len; (p != NULL)&& (i > 0); p= p->next, i-- ){
               p->otherline= ln++;
             }
             ln= bl->linenum;
-            for( p= bo, n= len; (p != NULL)&& (n > 0); p= p->next, n-- ){
+            for( p= bo, i= len; (p != NULL)&& (i > 0); p= p->next, i-- ){
               p->otherline= ln++;
             }
           }
@@ -482,6 +480,42 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
           emit_line_diff( filemem[ f1 ], p->line, strlen(p->line),
                           filemem[ f2 ], o->line, strlen(o->line), pfunc );
         }
+      }
+    }
+
+  }else{
+    //dump internal table
+    p= linelist[ filenum ];
+    while( p != NULL ){
+      if( p->otherline == 0 ){
+        n= p->linenum;
+        while( (p != NULL) && (p->otherline == 0) ){
+          no= p->linenum;
+          p= p->next;
+        }
+        (*pfunc)( 0 );    //only in this file
+        (*pfunc)( n );    //from line
+        (*pfunc)( no );   //to line
+
+      }else if( p->otherline < 0 ){
+        (*pfunc)( 1 );              //one line change
+        (*pfunc)( p->linenum );     //line in file 1
+        (*pfunc)( - p->otherline ); //line in file 2
+        p= p->next;
+
+      }else{
+        n= p->linenum;
+        fother= p->otherline;
+        while( (p != NULL) && (p->otherline == (fother+p->linenum-n)) ){
+          no= p->linenum;
+          p= p->next;
+        }
+        (*pfunc)( 2 );    //same text in file 1
+        (*pfunc)( n );    //from line
+        (*pfunc)( no );   //to line
+        (*pfunc)( 3 );    //same text in file 2
+        (*pfunc)( fother );      //from line
+        (*pfunc)( fother+no-n ); //to line
       }
     }
   }
