@@ -106,10 +106,8 @@ static void clear_otherline( struct line_info *p, int n )
   }
 }
 
-//count the number of lines that are the same in both lists and if this number is bigger that the current
-//longest chain, set this lists as the current best option.
-//NOTE: if more than one list has the same "longest" length, the first is used.
-static void check_longest_chain( struct line_info * list1, int n1, struct line_info * list2, int n2, struct line_info **best1, struct line_info **best2, int * longest )
+//get the number of lines that are the same in both lists
+static int get_common_chain_len( struct line_info * list1, int n1, struct line_info * list2, int n2, int longest )
 {
   struct line_info * l= list1;
   struct line_info * o= list2;
@@ -117,9 +115,7 @@ static void check_longest_chain( struct line_info * list1, int n1, struct line_i
   char *s2= o->line;
   int sz= 0;
   int len= 0;
-  int setbest= 0;
-  struct line_info *p;
-  int n, ln;
+  int n;
 
   //find the longest match using hash codes and sizes only
   if( n1 > n2 ){
@@ -136,16 +132,18 @@ static void check_longest_chain( struct line_info * list1, int n1, struct line_i
     l= l->next;
     n--;
   }
-  if( len > *longest ){
+  if( (len > 0) && (len >= longest) ){
     //this chain could to be the new longest, check the strings to be sure
-    if( strncmp( s1, s2, sz) == 0 ){
-      setbest= 1; //OK, set this as the new longest chain
-    }else{
-      //some of the hash colide so this chain is not that long... check line by line using strings (slower)
+    if( strncmp( s1, s2, sz) != 0 ){
+      //some of the hash colide so this chain is not that long...
+      //recalculate the chain len comparing line strings (slower)
+      if( len == longest ){
+        return 0; //no need to check: len < longest
+      }
       l= list1;
       o= list2;
       n= n1;
-      len= 0; //recalculate the chain len
+      len= 0;
       while( (l != NULL) && (o != NULL) && (n > 0) ){
         if( strncmp( l->line, o->line, l->linesz) != 0 ){ //(l->linesz == o->linesz) already checked
           break;
@@ -155,31 +153,9 @@ static void check_longest_chain( struct line_info * list1, int n1, struct line_i
         l= l->next;
         n--;
       }
-      if( len > *longest ){
-        setbest= 1; //OK, set this as the new longest chain
-      }
-    }
-    if( setbest ){
-      //clear line links in the previous best chain
-      if( *longest > 0 ){
-        clear_otherline( *best1, *longest );
-        clear_otherline( *best2, *longest );
-      }
-      //set new best chain
-      *best1= list1;
-      *best2= list2;
-      *longest= len;
-      //link line numbers in one file with the line numbers in the other
-      ln= list2->linenum;
-      for( p= *best1, n= len; (p != NULL)&& (n > 0); p= p->next, n-- ){
-        p->otherline= ln++;
-      }
-      ln= list1->linenum;
-      for( p= *best2, n= len; (p != NULL)&& (n > 0); p= p->next, n-- ){
-        p->otherline= ln++;
-      }
     }
   }
+  return len;
 }
 
 //compare list1 and list2 lists (only up to n1 and n2 lines)
@@ -187,8 +163,8 @@ static void check_longest_chain( struct line_info * list1, int n1, struct line_i
 //set line's "otherline" equal to the matching line number in the other list
 static void listcompare( struct line_info * list1, int n1, struct line_info *list2, int n2 )
 {
-  struct line_info * l, *o, *bl, *bo;
-  int n, no, longest, ns1, ns2;
+  struct line_info * l, *o, *bl, *bo, *p;
+  int n, no, nl, longest, ns1, ns2, bpl, bpo, len, dist, ln;
   unsigned long h1;
 
   if( (n1 == 0) || (n2 == 0) ){
@@ -199,12 +175,49 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
   longest= 0;
   bl= NULL;
   bo= NULL;
+  bpl= 0;
+  bpo= 0;
   for( l= list1, n= n1; (n > longest); n--, l= l->next ){
     h1= l->hash;
     for( o= list2, no= n2; (no > longest); no--, o= o->next ){
       //ignore lines that have different hashes or are already linked as part of the current longest chain
       if( (o->hash == h1) && (l->otherline != o->linenum) ){
-        check_longest_chain( l, n, o, no, &bl, &bo, &longest );
+        len= get_common_chain_len( l, n, o, no, longest );
+        if( len > 0 ){
+          if( len == longest ){
+            //only replace the best match for one with the same length if this option is nearear the top
+            //NOTE: this try to get the same results when the files are permuted
+            dist= n1-n; //dist= max(distance from lines begin to match)
+            if( dist < n2-no){
+              dist= n2-no;
+            }
+            if( (bpl <= dist) && (bpo <= dist) ){
+              len= 0; //this option is not "nearer" to the lines start, keep the actual one
+            }
+          }
+          if( len >= longest ){
+            //clear line links in the previous best chain
+            if( longest > 0 ){
+              clear_otherline( bl, longest );
+              clear_otherline( bo, longest );
+            }
+            //set new best chain
+            bl= l;
+            bo= o;
+            longest= len;
+            bpl= n1-n;
+            bpo= n2-no;
+            //link line numbers in one file with the line numbers in the other
+            ln= bo->linenum;
+            for( p= bl, n= len; (p != NULL)&& (n > 0); p= p->next, n-- ){
+              p->otherline= ln++;
+            }
+            ln= bl->linenum;
+            for( p= bo, n= len; (p != NULL)&& (n > 0); p= p->next, n-- ){
+              p->otherline= ln++;
+            }
+          }
+        }
       }
     }
   }
@@ -324,7 +337,7 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
               dist= o -line2;
             }
             if( (bl-line1 > dist) || (bo-line2 > dist) ){
-              //this option is "near" to the string beging
+              //this option is "nearer" to the lines start
               bl= l;
               bo= o;
               longest= len;
