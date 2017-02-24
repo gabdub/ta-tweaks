@@ -9,46 +9,45 @@ static char * filemem[ MAXFILEDIFF ];                 //file content
 static int linecount[ MAXFILEDIFF ];                  //file line count
 static struct line_info * linelist[ MAXFILEDIFF ];    //file line info list
 static int fdiff_dirty= 0;
-static int f1= 1; //files to compare (there are only 2 for now..)
-static int f2= 2;
-
-//free lines list memory
-static void free_lines_list( struct line_info * lines )
-{
-  struct line_info * n;
-  while( lines != NULL ){
-    n= lines->next;
-    free( lines );
-    lines= n;
-  }
-}
+static int f1= 0; //files to compare (there are only 2 for now..)
+static int f2= 1;
 
 //free all the memory used by a file (0...)
 static void free_filemem( int i )
 {
+  struct line_info *lines, *n;
+  //free file image
   if( filemem[i] != NULL ){
     free( filemem[i] );
     filemem[i]= NULL;
-    linecount[i]= 0;
-    free_lines_list( linelist[i] );
   }
+  linecount[i]= 0;
+  //free lines list memory
+  if( linelist[i] != NULL ){
+    lines= linelist[i];
+    while( lines != NULL ){
+      n= lines->next;
+      free( lines );
+      lines= n;
+    }
+    linelist[i]= NULL;
+  }
+  fdiff_dirty= 1; //last file difference is now invalid
 }
-
 
 //load a file to compare (filenum= 1..)
 void fdiff_setfile( int filenum, const char * filecontent )
 {
   struct line_info *m, *a, *list;
   unsigned long hash;
-  int c, i, linesz, linenum;
+  int c, linesz, linenum;
   size_t sz;
   char *mem, *s;
 
   if( (filenum >= 1) && (filenum <= MAXFILEDIFF) && (filecontent != NULL) ){
-    fdiff_dirty= 1; //file difference must be recalculated
-    i= filenum -1;
-    //delete previous content
-    free_filemem( i );
+    filenum--;
+    //delete previous content / invalidate last difference
+    free_filemem( filenum );
     sz= strlen( filecontent ) +1;
     mem= (char *) malloc( sz );
     if( mem != NULL ){
@@ -92,9 +91,9 @@ void fdiff_setfile( int filenum, const char * filecontent )
         a= m;
       } while( sz > 0 );
       //save file info
-      filemem[i]= mem;
-      linecount[i]= linenum;
-      linelist[i]= list;
+      filemem[ filenum ]=   mem;
+      linecount[ filenum ]= linenum;
+      linelist[ filenum ]=  list;
     }
   }
 }
@@ -167,7 +166,7 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
   int n, no, nl, longest, ns1, ns2, bpl, bpo, len, dist, ln;
   unsigned long h1;
 
-  if( (n1 == 0) || (n2 == 0) ){
+  if( (list1 == NULL) || (n1 == 0) || (list2 == NULL) || (n2 == 0) ){
     return;
   }
 
@@ -177,9 +176,9 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
   bo= NULL;
   bpl= 0;
   bpo= 0;
-  for( l= list1, n= n1; (n >= longest); n--, l= l->next ){
+  for( l= list1, n= n1; (n > 0) && (n >= longest); n--, l= l->next ){
     h1= l->hash;
-    for( o= list2, no= n2; (no >= longest); no--, o= o->next ){
+    for( o= list2, no= n2; (no > 0) && (no >= longest); no--, o= o->next ){
       //ignore lines that have different hashes or are already linked as part of the current longest chain
       if( (o->hash == h1) && (l->otherline != o->linenum) ){
         len= get_common_chain_len( l, n, o, no, longest );
@@ -187,7 +186,7 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
           if( len == longest ){
             //only replace the best match for one with the same length if this option is nearear the top
             //NOTE: this try to get the same results when the files are permuted
-            dist= n1-n; //dist= max(distance from lines begin to match)
+            dist= n1-n; //dist= max(distance from file begin to match)
             if( dist < n2-no){
               dist= n2-no;
             }
@@ -201,7 +200,7 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
               clear_otherline( bl, longest );
               clear_otherline( bo, longest );
             }
-            //set new best chain
+            //set the new best chain
             bl= l;
             bo= o;
             longest= len;
@@ -363,12 +362,12 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
     }
   }
   if( n1 > 0 ){
-    (*pfunc)( f1 );             //file number
+    (*pfunc)( f1+1 );           //file number
     (*pfunc)( line1 - f1beg );  //start position
     (*pfunc)( n1 );             //length
   }
   if( n2 > 0 ){
-    (*pfunc)( f2 );             //file number
+    (*pfunc)( f2+1 );           //file number
     (*pfunc)( line2 - f2beg );  //start position
     (*pfunc)( n2 );             //length
   }
@@ -378,11 +377,17 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
 // get file differences as an int array (num= 1...MAXFILEDIFF)
 // dlist= 1: (line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file)
 // dlist= 2: (nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
+// dlist= 3: (line num, count) number of blank lines needed to add under line "num" (0=before first) to align equal lines between files
 // NOTE: char ranges (dlist=2) are generated only for 1 line ranges (excluded from dlist=1) when they are "similar enough"
 void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
 {
   struct line_info *p, *o;
-  int n;
+  int n, no, fother;
+
+  if( (filenum < 1) || (filenum > MAXFILEDIFF) ){
+    return;
+  }
+  filenum--;
 
   if( fdiff_dirty ){
     //disconect all lines
@@ -399,7 +404,7 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
   if( dlist == 1 ){
     //(line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file)
     n= 0;
-    for( p= linelist[filenum]; (p != NULL); p= p->next ){
+    for( p= linelist[ filenum ]; (p != NULL); p= p->next ){
       if( p->otherline == 0 ){
         if( n == 0 ){   //emit "line from"
           (*pfunc)( p->linenum );
@@ -418,12 +423,19 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
 
   }else if( dlist == 2 ){   //this get option ignores "filenum" param
     //(nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
+    o= linelist[f2];
+    no= 1;
     for( p= linelist[f1]; (p != NULL); p= p->next ){
       if( p->otherline < 0 ){
         //locate the other line in f2
         n= - p->otherline;
-        for( o= linelist[f2]; (n > 0) && (o != NULL); o= o->next ){
-          n--;
+        if( n < no ){ //restart count from line 1
+          o= linelist[f2];
+          no= 1;
+        }
+        while( (n > no) && (o != NULL) ){
+          no++;
+          o= o->next;
         }
         if( o != NULL ){
           //compare both strings an emit the position and lenght of strings that are only in one file
@@ -431,6 +443,39 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
                           filemem[ f2 ], o->line, strlen(o->line), pfunc );
         }
       }
+    }
+
+  }else if( dlist == 3 ){
+    //(line num, count) number of blank lines needed to add under line "num" (0=before first)
+    //to align equal lines between files
+    if( filenum == f1 ){
+      fother= f2;
+    }else{
+      fother= f1;
+    }
+    n= 0;
+    no= 0;
+    for( p= linelist[fother]; (p != NULL); p= p->next ){
+      if( p->otherline == 0 ){ //this line is only in the "other file"
+        if( n == 0 ){
+          n= p->linenum;  //get the first
+        }
+      }else{ //same or 1 line modification
+        if( n != 0 ){
+          (*pfunc)( no );   //emit "line num"
+          (*pfunc)( n );    //emit "count"
+          n= 0;
+        }
+        no= p->otherline;
+        if( no < 0 ){
+          no= -no;
+        }
+      }
+    }
+    if( n != 0 ){       //emit pending
+      (*pfunc)( no );   //emit "line num"
+      (*pfunc)( n );    //emit "count"
+      n= 0;
     }
   }
 }
