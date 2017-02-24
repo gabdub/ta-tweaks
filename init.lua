@@ -38,11 +38,13 @@ require('goto_nearest')
 require('ctrl_tab_mru')
 require('quicktype')
 
+--require('file_diff')
+
 --cf5 "List commands in a new buffer"
 if actions then
   actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
 
-  actions.add("difftest", "Test diff cmd", function()
+  actions.add("sdiff_test", "String diff TEST", function()
     actions.run("new")  --new buffer
     local s1= "televisor sorpresa"
     local s2= "string sor de prueba sorteo"
@@ -57,6 +59,45 @@ if actions then
       buffer:append_text("F"..r[i].." = "..r[i+1].." - "..r[i+2].."\n")
     end
   end, "f6")
+  actions.add("fdiff_old", "Load current file buffer as the OLD version", function()
+    filediff.setfile(2, buffer:get_text())
+  end, "sf6")
+  actions.add("fdiff_new", "Load current file buffer as the NEW version", function()
+    filediff.setfile(1, buffer:get_text())
+  end, "cf6")
+  actions.add("fdiff_test", "File diff TEST", function()
+    actions.run("new")  --new buffer
+    local r= filediff.getdiff( 1, 1 )
+    buffer:append_text("--ONLY IN NEW FILE (+)--\n")
+    for i=1,#r,2 do
+      buffer:append_text("F1 L "..r[i].." - "..r[i+1].."\n")
+    end
+    r= filediff.getdiff( 2, 1 )
+    buffer:append_text("--ONLY IN OLD FILE (-)--\n")
+    for i=1,#r,2 do
+      buffer:append_text("F2 L "..r[i].." - "..r[i+1].."\n")
+    end
+    r= filediff.getdiff( 1, 3 )
+    buffer:append_text("--ADD BLANKS LINES NEW--\n")
+    for i=1,#r,2 do
+      buffer:append_text("F1 L "..r[i].." n= "..r[i+1].."\n")
+    end
+    r= filediff.getdiff( 2, 3 )
+    buffer:append_text("--ADD BLANKS LINES OLD--\n")
+    for i=1,#r,2 do
+      buffer:append_text("F2 L "..r[i].." n= "..r[i+1].."\n")
+    end
+    r= filediff.getdiff( 1, 2 )
+    buffer:append_text("--ONE LINE CHANGES--\n")
+    for i=1,#r,2 do
+      buffer:append_text("F1 L "..r[i].." <-> F2 L"..r[i+1].."\n")
+    end
+    r= filediff.getdiff( 1, 4 )
+    buffer:append_text("--TEXT CHANGES INSIDE ONE LINE--\n")
+    for i=1,#r,3 do
+      buffer:append_text("F"..r[i].." pos= "..r[i+1].." n= "..r[i+2].."\n")
+    end
+  end, "af6")
 end
 
 textadept.file_types.extensions.mas = 'mas'
