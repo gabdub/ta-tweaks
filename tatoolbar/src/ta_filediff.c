@@ -177,9 +177,9 @@ static void listcompare( struct line_info * list1, int n1, struct line_info *lis
   bo= NULL;
   bpl= 0;
   bpo= 0;
-  for( l= list1, n= n1; (n > longest); n--, l= l->next ){
+  for( l= list1, n= n1; (n >= longest); n--, l= l->next ){
     h1= l->hash;
-    for( o= list2, no= n2; (no > longest); no--, o= o->next ){
+    for( o= list2, no= n2; (no >= longest); no--, o= o->next ){
       //ignore lines that have different hashes or are already linked as part of the current longest chain
       if( (o->hash == h1) && (l->otherline != o->linenum) ){
         len= get_common_chain_len( l, n, o, no, longest );
@@ -320,8 +320,8 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
     longest= 0;
     bl= NULL;
     bo= NULL;
-    for( l= line1, n= n1; (n > longest); n--, l++ ){
-      for( o= line2, no= n2; (no > longest); no--, o++ ){
+    for( l= line1, n= n1; (n >= longest); n--, l++ ){
+      for( o= line2, no= n2; (no >= longest); no--, o++ ){
         //if the common prefix is bigger that the current longest chain, set this string as the current best option
         len= get_common_len( l, n, o, no );
         if( len > 0 ){
