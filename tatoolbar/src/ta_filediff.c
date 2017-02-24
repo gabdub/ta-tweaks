@@ -443,16 +443,14 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
     no= 0;
     for( p= linelist[fother]; (p != NULL); p= p->next ){
       if( p->otherline == 0 ){ //this line is only in the "other file"
-        if( n == 0 ){
-          n= p->linenum;  //get the first
-        }
+        n++;
       }else{ //same or 1 line modification
         if( n != 0 ){
           (*pfunc)( no );   //emit "line num"
           (*pfunc)( n );    //emit "count"
           n= 0;
         }
-        no= p->otherline;
+        no= p->otherline;   //show under last "same" line
         if( no < 0 ){
           no= -no;
         }
@@ -461,7 +459,6 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
     if( n != 0 ){       //emit pending
       (*pfunc)( no );   //emit "line num"
       (*pfunc)( n );    //emit "count"
-      n= 0;
     }
 
   }else if( dlist == 4 ){   //this get option ignores "filenum" param
