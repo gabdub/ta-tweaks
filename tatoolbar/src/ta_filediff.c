@@ -376,8 +376,9 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
 
 // get file differences as an int array (num= 1...MAXFILEDIFF)
 // dlist= 1: (line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file)
-// dlist= 2: (nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
+// dlist= 2: (line num, other file line num) modified lines (1 line changed in both files)
 // dlist= 3: (line num, count) number of blank lines needed to add under line "num" (0=before first) to align equal lines between files
+// dlist= 4: (nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
 // NOTE: char ranges (dlist=2) are generated only for 1 line ranges (excluded from dlist=1) when they are "similar enough"
 void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
 {
@@ -421,27 +422,12 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
       (*pfunc)( n );
     }
 
-  }else if( dlist == 2 ){   //this get option ignores "filenum" param
-    //(nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
-    o= linelist[f2];
-    no= 1;
-    for( p= linelist[f1]; (p != NULL); p= p->next ){
+  }else if( dlist == 2 ){
+    //(line num, other file line num) modified lines (1 line changed in both files)
+    for( p= linelist[ filenum ]; (p != NULL); p= p->next ){
       if( p->otherline < 0 ){
-        //locate the other line in f2
-        n= - p->otherline;
-        if( n < no ){ //restart count from line 1
-          o= linelist[f2];
-          no= 1;
-        }
-        while( (n > no) && (o != NULL) ){
-          no++;
-          o= o->next;
-        }
-        if( o != NULL ){
-          //compare both strings an emit the position and lenght of strings that are only in one file
-          emit_line_diff( filemem[ f1 ], p->line, strlen(p->line),
-                          filemem[ f2 ], o->line, strlen(o->line), pfunc );
-        }
+        (*pfunc)( p->linenum );     //emit "line num"
+        (*pfunc)( - p->otherline ); //emit "other line num"
       }
     }
 
@@ -476,6 +462,30 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
       (*pfunc)( no );   //emit "line num"
       (*pfunc)( n );    //emit "count"
       n= 0;
+    }
+
+  }else if( dlist == 4 ){   //this get option ignores "filenum" param
+    //(nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
+    o= linelist[f2];
+    no= 1;
+    for( p= linelist[f1]; (p != NULL); p= p->next ){
+      if( p->otherline < 0 ){
+        //locate the other line in f2
+        n= - p->otherline;
+        if( n < no ){ //restart count from line 1
+          o= linelist[f2];
+          no= 1;
+        }
+        while( (n > no) && (o != NULL) ){
+          no++;
+          o= o->next;
+        }
+        if( o != NULL ){
+          //compare both strings an emit the position and lenght of strings that are only in one file
+          emit_line_diff( filemem[ f1 ], p->line, strlen(p->line),
+                          filemem[ f2 ], o->line, strlen(o->line), pfunc );
+        }
+      }
     }
   }
 }
