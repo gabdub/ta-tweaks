@@ -253,20 +253,20 @@ static void link_modifications( struct line_info * list1, struct line_info *list
   o= list2;
   while( (p != NULL) && (o != NULL) ){
     //skip linked lines (same in both files)
-    while( p->otherline != 0 ){
+    while( p->otherline == o->linenum ){
       p= p->next;
-      if( p == NULL ){
-        return;
-      }
-    }
-    while( o->otherline != 0 ){
       o= o->next;
-      if( o == NULL ){
+      if( (p == NULL) || (o == NULL) ){
         return;
       }
     }
-    //check there is only one modification in both files
-    if( ((p->next == NULL) || (p->next->otherline != 0)) &&
+    if( (p->otherline != 0) && (o->otherline != 0) ){
+      return; //prevent infinite loop if the table was bad generated
+    }
+
+    //check if there is only one line change in both files
+    if( (p->otherline == 0) && (o->otherline == 0) &&
+        ((p->next == NULL) || (p->next->otherline != 0)) &&
         ((o->next == NULL) || (o->next->otherline != 0)) ){
       //one line change, link them using negatives line numbers
       p->otherline= - o->linenum;
