@@ -38,12 +38,13 @@ require('goto_nearest')
 require('ctrl_tab_mru')
 require('quicktype')
 
---require('file_diff')
+require('file_diff')
 
 --cf5 "List commands in a new buffer"
 if actions then
   actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
 
+--f6, sf6, cf6, af6 "debug file/string diff"
   actions.add("sdiff_test", "String diff TEST", function()
     actions.run("new")  --new buffer
     local s1= "televisor sorpresa"
