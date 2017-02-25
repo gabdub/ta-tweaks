@@ -305,7 +305,7 @@ static int get_common_len( const char * s1, int n1, const char * s2, int n2 )
   return len;
 }
 
-//compare both strings an emit the position and lenght of strings that are only in line1
+//compare both strings an emit the position and lenght of strings that are only in line1 or line2
 static void emit_line_diff( const char * f1beg, const char * line1, int n1, const char * f2beg, const char *line2, int n2, t_pushint pfunc )
 {
   int n, no, longest, ns1, ns2, len, dist;
@@ -376,8 +376,8 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
 // dlist= 1: (line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file)
 // dlist= 2: (line num, other file line num) modified lines (1 line changed in both files)
 // dlist= 3: (line num, count) number of blank lines needed to add under line "num" (0=before first) to align equal lines between files
-// dlist= 4: (nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
-// NOTE: char ranges (dlist=2) are generated only for 1 line ranges (excluded from dlist=1) when they are "similar enough"
+// dlist= 4: (nfile, char pos from, len) chars that are only in file1 or file2 (num param is ignored)
+// NOTE: char ranges (dlist=2) are generated only for 1 line ranges (this lines are excluded from dlist=1)
 void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
 {
   struct line_info *p, *o;
@@ -460,7 +460,7 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
     }
 
   }else if( dlist == 4 ){   //this get option ignores "filenum" param
-    //(nfile, char pos from, len) chars that are only in file nfile (deleted in the other file)
+    //(nfile, char pos from, len) chars that are only in file1 or file2
     o= linelist[f2];
     no= 1;
     for( p= linelist[f1]; (p != NULL); p= p->next ){
@@ -522,7 +522,7 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
 }
 
 //get string differences as an int array
-//compare both strings an emit the position and lenght of strings that are only in s1
+//compare both strings an emit the position and lenght of strings that are only in s1 or s2
 void fdiff_strdiff( const char *s1, const char *s2, t_pushint pfunc )
 {
   emit_line_diff( s1, s1, strlen(s1), s2, s2, strlen(s2), pfunc );

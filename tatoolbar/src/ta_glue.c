@@ -1195,8 +1195,8 @@ static void pushint_intable( int val )
 /** dlist= 1: (line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file) */
 /** dlist= 2: (line num, other file line num) modified lines (1 line changed in both files) */
 /** dlist= 3: (line num, count) number of blank lines needed to add under line "num" (0=before first) to align equal lines between files */
-/** dlist= 4: (nfile, char pos from, len) chars that are only in file nfile (deleted in the other file) */
-/** NOTE: char ranges (dlist=2) are generated only for 1 line ranges (that lines are excluded from dlist=1) */
+/** dlist= 4: (nfile, char pos from, len) chars that are only in file1 or file2 (num param is ignored) */
+/** NOTE: char ranges (dlist=2) are generated only for 1 line ranges (this lines are excluded from dlist=1) */
 static int lfilediff_getdiff(lua_State *L)
 {
   lua_newtable(L);
