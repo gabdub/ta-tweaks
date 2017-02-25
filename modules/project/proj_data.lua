@@ -761,22 +761,30 @@ function Proj.onlykeep_projopen(keepone)
       --skip project buffer and don't close buffers
       i= i+1
       buf._dont_close= nil --remove flag
+      actions.updateaction("dont_close")
     end
   end
   --check that at least one regular buffer remains after closing
   Proj.check_after_close_buffer()
 end
 
-function Proj.keep_thisbuffer()
+function Proj.keepthisbuff_status()
+  return (buffer._dont_close and 1 or 2) --check
+end
+
+function Proj.toggle_keep_thisbuffer()
   Proj.goto_filesview() --change to files view if needed
   --keep this buffer
-  buffer._dont_close= true
+  --toggle check
+  if buffer._dont_close then buffer._dont_close=nil else buffer._dont_close= true end
+  actions.updateaction("dont_close")
 end
 
 function Proj.close_others()
   --keep this buffer
-  Proj.keep_thisbuffer()
-  --close the others
+  Proj.goto_filesview() --change to files view if needed
+  buffer._dont_close= true --force keep this
+  --close the other buffers (except the project)
   Proj.onlykeep_projopen(true)
 end
 
