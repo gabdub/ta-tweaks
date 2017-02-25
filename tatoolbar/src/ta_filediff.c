@@ -477,8 +477,8 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
         }
         if( o != NULL ){
           //compare both strings an emit the position and lenght of strings that are only in one file
-          emit_line_diff( filemem[ f1 ], p->line, strlen(p->line),
-                          filemem[ f2 ], o->line, strlen(o->line), pfunc );
+          emit_line_diff( filemem[ f1 ], p->line, p->linesz,
+                          filemem[ f2 ], o->line, o->linesz, pfunc );
         }
       }
     }
