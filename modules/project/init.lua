@@ -27,6 +27,7 @@ Proj.PRJV_DEFAULT =     0   -- default view (no active project)
 Proj.PRJV_PROJECT =     1   -- project view
 Proj.PRJV_FILES =       2   -- project files view
 Proj.PRJV_SEARCH =      3   -- search results view
+Proj.PRJV_FILES_2 =     4   -- files #2 (right side of vertical split)
 
 --preferred view of each view type
 Proj.prefview = {
@@ -34,11 +35,13 @@ Proj.prefview = {
   [Proj.PRJV_PROJECT] = 1,  -- project in view #1
   [Proj.PRJV_FILES]   = 2,  -- project files in view #2
   [Proj.PRJV_SEARCH]  = 3,  -- search results in view #3
+  [Proj.PRJV_FILES_2] = 4,  -- files #2 (right side of vertical split) in view #4
 }
---split control { adjust previous view size [%], vertical split }
+--split control { adjust previous view size [%], vertical split, view to split }
 Proj.prefsplit = {
-  [1] = { 0.20, true  },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
-  [2] = { 0.75, false },  -- search results in view #3 (view #2 size = 75%, HORIZONTAL)
+  [1] = { 0.20, true,  1 },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
+  [2] = { 0.75, false, 2 },  -- search results in view #3 (view #2 size = 75%, HORIZONTAL)
+  [3] = { 0.50, true,  2 },  -- files #2 in view #4       (view #2 size = 50%, VERTICAL)
 }
 
 --project file type

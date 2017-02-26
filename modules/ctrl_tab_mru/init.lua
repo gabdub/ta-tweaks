@@ -53,12 +53,8 @@ local function mru_ctrl_tab_handler(shift)
     return --not enought buffers
   end
 
-  --Project module?
-  if Proj and (buffer._project_select ~= nil or buffer._type ~= nil) then
-    --goto files view before handling control+tab
-    Proj.goto_filesview(true) --change to files view if needed
-    return
-  end
+  --Project module? check current view and goto files view before handling control+tab
+  if Proj and Proj.getout_projview() then return end
 
   if ctrl_key_down then
     --CONTROL key was pressed before 'this' TAB
@@ -107,6 +103,20 @@ local function mru_ctrl_tab_handler(shift)
   until mru_buff[1]._project_select == nil and mru_buff[1]._type == nil
 
   --activate the buffer in the TOP of the MRU list
+  --Project module? change to left/right files view if needed (without project: 1/2, with project: 2/4)
+  if Proj then
+    Proj.goto_filesview(false, mru_buff[1]._right_side)
+  else
+    --no project module: view #2 is the right_side panel
+    if mru_buff[1]._right_side then
+      if #_VIEWS == 1 then
+        view:split(true)
+      end
+      if _VIEWS[view] == 1 then my_goto_view(2) end
+    else --view #1 is the left/only panel
+      if _VIEWS[view] ~= 1 then my_goto_view(1) end
+    end
+  end
   if TA_MAYOR_VER < 9 then
     view:goto_buffer(_BUFFERS[mru_buff[1]])
   else

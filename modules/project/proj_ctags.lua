@@ -142,7 +142,8 @@ function Proj.goto_tag(ask)
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
   Proj.store_current_pos(true)
-  Proj.goto_filesview()
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   io.open_file(tag[2])
   if not tonumber(tag[3]) then
     for i = 0, buffer.line_count - 1 do
@@ -165,7 +166,8 @@ function Proj.goto_current_pos()
     if bname == Proj.PRJT_SEARCH then
       Proj.goto_searchview()
     else
-      Proj.goto_filesview()
+      --if the current view is a project view, goto left/only files view. if not, keep the current view
+      Proj.getout_projview()
       io.open_file(bname)
     end
     buffer:goto_pos(jump_list[jump_list.pos][2])

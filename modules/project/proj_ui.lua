@@ -36,18 +36,18 @@ end
 -- The right-click context menu
 ---
 local proj_context_menu = {
-  { --#1
+  { --#1 project in SELECTION mode
     {"open_projsel","open_projectdir",SEPARATOR,
        "toggle_editproj","toggle_viewproj",SEPARATOR,
        "adddirfiles_proj","search_project"}
   },
-  { --#2
+  { --#2 project in EDIT mode
     {"undo","redo",SEPARATOR,
      "cut","copy","paste","delete_char",SEPARATOR,
      "selectall",SEPARATOR,
      "_end_editproj"}
   },
-  { --#3
+  { --#3 regular file
     {"undo","redo",SEPARATOR,
      "cut","copy","paste","delete_char",SEPARATOR,
      "selectall"
@@ -57,7 +57,11 @@ local proj_context_menu = {
       {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
        "search_project","goto_tag","save_position","next_position","prev_position",SEPARATOR,
        "toggle_viewproj"}
-    }
+    },
+    {SEPARATOR,"showin_rightpanel"}
+  },
+  { --#4 search view
+    {"copy", "selectall"}
   }
 }
 
@@ -94,6 +98,11 @@ end
 -- set project context menu for a regular file --
 local function proj_contextm_file()
   proj_context_menu_init(3)
+end
+
+-- set project context menu for search view --
+local function proj_contextm_search()
+  proj_context_menu_init(4)
 end
 
 ------------------PROJECT CONTROL-------------------
@@ -188,8 +197,9 @@ end
 --open files in the preferred view
 --optinal: goto line_num
 function Proj.go_file(file, line_num)
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
   if file == nil or file == '' then
+    Proj.getout_projview()
     --new file (add only one)
     local n= nil
     for i=1, #_BUFFERS do
@@ -214,6 +224,7 @@ function Proj.go_file(file, line_num)
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
         --already open
+        Proj.getout_projview(buf._right_side)
         if TA_MAYOR_VER < 9 then
           view:goto_buffer(i)
         else
@@ -223,6 +234,7 @@ function Proj.go_file(file, line_num)
         break
       end
     end
+    Proj.getout_projview()
     if fn then io.open_file(fn) end
 
     if line_num then my_goto_line(buffer, line_num-1) end
@@ -308,11 +320,15 @@ function Proj.update_after_switch()
   if buffer._project_select == nil then
     --normal file: restore current line default settings
     proj_show_default(buffer)
-    --set regular file context menu
-    proj_contextm_file()
-    --try to select the current file in the project
-    Proj.track_this_file()
-
+    if buffer._type == Proj.PRJT_SEARCH then
+      --set search context menu
+      proj_contextm_search()
+    else
+      --set regular file context menu
+      proj_contextm_file()
+      --try to select the current file in the project
+      Proj.track_this_file()
+    end
     --refresh some options (when views are closed this is mixed)
     --the current line is not always visible
     buffer.caret_line_visible_always= false
@@ -579,7 +595,8 @@ if TA_MAYOR_VER >= 9 then
         end
       else
         --normal file: check we are not in project view
-        Proj.goto_filesview() --change to files view if needed
+        --change to files view if needed
+        Proj.goto_filesview(false, _BUFFERS[ntab]._right_side)
       end
     end
   end, 1)
@@ -609,35 +626,41 @@ function Proj.trim_trailing_spaces()
 end
 
 function Proj.new_file()
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   buffer.new()
 end
 
 function Proj.open_file()
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   io.open_file()
 end
 
 function Proj.open_recent_file()
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   io.open_recent_file()
 end
 
 function Proj.qopen_user()
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   io.quick_open(_USERHOME)
   Proj.track_this_file()
 end
 
 function Proj.qopen_home()
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   io.quick_open(_HOME)
   Proj.track_this_file()
 end
 
 function Proj.qopen_curdir()
   local fname= buffer.filename
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
     Proj.track_this_file()
@@ -692,7 +715,8 @@ end
 --open a file using the selected text or the text under the cursor
 --or change buffer extension {c,cpp} <--> {h,hpp} or ask
 function Proj.open_cursor_file()
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   local s, e = buffer.selection_start, buffer.selection_end
   if s == e then
     --suggest current word

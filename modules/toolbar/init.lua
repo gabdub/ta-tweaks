@@ -60,7 +60,7 @@ if toolbar then
   end
 
   function toolbar.isbufhide(buf)
-  	if Proj then  --Project module?
+    if Proj then  --Project module?
       return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
     end
     return false
@@ -184,8 +184,9 @@ if toolbar then
             end
             return
           end
-		  --normal file: check we are not in project view
-		  Proj.goto_filesview() --change to files view if needed
+          --normal file: check we are not in project view
+          --change to left/right files view if needed (without project: 1/2, with project: 2/4)
+          Proj.goto_filesview(false, buf._right_side)
         end
       end
       if TA_MAYOR_VER < 9 then

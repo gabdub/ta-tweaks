@@ -198,10 +198,10 @@ events.connect(events.INITIALIZED, function()
         Proj.ifproj_setselectionmode(buff)
         Proj.is_visible= Proj._read_is_visible  --keep 0 is hidden
       end
-      --start in files view
+      --start in left/only files view
       Proj.goto_filesview(true)
       --check that at least there's one regular buffer
-      local rbuf = Proj.getFirstRegularBuf()
+      local rbuf = Proj.getFirstRegularBuf(1)
       if rbuf == nil then
         --no regular buffer found
         Proj.go_file() --open a blank file
@@ -547,9 +547,9 @@ function Proj.goto_projview(prjv)
   local nv= #_VIEWS
   while pref > nv do
     --more views are needed: split the last one
-    my_goto_view(nv)
     local porcent  = Proj.prefsplit[nv][1]
     local vertical = Proj.prefsplit[nv][2]
+    my_goto_view(Proj.prefsplit[nv][3])
     --split view to show search results
     view:split(vertical)
     --adjust view size (actual = 50%)
@@ -571,11 +571,31 @@ function Proj.goto_projview(prjv)
   my_goto_view(pref)
 end
 
-function Proj.goto_filesview(dontprjcheck)
+function Proj.goto_filesview(dontprjcheck, right_side)
   --goto the view for editing files, split views if needed
   if dontprjcheck or Proj.get_projectbuffer(false) ~= nil then
-    Proj.goto_projview(Proj.PRJV_FILES)
+    --if no project is open, this will create all the needed views
+    if right_side then Proj.goto_projview(Proj.PRJV_FILES_2) else Proj.goto_projview(Proj.PRJV_FILES) end
+  elseif right_side then
+    --if no project is open, view #2 is the right_side panel
+    if #_VIEWS == 1 then
+      view:split(true)
+    end
+    if _VIEWS[view] == 1 then my_goto_view(2) end
+  else
+    --if no project is open, view #1 is the left/only panel
+    if _VIEWS[view] ~= 1 then my_goto_view(1) end
   end
+end
+
+--if the current view is a project or project-search, goto left/only files view. if not, keep the current view
+function Proj.getout_projview(right_side)
+  if (buffer._project_select ~= nil or buffer._type ~= nil) then
+    --move to files view (left/only panel) and exit
+    Proj.goto_filesview(true,right_side)
+    return true
+  end
+  return false
 end
 
 --open the selected file
@@ -657,7 +677,7 @@ function Proj.snapopen()
     return
   end
   if p_buffer.proj_files ~= nil then
-    Proj.goto_filesview(true) --change to files view if needed
+    Proj.goto_filesview(true) --change to left/only file view if needed
     local utf8_list = {}
     for row= 1, #p_buffer.proj_files do
       local file= p_buffer.proj_files[row]
@@ -688,10 +708,11 @@ local function isRegularBuf(pbuffer)
 end
 
 --find the first regular buffer
-function Proj.getFirstRegularBuf()
+--panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
+function Proj.getFirstRegularBuf(panel)
   for _, buf in ipairs(_BUFFERS) do
     if isRegularBuf(buf) then
-      return buf
+      if (panel==0) or ((panel==1) and (not buf._right_side)) or ((panel==2) and (buf._right_side)) then return buf end
     end
   end
   return nil
@@ -699,7 +720,7 @@ end
 
 --check that at least one regular buffer remains after closing
 function Proj.check_after_close_buffer()
-  local rbuf = Proj.getFirstRegularBuf()
+  local rbuf = Proj.getFirstRegularBuf(1)
   if rbuf == nil then
     --no regular buffer found
     Proj.go_file() --open a blank file
@@ -745,7 +766,8 @@ function Proj.onlykeep_projopen(keepone)
   if Proj.get_projectbuffer(false) ~= nil then
     --close search results
     Proj.close_search_view()
-    Proj.goto_filesview(true) --change to files view if needed
+    --change to left/only file view if needed
+    Proj.goto_filesview(true)
   elseif not keepone then
      io.close_all_buffers()
      return
@@ -773,16 +795,77 @@ function Proj.keepthisbuff_status()
 end
 
 function Proj.toggle_keep_thisbuffer()
-  Proj.goto_filesview() --change to files view if needed
-  --keep this buffer
-  --toggle check
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   if buffer._dont_close then buffer._dont_close=nil else buffer._dont_close= true end
   actions.updateaction("dont_close")
 end
 
+function Proj.showin_rightpanel_status()
+  return (buffer._right_side and 1 or 2) --check
+end
+
+function Proj.toggle_showin_rightpanel()
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.updating_ui=1
+  Proj.getout_projview()
+  local buf= buffer
+  if buf._right_side then
+    buf._right_side= nil
+    --find one buffer in the right side
+    local br= Proj.getFirstRegularBuf(2)
+    if br then
+      Proj.goto_projview(Proj.PRJV_FILES_2)
+      if TA_MAYOR_VER < 9 then
+        view:goto_buffer(_BUFFERS[br])
+      else
+        view:goto_buffer(br)
+      end
+    else
+      --no right files left, close view
+      local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
+      if #_VIEWS >= vfp2 then
+        if _VIEWS[view] ~= vfp2 then
+          my_goto_view(vfp2)
+        end
+        view.unsplit(view)
+        view.unsplit(view)
+      end
+      --force to show search buffer in search view
+      --Proj.goto_searchview()
+    end
+    Proj.goto_projview(Proj.PRJV_FILES)
+  else
+    buf._right_side= true
+    --find one buffer in the left side
+    local bl= Proj.getFirstRegularBuf(1)
+    if bl then
+      Proj.goto_projview(Proj.PRJV_FILES)
+      if TA_MAYOR_VER < 9 then
+        view:goto_buffer(_BUFFERS[bl])
+      else
+        view:goto_buffer(bl)
+      end
+    else
+      --no left files left, create an empty file
+      Proj.goto_projview(Proj.PRJV_FILES)
+      buffer.new()
+      events.emit(events.FILE_OPENED)
+    end
+    Proj.goto_projview(Proj.PRJV_FILES_2)
+  end
+  if TA_MAYOR_VER < 9 then
+    view:goto_buffer(_BUFFERS[buf])
+  else
+    view:goto_buffer(buf)
+  end
+  Proj.updating_ui=0
+  actions.updateaction("showin_rightpanel")
+end
+
 function Proj.close_others()
-  --keep this buffer
-  Proj.goto_filesview() --change to files view if needed
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
   buffer._dont_close= true --force keep this
   --close the other buffers (except the project)
   Proj.onlykeep_projopen(true)
@@ -799,7 +882,7 @@ function Proj.goto_buffer(nb)
     Proj.goto_searchview()
   else
     --activate files view
-    Proj.goto_filesview(true)
+    Proj.goto_filesview(true, b._right_side)
     if TA_MAYOR_VER < 9 then
       view:goto_buffer(nb)
     else
