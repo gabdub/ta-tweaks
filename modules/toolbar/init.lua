@@ -96,6 +96,9 @@ if toolbar then
     else
       toolbar.modifiedtab(ntab, buf.modify)
     end
+    if buf._right_side then
+      tabtext= ">"..tabtext
+    end
     local tooltip= buf.filename
     if tooltip then
       if buf.mod_time then tooltip= tooltip.."\n"..os.date('%c', buf.mod_time) end
