@@ -583,20 +583,10 @@ if TA_MAYOR_VER >= 9 then
         --project buffer: force project view
         local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
         my_goto_view(projv)
-        elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then
-        --project search
-        if Proj.search_vn ~= nil then
-          my_goto_view(Proj.search_vn)
-        else
-          --activate search view
-          Proj.goto_searchview()
-          Proj.search_vn= _VIEWS[view]
-        end
-      else
-        --normal file: check we are not in project view
-        --change to files view if needed
-        Proj.goto_filesview(false, _BUFFERS[ntab]._right_side)
-      end
+      --search results?
+      elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then Proj.goto_searchview()
+      --normal file: check we are not in a project view
+      else Proj.goto_filesview(false, _BUFFERS[ntab]._right_side) end
     end
   end, 1)
 end

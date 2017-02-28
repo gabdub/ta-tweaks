@@ -176,18 +176,9 @@ if toolbar then
             my_goto_view(projv)
             return
           end
-          if buf._type == Proj.PRJT_SEARCH then
-            --project search
-            if Proj.search_vn ~= nil then
-              my_goto_view(Proj.search_vn)
-            else
-              --activate search view
-              Proj.goto_searchview()
-              Proj.search_vn= _VIEWS[view]
-            end
-            return
-          end
-          --normal file: check we are not in project view
+          --search results?
+          if buf._type == Proj.PRJT_SEARCH then Proj.goto_searchview() return end
+          --normal file: check we are not in a project view
           --change to left/right files view if needed (without project: 1/2, with project: 2/4)
           Proj.goto_filesview(false, buf._right_side)
         end

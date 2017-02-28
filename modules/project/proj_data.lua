@@ -173,7 +173,6 @@ events.connect(events.INITIALIZED, function()
     if buff._type == Proj.PRJT_SEARCH then
       --activate search view
       Proj.goto_searchview()
-      Proj.search_vn= _VIEWS[view]
       buff.read_only= true
       break
     end
@@ -468,7 +467,6 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   Proj.updating_ui=Proj.updating_ui+1
   --activate/create search view
   Proj.goto_searchview()
-  Proj.search_vn= _VIEWS[view]
 
   buffer.read_only= false
   buffer:append_text('['..text..']\n')
@@ -565,8 +563,8 @@ function Proj.goto_projview(prjv)
     elseif nv == Proj.prefview[Proj.PRJV_SEARCH] then
       --create an empty search results buffer
       my_goto_view(nv)
-      local search_buffer = buffer.new()
-      search_buffer._type = Proj.PRJT_SEARCH
+      buffer.new()
+      buffer._type = Proj.PRJT_SEARCH
       events.emit(events.FILE_OPENED)
     end
   end
@@ -630,22 +628,22 @@ function Proj.open_search_file()
 end
 
 function Proj.close_search_view()
-  --remove search from position table
-  Proj.remove_search_from_pos_table()
-  if Proj.search_vn then
+  local sv= Proj.prefview[Proj.PRJV_SEARCH]
+  --if more views are open, ignore the close
+  if #_VIEWS > sv then return false end
+  if #_VIEWS == sv then
+    --remove search from position table
+    Proj.remove_search_from_pos_table()
     --activate search view
     Proj.goto_searchview()
-    Proj.search_vn = nil
     --close buffer / view
     buffer:set_save_point()
     io.close_buffer()
-    if Proj.prefview[Proj.PRJV_SEARCH] > 0 then
-      my_goto_view( Proj.prefview[Proj.PRJV_SEARCH] -1 )
-    end
+    my_goto_view( sv -1 )
     view.unsplit(view)
     return true
   end
-  --no search results, try to close the search buffer and view
+  --no search view, try to close the search buffer
   for _, sbuffer in ipairs(_BUFFERS) do
     if sbuffer._type == Proj.PRJT_SEARCH then
       --goto search results view
@@ -654,13 +652,6 @@ function Proj.close_search_view()
       end
       io.close_buffer()
       break
-    end
-  end
-  if #_VIEWS == Proj.prefview[Proj.PRJV_SEARCH] then
-    if Proj.prefview[Proj.PRJV_SEARCH] > 0 then
-      my_goto_view( Proj.prefview[Proj.PRJV_SEARCH] -1 )
-      view.unsplit(view)
-      return true
     end
   end
   return false
@@ -722,6 +713,7 @@ function Proj.check_after_close_buffer()
   Proj.updating_ui=Proj.updating_ui+1
   local actv= _VIEWS[view]
   Proj.check_rightpanel()
+  Proj.check_searchpanel()
   Proj.check_leftpanel()
   if #_VIEWS >= actv then my_goto_view(actv) end
   Proj.updating_ui=Proj.updating_ui-1
@@ -754,6 +746,7 @@ function Proj.close_all_buffers()
 end
 
 function Proj.onlykeep_projopen(keepone)
+  Proj.updating_ui=Proj.updating_ui+1
   --close all buffers except project (and buffer._dont_close)
   if Proj.get_projectbuffer(false) ~= nil then
     --close search results
@@ -762,6 +755,7 @@ function Proj.onlykeep_projopen(keepone)
     Proj.goto_filesview(true)
   elseif not keepone then
      io.close_all_buffers()
+     Proj.updating_ui=Proj.updating_ui-1
      return
   end
   local i=1
@@ -770,16 +764,20 @@ function Proj.onlykeep_projopen(keepone)
     if isRegularBuf(buf) and not buf._dont_close then
       --regular file, close it
       my_goto_buffer(buf)
-      if not io.close_buffer() then return end
+      if not io.close_buffer() then
+        Proj.updating_ui=Proj.updating_ui-1
+        return
+      end
     else
-      --skip project buffer and don't close buffers
+      --skip project buffers and don't close buffers
       i= i+1
       buf._dont_close= nil --remove flag
-      actions.updateaction("dont_close")
     end
   end
   --check that at least one regular buffer remains after closing
   Proj.check_after_close_buffer()
+  actions.updateaction("dont_close")
+  Proj.updating_ui=Proj.updating_ui-1
 end
 
 function Proj.keepthisbuff_status()
@@ -812,6 +810,13 @@ function Proj.check_rightpanel()
         Proj.close_search_view()  --close search view too (TODO: don't close search view)
       end
     end
+  end
+end
+
+function Proj.check_searchpanel()
+  local vsp= Proj.prefview[Proj.PRJV_SEARCH]
+  if #_VIEWS >= vsp then
+    Proj.goto_searchview()
   end
 end
 
