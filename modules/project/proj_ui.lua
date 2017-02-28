@@ -678,7 +678,7 @@ local function str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-local function file_exists(fn)
+function Proj.file_exists(fn)
   if fn:match('[^\\/]+$') then
     local f, err = io.open(fn, 'rb')
     if f then
@@ -690,7 +690,7 @@ local function file_exists(fn)
 end
 
 local function try_open(fn)
-  if file_exists(fn) then
+  if Proj.file_exists(fn) then
     ui.statusbar_text= "Open: "..fn
     io.open_file(fn)
     return true

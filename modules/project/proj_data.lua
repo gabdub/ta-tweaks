@@ -465,6 +465,7 @@ end
 -- find text in project's files
 -- code adapted from module: find.lua
 function Proj.find_in_files(p_buffer,text,match_case,whole_word)
+  Proj.updating_ui=Proj.updating_ui+1
   --activate/create search view
   Proj.goto_searchview()
   Proj.search_vn= _VIEWS[view]
@@ -478,6 +479,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   local nfiles= 0
   local totfiles= 0
   local nfound= 0
+  local filesnf= 0
   --check the given buffer has a list of files
   if p_buffer and p_buffer.proj_files ~= nil then
     for row= 1, #p_buffer.proj_files do
@@ -485,31 +487,36 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
       if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
         local file= p_buffer.proj_files[row]
         if file and file ~= '' then
-          local line_num = 1
-          totfiles = totfiles + 1
-          local prt_fname= true
-          for line in io.lines(file) do
-            local s, e = (match_case and line or line:lower()):find(text)
-            if s and e then
-              file = file:iconv('UTF-8', _CHARSET)
-              if prt_fname then
-                prt_fname= false
-                local p,f,e= Proj.splitfilename(file)
-                if f == '' then
-                  f= file
+          if not Proj.file_exists(file) then
+            filesnf= filesnf+1 --file not found
+            buffer:append_text(('(%s NOT FOUND)::::\n'):format(file))
+          else
+            local line_num = 1
+            totfiles = totfiles + 1
+            local prt_fname= true
+            for line in io.lines(file) do
+              local s, e = (match_case and line or line:lower()):find(text)
+              if s and e then
+                file = file:iconv('UTF-8', _CHARSET)
+                if prt_fname then
+                  prt_fname= false
+                  local p,f,e= Proj.splitfilename(file)
+                  if f == '' then
+                    f= file
+                  end
+                  buffer:append_text((' %s::%s::\n'):format(f, file))
+                  nfiles = nfiles + 1
+                  if nfiles == 1 then buffer:goto_pos(buffer.length) end
                 end
-                buffer:append_text((' %s::%s::\n'):format(f, file))
-                nfiles = nfiles + 1
-                if nfiles == 1 then buffer:goto_pos(buffer.length) end
-              end
-              local snum= ('%4d'):format(line_num)
-              buffer:append_text(('  @%s:%s\n'):format(snum, line))
+                local snum= ('%4d'):format(line_num)
+                buffer:append_text(('  @%s:%s\n'):format(snum, line))
 
-              local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
-              buffer:indicator_fill_range(pos + s - 1, e - s + 1)
-              nfound = nfound + 1
+                local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+                buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+                nfound = nfound + 1
+              end
+              line_num = line_num + 1
             end
-            line_num = line_num + 1
           end
         end
       end
@@ -520,11 +527,16 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   buffer:append_text('\n')
   buffer:set_save_point()
 
-  ui.statusbar_text= ''..nfound..' matches found in '..nfiles..' of '..totfiles..' files'
+  local result= ''..nfound..' matches in '..nfiles..' of '..totfiles..' files'
+  if filesnf > 0 then
+    result= result .. ' / '..filesnf..' files NOT FOUND'
+  end
+  ui.statusbar_text= result
   buffer:set_lexer('myproj')
   buffer.read_only= true
   --set search context menu
   Proj.proj_contextm_search()
+  Proj.updating_ui=Proj.updating_ui-1
 end
 
 --goto the view for the requested project buffer type
@@ -663,7 +675,8 @@ function Proj.snapopen()
     return
   end
   if p_buffer.proj_files ~= nil then
-    Proj.goto_filesview(true) --change to left/only file view if needed
+    --if the current view is a project view, goto files view
+    Proj.getout_projview()
     local utf8_list = {}
     for row= 1, #p_buffer.proj_files do
       local file= p_buffer.proj_files[row]
