@@ -53,8 +53,13 @@ local function mru_ctrl_tab_handler(shift)
     return --not enought buffers
   end
 
+  local right= nil
   --Project module? check current view and goto files view before handling control+tab
-  if Proj and Proj.getout_projview() then return end
+  if Proj then
+    if Proj.getout_projview() then return end
+    --in right panel, only switch right files
+    if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then right= true end
+  end
 
   if ctrl_key_down then
     --CONTROL key was pressed before 'this' TAB
@@ -100,15 +105,16 @@ local function mru_ctrl_tab_handler(shift)
       mru_buff[1]= mru_buff[swap]
       mru_buff[swap]= b
     end
-  until mru_buff[1]._project_select == nil and mru_buff[1]._type == nil
+  until mru_buff[1]._project_select==nil and mru_buff[1]._type==nil and mru_buff[1]._right_side==right
 
   --activate the buffer in the TOP of the MRU list
   --Project module? change to left/right files view if needed (without project: 1/2, with project: 2/4)
+  local newb= mru_buff[1]
   if Proj then
-    Proj.goto_filesview(false, mru_buff[1]._right_side)
+    Proj.goto_filesview(false, newb._right_side)
   else
     --no project module: view #2 is the right_side panel
-    if mru_buff[1]._right_side then
+    if newb._right_side then
       if #_VIEWS == 1 then
         view:split(true)
       end
@@ -117,11 +123,7 @@ local function mru_ctrl_tab_handler(shift)
       if _VIEWS[view] ~= 1 then my_goto_view(1) end
     end
   end
-  if TA_MAYOR_VER < 9 then
-    view:goto_buffer(_BUFFERS[mru_buff[1]])
-  else
-    view:goto_buffer(mru_buff[1])
-  end
+  my_goto_buffer(newb)
 end
 
 events_connect(events.KEYPRESS, function(code, shift, control, alt, meta)

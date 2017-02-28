@@ -15,11 +15,21 @@ function Winfo(msg,info)
   }
 end
 
-function my_goto_view(view)
+function my_goto_view(numview)
+  if _VIEWS[view] ~= numview then
+    if TA_MAYOR_VER < 9 then
+      ui.goto_view(numview)
+    else
+      ui.goto_view(_VIEWS[numview])
+    end
+  end
+end
+
+function my_goto_buffer(buf)
   if TA_MAYOR_VER < 9 then
-    ui.goto_view(view)
+    view:goto_buffer(_BUFFERS[buf])
   else
-    ui.goto_view(_VIEWS[view])
+    view:goto_buffer(buf)
   end
 end
 

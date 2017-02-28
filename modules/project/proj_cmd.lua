@@ -459,11 +459,7 @@ events.connect(events.FILE_OPENED, function()
   if buffer.filename and (buffer._project_select == nil) and (#_BUFFERS == 3 or #_BUFFERS == 4) then
     for nbuf,buf in ipairs(_BUFFERS) do
       if not (buf.filename or buf._type or buf.modify or buf._project_select ~= nil) then
-        if TA_MAYOR_VER < 9 then
-          view:goto_buffer(nbuf)
-        else
-          view:goto_buffer(buf)
-        end
+        my_goto_buffer(buf)
         io.close_buffer()
         break
       end
@@ -494,13 +490,7 @@ function Proj.close_project(keepviews)
     if #_VIEWS >= projv then
       my_goto_view(projv)
     end
-
-    if TA_MAYOR_VER < 9 then
-      view.goto_buffer(view, _BUFFERS[p_buffer], false)
-    else
-      view.goto_buffer(view, p_buffer)
-    end
-
+    my_goto_buffer(p_buffer)
     if io.close_buffer() then
       ui.statusbar_text= 'Project closed'
       Proj.update_projview()  --update project view button

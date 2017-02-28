@@ -101,7 +101,7 @@ local function proj_contextm_file()
 end
 
 -- set project context menu for search view --
-local function proj_contextm_search()
+function Proj.proj_contextm_search()
   proj_context_menu_init(4)
 end
 
@@ -203,7 +203,7 @@ function Proj.go_file(file, line_num)
     --new file (add only one)
     local n= nil
     for i=1, #_BUFFERS do
-      if (_BUFFERS[i].filename == nil) and (_BUFFERS[i]._type ~= Proj.PRJT_SEARCH) then
+      if (_BUFFERS[i].filename == nil) and (_BUFFERS[i]._type ~= Proj.PRJT_SEARCH) and not _BUFFERS[i]._right_side then
         --there is one new file, select this instead of adding a new one
         n= i
         break
@@ -212,24 +212,17 @@ function Proj.go_file(file, line_num)
     if n == nil then
       buffer.new()
       n= _BUFFERS[buffer]
+      events.emit(events.FILE_OPENED)
     end
-    if TA_MAYOR_VER < 9 then
-      view.goto_buffer(view, n, false)
-    else
-      view.goto_buffer(view, _BUFFERS[n])
-    end
+    my_goto_buffer(_BUFFERS[n])
   else
     --goto file / line_num
     local fn = file:iconv(_CHARSET, 'UTF-8')
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
-        --already open
+        --already open (keep panel)
         Proj.getout_projview(buf._right_side)
-        if TA_MAYOR_VER < 9 then
-          view:goto_buffer(i)
-        else
-          view:goto_buffer(buf)
-        end
+        my_goto_buffer(buf)
         fn = nil
         break
       end
@@ -322,7 +315,7 @@ function Proj.update_after_switch()
     proj_show_default(buffer)
     if buffer._type == Proj.PRJT_SEARCH then
       --set search context menu
-      proj_contextm_search()
+      Proj.proj_contextm_search()
     else
       --set regular file context menu
       proj_contextm_file()
@@ -417,8 +410,14 @@ end)
 --if the current file is a project, enter SELECTION mode--
 events_connect(events.FILE_OPENED, function()
   --ignore session load
-  --if Proj.init_ready then Proj.ifproj_setselectionmode() end
   if Proj.updating_ui == 0 then Proj.ifproj_setselectionmode() end
+  --if the file is open in the right panel, mark it as such
+  if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
+end)
+
+events_connect(events.BUFFER_NEW, function()
+  --when a buffer is created in the right panel, mark it as such
+  if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
 end)
 
 local function open_proj_currrow()
@@ -445,8 +444,8 @@ events_connect(events.KEYPRESS, function(code)
     if toolbar and toolbar.hide_config() then
       return
     end
-    --2) try to close search view
-    if not Proj.close_search_view() then
+    --2) try to close search view (only if there are not more views)
+    if #_VIEWS ~= Proj.prefview[Proj.PRJV_SEARCH] or not Proj.close_search_view() then
       --3) change view
       if #_VIEWS > 1 then
         local nv= _VIEWS[view] +1

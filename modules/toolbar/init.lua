@@ -192,11 +192,7 @@ if toolbar then
           Proj.goto_filesview(false, buf._right_side)
         end
       end
-      if TA_MAYOR_VER < 9 then
-        view.goto_buffer(view, _BUFFERS[buf], false)
-      else
-        view.goto_buffer(view, buf)
-      end
+      my_goto_buffer(buf)
     end
   end
 
