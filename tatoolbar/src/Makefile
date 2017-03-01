@@ -397,7 +397,8 @@ osx-deps: $(base_deps) gtkosx termkey
 
 ifndef NIGHTLY
   scinterm_url = http://foicica.com/scinterm/download/$@
-  scintillua_url = http://foicica.com/scintillua/download/$@
+  #scintillua_url = http://foicica.com/scintillua/download/$@
+  scintillua_url = http://foicica.com/hg/scintillua/archive/$@
   gtdialog_url = http://foicica.com/gtdialog/download/$@
   lspawn_url = http://foicica.com/lspawn/download/$@
 else
@@ -407,11 +408,11 @@ else
   lspawn_url = http://foicica.com/hg/lspawn/archive/tip.zip
 endif
 
-scintilla_tgz = scintilla371.tgz
+scintilla_tgz = scintilla373.tgz
 tre_zip = cdce45e8dd7a3b36954022b4a4d3570e1ac5a4f8.zip
 scinterm_zip = scinterm_1.8.zip
-scintillua_zip = scintillua_3.7.1-1.zip
-lua_tgz = lua-5.3.3.tar.gz
+scintillua_zip = 33298b6cbce3.zip
+lua_tgz = lua-5.3.4.tar.gz
 lpeg_tgz = lpeg-1.0.0.tar.gz
 lfs_zip = v_1_6_3.zip
 lspawn_zip = lspawn_1.5.zip
@@ -431,10 +432,12 @@ cloc = cloc-1.60.pl
 
 $(scintilla_tgz): ; wget http://prdownloads.sourceforge.net/scintilla/$@ -O $@
 scintilla: scintilla.patch | $(scintilla_tgz)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	patch -d $@ -N -p1 < $<
 $(tre_zip): ; wget https://github.com/laurikari/tre/archive/$@ -O $@
 tre: tre.patch | $(tre_zip)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
 	patch -d $@ -N -p1 < $<
 $(scinterm_zip): ; wget $(scinterm_url) -O $@
@@ -449,12 +452,14 @@ $(lpeg_tgz): ; wget http://www.inf.puc-rio.br/~roberto/lpeg/$@
 $(lfs_zip): ; wget http://github.com/keplerproject/luafilesystem/archive/$@
 $(lspawn_zip): ; wget $(lspawn_url) -O $@
 lua: lua.patch | $(lua_tgz)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	patch -d $@ -N -p1 < $<
 lualibs: lua/src/lib/lpeg lua/src/lib/lfs lua/src/lib/lspawn
 lua/src/lib/lpeg: | $(lpeg_tgz)
 	mkdir -p $@ && tar xzf $| -C $@ && mv $@/*/*.c $@/*/*.h $(dir $@)
 lua/src/lib/lfs: lfs.patch | $(lfs_zip)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir -p $@ && unzip -d $@ $| && mv $@/*/src/*.c $@/*/src/*.h $(dir $@)
 	patch -d $(dir $@) -N -p1 < $<
 lua/src/lib/lspawn: | $(lspawn_zip)
@@ -464,6 +469,7 @@ lua/src/lib/lutf8lib.c: lutf8libjit.patch
 	patch -d $(dir $@) -N -p1 < $<
 $(luajit_tgz): ; wget http://luajit.org/download/$@
 luajit: luajit.patch | $(luajit_tgz)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	patch -d $@ -N -p1 < $<
 $(libluajit_tgz): ; wget http://foicica.com/textadept/download/$@
@@ -472,11 +478,13 @@ $(gtdialog_zip): ; wget $(gtdialog_url) -O $@
 gtdialog: | $(gtdialog_zip) ; mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
 $(cdk_tgz): ; wget http://invisible-mirror.net/archives/cdk/$@
 cdk: cdk.patch | $(cdk_tgz)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	mv $@/include/*.h $@
 	patch -d $@ -N -p1 < $<
 $(termkey_tgz): ; wget http://www.leonerd.org.uk/code/libtermkey/$@
 termkey: termkey.patch | $(termkey_tgz)
+	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	patch -d $@ -N -p1 < $<
 $(win32gtk_zip):
@@ -515,6 +523,10 @@ sign-deps: | $(scintilla_tgz) $(scinterm_zip) $(scintillua_zip) $(lua_tgz) \
 	@for file in $|; do gpg -ab $$file; done
 verify-deps: | $(wildcard $(basename $(wildcard *.asc)))
 	@for file in $|; do echo "$$file"; gpg --verify $$file.asc || return 1; done
+
+clean-deps:
+	rm -rf scintilla tre ../lexers LexLPeg.cxx lua luajit gtdialog cdk termkey \
+		win32gtk win32curses gtkosx $(notdir ../doc/bombay)
 
 # Count lines of code and generate ctags.
 
