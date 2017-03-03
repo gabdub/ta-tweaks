@@ -23,12 +23,12 @@ local vfp1= Proj.prefview[Proj.PRJV_FILES]
 local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
 
 local compareon=false
-local buffer1, buffer2
 
 local synchronizing = false
 
 local function clear_buf_marks(b)
   if b then
+    b._comparing=nil
     for _, mark in ipairs{MARK_ADDITION, MARK_DELETION, MARK_MODIFICATION} do
       b:marker_delete_all(mark)
     end
@@ -40,11 +40,17 @@ local function clear_buf_marks(b)
   end
 end
 
+local function clear_view_marks(nview)
+  if #_VIEWS >= nview then
+    clear_buf_marks(_VIEWS[nview].buffer)
+  end
+end
+
 -- Clear markers, indicators, and placeholder lines.
 -- Used when re-marking changes or finished diff'ing.
 local function clear_marked_changes()
-  clear_buf_marks(buffer1)
-  clear_buf_marks(buffer2)
+  clear_view_marks(vfp1)
+  clear_view_marks(vfp2)
 end
 
 -- Stops diff'ing.
@@ -52,14 +58,18 @@ local function stop()
   if compareon then
     compareon= false
     clear_marked_changes()
-    buffer1, buffers = nil, nil
     ui.statusbar_text= "File compare: OFF"
   end
 end
 
 --check that the buffers in both view hasn't changed
 local function check_comp_buffers()
-  if compareon and (#_VIEWS < vfp2 or buffer1 ~= _VIEWS[vfp1].buffer or buffer2 ~= _VIEWS[vfp2].buffer) then stop() end
+  if compareon then
+    if #_VIEWS < vfp2 then return false end
+    local b1= _VIEWS[vfp1].buffer
+    local b2= _VIEWS[vfp2].buffer
+    if not b1 or not b2 or not b1._comparing or not b2._comparing then return false end
+  end
   return compareon
 end
 
@@ -69,16 +79,18 @@ local function synchronize()
   local currview= _VIEWS[view]
   local otherview= vfp2
   if currview == vfp2 then otherview= vfp1 elseif currview ~= vfp1 then return end
-  Proj.updating_ui=Proj.updating_ui+1
-  local line = buffer:line_from_position(buffer.current_pos)
-  local visible_line = buffer:visible_from_doc_line(line)
-  local first_visible_line = buffer.first_visible_line
-  local x_offset = buffer.x_offset
-  my_goto_view(otherview)
-  buffer:goto_line(buffer:doc_line_from_visible(visible_line))
-  buffer.first_visible_line, buffer.x_offset = first_visible_line, x_offset
-  my_goto_view(currview)
-  Proj.updating_ui=Proj.updating_ui-1
+  if check_comp_buffers() then
+    Proj.updating_ui=Proj.updating_ui+1
+    local line = buffer:line_from_position(buffer.current_pos)
+    local visible_line = buffer:visible_from_doc_line(line)
+    local first_visible_line = buffer.first_visible_line
+    local x_offset = buffer.x_offset
+    my_goto_view(otherview)
+    buffer:goto_line(buffer:doc_line_from_visible(visible_line))
+    buffer.first_visible_line, buffer.x_offset = first_visible_line, x_offset
+    my_goto_view(currview)
+    Proj.updating_ui=Proj.updating_ui-1
+  end
   synchronizing = false
 end
 
@@ -86,8 +98,9 @@ end
 local function mark_changes()
   if not check_comp_buffers() then return end
   clear_marked_changes() -- clear previous marks
-
   -- Perform the diff.
+  local buffer1= _VIEWS[vfp1].buffer
+  local buffer2= _VIEWS[vfp2].buffer
   filediff.setfile(1, buffer1:get_text()) --#1 = new version (left)
   filediff.setfile(2, buffer2:get_text()) --#2 = old version (right)
 
@@ -154,12 +167,12 @@ function M.start()
 
   Proj.updating_ui=Proj.updating_ui+1
   my_goto_view(vfp2)
-  buffer2= buffer
-  buffer2.annotation_visible= buffer.ANNOTATION_STANDARD
+  buffer.annotation_visible= buffer.ANNOTATION_STANDARD
+  buffer._comparing=true
 
   my_goto_view(vfp1)
-  buffer1= buffer
-  buffer1.annotation_visible= buffer.ANNOTATION_STANDARD
+  buffer.annotation_visible= buffer.ANNOTATION_STANDARD
+  buffer._comparing=true
   Proj.updating_ui=Proj.updating_ui-1
 
   compareon= true
@@ -167,8 +180,17 @@ function M.start()
 end
 
 -- Stop diff'ing when one of the buffer's being diff'ed is switched or closed.
-events.connect(events.BUFFER_AFTER_SWITCH, function() check_comp_buffers() end)
-events.connect(events.BUFFER_DELETED, function() check_comp_buffers() end)
+events.connect(events.BUFFER_AFTER_SWITCH, function()
+  if buffer._comparing and not compareon then
+    clear_buf_marks(buffer)
+  end
+end)
+events.connect(events.VIEW_AFTER_SWITCH, function()
+  if buffer._comparing and not compareon then
+    clear_buf_marks(buffer)
+  end
+end)
+events.connect(events.BUFFER_DELETED, function() if not check_comp_buffers() then stop() end end)
 
 -- Ensure the diff buffers are scrolled in sync.
 events.connect(events.UPDATE_UI, function(updated)
