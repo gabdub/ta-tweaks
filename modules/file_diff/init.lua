@@ -88,22 +88,22 @@ local function mark_changes()
   clear_marked_changes() -- clear previous marks
 
   -- Perform the diff.
-  filediff.setfile(1, buffer1:get_text())
-  filediff.setfile(2, buffer2:get_text())
+  filediff.setfile(1, buffer1:get_text()) --#1 = new version (left)
+  filediff.setfile(2, buffer2:get_text()) --#2 = old version (right)
 
   -- Parse the diff, marking modified lines and changed text.
   local r= filediff.getdiff( 1, 1 )
   --enum lines that are only in buffer1
   for i=1,#r,2 do
     for j=r[i],r[i+1] do
-      buffer1:marker_add(j-1, MARK_DELETION)
+      buffer1:marker_add(j-1, MARK_ADDITION)
     end
   end
   --enum lines that are only in buffer2
   r= filediff.getdiff( 2, 1 )
   for i=1,#r,2 do
     for j=r[i],r[i+1] do
-      buffer2:marker_add(j-1, MARK_ADDITION)
+      buffer2:marker_add(j-1, MARK_DELETION)
     end
   end
   --enum modified lines
@@ -114,50 +114,24 @@ local function mark_changes()
   end
 
   --show the missing lines using annotations
-  local nlin0= 0
   r= filediff.getdiff( 1, 3 ) --buffer#1, 3=get blank lines list
   for i=1,#r,2 do
-    local lin= r[i]
-    local n= r[i+1]
-    if lin == 0 then
-      nlin0= n  --can't put annotations in line #0, move them 1 line down
-    else
-      if lin == 1 then
-        n= n + nlin0  --join line 0 and line 1 spaces
-        nlin0= 0
-      end
-      buffer1.annotation_text[lin-1] = string.rep('\n', n-1)
-    end
+    buffer1.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
   end
-  --add pending line 0 spaces
-  if nlin0 > 0 then buffer1.annotation_text[0] = string.rep('\n', nlin0-1) end
   --idem buffer #2
   r= filediff.getdiff( 2, 3 )--buffer#2, 3=get blank lines list
-  nlin0= 0
   for i=1,#r,2 do
-    local lin= r[i]
-    local n= r[i+1]
-    if lin == 0 then
-      nlin0= n  --can't put annotations in line #0, move them 1 line down
-    else
-      if lin == 1 then
-        n= n + nlin0  --join line 0 and line 1 spaces
-        nlin0= 0
-      end
-      buffer2.annotation_text[lin-1] = string.rep('\n', n-1)
-    end
+    buffer2.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
   end
-  --add pending line 0 spaces
-  if nlin0 > 0 then buffer2.annotation_text[0] = string.rep('\n', nlin0-1) end
 
   --mark text changes
   r= filediff.getdiff( 1, 4 )
   for i=1,#r,3 do
     if r[i] == 1 then
-      buffer1.indicator_current = INDIC_DELETION
+      buffer1.indicator_current = INDIC_ADDITION
       buffer1:indicator_fill_range(r[i+1], r[i+2])
     else
-      buffer2.indicator_current = INDIC_ADDITION
+      buffer2.indicator_current = INDIC_DELETION
       buffer2:indicator_fill_range(r[i+1], r[i+2])
     end
   end

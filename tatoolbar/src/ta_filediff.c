@@ -375,13 +375,14 @@ static void emit_line_diff( const char * f1beg, const char * line1, int n1, cons
 // get file differences as an int array (num= 1...MAXFILEDIFF)
 // dlist= 1: (line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file)
 // dlist= 2: (line num, other file line num) modified lines (1 line changed in both files)
-// dlist= 3: (line num, count) number of blank lines needed to add under line "num" (0=before first) to align equal lines between files
+// dlist= 3: (line num, count) number of blank lines needed to add under line "num" to align equal lines between files
+//           (0=before first, is not emited, is added to line 1 instead)
 // dlist= 4: (nfile, char pos from, len) chars that are only in file1 or file2 (num param is ignored)
 // NOTE: char ranges (dlist=2) are generated only for 1 line ranges (this lines are excluded from dlist=1)
 void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
 {
   struct line_info *p, *o;
-  int n, no, fother;
+  int n, no, n1p, fother;
 
   if( (filenum < 1) || (filenum > MAXFILEDIFF) ){
     return;
@@ -430,29 +431,76 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
     }
 
   }else if( dlist == 3 ){
-    //(line num, count) number of blank lines needed to add under line "num" (0=before first)
-    //to align equal lines between files
-    if( filenum == f1 ){
-      fother= f2;
-    }else{
-      fother= f1;
-    }
+    //(line num, count) number of blank lines needed to add under line "num" to align differences
+    //NOTE: line 0 (before first line) changes ARE NOT EMITED, they are moved/added to line 1
     n= 0;
     no= 0;
-    for( p= linelist[fother]; (p != NULL); p= p->next ){
-      if( p->otherline == 0 ){ //this line is only in the "other file"
-        n++;
-      }else{ //same or 1 line modification
-        if( n != 0 ){
-          (*pfunc)( no );   //emit "line num"
-          (*pfunc)( n );    //emit "count"
-          n= 0;
-        }
-        no= p->otherline;   //show under last "same" line
-        if( no < 0 ){
-          no= -no;
+    n1p= 0; //pending line 0 changes
+    if( filenum == f1 ){
+      //check f2 lines (file1 changes are shown "before" file2 changes)
+      for( p= linelist[f2]; (p != NULL); p= p->next ){
+        if( p->otherline == 0 ){ //this line is only in file2
+          n++;
+        }else{ //same or 1 line modification
+          if( n > 0 ){
+            no= p->otherline;   //show over "first next same" line
+            if( no < 0 ){
+              no= -no;
+            }
+            no--;
+            if( no == 0 ){
+              n1p= n;           //save line #0 changes
+            }else{
+              if( no == 1 ){    //add line #0 to line #1
+                n += n1p;
+                n1p= 0;
+              }else if( n1p != 0 ){ //emit pending line #0 as line #1
+                (*pfunc)( 1 );  //emit "line num"
+                (*pfunc)( n1p );//emit "count"
+                n1p= 0;
+              }
+              (*pfunc)( no );   //emit "line num"
+              (*pfunc)( n );    //emit "count"
+            }
+            n= 0;
+          }
         }
       }
+      no= linecount[f1];  //show pending file2 changes under the last file1 line
+
+    }else if( filenum == f2 ){
+      //check f1 lines (file2 changes are shown "after" file1 changes)
+      for( p= linelist[f1]; (p != NULL); p= p->next ){
+        if( p->otherline == 0 ){ //this line is only in file1
+          n++;
+        }else{ //same or 1 line modification
+          if( n > 0 ){
+            if( no == 0 ){
+              n1p= n;           //save line #0 changes
+            }else{
+              if( no == 1 ){    //add line #0 to line #1
+                n += n1p;
+                n1p= 0;
+              }else if( n1p != 0 ){ //emit pending line #0 as line #1
+                (*pfunc)( 1 );  //emit "line num"
+                (*pfunc)( n1p );//emit "count"
+                n1p= 0;
+              }
+              (*pfunc)( no );   //emit "line num"
+              (*pfunc)( n );    //emit "count"
+            }
+            n= 0;
+          }
+          no= p->otherline;   //show under last "same" line
+          if( no < 0 ){
+            no= -no;
+          }
+        }
+      }
+    }
+    if( n1p != 0 ){ //emit pending line #0 as line #1
+      (*pfunc)( 1 );    //emit "line num"
+      (*pfunc)( n1p );  //emit "count"
     }
     if( n != 0 ){       //emit pending
       (*pfunc)( no );   //emit "line num"
@@ -483,8 +531,7 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
       }
     }
 
-  }else{
-    //dump internal table
+  }else{ //DEBUG: dump internal table
     p= linelist[ filenum ];
     while( p != NULL ){
       if( p->otherline == 0 ){
