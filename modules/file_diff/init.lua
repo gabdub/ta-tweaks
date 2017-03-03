@@ -28,7 +28,6 @@ local synchronizing = false
 
 local function clear_buf_marks(b)
   if b then
-    b._comparing=nil
     for _, mark in ipairs{MARK_ADDITION, MARK_DELETION, MARK_MODIFICATION} do
       b:marker_delete_all(mark)
     end
@@ -64,22 +63,21 @@ end
 
 --check that the buffers in both view hasn't changed
 local function check_comp_buffers()
-  if compareon then
-    if #_VIEWS < vfp2 then return false end
+  if compareon and #_VIEWS >= vfp2 then
     local b1= _VIEWS[vfp1].buffer
     local b2= _VIEWS[vfp2].buffer
-    if not b1 or not b2 or not b1._comparing or not b2._comparing then return false end
+    return b1 and b2 and b1._comparing and b2._comparing
   end
-  return compareon
+  return false
 end
 
 -- Synchronize the scroll and line position of the other buffer.
 local function synchronize()
-  synchronizing = true
   local currview= _VIEWS[view]
   local otherview= vfp2
   if currview == vfp2 then otherview= vfp1 elseif currview ~= vfp1 then return end
   if check_comp_buffers() then
+    synchronizing = true
     Proj.updating_ui=Proj.updating_ui+1
     local line = buffer:line_from_position(buffer.current_pos)
     local visible_line = buffer:visible_from_doc_line(line)
@@ -90,13 +88,13 @@ local function synchronize()
     buffer.first_visible_line, buffer.x_offset = first_visible_line, x_offset
     my_goto_view(currview)
     Proj.updating_ui=Proj.updating_ui-1
+    synchronizing = false
   end
-  synchronizing = false
 end
 
 -- Mark the differences between the two buffers.
 local function mark_changes()
-  if not check_comp_buffers() then return end
+  --if not check_comp_buffers() then return end --already checked
   clear_marked_changes() -- clear previous marks
   -- Perform the diff.
   local buffer1= _VIEWS[vfp1].buffer
@@ -155,6 +153,7 @@ end
 -- Highlight differences between files in left (NEW) / right (OLD) panel
 function M.start()
   if not Proj then return end
+  clear_marked_changes()
   if compareon then
     stop()
     return
@@ -179,17 +178,16 @@ function M.start()
   mark_changes()
 end
 
+local function check_buf_comp_off()
+  if buffer._comparing and not compareon then
+    clear_buf_marks(buffer)
+    buffer._comparing=nil
+  end
+end
+
 -- Stop diff'ing when one of the buffer's being diff'ed is switched or closed.
-events.connect(events.BUFFER_AFTER_SWITCH, function()
-  if buffer._comparing and not compareon then
-    clear_buf_marks(buffer)
-  end
-end)
-events.connect(events.VIEW_AFTER_SWITCH, function()
-  if buffer._comparing and not compareon then
-    clear_buf_marks(buffer)
-  end
-end)
+events.connect(events.BUFFER_AFTER_SWITCH, check_buf_comp_off)
+events.connect(events.VIEW_AFTER_SWITCH, check_buf_comp_off)
 events.connect(events.BUFFER_DELETED, function() if not check_comp_buffers() then stop() end end)
 
 -- Ensure the diff buffers are scrolled in sync.
