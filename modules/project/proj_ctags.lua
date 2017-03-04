@@ -42,7 +42,68 @@ local Util = Util
 -- @name jump_list
 local jump_list = {pos = 0}
 
+local function goto_current_pos()
+  if jump_list.pos <= #jump_list and jump_list[jump_list.pos] then
+    ui.statusbar_text= 'Pos: '..jump_list.pos..' / '..#jump_list
+    local bname= jump_list[jump_list.pos][1]
+    if bname == Proj.PRJT_SEARCH then
+      Proj.goto_searchview()
+    else
+      --if the current view is a project view, goto left/only files view. if not, keep the current view
+      Proj.getout_projview()
+      io.open_file(bname)
+    end
+    buffer:goto_pos(jump_list[jump_list.pos][2])
+  end
+end
 
+local function update_go_toolbar()
+  if toolbar then
+    actions.updateaction("prev_position")
+    actions.updateaction("next_position")
+  end
+end
+
+-- Store the current position at the end of the jump history.
+function Proj.append_current_pos()
+  local bname= buffer.filename
+  if not bname then
+    if buffer._type == Proj.PRJT_SEARCH then
+      bname= Proj.PRJT_SEARCH
+    else
+      return
+    end
+  end
+  if buffer._project_select ~= nil then return end
+  local n=#jump_list
+  if n == 0 or jump_list[n][1] ~= bname or jump_list[n][2] ~= buffer.current_pos then
+    n=n+1
+    jump_list[n]= {bname, buffer.current_pos}
+    jump_list.pos= n
+  end
+  update_go_toolbar()
+end
+
+--remove search from position table
+function Proj.remove_search_from_pos_table()
+  if #jump_list > 0 then
+    local j = 0
+    for i = 0, #jump_list do
+      if jump_list[i] and jump_list[i][1] == Proj.PRJT_SEARCH then
+        if jump_list.pos > 0 and jump_list.pos >=  i then
+          jump_list.pos= jump_list.pos-1
+        end
+      else
+        if j < i then jump_list[j] = jump_list[i] end
+        j=j+1
+      end
+    end
+    for i = j, #jump_list do jump_list[i] = nil end
+  end
+end
+
+---- ACTIONS ----
+--ACTION: goto_tag
 function Proj.goto_tag(ask)
   --find CTAGS file in project
   local p_buffer = Proj.get_projectbuffer(true)
@@ -135,7 +196,6 @@ function Proj.goto_tag(ask)
     tag = tags[1]
     ui.statusbar_text = 'TAG: '..word..' (1 match)'
   end
-
   -- Store the current position in the jump history if applicable, clearing any
   -- jump history positions beyond the current one.
   Proj.store_current_pos(true)
@@ -156,36 +216,23 @@ function Proj.goto_tag(ask)
   Proj.append_current_pos()
 end
 
-function Proj.goto_current_pos()
-  if jump_list.pos <= #jump_list and jump_list[jump_list.pos] then
-    ui.statusbar_text= 'Pos: '..jump_list.pos..' / '..#jump_list
-    local bname= jump_list[jump_list.pos][1]
-    if bname == Proj.PRJT_SEARCH then
-      Proj.goto_searchview()
-    else
-      --if the current view is a project view, goto left/only files view. if not, keep the current view
-      Proj.getout_projview()
-      io.open_file(bname)
-    end
-    buffer:goto_pos(jump_list[jump_list.pos][2])
+--ACTION: save_position
+function Proj.store_current_pos(quiet)
+  -- Store the current position in the jump history if applicable, clearing any
+  -- jump history positions beyond the current one.
+  if jump_list.pos < #jump_list then
+    for i = jump_list.pos + 1, #jump_list do jump_list[i] = nil end
   end
+  -- Store the current position at the end of the jump history.
+  Proj.append_current_pos()
+  update_go_toolbar()
+  if not quiet then  ui.statusbar_text= 'Pos '..jump_list.pos..' set' end
 end
 
+--ACTION: prev_position
 function Proj.goprev_status() --go prev position
   return ((jump_list.pos >= 1) and 0 or 8) --8=disabled
 end
-
-function Proj.gonext_status() --go next position
-  return ((jump_list.pos < #jump_list) and 0 or 8) --8=disabled
-end
-
-function Proj.update_go_toolbar()
-  if toolbar then
-    actions.updateaction("prev_position")
-    actions.updateaction("next_position")
-  end
-end
-
 function Proj.goto_prev_pos()
   -- Navigate within the jump history.
   local n=jump_list.pos
@@ -202,21 +249,25 @@ function Proj.goto_prev_pos()
     if moved and n == #jump_list then
       Proj.store_current_pos(true)
       jump_list.pos = n
-      Proj.update_go_toolbar()
+      update_go_toolbar()
     end
   end
   if not moved then
     if n > 1 then
       jump_list.pos = n -1
-      Proj.update_go_toolbar()
+      update_go_toolbar()
     else
       ui.statusbar_text= 'No previous position'
       return
     end
   end
-  Proj.goto_current_pos()
+  goto_current_pos()
 end
 
+--ACTION: next_position
+function Proj.gonext_status() --go next position
+  return ((jump_list.pos < #jump_list) and 0 or 8) --8=disabled
+end
 function Proj.goto_next_pos()
   -- Navigate within the jump history.
   if jump_list.pos > #jump_list or not jump_list[jump_list.pos+1] then
@@ -224,68 +275,19 @@ function Proj.goto_next_pos()
     return
   end
   jump_list.pos = jump_list.pos +1
-  Proj.update_go_toolbar()
-  Proj.goto_current_pos()
+  update_go_toolbar()
+  goto_current_pos()
 end
 
-function Proj.store_current_pos(quiet)
-  -- Store the current position in the jump history if applicable, clearing any
-  -- jump history positions beyond the current one.
-  if jump_list.pos < #jump_list then
-    for i = jump_list.pos + 1, #jump_list do jump_list[i] = nil end
-  end
-  -- Store the current position at the end of the jump history.
-  Proj.append_current_pos()
-  Proj.update_go_toolbar()
-  if not quiet then  ui.statusbar_text= 'Pos '..jump_list.pos..' set' end
-end
-
-function Proj.append_current_pos()
-  -- Store the current position at the end of the jump history.
-  local bname= buffer.filename
-  if not bname then
-    if buffer._type == Proj.PRJT_SEARCH then
-      bname= Proj.PRJT_SEARCH
-    else
-      return
-    end
-  end
-  if buffer._project_select ~= nil then return end
-  local n=#jump_list
-  if n == 0 or jump_list[n][1] ~= bname or jump_list[n][2] ~= buffer.current_pos then
-    n=n+1
-    jump_list[n]= {bname, buffer.current_pos}
-    jump_list.pos= n
-  end
-  Proj.update_go_toolbar()
-end
-
+--ACTION: clear_position
 --clear position table
 function Proj.clear_pos_table()
   if #jump_list > 0 then
     for i = 0, #jump_list do jump_list[i] = nil end
   end
   jump_list.pos= 0
-  Proj.update_go_toolbar()
+  update_go_toolbar()
   ui.statusbar_text= 'All position cleared'
-end
-
---remove search from position table
-function Proj.remove_search_from_pos_table()
-  if #jump_list > 0 then
-    local j = 0
-    for i = 0, #jump_list do
-      if jump_list[i] and jump_list[i][1] == Proj.PRJT_SEARCH then
-        if jump_list.pos > 0 and jump_list.pos >=  i then
-          jump_list.pos= jump_list.pos-1
-        end
-      else
-        if j < i then jump_list[j] = jump_list[i] end
-        j=j+1
-      end
-    end
-    for i = j, #jump_list do jump_list[i] = nil end
-  end
 end
 
 --------------------------------------------------------------
@@ -294,4 +296,3 @@ end
 -- Shift+F12    goto next position
 -- Control+F11  store current position
 -- Control+F12  clear all positions
--- actions added in proj_menu.lua

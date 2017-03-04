@@ -573,3 +573,252 @@ function Proj.run_command(cmd)
   end
 end
 
+local function file_sort(filea,fileb)
+  local pa,fa,ea = Util.splitfilename(filea)
+  local pb,fb,eb = Util.splitfilename(fileb)
+  if pa == pb then return fa < fb end
+  return pa < pb
+end
+
+--add a list of files to the project (check for duplicates)
+function Proj.add_files(p_buffer, flist, groupfiles)
+  local finprj= {}
+  local n_inprj= 0
+  if #flist > 0 then
+    if groupfiles then --sort and group files with the same path
+      table.sort(flist, file_sort)
+    end
+    for _,file in ipairs(flist) do
+      --check if already in the project
+      local in_prj= (Proj.get_file_row(p_buffer, file) ~= nil)
+      finprj[ #finprj+1]= in_prj
+      if in_prj then n_inprj= n_inprj+1 end
+    end
+    --if some files are already in the project, ask for confirmation
+    if n_inprj == 1 then
+      info= '1 file is'
+    else
+      info= '' .. n_inprj .. ' files are'
+    end
+    all= true
+    nadd= #flist
+    local confirm = (n_inprj == 0) or ui.dialogs.msgbox{
+      title = 'Add confirmation',
+      text = info..' already in the project',
+      informative_text = 'Do you want to add it/them again?',
+      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+    } == 1
+    if (not confirm) and (#flist > n_inprj) then
+      all= false
+      nadd= #flist - n_inprj
+      if nadd == 1 then
+        info= '1 file is'
+      else
+        info= '' .. nadd .. ' files are'
+      end
+      confirm = (n_inprj == 0) or ui.dialogs.msgbox{
+        title = 'Add confirmation',
+        text = info..' not in the project',
+        informative_text = 'Do you want to add it/them?',
+        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+      } == 1
+    end
+    if confirm then
+      --prevent some events to fire for ever
+      Proj.updating_ui= Proj.updating_ui+1
+
+      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+      --this file is in the project view
+      if _VIEWS[view] ~= projv then
+        Util.goto_view(projv)
+      end
+
+      --if the project is in readonly, change it
+      save_ro= p_buffer.read_only
+      p_buffer.read_only= false
+      row= nil
+      local curpath
+      local defdir= p_buffer.proj_grp_path[1]
+      for i,file in ipairs(flist) do
+        if all or finprj[i] == false then
+          path,fn,ext = Util.splitfilename(file)
+          if groupfiles then
+            --add file with relative path
+            if curpath == nil or curpath ~= path then
+              curpath= path
+              local ph=path
+              --remove default proyect base
+              if defdir and string.sub(ph,1,string.len(defdir)) == defdir then
+                ph= string.sub(ph,string.len(defdir)+1)
+                if ph ~= "" then
+                  local lastch= string.sub(ph,-1) --remove "\" or "/" end
+                  if lastch == "\\" or lastch == "/" then ph= string.sub(ph,1,string.len(ph)-1) end
+                end
+              end
+              p_buffer:append_text( '\n (' .. ph .. ')::' .. path .. '::')
+            end
+            p_buffer:append_text( '\n  ' .. fn)
+          else
+            --add files with absolute path
+            p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
+          end
+          --add the new line to the proj. file list
+          row= #p_buffer.proj_files+1
+          p_buffer.proj_files[row]= file
+        end
+      end
+      p_buffer.read_only= save_ro
+      --update buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
+      Proj.parse_projectbuffer(p_buffer)
+
+      if row then
+        --move the selection bar
+        p_buffer:ensure_visible_enforce_policy(row- 1)
+        p_buffer:goto_line(row-1)
+      end
+      -- project in SELECTION mode without focus--
+      Proj.show_lost_focus(p_buffer)
+      p_buffer.home()
+      ui.statusbar_text= '' .. nadd .. ' file/s added to project'
+
+      Proj.updating_ui= Proj.updating_ui-1
+    end
+  end
+end
+
+-- find text in project's files
+-- code adapted from module: find.lua
+function Proj.find_in_files(p_buffer,text,match_case,whole_word)
+  Proj.updating_ui=Proj.updating_ui+1
+  --activate/create search view
+  Proj.goto_searchview()
+
+  buffer.read_only= false
+  buffer:append_text('['..text..']\n')
+  buffer:goto_pos(buffer.length)
+  buffer.indicator_current = ui.find.INDIC_FIND
+  if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end
+
+  local nfiles= 0
+  local totfiles= 0
+  local nfound= 0
+  local filesnf= 0
+  --check the given buffer has a list of files
+  if p_buffer and p_buffer.proj_files ~= nil then
+    for row= 1, #p_buffer.proj_files do
+      local ftype= p_buffer.proj_filestype[row]
+      if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
+        local file= p_buffer.proj_files[row]
+        if file and file ~= '' then
+          if not Util.file_exists(file) then
+            filesnf= filesnf+1 --file not found
+            buffer:append_text(('(%s NOT FOUND)::::\n'):format(file))
+          else
+            local line_num = 1
+            totfiles = totfiles + 1
+            local prt_fname= true
+            for line in io.lines(file) do
+              local s, e = (match_case and line or line:lower()):find(text)
+              if s and e then
+                file = file:iconv('UTF-8', _CHARSET)
+                if prt_fname then
+                  prt_fname= false
+                  local p,f,e= Util.splitfilename(file)
+                  if f == '' then
+                    f= file
+                  end
+                  buffer:append_text((' %s::%s::\n'):format(f, file))
+                  nfiles = nfiles + 1
+                  if nfiles == 1 then buffer:goto_pos(buffer.length) end
+                end
+                local snum= ('%4d'):format(line_num)
+                buffer:append_text(('  @%s:%s\n'):format(snum, line))
+
+                local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+                buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+                nfound = nfound + 1
+              end
+              line_num = line_num + 1
+            end
+          end
+        end
+      end
+    end
+  end
+
+  if nfound == 0 then buffer:append_text(' '.._L['No results found']..'\n') end
+  buffer:append_text('\n')
+  buffer:set_save_point()
+
+  local result= ''..nfound..' matches in '..nfiles..' of '..totfiles..' files'
+  if filesnf > 0 then
+    result= result .. ' / '..filesnf..' files NOT FOUND'
+  end
+  ui.statusbar_text= result
+  buffer:set_lexer('myproj')
+  buffer.read_only= true
+  --set search context menu
+  Proj.set_contextm_search()
+  Proj.updating_ui=Proj.updating_ui-1
+end
+
+local function try_open(fn)
+  if Util.file_exists(fn) then
+    ui.statusbar_text= "Open: "..fn
+    io.open_file(fn)
+    return true
+  end
+  return false
+end
+
+local function try_open_partner(mext, listext)
+  local fc= buffer.filename
+  if fc then
+    fc= fc:match(mext)
+    if fc then
+      for _,newext in pairs(listext) do
+        if try_open(fc..newext) then return true end
+      end
+    end
+  end
+  return false
+end
+
+--open a file using the selected text or the text under the cursor
+--or change buffer extension {c,cpp} <--> {h,hpp} or ask
+function Proj.open_cursor_file()
+  --if the current view is a project view, goto left/only files view. if not, keep the current view
+  Proj.getout_projview()
+  local s, e = buffer.selection_start, buffer.selection_end
+  if s == e then
+    --suggest current word
+    local savewc= buffer.word_chars
+    buffer.word_chars= savewc .. ".\\/:-"
+    s, e = buffer:word_start_position(s,true), buffer:word_end_position(s,true)
+    buffer.word_chars= savewc
+  end
+  local fn= Util.str_trim(buffer:text_range(s, e))  --remove trailing blanks (like \n)
+  local isabspath= fn:match('^/') or fn:match('^\\') or fn:match('^.*:\\')
+  if not isabspath then
+    --relative path: add buffer dir
+    fn= ((buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir())..fn
+    --replace aaaa"/dir/../"bbbb" with aaaa"/"bbbb
+    while true do
+      local a,b= fn:match('(.*)[/\\][^./\\]-[/\\]%.%.[/\\](.*)')
+      if a and b then fn= a..(WIN32 and "\\" or "/")..b
+      else break end
+    end
+  end
+  if not try_open(fn) then
+    if not try_open_partner('^(.+)%.c$', {'.h', '.hpp'}) then
+      if not try_open_partner('^(.+)%.cpp$', {'.hpp', '.h'}) then
+        if not try_open_partner('^(.+)%.h$', {'.c', '.cpp'}) then
+          if not try_open_partner('^(.+)%.hpp$', {'.cpp', '.c'}) then
+            ui.statusbar_text= fn.." not found"
+            io.open_file() --show open dialog
+          end
+        end
+      end
+    end
+  end
+end

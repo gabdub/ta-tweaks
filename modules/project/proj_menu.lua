@@ -83,26 +83,36 @@ if actions then
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
   actions.add("close_project",       _L['_Close'],            Proj.close_project)
   actions.add("search_project",      'Project _Search',       Proj.search_in_files)
-  actions.add("goto_tag",            'Goto _Tag',             Proj.goto_tag,          "f11" )
-  actions.add("save_position",       'S_ave position',        Proj.store_current_pos, "cf11")
-  actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos,     "sf11", "go-previous", Proj.goprev_status)
-  actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos,     "sf12", "go-next", Proj.gonext_status)
-  actions.add("clear_position",      'C_lear positions',      Proj.clear_pos_table,   "cf12")
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.toggle_keep_thisbuffer, nil, nil, Proj.keepthisbuff_status) --check
   actions.add("showin_rightpanel",   "Show file in the right panel", Proj.toggle_showin_rightpanel, nil, nil, Proj.showin_rightpanel_status) --check
   --actions.add("onlykeepproj",      _L['Close All'],         Proj.onlykeep_projopen) --"closeall"="onlykeepproj"
   actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
 
-  actions.add("toggle_editproj",     _L['_Edit'] .. ' project', Proj.change_proj_ed_mode, "f4")
+  actions.add("toggle_editproj",     _L['_Edit'] .. ' project', Proj.toggle_editproj, "f4")
   --"_end_editproj" = "toggle_editproj" with different text menu
-  actions.add("_end_editproj",       '_End edit',             Proj.change_proj_ed_mode)
+  actions.add("_end_editproj",       '_End edit',             Proj.toggle_editproj)
   actions.accelerators["_end_editproj"]="f4" --(alias)
 
   actions.add("toggle_viewproj",     'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
   actions.add("addthisfiles_proj",   '_Add this file',        Proj.add_this_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)
+
+  actions.add("open_selfile",        '_Open the selected/companion file',Proj.open_selfile,"ao" )
+  actions.add("first_buffer",        'First buffer',          Proj.first_buffer, "apgup")
+  actions.add("last_buffer",         'Last buffer',           Proj.last_buffer,  "apgdn")
+
+  --add actions defined in "proj_ctags"
+  actions.add("goto_tag",            'Goto _Tag',             Proj.goto_tag,          "f11" )
+  actions.add("save_position",       'S_ave position',        Proj.store_current_pos, "cf11")
+  actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos,     "sf11", "go-previous", Proj.goprev_status)
+  actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos,     "sf12", "go-next", Proj.gonext_status)
+  actions.add("clear_position",      'C_lear positions',      Proj.clear_pos_table,   "cf12")
+  
+  --add actions defined in "proj_diff"
+  actions.add("toggle_filediff", "Start/stop file diff", Proj.diff_start, "f8", "edit-copy")
+
 
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,
@@ -118,13 +128,10 @@ if actions then
   if m_ed then m_ed[#m_ed+1]= {SEPARATOR,"trim_trailingspaces"} end
 
   --add OPEN_SELFILE at the end of the QUICK-OPEN submenu
-  actions.add("open_selfile", '_Open the selected/companion file',Proj.open_cursor_file,"ao" )
   local m_qo= actions.getmenu_fromtitle(_L['Quick _Open'])
   if m_qo then m_qo[#m_qo+1]= {SEPARATOR,"open_selfile"} end
 
   --add FIRST/LAST BUFFER at the top of the BUFFER menu
-  actions.add("first_buffer", 'First buffer',                     Proj.first_buffer,    "apgup")
-  actions.add("last_buffer",  'Last buffer',                      Proj.last_buffer,     "apgdn")
   local med= actions.getmenu_fromtitle(_L['_Buffer'])
   if med then
     local m1=med[1]
@@ -176,44 +183,27 @@ if actions then
     }
   }
 
-  local ctxmenus= {}
-
   --init desired project context menu
+  local ctxmenus= {}
+  --CURSES or the menu is already set, don't change the context menu
   local function proj_context_menu_init(num)
-    if CURSES or Proj.cmenu_num == num then
-      --CURSES or the menu is already set, don't change the context menu
-      return
-    end
+    if CURSES or Proj.cmenu_num == num then return end
     Proj.cmenu_num= num
-
     if #ctxmenus == 0 then
       --first time here, create all the project context menus
       for i=1,#proj_context_menu do
         ctxmenus[i]= create_uimenu_fromactions(proj_context_menu[i])
       end
     end
-    --ok, change the context menu
     ui.context_menu = ctxmenus[num]
   end
 
   -- set project context menu in SELECTION mode --
-  function Proj.set_contextm_sel()
-    proj_context_menu_init(1)
-  end
-
+  function Proj.set_contextm_sel() proj_context_menu_init(1) end
   -- set project context menu in EDIT mode --
-  function Proj.set_contextm_edit()
-    proj_context_menu_init(2)
-  end
-
+  function Proj.set_contextm_edit() proj_context_menu_init(2) end
   -- set project context menu for a regular file --
-  function Proj.set_contextm_file()
-    proj_context_menu_init(3)
-  end
-
+  function Proj.set_contextm_file() proj_context_menu_init(3) end
   -- set project context menu for search view --
-  function Proj.set_contextm_search()
-    proj_context_menu_init(4)
-  end
-
+  function Proj.set_contextm_search() proj_context_menu_init(4) end
 end

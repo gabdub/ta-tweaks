@@ -236,6 +236,35 @@ function Proj.EVfile_opened()
   end
 end
 
+--open the selected file in the search view
+function Proj.open_search_file()
+  --clear selection
+  buffer.selection_start= buffer.selection_end
+  --get line number, format: " @ nnn:....."
+  local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
+  local file
+  if line_num then
+    --get file name from previous lines
+    for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
+      file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
+      if file then break end
+    end
+  else
+    --just open the file
+    file= buffer:get_cur_line():match('^[^@]-::(.+)::.+$')
+  end
+  if file then
+    textadept.bookmarks.clear()
+    textadept.bookmarks.toggle()
+    -- Store the current position in the jump history if applicable, clearing any
+    -- jump history positions beyond the current one.
+    Proj.store_current_pos(true)
+    Proj.go_file(file, line_num)
+    -- Store the current position at the end of the jump history.
+    Proj.append_current_pos()
+  end
+end
+
 local function open_proj_currrow()
   if buffer._project_select then
     Proj.open_sel_file()
@@ -334,8 +363,8 @@ function Proj.show_projview()
   end
 end
 
-function Proj.toggle_projview()
-  --Show/Hide project
+--Show/Hide project
+function Proj.show_hide_projview()
   if ena_toggle_projview() then
     if Proj.isin_editmode() then
       --project in edit mode
@@ -369,15 +398,6 @@ function Proj.update_projview()
   if toolbar then actions.updateaction("toggle_viewproj") end
 end
 
--- refresh syntax highlighting + project folding
-function Proj.refresh_hilight()
-  if buffer._project_select ~= nil then
-    Proj.toggle_selectionmode()
-    Proj.toggle_selectionmode()
-  end
-  buffer.colourise(buffer, 0, -1)
-end
-
 -- TA-EVENT TAB_CLICKED
 function Proj.EVtabclicked(ntab)
   --tab clicked (0...) check if a view change is needed
@@ -390,74 +410,6 @@ function Proj.EVtabclicked(ntab)
     elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then Proj.goto_searchview()
     --normal file: check we are not in a project view
     else Proj.goto_filesview(false, _BUFFERS[ntab]._right_side) end
-  end
-end
-
-function Proj.new_file()
-  Proj.getout_projview()
-  buffer.new()
-end
-
-function Proj.open_file()
-  Proj.getout_projview()
-  io.open_file()
-end
-
-function Proj.open_recent_file()
-  Proj.getout_projview()
-  io.open_recent_file()
-end
-
-function Proj.qopen_user()
-  Proj.getout_projview()
-  io.quick_open(_USERHOME)
-  Proj.track_this_file()
-end
-
-function Proj.qopen_home()
-  Proj.getout_projview()
-  io.quick_open(_HOME)
-  Proj.track_this_file()
-end
-
-function Proj.qopen_curdir()
-  local fname= buffer.filename
-  Proj.getout_projview()
-  if fname then
-    io.quick_open(fname:match('^(.+)[/\\]'))
-    Proj.track_this_file()
-  end
-end
-
-function Proj.search_in_files()
-  if Proj.do_search_in_files then --goto_nearest module?
-    Proj.do_search_in_files()
-  else
-    ui.statusbar_text= 'goto_nearest module not found'
-  end
-end
-
--- show project current row properties
-function Proj.show_doc()
-  --call_tip_show
-  if buffer._project_select ~= nil then
-    if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
-    if buffer.proj_files ~= nil then
-      local r= buffer.line_from_position(buffer.current_pos)+1
-      local info = buffer.proj_files[r]
-      local ftype= buffer.proj_filestype[r]
-      if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
-      elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
-      if info == '' and buffer.proj_grp_path[r] ~= nil then
-        info= buffer.proj_grp_path[r]
-      end
-      if info ~= '' then
-        buffer:call_tip_show(buffer.current_pos, info )
-      end
-    end
-  else
-    --call default show doc function
-    textadept.editing.show_documentation()
   end
 end
 
@@ -520,6 +472,22 @@ function Proj.getout_projview(right_side)
     return true
   end
   return false
+end
+
+function Proj.goto_buffer(nb)
+  local b= _BUFFERS[nb]
+  if b == nil then return end
+  if b._project_select ~= nil then
+    --activate project in the proper view
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+  elseif b._type == Proj.PRJT_SEARCH then
+    --activate project in the proper view
+    Proj.goto_searchview()
+  else
+    --activate files view
+    Proj.goto_filesview(true, b._right_side)
+    Util.goto_buffer(b)
+  end
 end
 
 ------SEARCH VIEW------

@@ -136,12 +136,64 @@ local function mark_changes()
       buffer2:indicator_fill_range(r[i+1], r[i+2])
     end
   end
-
   synchronize()
 end
 
+---- TA EVENTS ----
+--TA-EVENT: BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
+--clear pending file-diff
+function Proj.clear_pend_file_diff()
+  if buffer._comparing and not compareon then
+    clear_buf_marks(buffer)
+    buffer._comparing=nil
+  end
+end
+
+--TA-EVENT: BUFFER_DELETED
+--Stop diff'ing when one of the buffer's being diff'ed is closed
+function Proj.check_diff_stop()
+  if not check_comp_buffers() then diff_stop() end
+end
+
+--TA-EVENT: UPDATE_UI
+--Ensure the diff buffers are scrolled in sync
+function Proj.EVupdate_ui(updated)
+  if updated and not synchronizing and check_comp_buffers() then
+    if bit32_band(updated, buffer.UPDATE_H_SCROLL + buffer.UPDATE_V_SCROLL + buffer.UPDATE_SELECTION) > 0 then
+      synchronize()
+    end
+  end
+end
+
+--TA-EVENT: MODIFIED
+-- Highlight differences as text is typed and deleted.
+function Proj.EVmodified(modification_type)
+  if not check_comp_buffers() then return end
+  if bit32_band(modification_type, 0x01 + 0x02) > 0 then mark_changes() end
+end
+
+--TA-EVENT: VIEW_NEW
+function Proj.EVview_new()
+  local markers = {
+    [MARK_ADDITION] = 'green', [MARK_DELETION] = 'red',
+    [MARK_MODIFICATION] = 'yellow'
+  }
+  for mark, color in pairs(markers) do
+    buffer:marker_define(mark, buffer.MARK_BACKGROUND)
+    buffer.marker_back[mark] = buffer.property_int['color.'..color]
+  end
+  local indicators = {[INDIC_ADDITION] = 'green', [INDIC_DELETION] = 'red'}
+  for indic, color in pairs(indicators) do
+    buffer.indic_style[indic] = buffer.INDIC_FULLBOX
+    buffer.indic_fore[indic] = buffer.property_int['color.'..color]
+    buffer.indic_alpha[indic], buffer.indic_under[indic] = 255, true
+  end
+end
+
+---- ACTIONS ----
+--ACTION: toggle_filediff
 -- Highlight differences between files in left (NEW) / right (OLD) panel
-local function diff_start()
+function Proj.diff_start()
   if not Proj then return end
   clear_marked_changes()
   if compareon then
@@ -167,55 +219,3 @@ local function diff_start()
   compareon= true
   mark_changes()
 end
-
--- TA-EVENT BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
---clear pending file-diff
-function Proj.clear_pend_file_diff()
-  if buffer._comparing and not compareon then
-    clear_buf_marks(buffer)
-    buffer._comparing=nil
-  end
-end
-
--- TA-EVENT BUFFER_DELETED
---Stop diff'ing when one of the buffer's being diff'ed is closed
-function Proj.check_diff_stop()
-  if not check_comp_buffers() then diff_stop() end
-end
-
--- TA-EVENT UPDATE_UI
---Ensure the diff buffers are scrolled in sync
-function Proj.EVupdate_ui(updated)
-  if updated and not synchronizing and check_comp_buffers() then
-    if bit32_band(updated, buffer.UPDATE_H_SCROLL + buffer.UPDATE_V_SCROLL + buffer.UPDATE_SELECTION) > 0 then
-      synchronize()
-    end
-  end
-end
-
--- TA-EVENT MODIFIED
--- Highlight differences as text is typed and deleted.
-function Proj.EVmodified(modification_type)
-  if not check_comp_buffers() then return end
-  if bit32_band(modification_type, 0x01 + 0x02) > 0 then mark_changes() end
-end
-
--- TA-EVENT VIEW_NEW
-function Proj.EVview_new()
-  local markers = {
-    [MARK_ADDITION] = 'green', [MARK_DELETION] = 'red',
-    [MARK_MODIFICATION] = 'yellow'
-  }
-  for mark, color in pairs(markers) do
-    buffer:marker_define(mark, buffer.MARK_BACKGROUND)
-    buffer.marker_back[mark] = buffer.property_int['color.'..color]
-  end
-  local indicators = {[INDIC_ADDITION] = 'green', [INDIC_DELETION] = 'red'}
-  for indic, color in pairs(indicators) do
-    buffer.indic_style[indic] = buffer.INDIC_FULLBOX
-    buffer.indic_fore[indic] = buffer.property_int['color.'..color]
-    buffer.indic_alpha[indic], buffer.indic_under[indic] = 255, true
-  end
-end
-
-if actions then actions.add("toggle_filediff", "Start/stop file diff", diff_start, "f8", "edit-copy") end
