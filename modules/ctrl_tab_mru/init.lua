@@ -10,6 +10,7 @@
 -- 4   4   4-  3   3^  4
 -- 5   5   5   5-  4^  5
 --
+local Util = Util
 local ctrl_key_down = false
 local tab_mru_idx= 0
 local mru_buff= {}
@@ -118,12 +119,12 @@ local function mru_ctrl_tab_handler(shift)
       if #_VIEWS == 1 then
         view:split(true)
       end
-      if _VIEWS[view] == 1 then my_goto_view(2) end
+      if _VIEWS[view] == 1 then Util.goto_view(2) end
     else --view #1 is the left/only panel
-      if _VIEWS[view] ~= 1 then my_goto_view(1) end
+      if _VIEWS[view] ~= 1 then Util.goto_view(1) end
     end
   end
-  my_goto_buffer(newb)
+  Util.goto_buffer(newb)
 end
 
 events_connect(events.KEYPRESS, function(code, shift, control, alt, meta)

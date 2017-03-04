@@ -14,6 +14,10 @@ local M = {}
 --   The default value is `true`.
 module('export')]]
 
+--see https://foicica.com/wiki/export
+--export = require('export')
+--export.browser = 'chromium-browser'
+
 M.browser = 'firefox'
 M.line_numbers = true
 

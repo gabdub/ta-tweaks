@@ -1,4 +1,5 @@
 local Proj = Proj
+local Util = Util
 
 --=============================================================================--
 --CTAG file format (Windows example):
@@ -33,10 +34,6 @@ local Proj = Proj
 --M.stop	/home/xxx/textadept_8.6.x86_64/modules/textadept/run.lua	260;"	f
 --M.syntax_commands 	/home/xxx/textadept_8.6.x86_64/modules/textadept/run.lua	362;"	f
 --=============================================================================--
-
-local function str_trim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
 
 -- ====[ code from CTAGS Textadept module ]====
 -- List of jump positions comprising a jump history.
@@ -75,7 +72,7 @@ function Proj.goto_tag(ask)
       --suggest current word
       s, e = buffer:word_start_position(s), buffer:word_end_position(s)
     end
-    local suggest= str_trim(buffer:text_range(s, e))  --remove trailing \n
+    local suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
     if suggest == '' or ask then
       --ask what to search, suggest current word o last-search
       r,word= ui.dialogs.inputbox{title = 'Tag search', width = 400, text = suggest}
@@ -87,7 +84,7 @@ function Proj.goto_tag(ask)
     end
   else
     --use selection
-    word = str_trim(buffer:text_range(s, e))
+    word = Util.str_trim(buffer:text_range(s, e))
   end
   if word == '' then return end
 
@@ -148,12 +145,12 @@ function Proj.goto_tag(ask)
   if not tonumber(tag[3]) then
     for i = 0, buffer.line_count - 1 do
       if buffer:get_line(i):find(tag[3], 1, true) then
-        my_goto_line(buffer, i)
+        Util.goto_line(buffer, i)
         break
       end
     end
   else
-    my_goto_line(buffer, tonumber(tag[3])-1)
+    Util.goto_line(buffer, tonumber(tag[3])-1)
   end
   -- Store the current position at the end of the jump history.
   Proj.append_current_pos()

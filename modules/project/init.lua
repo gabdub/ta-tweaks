@@ -1,35 +1,16 @@
 ------- PROJECT -------
--- Project vars:
---  Proj.cmenu_num  = number of the current context menu
---                1 = project in SELECTION mode
---                2 = project in EDIT mode
---                3 = regular file
---  Proj.cmenu_idx  = 'Project' submenu position in the context menu
---
---  Proj.updating_ui= number of ui updates in progress (ignore some events if > 0)
-------------------------
 Proj = {}
 
---buffer type
-Proj.PRJB_NORMAL =      0   -- a regular file
-Proj.PRJB_FSEARCH =     1   -- a "search in project files" results buffer
-Proj.PRJB_PROJ_MIN =    2   -- start of project values
-Proj.PRJB_PROJ_NEW =     2  -- a project file not marked as such yet
-Proj.PRJB_PROJ_IDLE =    3  -- a project file (but not the working one)
-Proj.PRJB_PROJ_SELECT =  4  -- a project file in "selection mode"
-Proj.PRJB_PROJ_EDIT =    5  -- a project file in "edit mode"
+local events, events_connect = events, events.connect
 
---buffer "_type"
-Proj.PRJT_SEARCH= '[Project search]'  --search results
-
---view type
+--project views
 Proj.PRJV_DEFAULT =     0   -- default view (no active project)
 Proj.PRJV_PROJECT =     1   -- project view
 Proj.PRJV_FILES =       2   -- project files view
 Proj.PRJV_SEARCH =      3   -- search results view
 Proj.PRJV_FILES_2 =     4   -- files #2 (right side of vertical split)
 
---preferred view of each view type
+--preferred view number for each view type
 Proj.prefview = {
   [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
   [Proj.PRJV_PROJECT] = 1,  -- project in view #1
@@ -37,22 +18,70 @@ Proj.prefview = {
   [Proj.PRJV_SEARCH]  = 3,  -- search results in view #3
   [Proj.PRJV_FILES_2] = 4,  -- files #2 (right side of vertical split) in view #4
 }
---split control { adjust previous view size [%], vertical split, view to split }
+
+--split control { adjust previous view size [%], vertical/horizontal split, view to split }
 Proj.prefsplit = {
   [1] = { 0.20, true,  1 },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
   [2] = { 0.75, false, 2 },  -- search results in view #3 (view #2 size = 75%, HORIZONTAL)
   [3] = { 0.50, true,  2 },  -- files #2 in view #4       (view #2 size = 50%, VERTICAL)
 }
 
---project file type
+--project row/file types
 Proj.PRJF_EMPTY =       0   -- not a file (could be an empty row or a file group)
 Proj.PRJF_PATH  =       1   -- a path
 Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
 Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
 Proj.PRJF_RUN   =       4   -- a run command
 
+--buffer types
+Proj.PRJB_NORMAL =      0   -- a regular file
+Proj.PRJB_FSEARCH =     1   -- a "search in project files" results
+Proj.PRJB_PROJ_MIN =    2   -- start of project values
+Proj.PRJB_PROJ_NEW =     2  -- a project file (not marked yet)
+Proj.PRJB_PROJ_IDLE =    3  -- a project file (but not the working one)
+Proj.PRJB_PROJ_SELECT =  4  -- a project file in "selection mode"
+Proj.PRJB_PROJ_EDIT =    5  -- a project file in "edit mode"
+
+--buffer "_type" constants
+Proj.PRJT_SEARCH= '[Project search]'  --search results
+
 require('project.proj_data')
-require('project.proj_cmd')
 require('project.proj_ui')
+require('project.proj_cmd')
 require('project.proj_ctags')
+require('project.proj_diff')
 require('project.proj_menu')
+
+--- TA-EVENTS ---
+events_connect(events.INITIALIZED,          Proj.EVinitialize)
+events_connect(events.QUIT,                 Proj.EVquit, 1)
+
+events_connect(events.BUFFER_BEFORE_SWITCH, Proj.show_lost_focus)
+events_connect(events.VIEW_BEFORE_SWITCH,   Proj.show_lost_focus)
+
+events_connect(events.BUFFER_AFTER_SWITCH,  Proj.EVafter_switch)
+events_connect(events.VIEW_AFTER_SWITCH,    Proj.EVafter_switch)
+
+events.connect(events.VIEW_NEW,             Proj.EVview_new)
+events_connect(events.BUFFER_NEW,           Proj.EVbuffer_new)
+events_connect(events.BUFFER_DELETED,       Proj.EVbuffer_deleted)
+events_connect(events.FILE_OPENED,          Proj.EVfile_opened)
+
+events_connect(events.DOUBLE_CLICK,         Proj.EVdouble_click)
+events_connect(events.KEYPRESS,             Proj.EVkeypress)
+events_connect(events.UPDATE_UI,            Proj.EVupdate_ui)
+events_connect(events.MODIFIED,             Proj.EVmodified)
+
+
+------------------- tab-clicked event ---------------
+--- when a tab is clicked, change the view if needed
+--- (Textadept version >= 9)
+---
+---  * For Textadept version 8:
+---    * add the following line to the function "t_tabchange()" in "textadept.c" @1828
+---      lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
+---    * recompile textadept
+---    * add "'tab_clicked'," to "ta_events = {}" in "events.lua" (to register the new event) @369
+if Util.TA_MAYOR_VER >= 9 then
+  events_connect(events.TAB_CLICKED,        Proj.EVtabclicked, 1)
+end

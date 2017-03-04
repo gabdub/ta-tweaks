@@ -1,4 +1,5 @@
 if toolbar then
+  local Util = Util
   if actions then
     require('toolbar.actions')
   end
@@ -173,7 +174,7 @@ if toolbar then
           if buf._project_select ~= nil then
             --project buffer: force project view
             local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-            my_goto_view(projv)
+            Util.goto_view(projv)
             return
           end
           --search results?
@@ -183,7 +184,7 @@ if toolbar then
           Proj.goto_filesview(false, buf._right_side)
         end
       end
-      my_goto_buffer(buf)
+      Util.goto_buffer(buf)
     end
   end
 

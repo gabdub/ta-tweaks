@@ -1,3 +1,6 @@
+local Util = Util
+local toolbar = toolbar
+
 toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
 toolbar.cfgpnl_chkval={}
 toolbar.cfgpnl_chknotify={}
@@ -1052,21 +1055,16 @@ local function picker_copy()
   picker_type(true)
 end
 
---remove blanks and CR/LF
-local function str_trim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
 local function picker_get(fromclipboard)
   local text
   if fromclipboard then
-    text= str_trim(ui.clipboard_text)
+    text= Util.str_trim(ui.clipboard_text)
   else
     local s, e = buffer.selection_start, buffer.selection_end
     if s == e then
       s, e = buffer:word_start_position(s), buffer:word_end_position(s)
     end
-    text= str_trim(buffer:text_range(s, e))
+    text= Util.str_trim(buffer:text_range(s, e))
   end
   if text and text ~= "" then
     local hex= false

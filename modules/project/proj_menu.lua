@@ -1,5 +1,7 @@
 local _L = _L
 local SEPARATOR = ""
+local Proj = Proj
+local Util = Util
 
 --------------------------------------------------------------
 -- Control+W=         close buffer
@@ -134,11 +136,84 @@ if actions then
   local m_vi= actions.getmenu_fromtitle(_L['_View'])
   if m_vi then m_vi[#m_vi+1]= {SEPARATOR,"toggle_viewproj"} end
 
-    --replace tab context menu
+  ----------------- CONTEXT MENUS -------------------
+  --replace tab context menu
   actions.tab_context_menu = {
     {"close","close_others","dont_close","closeall",SEPARATOR,
      "save","saveas",SEPARATOR,
      "showin_rightpanel",SEPARATOR,
      "reload"}
   }
+
+  --right-click context menus
+  local proj_context_menu = {
+    { --#1 project in SELECTION mode
+      {"open_projsel","open_projectdir",SEPARATOR,
+         "toggle_editproj","toggle_viewproj",SEPARATOR,
+         "adddirfiles_proj","search_project"}
+    },
+    { --#2 project in EDIT mode
+      {"undo","redo",SEPARATOR,
+       "cut","copy","paste","delete_char",SEPARATOR,
+       "selectall",SEPARATOR,
+       "_end_editproj"}
+    },
+    { --#3 regular file
+      {"undo","redo",SEPARATOR,
+       "cut","copy","paste","delete_char",SEPARATOR,
+       "selectall"
+      },
+      {
+        title = '_Project',
+        {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
+         "search_project","goto_tag","save_position","next_position","prev_position",SEPARATOR,
+         "toggle_viewproj"}
+      },
+      {SEPARATOR,"showin_rightpanel"}
+    },
+    { --#4 search view
+      {"copy", "selectall"}
+    }
+  }
+
+  local ctxmenus= {}
+
+  --init desired project context menu
+  local function proj_context_menu_init(num)
+    if CURSES or Proj.cmenu_num == num then
+      --CURSES or the menu is already set, don't change the context menu
+      return
+    end
+    Proj.cmenu_num= num
+
+    if #ctxmenus == 0 then
+      --first time here, create all the project context menus
+      for i=1,#proj_context_menu do
+        ctxmenus[i]= create_uimenu_fromactions(proj_context_menu[i])
+      end
+    end
+    --ok, change the context menu
+    ui.context_menu = ctxmenus[num]
+  end
+
+  -- set project context menu in SELECTION mode --
+  function Proj.set_contextm_sel()
+    proj_context_menu_init(1)
+  end
+
+  -- set project context menu in EDIT mode --
+  function Proj.set_contextm_edit()
+    proj_context_menu_init(2)
+  end
+
+  -- set project context menu for a regular file --
+  function Proj.set_contextm_file()
+    proj_context_menu_init(3)
+  end
+
+  -- set project context menu for search view --
+  function Proj.set_contextm_search()
+    proj_context_menu_init(4)
+  end
+
 end

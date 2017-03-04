@@ -1,8 +1,5 @@
 -- BASED ON: file_diff module, Copyright 2015-2017 Mitchell mitchell.att.foicica.com. See LICENSE.
-
 --
--- DON'T USE YET (working on this module) ===> MOVED TO project/proj_diff.lua
---      THIS FILE WILL BE REMOVED!!!
 local Proj = Proj
 local Util = Util
 
@@ -171,34 +168,40 @@ local function diff_start()
   mark_changes()
 end
 
-local function check_buf_comp_off()
+-- TA-EVENT BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
+--clear pending file-diff
+function Proj.clear_pend_file_diff()
   if buffer._comparing and not compareon then
     clear_buf_marks(buffer)
     buffer._comparing=nil
   end
 end
 
--- Stop diff'ing when one of the buffer's being diff'ed is switched or closed.
-events.connect(events.BUFFER_AFTER_SWITCH, check_buf_comp_off)
-events.connect(events.VIEW_AFTER_SWITCH, check_buf_comp_off)
-events.connect(events.BUFFER_DELETED, function() if not check_comp_buffers() then diff_stop() end end)
+-- TA-EVENT BUFFER_DELETED
+--Stop diff'ing when one of the buffer's being diff'ed is closed
+function Proj.check_diff_stop()
+  if not check_comp_buffers() then diff_stop() end
+end
 
--- Ensure the diff buffers are scrolled in sync.
-events.connect(events.UPDATE_UI, function(updated)
+-- TA-EVENT UPDATE_UI
+--Ensure the diff buffers are scrolled in sync
+function Proj.EVupdate_ui(updated)
   if updated and not synchronizing and check_comp_buffers() then
     if bit32_band(updated, buffer.UPDATE_H_SCROLL + buffer.UPDATE_V_SCROLL + buffer.UPDATE_SELECTION) > 0 then
       synchronize()
     end
   end
-end)
+end
 
+-- TA-EVENT MODIFIED
 -- Highlight differences as text is typed and deleted.
-events.connect(events.MODIFIED, function(modification_type)
+function Proj.EVmodified(modification_type)
   if not check_comp_buffers() then return end
   if bit32_band(modification_type, 0x01 + 0x02) > 0 then mark_changes() end
-end)
+end
 
-events.connect(events.VIEW_NEW, function()
+-- TA-EVENT VIEW_NEW
+function Proj.EVview_new()
   local markers = {
     [MARK_ADDITION] = 'green', [MARK_DELETION] = 'red',
     [MARK_MODIFICATION] = 'yellow'
@@ -213,6 +216,6 @@ events.connect(events.VIEW_NEW, function()
     buffer.indic_fore[indic] = buffer.property_int['color.'..color]
     buffer.indic_alpha[indic], buffer.indic_under[indic] = 255, true
   end
-end)
+end
 
 if actions then actions.add("toggle_filediff", "Start/stop file diff", diff_start, "f8", "edit-copy") end

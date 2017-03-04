@@ -1,60 +1,20 @@
---if not CURSES then ui.set_theme('base16-tomorrow-dark') end
-if not CURSES then ui.set_theme('ggg') end
-
-TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
-
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
-function Winfo(msg,info)
-  ui.dialogs.msgbox{
-    title = 'Information',
-    text = msg,
-    informative_text = info,
-    icon = 'gtk-dialog-info', button1 = _L['_OK']
-  }
-end
+if not CURSES then ui.set_theme('ggg') end
 
-function my_goto_view(numview)
-  if _VIEWS[view] ~= numview then
-    if TA_MAYOR_VER < 9 then
-      ui.goto_view(numview)
-    else
-      ui.goto_view(_VIEWS[numview])
-    end
-  end
-end
-
-function my_goto_buffer(buf)
-  if TA_MAYOR_VER < 9 then
-    view:goto_buffer(_BUFFERS[buf])
-  else
-    view:goto_buffer(buf)
-  end
-end
-
---goto line= 0...
-function my_goto_line(p_buffer,line)
-  p_buffer:ensure_visible_enforce_policy(line)
-  p_buffer:goto_line(line)
-end
-
---https://foicica.com/wiki/export
-export = require('export')
---export.browser = 'chromium-browser'
-
+require('util')
+require('export')
 require('project')
 require('goto_nearest')
 require('ctrl_tab_mru')
 require('quicktype')
 
-require('file_diff')
-
 --cf5 "List commands in a new buffer"
 if actions then
   actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
 
---f6, sf6, cf6, af6 "debug file/string diff"
+--f6, sf6, cf6, af6 "DEBUG file/string diff"
   actions.add("sdiff_test", "String diff TEST", function()
     actions.run("new")  --new buffer
     local s1= "televisor sorpresa"

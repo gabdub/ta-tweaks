@@ -4,6 +4,7 @@
 --  replace M.goto_nearest_whole_word with buffer.goto_nearest_whole_word
 --  replace M.goto_nearest_match_case with buffer.goto_nearest_match_case
 local M = {}
+local Util = Util
 
 local function goto_nearest_default()
   if M.goto_nearest_whole_word == nil then
@@ -11,14 +12,6 @@ local function goto_nearest_default()
     M.goto_nearest_whole_word= false
     M.goto_nearest_match_case= true
   end
-end
-
-local function str_trim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
-local function str_one_line(s)
-  return (s:gsub("^%s*(.-)%s*\n.*$", "%1"))
 end
 
 local function goto_nearest_occurrence(reverse,ask)
@@ -37,7 +30,7 @@ local function goto_nearest_occurrence(reverse,ask)
         --suggest current word
         s, e = buffer:word_start_position(s), buffer:word_end_position(s)
       end
-      suggest= str_trim(buffer:text_range(s, e))  --remove trailing \n
+      suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
       --ask what to search, suggest current word o last-search
       local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') ..
                  (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') ..
@@ -50,7 +43,7 @@ local function goto_nearest_occurrence(reverse,ask)
     end
   else
     --use selection
-    word = str_trim(buffer:text_range(s, e))
+    word = Util.str_trim(buffer:text_range(s, e))
   end
 
   if word == '' then return end
@@ -80,12 +73,12 @@ local function goto_nearest_occurrence(reverse,ask)
       buffer.target_end = s - 1
     end
     if buffer:search_in_target(word) == -1 then
-      ui.statusbar_text= str_one_line(M.last_search) .. ': not found'
+      ui.statusbar_text= Util.str_one_line(M.last_search) .. ': not found'
       return
     end
   end
   buffer:set_sel(buffer.target_start, buffer.target_end)
-  ui.statusbar_text= str_one_line(M.last_search) .. ': found'
+  ui.statusbar_text= Util.str_one_line(M.last_search) .. ': found'
 
   if Proj then  --Project module?
     -- Store the current position at the end of the jump history.
@@ -168,7 +161,7 @@ if Proj then  --Project module?
           --suggest current word
           s, e = buffer:word_start_position(s), buffer:word_end_position(s)
         end
-        suggest= str_trim(buffer:text_range(s, e))  --remove trailing \n
+        suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
         --ask what to search, suggest current word o last-search
         local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') ..
                    (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') ..
@@ -180,7 +173,7 @@ if Proj then  --Project module?
       end
     else
       --use selection
-      word = str_trim(buffer:text_range(s, e))
+      word = Util.str_trim(buffer:text_range(s, e))
     end
 
     if word == '' then return end

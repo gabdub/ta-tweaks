@@ -1,10 +1,76 @@
-local events, events_connect = events, events.connect
+local events = events
 local Proj = Proj
-local _L = _L
+local Util = Util
+
+--------hilight project's open files--------
+local indic_open = _SCINTILLA.next_indic_number()
+buffer.indic_fore[indic_open]= (tonumber(buffer.property['color.prj_open_mark']) or 0x404040)
+buffer.indic_style[indic_open]= buffer.INDIC_DOTS
+
+--remove all open-indicators from project
+function Proj.clear_open_indicators(pbuf)
+  pbuf.indicator_current= indic_open
+  pbuf:indicator_clear_range(0,pbuf.length-1)
+end
+
+function Proj.add_open_indicator(pbuf,row)
+  pbuf.indicator_current= indic_open
+  local pos= pbuf.line_indent_position[row]
+  local len= pbuf.line_end_position[row] - pos
+  pbuf:indicator_fill_range(pos,len)
+end
+
+--if buff is a project's file, hilight it with and open-indicator
+function Proj.show_open_indicator(pbuf,buff)
+  --ignore project and search buffers
+  if buff._project_select == nil and buff._type == nil then
+    local file= buff.filename
+    if file then
+      local row= Proj.get_file_row(pbuf, file)
+      if row then
+        Proj.add_open_indicator(pbuf,row-1)
+      end
+    end
+  end
+end
+
+--add and open-indicator to all project's files that are open
+function Proj.mark_open_files(pbuf)
+  if pbuf then
+    Proj.clear_open_indicators(pbuf)
+    if pbuf._project_select then --only in selection mode
+      for _, b in ipairs(_BUFFERS) do
+        Proj.show_open_indicator(pbuf,b)
+      end
+    end
+  end
+end
+
+--check/force the buffer is in the preferred view
+function Proj.force_buffer_inview(pbuf, nprefv)
+  --locate the buffer view
+  local nview
+  --check "visible" buffers
+  for i= 1, #_VIEWS do
+    if _VIEWS[i].buffer == pbuff then
+      nview = i
+      break
+    end
+  end
+  if nview ~= nprefv then
+    --show the buffer in the preferred view
+    Proj.updating_ui= Proj.updating_ui+1
+    local nv= _VIEWS[view]    --save actual view
+    Util.goto_view(nprefv)    --goto preferred view
+    Util.goto_buffer(pbuff)   --show the buffer
+    Util.goto_view(nv)        --restore actual view
+    Proj.updating_ui= Proj.updating_ui-1
+  end
+end
 
 -----------------CURRENT LINE-------------------
 --project is in SELECTION mode with focus--
-local function proj_show_sel_w_focus(buff)
+function Proj.show_sel_w_focus(buff)
   --hide line numbers
   buff.margin_width_n[0] = 0
   --highlight current line as selected
@@ -21,7 +87,7 @@ function Proj.show_lost_focus(buff)
 end
 
 --restore current line default settings
-local function proj_show_default(buff)
+function Proj.show_default(buff)
   --project in EDIT mode / default text file--
   --show line numbers
   local width = 4 * buff:text_width(buffer.STYLE_LINENUMBER, '9')
@@ -31,280 +97,6 @@ local function proj_show_default(buff)
   buff.caret_line_back = buff.property['color.curr_line_back']
 end
 
------------------MENU/CONTEXT MENU-------------------
----
--- The right-click context menu
----
-local proj_context_menu = {
-  { --#1 project in SELECTION mode
-    {"open_projsel","open_projectdir",SEPARATOR,
-       "toggle_editproj","toggle_viewproj",SEPARATOR,
-       "adddirfiles_proj","search_project"}
-  },
-  { --#2 project in EDIT mode
-    {"undo","redo",SEPARATOR,
-     "cut","copy","paste","delete_char",SEPARATOR,
-     "selectall",SEPARATOR,
-     "_end_editproj"}
-  },
-  { --#3 regular file
-    {"undo","redo",SEPARATOR,
-     "cut","copy","paste","delete_char",SEPARATOR,
-     "selectall"
-    },
-    {
-      title = '_Project',
-      {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-       "search_project","goto_tag","save_position","next_position","prev_position",SEPARATOR,
-       "toggle_viewproj"}
-    },
-    {SEPARATOR,"showin_rightpanel"}
-  },
-  { --#4 search view
-    {"copy", "selectall"}
-  }
-}
-
-local ctxmenus= {}
-
---init desired project context menu
-local function proj_context_menu_init(num)
-  if CURSES or Proj.cmenu_num == num then
-    --CURSES or the menu is already set, don't change the context menu
-    return
-  end
-  Proj.cmenu_num= num
-
-  if #ctxmenus == 0 then
-    --first time here, create all the project context menus
-    for i=1,#proj_context_menu do
-      ctxmenus[i]= create_uimenu_fromactions(proj_context_menu[i])
-    end
-  end
-  --ok, change the context menu
-  ui.context_menu = ctxmenus[num]
-end
-
--- set project context menu in SELECTION mode --
-local function proj_contextm_sel()
-  proj_context_menu_init(1)
-end
-
--- set project context menu in EDIT mode --
-local function proj_contextm_edit()
-  proj_context_menu_init(2)
-end
-
--- set project context menu for a regular file --
-local function proj_contextm_file()
-  proj_context_menu_init(3)
-end
-
--- set project context menu for search view --
-function Proj.proj_contextm_search()
-  proj_context_menu_init(4)
-end
-
-------------------PROJECT CONTROL-------------------
---if the current file is a project, enter SELECTION mode--
-function Proj.ifproj_setselectionmode(p_buffer)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
-    Proj.set_selectionmode(p_buffer,true)
-    if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. buffer.filename
-    end
-    return true
-  end
-  return false
-end
-
---if the current file is a project, enter EDIT mode--
-function Proj.ifproj_seteditmode(buff)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
-    Proj.set_selectionmode(p_buffer,false)
-    if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. buffer.filename
-    end
-    return true
-  end
-  return false
-end
-
---toggle project between SELECTION and EDIT modes
-function Proj.toggle_selectionmode()
-  local mode= Proj.get_buffertype()
-  if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then
-    Proj.set_selectionmode(buffer, (mode == Proj.PRJB_PROJ_EDIT)) --toggle current mode
-  else
-    --if the current file is a project, enter SELECTION mode--
-    if not Proj.ifproj_setselectionmode() then
-      ui.statusbar_text='This file is not a project'
-    end
-  end
-  buffer.home()
-end
-
---set the project mode as: selected (selmode=true) or edit (selmode=false)
---if selmode=true, parse the project and build file list: "proj_file[]"
-function Proj.set_selectionmode(buff,selmode)
-  local editmode= not selmode
-  --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
-  buff._project_select= selmode
-  --selection is read-only
-  buff.read_only= selmode
-  --in SELECTION mode the current line is always visible
-  buff.caret_line_visible_always= selmode
-  --and the scrollbars hidden
-  buff.h_scroll_bar= editmode
-  buff.v_scroll_bar= editmode
-
-  if selmode then
-    --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-    Proj.parse_projectbuffer(buff)
-    --set lexer to highlight groups and hidden control info ":: ... ::"
-    buff:set_lexer('myproj')
-    --project in SELECTION mode--
-    proj_show_sel_w_focus(buff)
-
-    --set SELECTION mode context menu
-    proj_contextm_sel()
-
-    --fold the requested folders
-    for i= #buff.proj_fold_row, 1, -1 do
-      buff.toggle_fold(buff.proj_fold_row[i])
-    end
-    Proj.is_visible= 1  --1:shown in selection mode
-    Proj.mark_open_files(buff)
-  else
-    --edit project as a text file (show control info)
-    buff:set_lexer('text')
-    --set EDIT mode context menu
-    proj_contextm_edit()
-    --project in EDIT mode--
-    proj_show_default(buff)
-    Proj.is_visible= 2  --2:shown in edit mode
-    Proj.clear_open_indicators(buff)
-  end
-  if toolbar then
-    Proj.update_projview()  --update project view button
-    toolbar.seltabbuf(buff) --hide/show and select tab in edit mode
-  end
-end
-
-------------------HELPERS-------------------
---open files in the preferred view
---optinal: goto line_num
-function Proj.go_file(file, line_num)
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
-  if file == nil or file == '' then
-    Proj.getout_projview()
-    --new file (add only one)
-    local n= nil
-    for i=1, #_BUFFERS do
-      if (_BUFFERS[i].filename == nil) and (_BUFFERS[i]._type ~= Proj.PRJT_SEARCH) and not _BUFFERS[i]._right_side then
-        --there is one new file, select this instead of adding a new one
-        n= i
-        break
-      end
-    end
-    if n == nil then
-      buffer.new()
-      n= _BUFFERS[buffer]
-      events.emit(events.FILE_OPENED)
-    end
-    my_goto_buffer(_BUFFERS[n])
-  else
-    --goto file / line_num
-    local fn = file:iconv(_CHARSET, 'UTF-8')
-    for i, buf in ipairs(_BUFFERS) do
-      if buf.filename == fn then
-        --already open (keep panel)
-        Proj.getout_projview(buf._right_side)
-        my_goto_buffer(buf)
-        fn = nil
-        break
-      end
-    end
-    Proj.getout_projview()
-    if fn then io.open_file(fn) end
-
-    if line_num then my_goto_line(buffer, line_num-1) end
-    Proj.update_after_switch()
-  end
-end
-
---RUN a command
---%{projfiles} is replaced for a temporary file with the complete list of project files
---%{projfiles.ext1.ext2...} only project files with this extensions are included
-function Proj.run_command(cmd)
-  if cmd ~= nil and cmd ~= '' then
-    local tmpfile, ext
-    --replace special vars
-    local s, e = cmd:find('%{projfiles}')
-    if not s then
-      s, e = cmd:find('%{projfiles%..*}')
-      if s and e then
-        --get extensions
-        local se= cmd:match('%{projfiles%.(.*)}')
-        if se then
-          ext={}
-          for i in string.gmatch(se, "[^%.]+") do
-            ext[i] = true
-          end
-        end
-      end
-    end
-    if s and e then
-      --replace %{projfiles} is with a temporary file with the list of project files
-      local p_buffer = Proj.get_projectbuffer(true)
-      if p_buffer == nil or p_buffer.proj_files == nil then
-        ui.statusbar_text= 'No project found'
-        return
-      end
-
-      --get a list of project files
-      local flist= {}
-      for row= 1, #p_buffer.proj_files do
-        local ftype= p_buffer.proj_filestype[row]
-        if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
-          local file= p_buffer.proj_files[row]
-          if not ext or ext[file:match('[^%.]+$')] then
-            --all files / listed extension
-            flist[ #flist+1 ]= file
-          end
-        end
-      end
-      if #flist == 0 then
-        ui.statusbar_text= 'File not found in project'
-        return
-      end
-      --write the project files list in a temp file
-      tmpfile = p_buffer.filename..'_tmp'
-      local f = io.open(tmpfile, 'wb')
-      if f then
-        f:write(table.concat(flist, '\n'))
-        f:close()
-      end
-      cmd= string.sub(cmd,1,s-2)..tmpfile..string.sub(cmd,e+1)
-    end
-    Proj.last_run_command= cmd
-    Proj.last_run_tmpfile= tmpfile
-    if string.len(Proj.last_run_command) > 40 then
-      Proj.last_run_command= string.sub(Proj.last_run_command,1,40)..'...'
-    end
-    local proc= spawn(cmd,nil,nil,nil,function(status)
-        ui.statusbar_text= 'RUN '..Proj.last_run_command..' ended with status '..status
-        if Proj.last_run_tmpfile then
-          os.remove(Proj.last_run_tmpfile)
-          Proj.last_run_tmpfile= nil
-        end
-      end)
-    ui.statusbar_text= 'RUNNING: '..Proj.last_run_command
-  end
-end
-
 --set/restore lexer/ui after a buffer/view switch
 function Proj.update_after_switch()
   --if we are updating, ignore this event
@@ -312,13 +104,13 @@ function Proj.update_after_switch()
   Proj.updating_ui= 1
   if buffer._project_select == nil then
     --normal file: restore current line default settings
-    proj_show_default(buffer)
+    Proj.show_default(buffer)
     if buffer._type == Proj.PRJT_SEARCH then
       --set search context menu
-      Proj.proj_contextm_search()
+      Proj.set_contextm_search()
     else
       --set regular file context menu
-      proj_contextm_file()
+      Proj.set_contextm_file()
       --try to select the current file in the project
       Proj.track_this_file()
     end
@@ -339,14 +131,14 @@ function Proj.update_after_switch()
         -- project in SELECTION mode: set "myprog" lexer --
         buffer:set_lexer('myproj')
         --project in SELECTION mode--
-        proj_show_sel_w_focus(buffer)
+        Proj.show_sel_w_focus(buffer)
         --set SELECTION mode context menu
-        proj_contextm_sel()
+        Proj.set_contextm_sel()
       else
         -- project in EDIT mode: restore current line default settings --
-        proj_show_default(buffer)
+        Proj.show_default(buffer)
         --set EDIT mode context menu
-        proj_contextm_edit()
+        Proj.set_contextm_edit()
       end
       --refresh some options (when views are closed this is mixed)
       --in SELECTION mode the current line is always visible
@@ -368,13 +160,13 @@ function Proj.track_this_file()
     --get file path
     local file= buffer.filename
     if file ~= nil then
-      row= Proj.locate_file(p_buffer, file)
+      row= Proj.get_file_row(p_buffer, file)
       if row ~= nil then
         --prevent some events to fire for ever
         Proj.updating_ui= Proj.updating_ui+1
 
         local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-        my_goto_view(projv)
+        Util.goto_view(projv)
         --move the selection bar
         p_buffer:ensure_visible_enforce_policy(row- 1)
         p_buffer:goto_line(row-1)
@@ -392,33 +184,57 @@ function Proj.track_this_file()
   end
 end
 
-------------------EVENTS-------------------
-events_connect(events.BUFFER_BEFORE_SWITCH, Proj.show_lost_focus)
-events_connect(events.VIEW_BEFORE_SWITCH,   Proj.show_lost_focus)
+------------------ TA-EVENTS -------------------
+-- TA-EVENT BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
+function Proj.EVafter_switch()
+  --set/restore lexer/ui after a buffer/view switch
+  Proj.update_after_switch()
+  --clear pending file-diff
+  Proj.clear_pend_file_diff()
+end
 
-events_connect(events.BUFFER_AFTER_SWITCH,  Proj.update_after_switch)
-events_connect(events.VIEW_AFTER_SWITCH,    Proj.update_after_switch)
+-- TA-EVENT BUFFER_NEW
+function Proj.EVbuffer_new()
+  --when a buffer is created in the right panel, mark it as such
+  if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
+end
 
-events_connect(events.BUFFER_DELETED, function()
+-- TA-EVENT BUFFER_DELETED
+function Proj.EVbuffer_deleted()
   --update open files hilight if the project is visible and in SELECTION mode
   local pbuf = Proj.get_projectbuffer(false)
   if pbuf and pbuf._project_select then
     Proj.mark_open_files(pbuf)
   end
-end)
+  --Stop diff'ing when one of the buffer's being diff'ed is closed
+  Proj.check_diff_stop()
+end
 
+-- TA-EVENT FILE_OPENED
 --if the current file is a project, enter SELECTION mode--
-events_connect(events.FILE_OPENED, function()
-  --ignore session load
-  if Proj.updating_ui == 0 then Proj.ifproj_setselectionmode() end
+function Proj.EVfile_opened()
   --if the file is open in the right panel, mark it as such
   if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
-end)
-
-events_connect(events.BUFFER_NEW, function()
-  --when a buffer is created in the right panel, mark it as such
-  if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
-end)
+  --ignore session load
+  if Proj.updating_ui == 0 then
+    --open project in selection mode
+    Proj.ifproj_setselectionmode()
+    -- Closes the initial "Untitled" buffer (project version)
+    -- only when a regular file is opened
+    -- #3: project + untitled + file
+    -- #4: project + search results + untitled + file
+    -- TO DO: improve this (see check_panels())
+    if buffer.filename and (buffer._project_select == nil) and (#_BUFFERS == 3 or #_BUFFERS == 4) then
+      for nbuf,buf in ipairs(_BUFFERS) do
+        if not (buf.filename or buf._type or buf.modify or buf._project_select ~= nil) then
+          Util.goto_buffer(buf)
+          io.close_buffer()
+          break
+        end
+      end
+    end
+  end
+end
 
 local function open_proj_currrow()
   if buffer._project_select then
@@ -428,10 +244,11 @@ local function open_proj_currrow()
   end
 end
 
-events_connect(events.DOUBLE_CLICK, function(_, line)
-  open_proj_currrow()
-end)
-events_connect(events.KEYPRESS, function(code)
+-- TA-EVENT DOUBLE_CLICK
+function Proj.EVdouble_click(_, line) open_proj_currrow() end
+
+-- TA-EVENT KEYPRESS
+function Proj.EVkeypress(code)
   local ks= keys.KEYSYMS[code]
   if ks == '\n' or ks == 'kpenter' then  --"Enter" or "Return"
     open_proj_currrow()
@@ -450,7 +267,7 @@ events_connect(events.KEYPRESS, function(code)
       if #_VIEWS > 1 then
         local nv= _VIEWS[view] +1
         if nv > #_VIEWS then nv=1 end
-        my_goto_view(nv)
+        Util.goto_view(nv)
         if nv == Proj.prefview[Proj.PRJV_PROJECT] and Proj.is_visible == 0 then
           --in project's view, force visibility
           Proj.is_visible= 1  --1:shown in selection mode
@@ -465,7 +282,7 @@ events_connect(events.KEYPRESS, function(code)
       end
     end
   end
-end)
+end
 
 --toggle project between selection and EDIT modes
 function Proj.change_proj_ed_mode()
@@ -476,7 +293,7 @@ function Proj.change_proj_ed_mode()
         if Proj.select_width ~= view.size then
           Proj.select_width= view.size  --save current width
           if Proj.select_width < 50 then Proj.select_width= 200 end
-          Proj.list_change= true  --save it on exit
+          Proj.prjlist_change= true  --save it on exit
         end
         Proj.is_visible= 2  --2:shown in edit mode
         view.size= Proj.edit_width
@@ -484,7 +301,7 @@ function Proj.change_proj_ed_mode()
         if Proj.edit_width ~= view.size then
           Proj.edit_width= view.size  --save current width
           if Proj.edit_width < 50 then Proj.edit_width= 600 end
-          Proj.list_change= true  --save it on exit
+          Proj.prjlist_change= true  --save it on exit
         end
         Proj.is_visible= 1  --1:shown in selection mode
         view.size= Proj.select_width
@@ -505,11 +322,6 @@ local function ena_toggle_projview()
   return ena
 end
 
-local function proj_in_editmode()
-  local pbuf= Proj.get_projectbuffer(true)
-  return pbuf and (Proj.get_buffertype(pbuf) == Proj.PRJB_PROJ_EDIT)
-end
-
 function Proj.show_projview()
   --Show project / goto project view
   if Proj.get_projectbuffer(true) then
@@ -525,7 +337,7 @@ end
 function Proj.toggle_projview()
   --Show/Hide project
   if ena_toggle_projview() then
-    if proj_in_editmode() then
+    if Proj.isin_editmode() then
       --project in edit mode
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Proj.change_proj_ed_mode() --return to select mode
@@ -539,7 +351,7 @@ function Proj.toggle_projview()
         if Proj.select_width ~= view.size then
           Proj.select_width= view.size  --save current width
           if Proj.select_width < 50 then Proj.select_width= 200 end
-          Proj.list_change= true  --save it on exit
+          Proj.prjlist_change= true  --save it on exit
         end
         view.size= 0
       else
@@ -566,81 +378,43 @@ function Proj.refresh_hilight()
   buffer.colourise(buffer, 0, -1)
 end
 
-------------------- tab-clicked event ---------------
---- when a tab is clicked, change the view if needed
---- (Textadept version >= 9)
----
----  * For Textadept version 8:
----    * add the following line to the function "t_tabchange()" in "textadept.c" @1828
----      lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
----    * recompile textadept
----    * add "'tab_clicked'," to "ta_events = {}" in "events.lua" (to register the new event) @369
-if TA_MAYOR_VER >= 9 then
-  events.connect(events.TAB_CLICKED, function(ntab)
-    --tab clicked (0...) check if a view change is needed
-    if #_VIEWS > 1 then
-      if _BUFFERS[ntab]._project_select ~= nil then
-        --project buffer: force project view
-        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-        my_goto_view(projv)
-      --search results?
-      elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then Proj.goto_searchview()
-      --normal file: check we are not in a project view
-      else Proj.goto_filesview(false, _BUFFERS[ntab]._right_side) end
-    end
-  end, 1)
-end
-
---delete all trailing blanks chars
-function Proj.trim_trailing_spaces()
-  local buffer = buffer
-  buffer:begin_undo_action()
-  local n=0
-  for line = 0, buffer.line_count - 1 do
-    local trail = buffer:get_line(line):match('^.-(%s-)[\n\r]*$')
-    if trail and trail ~= '' then
-      local e = buffer.line_end_position[line]
-      local s = e - string.len(trail)
-      buffer:set_target_range(s, e)
-      buffer:replace_target('')
-      n=n+1
-    end
-  end
-  buffer:end_undo_action()
-  if n > 0 then
-    ui.statusbar_text= 'Trimmed lines: '..n
-  else
-    ui.statusbar_text= 'No trailing spaces found'
+-- TA-EVENT TAB_CLICKED
+function Proj.EVtabclicked(ntab)
+  --tab clicked (0...) check if a view change is needed
+  if #_VIEWS > 1 then
+    if _BUFFERS[ntab]._project_select ~= nil then
+      --project buffer: force project view
+      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+      Util.goto_view(projv)
+    --search results?
+    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then Proj.goto_searchview()
+    --normal file: check we are not in a project view
+    else Proj.goto_filesview(false, _BUFFERS[ntab]._right_side) end
   end
 end
 
 function Proj.new_file()
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   buffer.new()
 end
 
 function Proj.open_file()
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   io.open_file()
 end
 
 function Proj.open_recent_file()
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   io.open_recent_file()
 end
 
 function Proj.qopen_user()
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   io.quick_open(_USERHOME)
   Proj.track_this_file()
 end
 
 function Proj.qopen_home()
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   io.quick_open(_HOME)
   Proj.track_this_file()
@@ -648,7 +422,6 @@ end
 
 function Proj.qopen_curdir()
   local fname= buffer.filename
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
@@ -664,79 +437,184 @@ function Proj.search_in_files()
   end
 end
 
-local function str_trim(s)
-  return (s:gsub("^%s*(.-)%s*$", "%1"))
+-- show project current row properties
+function Proj.show_doc()
+  --call_tip_show
+  if buffer._project_select ~= nil then
+    if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
+    if buffer.proj_files ~= nil then
+      local r= buffer.line_from_position(buffer.current_pos)+1
+      local info = buffer.proj_files[r]
+      local ftype= buffer.proj_filestype[r]
+      if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
+      elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
+      if info == '' and buffer.proj_grp_path[r] ~= nil then
+        info= buffer.proj_grp_path[r]
+      end
+      if info ~= '' then
+        buffer:call_tip_show(buffer.current_pos, info )
+      end
+    end
+  else
+    --call default show doc function
+    textadept.editing.show_documentation()
+  end
 end
 
-function Proj.file_exists(fn)
-  if fn:match('[^\\/]+$') then
-    local f, err = io.open(fn, 'rb')
-    if f then
-      f:close()
-      return true
+--goto the view for the requested project buffer type
+--split views if needed
+function Proj.goto_projview(prjv)
+  local pref= Proj.prefview[prjv] --preferred view for this buffer type
+  if pref == _VIEWS[view] then
+    return  --already in the right view
+  end
+  local nv= #_VIEWS
+  while pref > nv do
+    --more views are needed: split the last one
+    local porcent  = Proj.prefsplit[nv][1]
+    local vertical = Proj.prefsplit[nv][2]
+    Util.goto_view(Proj.prefsplit[nv][3])
+    --split view to show search results
+    view:split(vertical)
+    --adjust view size (actual = 50%)
+    view.size= math.floor(view.size*porcent*2)
+    nv= nv +1
+    if nv == Proj.prefview[Proj.PRJV_FILES] then
+      --create an empty file
+      Util.goto_view(nv)
+      buffer.new()
+      events.emit(events.FILE_OPENED)
+    elseif nv == Proj.prefview[Proj.PRJV_SEARCH] then
+      --create an empty search results buffer
+      Util.goto_view(nv)
+      buffer.new()
+      buffer._type = Proj.PRJT_SEARCH
+      events.emit(events.FILE_OPENED)
     end
   end
-  return false
+  Util.goto_view(pref)
 end
 
-local function try_open(fn)
-  if Proj.file_exists(fn) then
-    ui.statusbar_text= "Open: "..fn
-    io.open_file(fn)
+function Proj.goto_filesview(dontprjcheck, right_side)
+  --goto the view for editing files, split views if needed
+  if dontprjcheck or Proj.get_projectbuffer(false) ~= nil then
+    --if a project is open, this will create all the needed views
+    if right_side then Proj.goto_projview(Proj.PRJV_FILES_2) else Proj.goto_projview(Proj.PRJV_FILES) end
+  elseif right_side then
+    --if no project is open, view #2 is the right_side panel
+    if #_VIEWS == 1 then
+      view:split(true)
+    end
+    if _VIEWS[view] == 1 then Util.goto_view(2) end
+  else
+    --if no project is open, view #1 is the left/only panel
+    if _VIEWS[view] ~= 1 then Util.goto_view(1) end
+  end
+end
+
+--if the current view is a project or project-search, goto left/only files view. if not, keep the current view
+function Proj.getout_projview(right_side)
+  if (buffer._project_select ~= nil or buffer._type ~= nil) then
+    --move to files view (left/only panel) and exit
+    Proj.goto_filesview(true,right_side)
     return true
   end
   return false
 end
 
-local function try_open_partner(mext, listext)
-  local fc= buffer.filename
-  if fc then
-    fc= fc:match(mext)
-    if fc then
-      for _,newext in pairs(listext) do
-        if try_open(fc..newext) then return true end
+------SEARCH VIEW------
+--activate/create search view
+function Proj.goto_searchview()
+  --goto the view for search results, split views and create empty buffers if needed
+  Proj.goto_projview(Proj.PRJV_SEARCH)
+  --goto search results view
+  if buffer._type ~= Proj.PRJT_SEARCH then
+    for nbuf, sbuf in ipairs(_BUFFERS) do
+      if sbuf._type == Proj.PRJT_SEARCH then
+        Util.goto_buffer(sbuf)
+        return
       end
+    end
+  end
+end
+
+function Proj.close_search_view()
+  local sv= Proj.prefview[Proj.PRJV_SEARCH]
+  --if more views are open, ignore the close
+  if #_VIEWS > sv then return false end
+  if #_VIEWS == sv then
+    --remove search from position table
+    Proj.remove_search_from_pos_table()
+    --activate search view
+    Proj.goto_searchview()
+    --close buffer / view
+    buffer:set_save_point()
+    io.close_buffer()
+    Util.goto_view( sv -1 )
+    view.unsplit(view)
+    return true
+  end
+  --no search view, try to close the search buffer
+  for _, sbuffer in ipairs(_BUFFERS) do
+    if sbuffer._type == Proj.PRJT_SEARCH then
+      --goto search results view
+      if view.buffer._type ~= Proj.PRJT_SEARCH then
+        Util.goto_buffer(sbuffer)
+      end
+      io.close_buffer()
+      break
     end
   end
   return false
 end
 
---open a file using the selected text or the text under the cursor
---or change buffer extension {c,cpp} <--> {h,hpp} or ask
-function Proj.open_cursor_file()
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
-  Proj.getout_projview()
-  local s, e = buffer.selection_start, buffer.selection_end
-  if s == e then
-    --suggest current word
-    local savewc= buffer.word_chars
-    buffer.word_chars= savewc .. ".\\/:-"
-    s, e = buffer:word_start_position(s,true), buffer:word_end_position(s,true)
-    buffer.word_chars= savewc
-  end
-  local fn= str_trim(buffer:text_range(s, e))  --remove trailing blanks (like \n)
-  local isabspath= fn:match('^/') or fn:match('^\\') or fn:match('^.*:\\')
-  if not isabspath then
-    --relative path: add buffer dir
-    fn= ((buffer.filename or ''):match('^.+[/\\]') or lfs.currentdir())..fn
-    --replace aaaa"/dir/../"bbbb" with aaaa"/"bbbb
-    while true do
-      local a,b= fn:match('(.*)[/\\][^./\\]-[/\\]%.%.[/\\](.*)')
-      if a and b then fn= a..(WIN32 and "\\" or "/")..b
-      else break end
+function Proj.check_leftpanel()
+  --check the left/only panel content
+  local vfp1= Proj.prefview[Proj.PRJV_FILES]
+  if #_VIEWS >= vfp1 then
+    --goto left view
+    Util.goto_view(vfp1)
+    --check current file
+    if not Proj.isRegularBuf(buffer) or buffer._right_side then
+      --it is not a proper file for this panel, find one or open a blank one
+      local bl= Proj.getFirstRegularBuf(1)
+      if bl then Util.goto_buffer(bl) else Proj.go_file() end
     end
   end
-  if not try_open(fn) then
-    if not try_open_partner('^(.+)%.c$', {'.h', '.hpp'}) then
-      if not try_open_partner('^(.+)%.cpp$', {'.hpp', '.h'}) then
-        if not try_open_partner('^(.+)%.h$', {'.c', '.cpp'}) then
-          if not try_open_partner('^(.+)%.hpp$', {'.cpp', '.c'}) then
-            ui.statusbar_text= fn.." not found"
-            io.open_file() --show open dialog
-          end
-        end
+end
+
+function Proj.check_searchpanel()
+  local vsp= Proj.prefview[Proj.PRJV_SEARCH]
+  if #_VIEWS >= vsp then
+    Proj.goto_searchview()
+  end
+end
+
+function Proj.check_rightpanel()
+  --if the right panel is open, check it
+  local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
+  if #_VIEWS >= vfp2 then
+    --goto right view
+    Util.goto_view(vfp2)
+    --check current file
+    if not Proj.isRegularBuf(buffer) or not buffer._right_side then
+      --it is not a proper file for this panel, find one or close the panel
+      local br= Proj.getFirstRegularBuf(2)
+      if br then Util.goto_buffer(br) else
+        view.unsplit(view)
+        Proj.close_search_view()  --close search view too (TODO: don't close search view)
       end
     end
   end
 end
 
+--check the buffer type of every open view
+function Proj.check_panels()
+  Proj.updating_ui=Proj.updating_ui+1
+  local actv= _VIEWS[view]
+  Proj.check_rightpanel()
+  Proj.check_searchpanel()
+  Proj.check_leftpanel()
+  if #_VIEWS >= actv then Util.goto_view(actv) end
+  Proj.updating_ui=Proj.updating_ui-1
+end
