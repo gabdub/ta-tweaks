@@ -1,17 +1,4 @@
-if actions then actions.free_accelerator({"a1","a2","a3","a4","a5","a0","a9", "c,", "c.", "c;", "c:"}) end
-
-local function type_before_after(before,after)
-  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
-    --if something is selected use enclose (left the cursor at the end)
-    textadept.editing.enclose(before,after)
-    return
-  end
-  --nothing is selected, left the cursor between 'before' and 'after'
-  buffer.add_text(buffer, before)
-  local pos= buffer.current_pos
-  buffer.add_text(buffer, after)
-  buffer.goto_pos(buffer, pos)
-end
+local Util = Util
 
 -- Alt+1 = ($=cursor position) TYPE
 -- /*
@@ -19,26 +6,26 @@ end
 --
 -- */
 local function qt_cfun_comm()
-  type_before_after("/*\n    ", ":\n      \n*/\n")
+  Util.type_before_after("/*\n    ", ":\n      \n*/\n")
 end
 
 -- Alt+2 = ($=cursor position) TYPE
 -- /* $ */
 local function qt_c_comm()
-  type_before_after("/* ", " */")
+  Util.type_before_after("/* ", " */")
 end
 
 -- Alt+3 = ($=cursor position) TYPE
 -- #define $
 local function qt_c_define()
-  type_before_after("#define ", "")
+  Util.type_before_after("#define ", "")
 end
 
 
 -- Alt+4 = ($=cursor position) TYPE
 -- /* TO DO: $ */
 local function qt_c_todo()
-  type_before_after("/* TO DO: ", " */")
+  Util.type_before_after("/* TO DO: ", " */")
 end
 
 -- Alt+5 = ($=cursor position) TYPE
@@ -47,14 +34,14 @@ end
 --     \|/   */
 -- $
 local function qt_c_switchcont()
-  type_before_after("/*    |\n      |\n     \\|/   */\n", "")
+  Util.type_before_after("/*    |\n      |\n     \\|/   */\n", "")
 end
 
 -- Alt+0 = ($=cursor position) TYPE
 -- /* ==....== */
 -- $
 local function qt_c_sep_line()
-  type_before_after("/* ============================================================================= */\n", "")
+  Util.type_before_after("/* ============================================================================= */\n", "")
 end
 
 -- Alt+9 = MULTILINE TYPER

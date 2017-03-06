@@ -62,3 +62,16 @@ function Util.file_exists(fn)
   return false
 end
 
+function Util.type_before_after(before,after)
+  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
+    --if something is selected use enclose (left the cursor at the end)
+    textadept.editing.enclose(before,after)
+    return
+  end
+  --nothing is selected, left the cursor between 'before' and 'after'
+  buffer.add_text(buffer, before)
+  local pos= buffer.current_pos
+  buffer.add_text(buffer, after)
+  buffer.goto_pos(buffer, pos)
+end
+

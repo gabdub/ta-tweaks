@@ -1,50 +1,38 @@
+local Util = Util
 if toolbar then
   --HTML quicktype toolbar
   local addclass= false
   local addid= false
   local addstyle= false
 
-  local function type_before_after(before,after)
-    if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
-      --if something is selected use enclose (left the cursor at the end)
-      textadept.editing.enclose(before,after)
-      return
-    end
-    --nothing is selected, left the cursor between 'before' and 'after'
-    buffer.add_text(buffer, before)
-    local pos= buffer.current_pos
-    buffer.add_text(buffer, after)
-    buffer.goto_pos(buffer, pos)
-  end
-
   local function type_html(befclass,before,after)
     if addclass then befclass= befclass..' class=""'  end
     if addid    then befclass= befclass..' id=""'     end
     if addstyle then befclass= befclass..' style=""'  end
-    type_before_after(befclass..before,after)
+    Util.type_before_after(befclass..before,after)
   end
   local function enc_html_html()
-    type_before_after('<!DOCTYPE html>\n<html lang="es">\n<head>\n  <title></title>\n</head>\n<body>\n  ', '\n</body>\n</html>\n')
+    Util.type_before_after('<!DOCTYPE html>\n<html lang="es">\n<head>\n  <title></title>\n</head>\n<body>\n  ', '\n</body>\n</html>\n')
   end
   local function enc_html_para()
     type_html('<p','>', '</p>\n')
   end
   local function enc_html_bold()
     if addclass then
-      type_before_after('<strong>', '</strong>')
+      Util.type_before_after('<strong>', '</strong>')
     else
-      type_before_after('<b>', '</b>')
+      Util.type_before_after('<b>', '</b>')
     end
   end
   local function enc_html_italic()
     if addclass then
-      type_before_after('<em>', '</em>')
+      Util.type_before_after('<em>', '</em>')
     else
-      type_before_after('<i>', '</i>')
+      Util.type_before_after('<i>', '</i>')
     end
   end
   local function enc_html_underline()
-    type_before_after('<u>', '</u>')
+    Util.type_before_after('<u>', '</u>')
   end
   local function enc_html_ul()
     type_html('<ul','>\n', '</ul>\n')
