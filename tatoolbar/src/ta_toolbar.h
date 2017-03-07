@@ -232,6 +232,7 @@ struct toolbar_data
   int num;              //number of toolbar
   int isvertical;       //is a vertical toolbar (#1=yes)
   int isvisible;
+  int redrawlater;      //flag: hold updates for now.. redraw later
 
   struct toolbar_group * group;
   struct toolbar_group * group_last;

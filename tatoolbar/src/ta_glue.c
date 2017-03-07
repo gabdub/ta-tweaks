@@ -11,6 +11,9 @@ static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
 //pre-def
 static void create_tatoolbar( GtkWidget *vbox, int ntoolbar );
 static void setmenuitemstatus( int menu_id, int status);
+int toolbar_set_statusbar_text(const char *text, int bar);
+
+int  update_ui= 1; //on by default
 
 /* ============================================================================= */
 /*                                 LUA FUNCTIONS                                 */
@@ -411,8 +414,12 @@ void redraw_endG( struct toolbar_group *G )
         if( T->_grp_y2 < G->bary2 ){
           T->_grp_y2= G->bary2;
         }
-        gtk_widget_queue_draw_area(T->draw, G->barx1 + T->_grp_x1, G->bary1 + T->_grp_y1,
-            T->_grp_x2 - T->_grp_x1 +1, T->_grp_y2 - T->_grp_y1 +1);
+        if( update_ui ){
+          gtk_widget_queue_draw_area(T->draw, G->barx1 + T->_grp_x1, G->bary1 + T->_grp_y1,
+              T->_grp_x2 - T->_grp_x1 +1, T->_grp_y2 - T->_grp_y1 +1);
+        }else{
+          T->redrawlater= 1;
+        }
       }
     }
   }
@@ -421,15 +428,23 @@ void redraw_endG( struct toolbar_group *G )
 void redraw_toolbar( struct toolbar_data *T )
 { //redraw the complete toolbar
   if( (T != NULL) && (T->isvisible) ){
-    gtk_widget_queue_draw(T->draw);
+    if( update_ui ){
+      gtk_widget_queue_draw(T->draw);
+    }else{
+      T->redrawlater= 1;
+    }
   }
 }
 
 void redraw_group( struct toolbar_group *G )
 {
   if( (G != NULL) && (G->toolbar->isvisible) && ((G->flags & TTBF_HIDDEN) == 0) ){
-    gtk_widget_queue_draw_area(G->toolbar->draw, G->barx1, G->bary1,
-      G->barx2 - G->barx1 +1, G->bary2 - G->bary1 +1 );
+    if( update_ui ){
+      gtk_widget_queue_draw_area(G->toolbar->draw, G->barx1, G->bary1,
+        G->barx2 - G->barx1 +1, G->bary2 - G->bary1 +1 );
+    }else{
+      G->toolbar->redrawlater= 1;
+    }
   }
 }
 
@@ -442,13 +457,28 @@ void redraw_item( struct toolbar_item * p )
       //the group is visible
       if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT|TTBF_HIDDEN)) == 0 ){
         //redraw the area of one regular button
-        gtk_widget_queue_draw_area(p->group->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1 - g->yvscroll,
-            p->barx2 - p->barx1 +1, p->bary2 - p->bary1 +1 );
+        if( update_ui ){
+          gtk_widget_queue_draw_area(g->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1 - g->yvscroll,
+              p->barx2 - p->barx1 +1, p->bary2 - p->bary1 +1 );
+        }else{
+          g->toolbar->redrawlater= 1;
+        }
         return;
       }
       //redraw a tab or one of its buttons
       //redraw the complete group
       redraw_group(g);
+    }
+  }
+}
+
+void redraw_pending_toolbars( void )
+{
+  int nt;
+  for( nt= 0; nt < NTOOLBARS; nt++ ){
+    if( (ttb.tbdata[nt].redrawlater) && (ttb.tbdata[nt].draw != NULL) ){
+      gtk_widget_queue_draw(ttb.tbdata[nt].draw);
+      ttb.tbdata[nt].redrawlater= 0;
     }
   }
 }
@@ -1172,16 +1202,21 @@ static int ltoolbar_menustatus(lua_State *L)
 }
 
 /** `toolbar.updatebuffinfo(onoff)` Lua function. */
-int  update_buff_info= 1; //on by default
 char saved_title[512];
+char saved_statusbar[512];
 static int ltoolbar_updatebuffinfo(lua_State *L)
 {
-  update_buff_info= lua_toboolean(L, 1);
-  if( update_buff_info ){ //update ui on?
+  update_ui= lua_toboolean(L, 1);
+  if( update_ui ){ //update ui on?
     if( saved_title[0] != 0 ){  //set the saved title
       toolbar_set_win_title(saved_title);
       saved_title[0]= 0;
     }
+    if( saved_statusbar[0] != 0 ){  //set the saved status bar fields
+      toolbar_set_statusbar_text( saved_statusbar, 1);
+      saved_statusbar[0]= 0;
+    }
+    redraw_pending_toolbars();
   }
   return 0;
 }
@@ -1239,8 +1274,9 @@ static int lfilediff_strdiff(lua_State *L)
 /* register LUA toolbar object */
 void register_toolbar(lua_State *L)
 {
-  update_buff_info= 1;  //update buffer UI: on by default
+  update_ui= 1;  //update buffer UI: on by default
   saved_title[0]= 0;
+  saved_statusbar[0]= 0;
   //init tatoolbar vars like color picker
   init_tatoolbar_vars();
 
@@ -1315,29 +1351,35 @@ int toolbar_set_statusbar_text(const char *text, int bar)
       if( bar == 0 ){
         set_tabtextG(G, 1, text, text, 1 ); //tooltip = text in case it can be shown complete
       }else{
-        //split text in parts (separator= 4 spaces)
-        ntab= 2;
-        s= text;
-        while( (*s != 0) && (ntab <= 7)){
-          d= strstr( s, "    " );
-          if( d != NULL ){
-            n= d-s;
-            if( n >= sizeof(txt) ){
-              n= sizeof(txt)-1;
+        if( update_ui ){ //update buffer UI on?
+          //split text in parts (separator= 4 spaces)
+          ntab= 2;
+          s= text;
+          while( (*s != 0) && (ntab <= 7)){
+            d= strstr( s, "    " );
+            if( d != NULL ){
+              n= d-s;
+              if( n >= sizeof(txt) ){
+                n= sizeof(txt)-1;
+              }
+              strncpy( txt, s, n );
+              txt[n]= 0;
+              set_tabtextG(G, ntab, txt, "", 0 );
+              s=d+4;
+            }else{
+              //last field
+              set_tabtextG(G, ntab, s, "", 0 );
+              break;
             }
-            strncpy( txt, s, n );
-            txt[n]= 0;
-            set_tabtextG(G, ntab, txt, "", 0 );
-            s=d+4;
-          }else{
-            //last field
-            set_tabtextG(G, ntab, s, "", 0 );
-            break;
+            ntab++;
           }
-          ntab++;
+          //redraw the complete toolbar
+          redraw_group(G);
+        }else{
+          //save for later
+          strncpy( saved_statusbar, text, sizeof(saved_statusbar)-1 );
+          saved_statusbar[sizeof(saved_statusbar)-1]= 0;
         }
-        //redraw the complete toolbar
-        redraw_group(G);
       }
       return 0;
     }
@@ -1347,7 +1389,7 @@ int toolbar_set_statusbar_text(const char *text, int bar)
 
 void toolbar_set_win_title( const char *title )
 {
-  if( update_buff_info ){ //update buffer UI on?
+  if( update_ui ){ //update buffer UI on?
     //update window title now
     gtk_window_set_title(GTK_WINDOW(window), title);
   }else{
