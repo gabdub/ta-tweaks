@@ -5,7 +5,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.3 (22 feb 2017)"
+#define TA_TOOLBAR_VERSION_STR "1.0.4 (7 mar 2017)"
 
 /* ============================================================================= */
 /*                                DATA                                           */

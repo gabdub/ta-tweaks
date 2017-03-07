@@ -51,7 +51,7 @@ end
 
 --ACTION: closeall (dont'close project) replaces "onlykeepproj" action
 function Proj.onlykeep_projopen(keepone)
-  Proj.updating_ui=Proj.updating_ui+1
+  Proj.stop_update_ui(true)
   --close all buffers except project (and buffer._dont_close)
   if Proj.get_projectbuffer(false) ~= nil then
     --close search results
@@ -60,7 +60,7 @@ function Proj.onlykeep_projopen(keepone)
     Proj.goto_filesview(true)
   elseif not keepone then
      io.close_all_buffers()
-     Proj.updating_ui=Proj.updating_ui-1
+     Proj.stop_update_ui(false)
      return
   end
   local i=1
@@ -70,7 +70,7 @@ function Proj.onlykeep_projopen(keepone)
       --regular file, close it
       Util.goto_buffer(buf)
       if not io.close_buffer() then
-        Proj.updating_ui=Proj.updating_ui-1
+        Proj.stop_update_ui(false)
         return
       end
     else
@@ -82,7 +82,7 @@ function Proj.onlykeep_projopen(keepone)
   --check that at least one regular buffer remains after closing
   Proj.check_panels()
   actions.updateaction("dont_close")
-  Proj.updating_ui=Proj.updating_ui-1
+  Proj.stop_update_ui(false)
 end
 
 --ACTION: open_userhome
@@ -313,9 +313,9 @@ function Proj.new_project()
   Proj.set_selectionmode(buffer,true)
   Proj.show_lost_focus(buffer)
   --update ui
-  Proj.updating_ui= 1
+  Proj.stop_update_ui(true)
   Proj.goto_filesview(true) --change to files
-  Proj.updating_ui= 0
+  Proj.stop_update_ui(false)
   -- project in SELECTION mode without focus--
   --local p_buffer = Proj.get_projectbuffer(true)
   --Proj.show_lost_focus(p_buffer)
@@ -356,9 +356,9 @@ function Proj.open_project(filename)
     io.open_file(prjfile)
 
     --update ui
-    Proj.updating_ui= 1
+    Proj.stop_update_ui(true)
     Proj.goto_filesview(true) --change to files
-    Proj.updating_ui= 0
+    Proj.stop_update_ui(false)
     -- project in SELECTION mode without focus--
     local p_buffer = Proj.get_projectbuffer(true)
     Proj.show_lost_focus(p_buffer)
@@ -455,7 +455,7 @@ function Proj.showin_rightpanel_status()
 end
 function Proj.toggle_showin_rightpanel()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
-  Proj.updating_ui=1
+  Proj.stop_update_ui(true)
   Proj.getout_projview()
   local buf= buffer
   if buf._right_side then
@@ -471,7 +471,7 @@ function Proj.toggle_showin_rightpanel()
   end
   --move the buffer to the other panel
   Util.goto_buffer(buf)
-  Proj.updating_ui=0
+  Proj.stop_update_ui(false)
   actions.updateaction("showin_rightpanel")
 end
 
@@ -590,7 +590,7 @@ function Proj.add_this_file()
       } == 1
       if confirm then
         --prevent some events to fire for ever
-        Proj.updating_ui= Proj.updating_ui+1
+        Proj.stop_update_ui(true)
 
         local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
           --this file is in the project view
@@ -618,7 +618,7 @@ function Proj.add_this_file()
         Proj.go_file(file)
         ui.statusbar_text= 'File added to project: ' .. file .. ' in row ' .. row
 
-        Proj.updating_ui= Proj.updating_ui-1
+        Proj.stop_update_ui(false)
       end
     end
   else

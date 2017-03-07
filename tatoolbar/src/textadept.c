@@ -934,7 +934,11 @@ static int lui__newindex(lua_State *L) {
   const char *key = lua_tostring(L, 2);
   if (strcmp(key, "title") == 0) {
 #if GTK
+ #ifdef USE_TA_TOOLBAR
+    toolbar_set_win_title(lua_tostring(L, 3));
+ #else
     gtk_window_set_title(GTK_WINDOW(window), lua_tostring(L, 3));
+ #endif
 #elif CURSES
     for (int i = 0; i < COLS; i++) mvaddch(0, i, ' '); // clear titlebar
     mvaddstr(0, 0, lua_tostring(L, 3)), refresh();

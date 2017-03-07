@@ -389,5 +389,6 @@ void ttb_settooltip( const char * name, const char *tooltip, int onlythistb );
 void ttb_settext( const char * name, const char * text, const char *tooltip, int onlythistb );
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
 
+void toolbar_set_win_title( const char *title );
 
 #endif

@@ -59,12 +59,12 @@ function Proj.force_buffer_inview(pbuf, nprefv)
   end
   if nview ~= nprefv then
     --show the buffer in the preferred view
-    Proj.updating_ui= Proj.updating_ui+1
+    Proj.stop_update_ui(true)
     local nv= _VIEWS[view]    --save actual view
     Util.goto_view(nprefv)    --goto preferred view
     Util.goto_buffer(pbuff)   --show the buffer
     Util.goto_view(nv)        --restore actual view
-    Proj.updating_ui= Proj.updating_ui-1
+    Proj.stop_update_ui(false)
   end
 end
 
@@ -80,7 +80,7 @@ end
 
 -- project in SELECTION mode without focus--
 function Proj.show_lost_focus(buff)
-  if (Proj.updating_ui == 0 and buffer._project_select) or (buff ~= nil) then
+  if (Proj.update_ui == 0 and buffer._project_select) or (buff ~= nil) then
     if buff == nil then buff= buffer end
     buff.caret_line_back = buff.property['color.prj_sel_bar_nof']
   end
@@ -100,8 +100,8 @@ end
 --set/restore lexer/ui after a buffer/view switch
 function Proj.update_after_switch()
   --if we are updating, ignore this event
-  if Proj.updating_ui > 0 then return end
-  Proj.updating_ui= 1
+  if Proj.update_ui > 0 then return end
+  Proj.stop_update_ui(true)
   if buffer._project_select == nil then
     --normal file: restore current line default settings
     Proj.show_default(buffer)
@@ -148,7 +148,7 @@ function Proj.update_after_switch()
       buffer.v_scroll_bar= buffer.h_scroll_bar
     end
   end
-  Proj.updating_ui= 0
+  Proj.stop_update_ui(false)
 end
 
 --try to select the current file in the working project
@@ -163,7 +163,7 @@ function Proj.track_this_file()
       row= Proj.get_file_row(p_buffer, file)
       if row ~= nil then
         --prevent some events to fire for ever
-        Proj.updating_ui= Proj.updating_ui+1
+        Proj.stop_update_ui(true)
 
         local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
         Util.goto_view(projv)
@@ -178,7 +178,7 @@ function Proj.track_this_file()
         --return to this file (it could be in a different view)
         Proj.go_file(file)
 
-        Proj.updating_ui= Proj.updating_ui-1
+        Proj.stop_update_ui(false)
       end
     end
   end
@@ -216,7 +216,7 @@ function Proj.EVfile_opened()
   --if the file is open in the right panel, mark it as such
   if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
   --ignore session load
-  if Proj.updating_ui == 0 then
+  if Proj.update_ui == 0 then
     --open project in selection mode
     Proj.ifproj_setselectionmode()
     -- Closes the initial "Untitled" buffer (project version)
@@ -578,11 +578,11 @@ end
 
 --check the buffer type of every open view
 function Proj.check_panels()
-  Proj.updating_ui=Proj.updating_ui+1
+  Proj.stop_update_ui(true)
   local actv= _VIEWS[view]
   Proj.check_rightpanel()
   Proj.check_searchpanel()
   Proj.check_leftpanel()
   if #_VIEWS >= actv then Util.goto_view(actv) end
-  Proj.updating_ui=Proj.updating_ui-1
+  Proj.stop_update_ui(false)
 end

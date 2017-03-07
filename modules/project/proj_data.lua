@@ -36,13 +36,11 @@
 --  proj_fold_row[]  = array with the row numbers to fold on open
 --  proj_grp_path[]  = array with the path of each group or nil
 --
---  Proj.updating_ui= number of ui updates in progress (ignore some events if > 0)
---  Proj.cmenu_num  = number of the current context menu
+--  Proj.update_ui   = number of ui updates in progress (ignore some events if > 0)
+--  Proj.cmenu_num   = number of the current context menu
 -----------------------------------------------------------------------
 local Proj = Proj
 local Util = Util
-
-Proj.updating_ui= 1 --don't update the UI until Proj.EVinitialize is called
 
 Proj.PROJECTS_FILE = _USERHOME..'/projects'
 Proj.MAX_RECENT_PROJ = 10
@@ -50,6 +48,28 @@ Proj.prjlist_change = false
 
 --recent Projects list
 Proj.recent_projects= {}
+
+Proj.update_ui= 0
+function Proj.stop_update_ui(onoff)
+  if onoff then
+    --prevent some events to fire
+    Proj.update_ui= Proj.update_ui+1
+    if Proj.update_ui == 1 then
+      --stop updating global buffer info like windows title / status bar
+      toolbar.updatebuffinfo(false)
+    end
+  else
+    --restore normal mode
+    Proj.update_ui= Proj.update_ui-1
+    if Proj.update_ui == 0 then
+      --update pending changes to global buffer info
+      toolbar.updatebuffinfo(true)
+    end
+  end
+end
+
+--don't update the UI until Proj.EVinitialize is called
+Proj.stop_update_ui(true)
 
 local function load_recent_projects(filename)
   local f = io.open(filename, 'rb')
@@ -117,7 +137,8 @@ end
 -- TA-EVENT INITIALIZED
 function Proj.EVinitialize()
   --after session load ends, verify all the buffers (this prevents view creation conflicts)
-  Proj.updating_ui= 0
+  Proj.stop_update_ui(false)
+
   Proj.is_visible= 1  --0:hidden  1:shown in selection mode  2:shown in edit mode
   Proj.edit_width= 600
   Proj.select_width= 200
@@ -625,7 +646,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
     end
     if confirm then
       --prevent some events to fire for ever
-      Proj.updating_ui= Proj.updating_ui+1
+      Proj.stop_update_ui(true)
 
       local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
       --this file is in the project view
@@ -681,7 +702,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
       p_buffer.home()
       ui.statusbar_text= '' .. nadd .. ' file/s added to project'
 
-      Proj.updating_ui= Proj.updating_ui-1
+      Proj.stop_update_ui(false)
     end
   end
 end
@@ -689,7 +710,7 @@ end
 -- find text in project's files
 -- code adapted from module: find.lua
 function Proj.find_in_files(p_buffer,text,match_case,whole_word)
-  Proj.updating_ui=Proj.updating_ui+1
+  Proj.stop_update_ui(true)
   --activate/create search view
   Proj.goto_searchview()
 
@@ -759,7 +780,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word)
   buffer.read_only= true
   --set search context menu
   Proj.set_contextm_search()
-  Proj.updating_ui=Proj.updating_ui-1
+  Proj.stop_update_ui(false)
 end
 
 local function try_open(fn)

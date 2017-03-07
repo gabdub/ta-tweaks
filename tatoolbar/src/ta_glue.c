@@ -1171,6 +1171,21 @@ static int ltoolbar_menustatus(lua_State *L)
   return 0;
 }
 
+/** `toolbar.updatebuffinfo(onoff)` Lua function. */
+int  update_buff_info= 1; //on by default
+char saved_title[512];
+static int ltoolbar_updatebuffinfo(lua_State *L)
+{
+  update_buff_info= lua_toboolean(L, 1);
+  if( update_buff_info ){ //update ui on?
+    if( saved_title[0] != 0 ){  //set the saved title
+      toolbar_set_win_title(saved_title);
+      saved_title[0]= 0;
+    }
+  }
+  return 0;
+}
+
 /* ============================================================================= */
 /*                          FILE DIFF                                            */
 /* ============================================================================= */
@@ -1224,6 +1239,8 @@ static int lfilediff_strdiff(lua_State *L)
 /* register LUA toolbar object */
 void register_toolbar(lua_State *L)
 {
+  update_buff_info= 1;  //update buffer UI: on by default
+  saved_title[0]= 0;
   //init tatoolbar vars like color picker
   init_tatoolbar_vars();
 
@@ -1267,6 +1284,8 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "popup",        ltoolbar_popup);        //show a popup toolbar
   //menuitem
   l_setcfunction(L, -1, "menustatus",   ltoolbar_menustatus);   //change menu item status
+  //ui
+  l_setcfunction(L, -1, "updatebuffinfo",ltoolbar_updatebuffinfo); //update buffer info (app title/status bar)
   //toolbar object
   lua_setglobal(L, "toolbar");
 
@@ -1324,6 +1343,18 @@ int toolbar_set_statusbar_text(const char *text, int bar)
     }
   }
   return 1; //update the regular status bar
+}
+
+void toolbar_set_win_title( const char *title )
+{
+  if( update_buff_info ){ //update buffer UI on?
+    //update window title now
+    gtk_window_set_title(GTK_WINDOW(window), title);
+  }else{
+    //save for later
+    strncpy( saved_title, title, sizeof(saved_title)-1 );
+    saved_title[sizeof(saved_title)-1]= 0;
+  }
 }
 
 /* create a DRAWING-AREA for each toolbar */

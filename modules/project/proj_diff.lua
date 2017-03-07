@@ -68,7 +68,7 @@ local function synchronize()
   if currview == vfp2 then otherview= vfp1 elseif currview ~= vfp1 then return end
   if check_comp_buffers() then
     synchronizing = true
-    Proj.updating_ui=Proj.updating_ui+1
+    Proj.stop_update_ui(true)
     local line = buffer:line_from_position(buffer.current_pos)
     local visible_line = buffer:visible_from_doc_line(line)
     local first_visible_line = buffer.first_visible_line
@@ -77,7 +77,7 @@ local function synchronize()
     buffer:goto_line(buffer:doc_line_from_visible(visible_line))
     buffer.first_visible_line, buffer.x_offset = first_visible_line, x_offset
     Util.goto_view(currview)
-    Proj.updating_ui=Proj.updating_ui-1
+    Proj.stop_update_ui(false)
     synchronizing = false
   end
 end
@@ -206,7 +206,7 @@ function Proj.diff_start()
   end
   ui.statusbar_text= "File compare: ON"
 
-  Proj.updating_ui=Proj.updating_ui+1
+  Proj.stop_update_ui(true)
   Util.goto_view(vfp2)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
@@ -214,7 +214,7 @@ function Proj.diff_start()
   Util.goto_view(vfp1)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
-  Proj.updating_ui=Proj.updating_ui-1
+  Proj.stop_update_ui(false)
 
   compareon= true
   mark_changes()
