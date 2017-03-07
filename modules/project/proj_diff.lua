@@ -83,7 +83,7 @@ local function synchronize()
 end
 
 -- Mark the differences between the two buffers.
-local function mark_changes()
+local function mark_changes(goto_first)
   --if not check_comp_buffers() then return end --already checked
   clear_marked_changes() -- clear previous marks
   -- Perform the diff.
@@ -92,10 +92,13 @@ local function mark_changes()
   filediff.setfile(1, buffer1:get_text()) --#1 = new version (left)
   filediff.setfile(2, buffer2:get_text()) --#2 = old version (right)
 
+  local first, n1, n2 = 0, 0, 0
   -- Parse the diff, marking modified lines and changed text.
   local r= filediff.getdiff( 1, 1 )
   --enum lines that are only in buffer1
+  if #r > 0 then first= r[1] end
   for i=1,#r,2 do
+    n1= n1 + r[i+1]-r[i]+1
     for j=r[i],r[i+1] do
       buffer1:marker_add(j-1, MARK_ADDITION)
     end
@@ -103,12 +106,16 @@ local function mark_changes()
   --enum lines that are only in buffer2
   r= filediff.getdiff( 2, 1 )
   for i=1,#r,2 do
+    n2= n2 + r[i+1]-r[i]+1
     for j=r[i],r[i+1] do
       buffer2:marker_add(j-1, MARK_DELETION)
     end
   end
   --enum modified lines
   r= filediff.getdiff( 1, 2 )
+  if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
+  n1= n1 + #r
+  n2= n2 + #r
   for i=1,#r,2 do
     buffer1:marker_add(r[i]-1, MARK_MODIFICATION)
     buffer2:marker_add(r[i+1]-1, MARK_MODIFICATION)
@@ -116,6 +123,7 @@ local function mark_changes()
 
   --show the missing lines using annotations
   r= filediff.getdiff( 1, 3 ) --buffer#1, 3=get blank lines list
+  if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
   for i=1,#r,2 do
     buffer1.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
   end
@@ -136,7 +144,9 @@ local function mark_changes()
       buffer2:indicator_fill_range(r[i+1], r[i+2])
     end
   end
+  if goto_first and first > 0 then buffer1:goto_line(first-1) end
   synchronize()
+  return {n1, n2}
 end
 
 ---- TA EVENTS ----
@@ -210,12 +220,22 @@ function Proj.diff_start()
   Util.goto_view(vfp2)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
+  local fn2= buffer.filename and buffer.filename or 'right buffer'
 
   Util.goto_view(vfp1)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
-  Proj.stop_update_ui(false)
+  local fn1= buffer.filename and buffer.filename or 'left buffer'
 
   compareon= true
-  mark_changes()
+  local n= mark_changes(true) --goto first change in buffer1
+
+  --activate/create search view
+  Proj.goto_searchview()
+  buffer:append_text('[File compare]\n')
+  buffer:append_text('  '..n[1]..' lines changed in '..fn1..'\n')
+  buffer:append_text('  '..n[2]..' lines changed in '..fn2..'\n')
+  Util.goto_view(vfp1)
+  Proj.stop_update_ui(false)
+
 end
