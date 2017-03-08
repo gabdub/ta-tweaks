@@ -102,6 +102,7 @@ if actions then
   actions.add("open_selfile",        '_Open the selected/companion file',Proj.open_selfile,"ao" )
   actions.add("first_buffer",        'First buffer',          Proj.first_buffer, "apgup")
   actions.add("last_buffer",         'Last buffer',           Proj.last_buffer,  "apgdn")
+  actions.add("clear_search",        'Clear search results',  Proj.clear_search)
 
   --add actions defined in "proj_ctags"
   actions.add("goto_tag",            'Goto _Tag',             Proj.goto_tag,          "f11" )
@@ -109,7 +110,7 @@ if actions then
   actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos,     "sf11", "go-previous", Proj.goprev_status)
   actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos,     "sf12", "go-next", Proj.gonext_status)
   actions.add("clear_position",      'C_lear positions',      Proj.clear_pos_table,   "cf12")
-  
+
   --add actions defined in "proj_diff"
   actions.add("toggle_filediff", "Start/stop file diff", Proj.diff_start, "f8", "edit-copy")
 
@@ -179,7 +180,7 @@ if actions then
       {SEPARATOR,"showin_rightpanel"}
     },
     { --#4 search view
-      {"copy", "selectall"}
+      {"copy", "selectall", "clear_search"}
     }
   }
 

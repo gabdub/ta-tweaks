@@ -114,8 +114,7 @@ local function mark_changes(goto_first)
   --enum modified lines
   r= filediff.getdiff( 1, 2 )
   if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
-  n1= n1 + #r
-  n2= n2 + #r
+  local n3= #r / 2
   for i=1,#r,2 do
     buffer1:marker_add(r[i]-1, MARK_MODIFICATION)
     buffer2:marker_add(r[i+1]-1, MARK_MODIFICATION)
@@ -146,7 +145,7 @@ local function mark_changes(goto_first)
   end
   if goto_first and first > 0 then buffer1:goto_line(first-1) end
   synchronize()
-  return {n1, n2}
+  return {n1, n2, n3}
 end
 
 ---- TA EVENTS ----
@@ -200,6 +199,24 @@ function Proj.EVview_new()
   end
 end
 
+local function dump_changes(n,buff, fnum, dlist)
+  if n > 0 then
+    local r= filediff.getdiff(fnum, dlist)
+    local c= 10
+    for i=1,#r,2 do
+      local snum= ('%4d'):format(r[i])
+      local line= buff:get_line(r[i]-1)
+      buffer:append_text(('  @%s:%s'):format(snum, line))
+      c= c-1
+      if c == 0 then --only show first 10 blocks
+        if i < #r-1 then buffer:append_text('  ...') end
+        break
+      end
+    end
+  end
+  buffer:append_text('\n')
+end
+
 ---- ACTIONS ----
 --ACTION: toggle_filediff
 -- Highlight differences between files in left (NEW) / right (OLD) panel
@@ -220,22 +237,46 @@ function Proj.diff_start()
   Util.goto_view(vfp2)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
+  local b2= buffer
   local fn2= buffer.filename and buffer.filename or 'right buffer'
 
   Util.goto_view(vfp1)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
+  local b1= buffer
   local fn1= buffer.filename and buffer.filename or 'left buffer'
 
   compareon= true
   local n= mark_changes(true) --goto first change in buffer1
 
+  Proj.clear_search_results()
   --activate/create search view
   Proj.goto_searchview()
+  buffer.read_only= false
+   --delete search content
   buffer:append_text('[File compare]\n')
-  buffer:append_text('  '..n[1]..' lines changed in '..fn1..'\n')
-  buffer:append_text('  '..n[2]..' lines changed in '..fn2..'\n')
+  buffer:goto_pos(buffer.length)
+  local p,f,e= Util.splitfilename(fn1)
+  if f == '' then f= fn1 end
+  buffer:append_text((' (+)%4d %s::%s::\n'):format(n[1], f, fn1))
+  --enum lines that are only in buffer 1
+  dump_changes(n[1],b1,1,1)
+
+  p,f,e= Util.splitfilename(fn2)
+  if f == '' then f= fn2 end
+  buffer:append_text((' (-)%4d %s::%s::\n'):format(n[2], f, fn2))
+  --enum lines that are only in buffer 2
+  dump_changes(n[2],b2,2,1)
+
+  buffer:append_text((' (*)%4d edited lines::%s::\n'):format(n[3],fn1))
+  --enum modified lines in buffer 1
+  dump_changes(n[3],b1,1,2)
+
+  buffer:append_text('\n')
+  buffer:set_save_point()
+  buffer.read_only= true
+  buffer:set_lexer('myproj')
+  --return to file #1
   Util.goto_view(vfp1)
   Proj.stop_update_ui(false)
-
 end

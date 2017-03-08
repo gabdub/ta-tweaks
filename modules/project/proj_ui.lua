@@ -506,6 +506,20 @@ function Proj.goto_searchview()
   end
 end
 
+function Proj.clear_search_results()
+  local sv= Proj.prefview[Proj.PRJV_SEARCH]
+  if #_VIEWS < sv then return false end
+  Proj.goto_searchview()
+  buffer.read_only= false
+   --delete search content
+  textadept.bookmarks.clear()
+  Proj.remove_search_from_pos_table()
+  buffer:set_text('')
+  buffer:set_save_point()
+  buffer.read_only= true
+  buffer:set_lexer('myproj')
+end
+
 function Proj.close_search_view()
   local sv= Proj.prefview[Proj.PRJV_SEARCH]
   --if more views are open, ignore the close

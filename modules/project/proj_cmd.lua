@@ -429,6 +429,11 @@ function Proj.search_in_files()
   end
 end
 
+--ACTION: clear_search
+function Proj.clear_search()
+  Proj.clear_search_results()
+end
+
 --ACTION: close_others
 function Proj.close_others()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
