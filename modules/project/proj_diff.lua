@@ -177,8 +177,7 @@ end
 --TA-EVENT: MODIFIED
 -- Highlight differences as text is typed and deleted.
 function Proj.EVmodified(modification_type)
-  if not check_comp_buffers() then return end
-  if bit32_band(modification_type, 0x01 + 0x02) > 0 then mark_changes() end
+  if check_comp_buffers() and bit32_band(modification_type, 0x01 + 0x02) > 0 then mark_changes(false) end
 end
 
 --TA-EVENT: VIEW_NEW
