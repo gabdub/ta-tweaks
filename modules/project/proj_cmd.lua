@@ -261,6 +261,33 @@ function Proj.trim_trailing_spaces()
   end
 end
 
+--ACTION: remove_tabs
+--Convert all tabs into spaces
+function Proj.remove_tabs()
+  local buffer = buffer
+  local nt, ne= 0, 0
+  buffer:begin_undo_action()
+  local pos= buffer.current_pos
+  local startlin= buffer.line_from_position(pos)
+  local startcol= buffer.column[pos]
+  buffer:goto_pos(0)
+  buffer:search_anchor()
+  local tw= buffer.tab_width
+  pos= buffer:search_next(0, "\t")
+  while pos ~= -1 do
+    buffer:set_target_range(pos, pos+1)
+    local col= buffer.column[pos]
+    local spaces = tw - math.fmod(col, tw)
+    buffer:replace_target(string.rep(' ', spaces))
+    nt=nt+1
+    ne=ne+spaces
+    pos= buffer:search_next(0, "\t")
+  end
+  buffer:goto_pos(buffer:find_column(startlin, startcol))
+  buffer:end_undo_action()
+  ui.statusbar_text= ""..nt.." tabs replaced with "..ne.." spaces"
+end
+
 --ACTION: new_project
 --create a new project fije
 function Proj.new_project()

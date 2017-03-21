@@ -78,6 +78,8 @@ if actions then
 
   --add new PROJECT actions
   actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces, nil, "dialog-ok")
+  actions.add("remove_tabs",         'Convert all tabs into spaces', Proj.remove_tabs)
+
   actions.add("new_project",         _L['_New'],              Proj.new_project)
   actions.add("open_project",        _L['_Open'],             Proj.open_project)
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
@@ -124,9 +126,9 @@ if actions then
       "addthisfiles_proj","addallfiles_proj","adddirfiles_proj"}
     })
 
-  --add TRIM_TRAILINGSPACES at the end of the EDIT menu
+  --add TRIM_TRAILINGSPACES / REMOVE_TABS at the end of the EDIT menu
   local m_ed= actions.getmenu_fromtitle(_L['_Edit'])
-  if m_ed then m_ed[#m_ed+1]= {SEPARATOR,"trim_trailingspaces"} end
+  if m_ed then m_ed[#m_ed+1]= {SEPARATOR,"trim_trailingspaces", "remove_tabs"} end
 
   --add OPEN_SELFILE at the end of the QUICK-OPEN submenu
   local m_qo= actions.getmenu_fromtitle(_L['Quick _Open'])
