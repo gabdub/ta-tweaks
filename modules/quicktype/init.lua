@@ -73,7 +73,7 @@ local function multiline_comment()
     --all lines already commented: uncomment them
     for i= n1, n2 do
       buffer:goto_line(i)
-      buffer:delete_range(buffer.current_pos,2)
+      buffer:delete_range(buffer.current_pos,#prefix)
     end
     ui.statusbar_text= ""..(n2-n1+1).." lines uncommented"
   else
