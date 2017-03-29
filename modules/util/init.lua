@@ -38,6 +38,7 @@ end
 
 -- Returns the Path, Filename, and Extension of a filename as 3 strings
 function Util.splitfilename(strfilename)
+  if not strfilename then return {'','',''} end
   return string.match(strfilename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
 end
 
@@ -75,3 +76,8 @@ function Util.type_before_after(before,after)
   buffer.goto_pos(buffer, pos)
 end
 
+function Util.escape_match(x)
+   return( x:gsub('%%', '%%%%'):gsub('^%^', '%%^'):gsub('%$$', '%%$'):gsub('%(', '%%(')
+            :gsub('%)', '%%)'):gsub('%.', '%%.'):gsub('%[', '%%['):gsub('%]', '%%]')
+            :gsub('%*', '%%*'):gsub('%+', '%%+'):gsub('%-', '%%-'):gsub('%?', '%%?') )
+end

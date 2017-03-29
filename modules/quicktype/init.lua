@@ -44,18 +44,33 @@ local function qt_c_sep_line()
   Util.type_before_after("/* ============================================================================= */\n", "")
 end
 
--- Alt+7 = "//" comment - uncomment (ALWAYS put // in column #1)
+-- Alt+7 = prefix type comment - uncomment in column #1
 local function multiline_comment()
+  local comment = textadept.editing.comment_string[buffer:get_lexer(true)] or ''
+  local prefix, suffix = comment:match('^([^|]+)|?([^|]*)$')
+  if not prefix then return end
+  if prefix == '/*' then
+    prefix= '//'
+  end
   local n1= buffer:line_from_position(buffer.current_pos)
   local n2= n1
   if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
-    --if something is selected use selected line range
+    --if something is selected use the selected line range
     n1=buffer:line_from_position(buffer.selection_n_start[0])
     n2=buffer:line_from_position(buffer.selection_n_end[0])
   end
-  local cl= buffer:get_line(n1)
+  local uncomm= true
+  local iscomm= '^'..Util.escape_match(prefix)
+  for i= n1, n2 do
+    local cl= buffer:get_line(i)
+    if not cl:match(iscomm) then
+      uncomm= false
+      break
+    end
+  end
   buffer:begin_undo_action()
-  if cl:match('^//') then
+  if uncomm then
+    --all lines already commented: uncomment them
     for i= n1, n2 do
       buffer:goto_line(i)
       buffer:delete_range(buffer.current_pos,2)
@@ -64,7 +79,7 @@ local function multiline_comment()
   else
     for i= n1, n2 do
       buffer:goto_line(i)
-      buffer.add_text(buffer, "//")
+      buffer.add_text(buffer, prefix)
     end
     ui.statusbar_text= ""..(n2-n1+1).." lines commented"
   end
@@ -197,7 +212,7 @@ if actions then
   actions.add("type_c_define", 'Quicktype: C define',             qt_c_define,    "a3")
   actions.add("type_c_todo",   'Quicktype: C TODO',               qt_c_todo,      "a4")
   actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
-  actions.add("multiline_comment",'Multiline // comment',         multiline_comment,"a7")
+  actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
   actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
   actions.add("multiline_typer",'Multiline typer',                multiline_typer,"a9")
 else
