@@ -179,7 +179,7 @@ if Proj then  --Project module?
     if word == '' then return end
     M.last_search = word       --save last search
 
-    Proj.find_in_files(p_buffer,word,M.goto_nearest_match_case,M.goto_nearest_whole_word)
+    Proj.find_in_files(p_buffer,Util.escape_match(word),M.goto_nearest_match_case,M.goto_nearest_whole_word)
   end
   function Proj.do_search_in_files()
     find_text_in_project(true)
