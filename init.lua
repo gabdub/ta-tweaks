@@ -14,74 +14,47 @@ require('quicktype')
 if actions then
   actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
 
---f6, sf6, cf6, af6 "DEBUG file/string diff"
-  actions.add("sdiff_test", "String diff TEST", function()
-    actions.run("new")  --new buffer
-    local s1= "televisor sorpresa"
-    local s2= "string sor de prueba sorteo"
-    buffer:append_text(s1.." => "..s2.."\n")
-    local r= filediff.strdiff( s1, s2 )
-    for i=1,#r,3 do
-      buffer:append_text("F"..r[i].." = "..r[i+1].." - "..r[i+2].."\n")
+--f6 "svn cat"
+  actions.add("svn_changes", "SVN: compare current buffer to HEAD version", function()
+    local orgbuf= buffer
+    if orgbuf._is_svn then
+      orgbuf._is_svn= nil
+      --close right file (svn HEAD)
+      Proj.goto_filesview(false,true)
+      Proj.close_buffer()
+      Proj.goto_filesview()
+      Util.goto_buffer(orgbuf)
+      return
     end
-    buffer:append_text(s2.." => "..s1.."\n")
-    r= filediff.strdiff( s2, s1 )
-    for i=1,#r,3 do
-      buffer:append_text("F"..r[i].." = "..r[i+1].." - "..r[i+2].."\n")
+    local orgfile= buffer.filename
+    if orgfile then
+      buffer._is_svn= true
+      local enc= buffer.encoding     --keep encoding
+      local lex= buffer:get_lexer()  --keep lexer
+      --new buffer
+      actions.run("new")
+      local cmd= "/home/mate11/mw/catcurrentver "..orgfile
+      --#!/bin/bash
+      --BASEDIR="/home/mate11/mw/"
+      --REPODIR="https://192.168.0.11:8443/svn/"
+      --REPO="$1"
+      --REPO=${REPO//$BASEDIR/$REPODIR}
+      --svn cat "$REPO"
+      local p = assert(spawn(cmd))
+      p:close()
+      buffer:replace_target((p:read('*a') or ''):iconv('UTF-8', enc))
+      if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
+      buffer:set_lexer(lex)
+      buffer:set_save_point()
+      buffer._is_svn= true
+      --show in the right panel
+      Proj.toggle_showin_rightpanel()
+      Proj.goto_filesview()
+      Util.goto_buffer(orgbuf)
+      --compare files
+      Proj.diff_start()
     end
-    buffer:set_save_point()
   end, "f6")
-  actions.add("fdiff_old", "Load current file buffer as the OLD version", function()
-    filediff.setfile(2, buffer:get_text())
-  end, "sf6")
-  actions.add("fdiff_new", "Load current file buffer as the NEW version", function()
-    filediff.setfile(1, buffer:get_text())
-  end, "cf6")
-  actions.add("fdiff_test", "File diff TEST", function()
-    actions.run("new")  --new buffer
-    local r= filediff.getdiff( 1, 0 )
-    buffer:append_text("--RAW F1 - NEW FILE--\n")
-    for i=1,#r,3 do
-      buffer:append_text("F1 "..r[i]..": "..r[i+1].." - "..r[i+2].."\n")
-    end
-    r= filediff.getdiff( 2, 0 )
-    buffer:append_text("--RAW F2 - OLD FILE--\n")
-    for i=1,#r,3 do
-      buffer:append_text("F2 "..r[i]..": "..r[i+1].." - "..r[i+2].."\n")
-    end
-
-    r= filediff.getdiff( 1, 1 )
-    buffer:append_text("\n--ONLY IN NEW FILE (+)--\n")
-    for i=1,#r,2 do
-      buffer:append_text("F1 L "..r[i].." - "..r[i+1].."\n")
-    end
-    r= filediff.getdiff( 2, 1 )
-    buffer:append_text("--ONLY IN OLD FILE (-)--\n")
-    for i=1,#r,2 do
-      buffer:append_text("F2 L "..r[i].." - "..r[i+1].."\n")
-    end
-    r= filediff.getdiff( 1, 3 )
-    buffer:append_text("--ADD BLANKS LINES NEW--\n")
-    for i=1,#r,2 do
-      buffer:append_text("F1 L "..r[i].." n= "..r[i+1].."\n")
-    end
-    r= filediff.getdiff( 2, 3 )
-    buffer:append_text("--ADD BLANKS LINES OLD--\n")
-    for i=1,#r,2 do
-      buffer:append_text("F2 L "..r[i].." n= "..r[i+1].."\n")
-    end
-    r= filediff.getdiff( 1, 2 )
-    buffer:append_text("--ONE LINE CHANGES--\n")
-    for i=1,#r,2 do
-      buffer:append_text("F1 L "..r[i].." <-> F2 L"..r[i+1].."\n")
-    end
-    r= filediff.getdiff( 1, 4 )
-    buffer:append_text("--TEXT CHANGES INSIDE ONE LINE--\n")
-    for i=1,#r,3 do
-      buffer:append_text("F"..r[i].." pos= "..r[i+1].." n= "..r[i+2].."\n")
-    end
-    buffer:set_save_point()
-  end, "af6")
 end
 
 textadept.file_types.extensions.mas = 'mas'
