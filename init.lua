@@ -39,7 +39,7 @@ if actions then
         local cmd= "svn cat "..url
         local p = assert(spawn(cmd))
         p:close()
-        buffer:replace_target((p:read('*a') or ''):iconv('UTF-8', enc))
+        buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
         if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
         buffer:set_lexer(lex)
         buffer:set_save_point()
