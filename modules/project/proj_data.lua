@@ -852,6 +852,7 @@ end
 
 --convert file to SVN url
 function Proj.get_svn_url(file)
+  file=string.gsub(file, '%\\', '/')
   local p_buffer= Proj.get_projectbuffer(true)
   if p_buffer == nil or p_buffer.proj_files == nil then
     ui.statusbar_text= 'No project found'
@@ -866,6 +867,7 @@ function Proj.get_svn_url(file)
     ui.statusbar_text= 'No base directory set in project'
     return
   end
+  base=string.gsub(base, '%\\', '/')
   --remove base dir
   local fmt= '^'..Util.escape_match(base)..'(.*)'
   local url= string.match(file,fmt)
