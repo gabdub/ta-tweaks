@@ -19,6 +19,7 @@
 --        'C'     CTAGS file
 --        'R'     RUN a command, %{projfiles} is replaced with a temporary files with the list of project files
 --                               %{projfiles.ext1.ext2...} only project files with this extensions are included
+--        'Sxxxx' SVN repository base
 --
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
@@ -223,8 +224,9 @@ function Proj.parse_projectbuffer(p_buffer)
 
   p_buffer.proj_files= {}
   p_buffer.proj_filestype= {}   --Proj.PRJF_...
-  p_buffer.proj_fold_row = {}
-  p_buffer.proj_grp_path = {}
+  p_buffer.proj_fold_row=  {}
+  p_buffer.proj_grp_path=  {}
+  p_buffer.proj_svn_base=  nil
 
   --get project file path (default)
   local projname= p_buffer.filename
@@ -287,15 +289,19 @@ function Proj.parse_projectbuffer(p_buffer)
       end
     end
     if opt ~= nil and opt ~= '' then
-      if opt == '-' then
+      local o, p= string.match(opt, '(.)(.*)')
+      if o == '-' then
         --  '-': fold this group on project load
         p_buffer.proj_fold_row[ #p_buffer.proj_fold_row+1 ]= r
-      elseif opt == 'C' then
+      elseif o == 'C' then
         --  'C': CTAGS file
         if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_CTAG else ftype=Proj.PRJF_EMPTY end
-      elseif opt == 'R' then
+      elseif o == 'R' then
         --  'R': RUN a command
         if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_RUN else ftype=Proj.PRJF_EMPTY end
+      elseif o == 'S' then
+        --  'S': SVN repository base
+        p_buffer.proj_svn_base= p
       end
     end
     --set the filename/type asigned to each row
@@ -842,4 +848,32 @@ function Proj.open_cursor_file()
       end
     end
   end
+end
+
+--convert file to SVN url
+function Proj.get_svn_url(file)
+  local p_buffer= Proj.get_projectbuffer(true)
+  if p_buffer == nil or p_buffer.proj_files == nil then
+    ui.statusbar_text= 'No project found'
+    return
+  end
+  if p_buffer.proj_svn_base == nil or p_buffer.proj_svn_base == '' then
+    ui.statusbar_text= 'No SVN repository set in project'
+    return
+  end
+  local base= p_buffer.proj_grp_path[1]
+  if base == nil or base == '' then
+    ui.statusbar_text= 'No base directory set in project'
+    return
+  end
+  --remove base dir
+  local fmt= '^'..Util.escape_match(base)..'(.*)'
+  local url= string.match(file,fmt)
+  if url == nil or url == '' then
+    ui.statusbar_text= 'The file is outside the project base directory'
+    return
+  end
+  url= p_buffer.proj_svn_base..url
+  ui.statusbar_text= 'SVN: '..url
+  return url
 end

@@ -28,31 +28,29 @@ if actions then
     end
     local orgfile= buffer.filename
     if orgfile then
-      buffer._is_svn= true
-      local enc= buffer.encoding     --keep encoding
-      local lex= buffer:get_lexer()  --keep lexer
-      --new buffer
-      actions.run("new")
-      local cmd= "/home/mate11/mw/catcurrentver "..orgfile
-      --#!/bin/bash
-      --BASEDIR="/home/mate11/mw/"
-      --REPODIR="https://192.168.0.11:8443/svn/"
-      --REPO="$1"
-      --REPO=${REPO//$BASEDIR/$REPODIR}
-      --svn cat "$REPO"
-      local p = assert(spawn(cmd))
-      p:close()
-      buffer:replace_target((p:read('*a') or ''):iconv('UTF-8', enc))
-      if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
-      buffer:set_lexer(lex)
-      buffer:set_save_point()
-      buffer._is_svn= true
-      --show in the right panel
-      Proj.toggle_showin_rightpanel()
-      Proj.goto_filesview()
-      Util.goto_buffer(orgbuf)
-      --compare files
-      Proj.diff_start()
+      --convert filename to svn url
+      local url= Proj.get_svn_url(orgfile)
+      if url then
+        buffer._is_svn= true
+        local enc= buffer.encoding     --keep encoding
+        local lex= buffer:get_lexer()  --keep lexer
+        --new buffer
+        actions.run("new")
+        local cmd= "svn cat "..url
+        local p = assert(spawn(cmd))
+        p:close()
+        buffer:replace_target((p:read('*a') or ''):iconv('UTF-8', enc))
+        if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
+        buffer:set_lexer(lex)
+        buffer:set_save_point()
+        buffer._is_svn= true
+        --show in the right panel
+        Proj.toggle_showin_rightpanel()
+        Proj.goto_filesview()
+        Util.goto_buffer(orgbuf)
+        --compare files
+        Proj.diff_start()
+      end
     end
   end, "f6")
 end
