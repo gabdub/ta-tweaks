@@ -771,6 +771,10 @@ end
 --ACTION: vc_changes
 --Version control SVN/GIT changes
 function Proj.vc_changes()
+  if buffer._right_side then
+    Proj.goto_filesview()
+  end
+  Proj.getout_projview()
   local orgbuf= buffer
   if orgbuf._is_svn then
     orgbuf._is_svn= nil
