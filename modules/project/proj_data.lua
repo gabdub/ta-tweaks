@@ -16,11 +16,20 @@
 --        'filename' open file 'fn' (absolute) or 'P'+'fn' (relative)
 -- [opt] = optional control options
 --        '-'     fold this group on project load / refresh
+----------
 --        'C'     CTAGS file
+--          e.g. ctags-ta.ctag::C:\textadept\ctags-ta.ctag::C
+----------
 --        'R'     RUN a command, %{projfiles} is replaced with a temporary files with the list of project files
 --                               %{projfiles.ext1.ext2...} only project files with this extensions are included
---        'Sxxxx' SVN repository base
---
+--          e.g. [Update CTAGS]::C:\GNU\ctags.exe -n -L %{projfiles.lua.c} -f C:\textadept\ctags-ta.ctag::R
+----------
+--        'Sxxxx' SVN folder and repository base (URL base)
+--          e.g. [svn]::/home/user/mw/::Shttps://192.168.0.11:8443/svn/
+----------
+--        'Gxxxx' GIT folder and repository base (working dir)
+--          e.g. [git]::C:\Users\desa1\.textadept\::GC:\Users\desa1\.textadept\ta-tweaks
+----------
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
 ----------------------------------------------------------------------
@@ -226,7 +235,7 @@ function Proj.parse_projectbuffer(p_buffer)
   p_buffer.proj_filestype= {}   --Proj.PRJF_...
   p_buffer.proj_fold_row=  {}
   p_buffer.proj_grp_path=  {}
-  p_buffer.proj_svn_base=  nil
+  p_buffer.proj_vcontrol=  {}
 
   --get project file path (default)
   local projname= p_buffer.filename
@@ -299,9 +308,10 @@ function Proj.parse_projectbuffer(p_buffer)
       elseif o == 'R' then
         --  'R': RUN a command
         if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_RUN else ftype=Proj.PRJF_EMPTY end
-      elseif o == 'S' then
-        --  'S': SVN repository base
-        p_buffer.proj_svn_base= p
+      elseif o == 'S' or o == 'G' then
+        --  'S': SVN repository base (1)
+        --  'G': GIT repository base (2)
+        p_buffer.proj_vcontrol[ #p_buffer.proj_vcontrol+1 ]= { path, p, (o == 'S') and 1 or 2 }
       end
     end
     --set the filename/type asigned to each row
@@ -850,32 +860,38 @@ function Proj.open_cursor_file()
   end
 end
 
---convert file to SVN url
-function Proj.get_svn_url(file)
-  file=string.gsub(file, '%\\', '/')
+--get "version control number, path, url" for filename
+function Proj.get_versioncontrol_url(filename)
+  filename=string.gsub(filename, '%\\', '/')
   local p_buffer= Proj.get_projectbuffer(true)
   if p_buffer == nil or p_buffer.proj_files == nil then
     ui.statusbar_text= 'No project found'
     return
   end
-  if p_buffer.proj_svn_base == nil or p_buffer.proj_svn_base == '' then
-    ui.statusbar_text= 'No SVN repository set in project'
+  if p_buffer.proj_vcontrol == nil or #p_buffer.proj_vcontrol == 0 then
+    ui.statusbar_text= 'No SVN/GIT repository set in project'
     return
   end
-  local base= p_buffer.proj_grp_path[1]
-  if base == nil or base == '' then
-    ui.statusbar_text= 'No base directory set in project'
+  local url= ""
+  local nvc= 1
+  while nvc <= #p_buffer.proj_vcontrol do
+    local base= p_buffer.proj_vcontrol[nvc][1]
+    if base and base ~= '' then
+      base= string.gsub(base, '%\\', '/')
+      --remove base dir
+      local fmt= '^'..Util.escape_match(base)..'(.*)'
+      url= string.match(filename,fmt)
+      if url and url ~= '' then
+        break
+      end
+    end
+    nvc=nvc+1
+  end
+  if nvc > #p_buffer.proj_vcontrol then
+    ui.statusbar_text= 'The file is outside project base directory'
     return
   end
-  base=string.gsub(base, '%\\', '/')
-  --remove base dir
-  local fmt= '^'..Util.escape_match(base)..'(.*)'
-  local url= string.match(file,fmt)
-  if url == nil or url == '' then
-    ui.statusbar_text= 'The file is outside the project base directory'
-    return
-  end
-  url= p_buffer.proj_svn_base..url
-  ui.statusbar_text= 'SVN: '..url
-  return url
+  local verctrl= p_buffer.proj_vcontrol[nvc][3]
+  ui.statusbar_text= (verctrl == 1 and 'SVN: ' or 'GIT: ')..url
+  return verctrl, p_buffer.proj_vcontrol[nvc][2], url
 end

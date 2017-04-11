@@ -116,12 +116,13 @@ if actions then
   --add actions defined in "proj_diff"
   actions.add("toggle_filediff", "Start/stop file diff", Proj.diff_start, "f8", "edit-copy")
 
+  actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, "f6", "document-properties")
 
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,
     {title='_Project',
      {"new_project","open_project","recent_project","close_project",SEPARATOR,
-      "search_project","goto_tag",SEPARATOR,
+      "search_project","goto_tag","vc_changes",SEPARATOR,
       "save_position","next_position","prev_position","clear_position",SEPARATOR,
       "addthisfiles_proj","addallfiles_proj","adddirfiles_proj"}
     })
@@ -176,7 +177,8 @@ if actions then
       {
         title = '_Project',
         {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-         "search_project","goto_tag","save_position","next_position","prev_position",SEPARATOR,
+         "search_project","goto_tag","vc_changes",SEPARATOR,
+         "save_position","next_position","prev_position",SEPARATOR,
          "toggle_viewproj"}
       },
       {SEPARATOR,"showin_rightpanel"}

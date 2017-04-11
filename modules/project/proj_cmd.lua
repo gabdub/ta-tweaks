@@ -767,3 +767,50 @@ function Proj.last_buffer()
     toolbar.gototab(2)
   end
 end
+
+--ACTION: vc_changes
+--Version control SVN/GIT changes
+function Proj.vc_changes()
+  local orgbuf= buffer
+  if orgbuf._is_svn then
+    orgbuf._is_svn= nil
+    --close right file (svn HEAD)
+    Proj.goto_filesview(false,true)
+    Proj.close_buffer()
+    Proj.goto_filesview()
+    Util.goto_buffer(orgbuf)
+    return
+  end
+  local orgfile= buffer.filename
+  if orgfile then
+    --convert filename to svn url
+    local verctrl, path, url= Proj.get_versioncontrol_url(orgfile)
+    if url then
+      buffer._is_svn= true
+      local enc= buffer.encoding     --keep encoding
+      local lex= buffer:get_lexer()  --keep lexer
+      --new buffer
+      actions.run("new")
+      local cmd
+      if verctrl == 1 then
+        cmd= "svn cat "..path..url
+        path=nil
+      else
+        cmd= "git show head:"..url
+      end
+      local p = assert(spawn(cmd,path))
+      p:close()
+      buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
+      if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
+      buffer:set_lexer(lex)
+      buffer:set_save_point()
+      buffer._is_svn= true
+      --show in the right panel
+      Proj.toggle_showin_rightpanel()
+      Proj.goto_filesview()
+      Util.goto_buffer(orgbuf)
+      --compare files
+      Proj.diff_start()
+    end
+  end
+end
