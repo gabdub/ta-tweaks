@@ -789,8 +789,10 @@ function Proj.vc_changes()
       buffer._is_svn= true
       local enc= buffer.encoding     --keep encoding
       local lex= buffer:get_lexer()  --keep lexer
+      local eol= buffer.eol_mode     --keep EOL
       --new buffer
       actions.run("new")
+      buffer.filename= orgfile..":HEAD"
       local cmd
       if verctrl == 1 then
         cmd= "svn cat "..path..url
@@ -802,6 +804,9 @@ function Proj.vc_changes()
       p:close()
       buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
       if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
+      --force the same EOL (git changes EOL when needed)
+      buffer.eol_mode= eol
+      buffer:convert_eols(eol)
       buffer:set_lexer(lex)
       buffer:set_save_point()
       buffer._is_svn= true

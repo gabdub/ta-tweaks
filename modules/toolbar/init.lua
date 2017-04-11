@@ -188,7 +188,7 @@ if toolbar then
     end
   end
 
-  local function choose_indent()
+  local function change_encoding()
     local options= {'UTF-8','ASCII','ISO-8859-1','UTF-16LE'}
     local button, i = ui.dialogs.filteredlist{
       title = "Select buffer enconding",
@@ -222,7 +222,7 @@ if toolbar then
       elseif ntab == 5 or ntab == 6 then --eol / indent
         toolbar.toggle_buffer_configtab()
       elseif ntab == 7 then --encoding
-        choose_indent()
+        change_encoding()
       end
     elseif ntoolbar == 3 then
       --config panel
