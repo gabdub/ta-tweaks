@@ -802,7 +802,7 @@ function Proj.vc_changes()
         cmd= "svn cat "..path..url
         path=nil
       else
-        cmd= "git show head:"..url
+        cmd= "git show HEAD:"..url
       end
       local p = assert(spawn(cmd,path))
       p:close()
