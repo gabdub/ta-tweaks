@@ -808,6 +808,7 @@ function Proj.vc_changes()
       buffer.eol_mode= eol
       buffer:convert_eols(eol)
       buffer:set_lexer(lex)
+      buffer.read_only= true
       buffer:set_save_point()
       buffer._is_svn= true
       --show in the right panel
