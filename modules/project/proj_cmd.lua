@@ -156,6 +156,25 @@ function Proj.show_doc()
       elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
       if info == '' and buffer.proj_grp_path[r] ~= nil then
         info= buffer.proj_grp_path[r]
+      elseif ftype == Proj.PRJF_FILE then
+        --get version control params for filename
+        local verctrl, cwd, url= Proj.get_versioncontrol_url(info)
+        if verctrl == 1 then
+          local p = assert(spawn("svn info "..url,cwd))
+          p:close()
+          local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
+          if einfo and einfo ~= '' then
+            info= info..'\n'..einfo..'SVN'
+          end
+        elseif verctrl == 2 then
+          info= info..'\nGIT: '..url
+          local p = assert(spawn("git status -sb "..url,cwd))
+          p:close()
+          local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
+          if einfo and einfo ~= '' then
+            info= info..'\n'..einfo
+          end
+        end
       end
       if info ~= '' then
         buffer:call_tip_show(buffer.current_pos, info )
