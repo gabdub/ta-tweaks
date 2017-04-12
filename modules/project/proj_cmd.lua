@@ -787,8 +787,8 @@ function Proj.vc_changes()
   end
   local orgfile= buffer.filename
   if orgfile then
-    --convert filename to svn url
-    local verctrl, path, url= Proj.get_versioncontrol_url(orgfile)
+    --get version control params for filename
+    local verctrl, cwd, url= Proj.get_versioncontrol_url(orgfile)
     if url then
       buffer._is_svn= true
       local enc= buffer.encoding     --keep encoding
@@ -799,12 +799,12 @@ function Proj.vc_changes()
       buffer.filename= orgfile..":HEAD"
       local cmd
       if verctrl == 1 then
-        cmd= "svn cat "..path..url
+        cmd= "svn cat "..url
         path=nil
       else
         cmd= "git show HEAD:"..url
       end
-      local p = assert(spawn(cmd,path))
+      local p = assert(spawn(cmd,cwd))
       p:close()
       buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
       if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
@@ -819,8 +819,8 @@ function Proj.vc_changes()
       Proj.toggle_showin_rightpanel()
       Proj.goto_filesview()
       Util.goto_buffer(orgbuf)
-      --compare files
-      Proj.diff_start()
+      --compare files (keep statusbar text)
+      Proj.diff_start(true)
     end
   end
 end

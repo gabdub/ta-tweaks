@@ -24,11 +24,19 @@
 --                               %{projfiles.ext1.ext2...} only project files with this extensions are included
 --          e.g. [Update CTAGS]::C:\GNU\ctags.exe -n -L %{projfiles.lua.c} -f C:\textadept\ctags-ta.ctag::R
 ----------
---        'Sxxxx' SVN folder and repository base (URL base)
+--        'Sxxx[,ccc]' SVN folder and repository base (xxx=URL prefix, ccc=working directory)
 --          e.g. [svn]::/home/user/mw/::Shttps://192.168.0.11:8443/svn/
+--                /home/user/mw/MGWdrv/trunk/v.c ==> svn cat https://192.168.0.11:8443/svn/MGWdrv/trunk/v.c
+--                working dir= no need to set
 ----------
---        'Gxxxx' GIT folder and repository base (working dir)
---          e.g. [git]::C:\Users\desa1\.textadept\::GC:\Users\desa1\.textadept\ta-tweaks
+--        'Gxxx[,ccc]' GIT folder and repository base (xxx=URL prefix, ccc=working directory)
+--          e.g. [git]::C:\Users\desa1\.textadept\::G,C:\Users\desa1\.textadept\ta-tweaks
+--                C:\Users\desa1\.textadept\modules\init.lua ==> git show HEAD:modules\init.lua
+--                working dir= C:\Users\desa1\.textadept\ta-tweaks
+--
+--          e.g. [git]::C:\textadept\ta9\src\::Gtatoolbar/src/,C:\Users\desa1\.textadept\ta-tweaks
+--                C:\textadept\ta9\src\textadept.c ==> git show HEAD:tatoolbar/src/textadept.c
+--                working dir= C:\Users\desa1\.textadept\ta-tweaks
 ----------
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
@@ -891,7 +899,11 @@ function Proj.get_versioncontrol_url(filename)
     ui.statusbar_text= 'The file is outside project base directory'
     return
   end
+  local param= p_buffer.proj_vcontrol[nvc][2] --add prefix to url [,currentdir]
+  local pref, cwd= string.match(param, '(.-),(.*)')
+  if not pref then pref= param end
+  url= pref..url
   local verctrl= p_buffer.proj_vcontrol[nvc][3]
   ui.statusbar_text= (verctrl == 1 and 'SVN: ' or 'GIT: ')..url
-  return verctrl, p_buffer.proj_vcontrol[nvc][2], url
+  return verctrl, cwd, url
 end

@@ -251,7 +251,7 @@ end
 ---- ACTIONS ----
 --ACTION: toggle_filediff
 -- Highlight differences between files in left (NEW) / right (OLD) panel
-function Proj.diff_start()
+function Proj.diff_start(silent)
   if not Proj then return end
   clear_marked_changes()
   if compareon then
@@ -262,7 +262,7 @@ function Proj.diff_start()
     ui.statusbar_text= "Can't compare, the right panel is closed"
     return
   end
-  ui.statusbar_text= "File compare: ON"
+  if not silent then ui.statusbar_text= "File compare: ON" end
 
   Proj.stop_update_ui(true)
   Util.goto_view(vfp2)
