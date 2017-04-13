@@ -137,17 +137,11 @@ function goto_line_col(askcol)
 end
 
 if Proj then  --Project module?
-  -------find text in project's files----
-  local function find_text_in_project(ask)
+  -------add function to search for text using the same params/config as goto_nearest----
+  function Proj.ask_search_in_files(ask)
     local buffer = buffer
     local suggest= ''
     local word = ''
-
-    local p_buffer = Proj.get_projectbuffer(true)
-    if p_buffer == nil then
-      ui.statusbar_text= 'No project found'
-      return
-    end
 
     goto_nearest_default()
     local s, e = buffer.selection_start, buffer.selection_end
@@ -179,14 +173,7 @@ if Proj then  --Project module?
     if word == '' then return end
     M.last_search = word       --save last search
 
-    Proj.find_in_files(p_buffer,Util.escape_match(word),M.goto_nearest_match_case,M.goto_nearest_whole_word)
-  end
-  function Proj.do_search_in_files()
-    find_text_in_project(true)
-  end
-  if actions then
-    actions.free_accelerator("aF")
-    actions.accelerators["search_project"]="aF"
+    return word, M.goto_nearest_match_case, M.goto_nearest_whole_word
   end
 end
 --------------------------------------------------------------

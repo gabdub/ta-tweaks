@@ -490,8 +490,14 @@ end
 
 --ACTION: search_project
 function Proj.search_in_files()
-  if Proj.do_search_in_files then --goto_nearest module?
-    Proj.do_search_in_files()
+  if Proj.ask_search_in_files then --goto_nearest module?
+    local p_buffer = Proj.get_projectbuffer(true)
+    if p_buffer == nil then
+      ui.statusbar_text= 'No project found'
+      return
+    end
+    local find, case, word= Proj.ask_search_in_files(true)
+    if find then Proj.find_in_files(p_buffer, find, case, word, true) end
   else
     ui.statusbar_text= 'goto_nearest module not found'
   end

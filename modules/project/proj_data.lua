@@ -733,13 +733,15 @@ end
 
 -- find text in project's files
 -- code adapted from module: find.lua
-function Proj.find_in_files(p_buffer,text,match_case,whole_word)
+function Proj.find_in_files(p_buffer,text,match_case,whole_word,escapetext)
   Proj.stop_update_ui(true)
   --activate/create search view
   Proj.goto_searchview()
 
   buffer.read_only= false
   buffer:append_text('['..text..']\n')
+  if escapetext then text= Util.escape_match(text) end
+
   buffer:goto_pos(buffer.length)
   buffer.indicator_current = ui.find.INDIC_FIND
   if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end

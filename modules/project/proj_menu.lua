@@ -84,7 +84,7 @@ if actions then
   actions.add("open_project",        _L['_Open'],             Proj.open_project)
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
   actions.add("close_project",       _L['_Close'],            Proj.close_project)
-  actions.add("search_project",      'Project _Search',       Proj.search_in_files)
+  actions.add("search_project",      'Project _Search',       Proj.search_in_files, "aF")
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.toggle_keep_thisbuffer, nil, nil, Proj.keepthisbuff_status) --check
   actions.add("showin_rightpanel",   "Show file in the right panel", Proj.toggle_showin_rightpanel, nil, nil, Proj.showin_rightpanel_status) --check
