@@ -85,6 +85,8 @@ if actions then
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
   actions.add("close_project",       _L['_Close'],            Proj.close_project)
   actions.add("search_project",      'Project _Search',       Proj.search_in_files, "aF")
+  actions.add("search_sel_dir",      'Search in selected dir', Proj.search_in_sel_dir)
+  actions.add("search_sel_file",     'Search in selected file', Proj.search_in_sel_file)
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.toggle_keep_thisbuffer, nil, nil, Proj.keepthisbuff_status) --check
   actions.add("showin_rightpanel",   "Show file in the right panel", Proj.toggle_showin_rightpanel, nil, nil, Proj.showin_rightpanel_status) --check
@@ -163,8 +165,8 @@ if actions then
     { --#1 project in SELECTION mode
       {"open_projsel","open_projectdir",SEPARATOR,
          "toggle_editproj","toggle_viewproj",SEPARATOR,
-         "adddirfiles_proj","search_project",SEPARATOR,
-         "show_documentation"}
+         "adddirfiles_proj",SEPARATOR,
+         "show_documentation", "search_project","search_sel_dir","search_sel_file"}
     },
     { --#2 project in EDIT mode
       {"undo","redo",SEPARATOR,

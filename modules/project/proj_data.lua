@@ -733,7 +733,34 @@ end
 
 -- find text in project's files
 -- code adapted from module: find.lua
-function Proj.find_in_files(p_buffer,text,match_case,whole_word,escapetext)
+-- where: 0=ALL project files, 1=selected directory, 2=selected file
+function Proj.find_in_files(p_buffer, text, match_case, whole_word, escapetext, where)
+  local fromrow=1
+  local filterpath
+  if where == 1 then --only in selected directory
+    if p_buffer and p_buffer.proj_files ~= nil then
+      local r= p_buffer.line_from_position(p_buffer.current_pos)+1
+      if r <= #p_buffer.proj_files then
+        local ftype= p_buffer.proj_filestype[r]
+        if ftype == Proj.PRJF_PATH then
+          filterpath= p_buffer.proj_grp_path[r]
+        elseif ftype == Proj.PRJF_FILE then
+          local file= p_buffer.proj_files[r]
+          if file and file ~= '' then
+            local p,f,e= Util.splitfilename(file)
+            filterpath= p
+          end
+        end
+      end
+    end
+    if not filterpath then
+      ui.statusbar_text= "No selected directory"
+      return
+    end
+  elseif where == 2 then --only in selected file
+    fromrow= p_buffer.line_from_position(p_buffer.current_pos)+1
+  end
+
   Proj.stop_update_ui(true)
   --activate/create search view
   Proj.goto_searchview()
@@ -741,6 +768,7 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word,escapetext)
   buffer.read_only= false
   buffer:append_text('['..text..']\n')
   if escapetext then text= Util.escape_match(text) end
+  if filterpath then buffer:append_text(' search dir '..filterpath..'::::\n') end
 
   buffer:goto_pos(buffer.length)
   buffer.indicator_current = ui.find.INDIC_FIND
@@ -752,7 +780,9 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word,escapetext)
   local filesnf= 0
   --check the given buffer has a list of files
   if p_buffer and p_buffer.proj_files ~= nil then
-    for row= 1, #p_buffer.proj_files do
+    local torow= #p_buffer.proj_files
+    if where == 2 and fromrow < torow then torow= fromrow end
+    for row= fromrow, torow do
       local ftype= p_buffer.proj_filestype[row]
       if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
         local file= p_buffer.proj_files[row]
@@ -761,31 +791,33 @@ function Proj.find_in_files(p_buffer,text,match_case,whole_word,escapetext)
             filesnf= filesnf+1 --file not found
             buffer:append_text(('(%s NOT FOUND)::::\n'):format(file))
           else
-            local line_num = 1
-            totfiles = totfiles + 1
-            local prt_fname= true
-            for line in io.lines(file) do
-              local s, e = (match_case and line or line:lower()):find(text)
-              if s and e then
-                file = file:iconv('UTF-8', _CHARSET)
-                if prt_fname then
-                  prt_fname= false
-                  local p,f,e= Util.splitfilename(file)
-                  if f == '' then
-                    f= file
+            file = file:iconv('UTF-8', _CHARSET)
+            local p,f,e= Util.splitfilename(file)
+            if f == '' then
+              f= file
+            end
+            if (not filterpath) or (filterpath == p) then
+              local line_num = 1
+              totfiles = totfiles + 1
+              local prt_fname= true
+              for line in io.lines(file) do
+                local s, e = (match_case and line or line:lower()):find(text)
+                if s and e then
+                  if prt_fname then
+                    prt_fname= false
+                    buffer:append_text((' %s::%s::\n'):format(f, file))
+                    nfiles = nfiles + 1
+                    if nfiles == 1 then buffer:goto_pos(buffer.length) end
                   end
-                  buffer:append_text((' %s::%s::\n'):format(f, file))
-                  nfiles = nfiles + 1
-                  if nfiles == 1 then buffer:goto_pos(buffer.length) end
-                end
-                local snum= ('%4d'):format(line_num)
-                buffer:append_text(('  @%s:%s\n'):format(snum, line))
+                  local snum= ('%4d'):format(line_num)
+                  buffer:append_text(('  @%s:%s\n'):format(snum, line))
 
-                local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
-                buffer:indicator_fill_range(pos + s - 1, e - s + 1)
-                nfound = nfound + 1
+                  local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+                  buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+                  nfound = nfound + 1
+                end
+                line_num = line_num + 1
               end
-              line_num = line_num + 1
             end
           end
         end

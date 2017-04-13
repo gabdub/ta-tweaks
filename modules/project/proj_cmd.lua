@@ -489,7 +489,7 @@ function Proj.close_project(keepviews)
 end
 
 --ACTION: search_project
-function Proj.search_in_files()
+function Proj.search_in_files(where)
   if Proj.ask_search_in_files then --goto_nearest module?
     local p_buffer = Proj.get_projectbuffer(true)
     if p_buffer == nil then
@@ -497,10 +497,18 @@ function Proj.search_in_files()
       return
     end
     local find, case, word= Proj.ask_search_in_files(true)
-    if find then Proj.find_in_files(p_buffer, find, case, word, true) end
+    if find then Proj.find_in_files(p_buffer, find, case, word, true, where) end
   else
     ui.statusbar_text= 'goto_nearest module not found'
   end
+end
+--ACTION: search_sel_dir
+function Proj.search_in_sel_dir()
+  Proj.search_in_files(1)
+end
+--ACTION: search_sel_file
+function Proj.search_in_sel_file()
+  Proj.search_in_files(2)
 end
 
 --ACTION: clear_search
