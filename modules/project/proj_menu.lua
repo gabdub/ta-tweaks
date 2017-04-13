@@ -116,13 +116,15 @@ if actions then
   --add actions defined in "proj_diff"
   actions.add("toggle_filediff", "Start/stop file diff", Proj.diff_start, "f8", "edit-copy")
 
-  actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, "f6", "document-properties")
+  actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, "f6", "document-properties", Proj.vc_changes_status)
+
+  actions.add("show_filevcinfo", "SVN/GIT: show file info", Proj.show_filevcinfo)
 
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,
     {title='_Project',
      {"new_project","open_project","recent_project","close_project",SEPARATOR,
-      "search_project","goto_tag","vc_changes",SEPARATOR,
+      "search_project","goto_tag","vc_changes","show_filevcinfo",SEPARATOR,
       "save_position","next_position","prev_position","clear_position",SEPARATOR,
       "addthisfiles_proj","addallfiles_proj","adddirfiles_proj"}
     })
@@ -161,7 +163,8 @@ if actions then
     { --#1 project in SELECTION mode
       {"open_projsel","open_projectdir",SEPARATOR,
          "toggle_editproj","toggle_viewproj",SEPARATOR,
-         "adddirfiles_proj","search_project"}
+         "adddirfiles_proj","search_project",SEPARATOR,
+         "show_documentation"}
     },
     { --#2 project in EDIT mode
       {"undo","redo",SEPARATOR,
@@ -177,7 +180,7 @@ if actions then
       {
         title = '_Project',
         {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-         "search_project","goto_tag","vc_changes",SEPARATOR,
+         "search_project","goto_tag","vc_changes","show_filevcinfo",SEPARATOR,
          "save_position","next_position","prev_position",SEPARATOR,
          "toggle_viewproj"}
       },

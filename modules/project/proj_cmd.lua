@@ -142,6 +142,45 @@ function Proj.snapopen()
   end
 end
 
+local function get_filevcinfo(fname)
+  --show filename
+  local info= fname
+  local fn=string.match(fname..'::','(.-):HEAD::')
+  if fn then fname=fn end
+  --get version control params for filename
+  local cmd
+  local post= ""
+  local verctrl, cwd, url= Proj.get_versioncontrol_url(fname)
+  if verctrl == 1 then
+    cmd= "svn info "..url
+    post= "SVN"
+  elseif verctrl == 2 then
+    info= info..'\nGIT: '..url
+    cmd= "git status -sb "..url
+  end
+  if cmd then
+    local p = assert(spawn(cmd,cwd))
+    p:close()
+    local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
+    if einfo and einfo ~= '' then
+      info= info..'\n'..einfo..post
+    end
+  end
+  return info
+end
+
+--ACTION: show_filevcinfo
+function Proj.show_filevcinfo()
+  --call_tip_show
+  if buffer.filename ~= nil then
+    if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
+    local info= get_filevcinfo(buffer.filename)
+    if info ~= '' then
+      buffer:call_tip_show(buffer.current_pos, info )
+    end
+  end
+end
+
 --ACTION: show_documentation
 -- show project current row properties
 function Proj.show_doc()
@@ -157,24 +196,7 @@ function Proj.show_doc()
       if info == '' and buffer.proj_grp_path[r] ~= nil then
         info= buffer.proj_grp_path[r]
       elseif ftype == Proj.PRJF_FILE then
-        --get version control params for filename
-        local verctrl, cwd, url= Proj.get_versioncontrol_url(info)
-        if verctrl == 1 then
-          local p = assert(spawn("svn info "..url,cwd))
-          p:close()
-          local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
-          if einfo and einfo ~= '' then
-            info= info..'\n'..einfo..'SVN'
-          end
-        elseif verctrl == 2 then
-          info= info..'\nGIT: '..url
-          local p = assert(spawn("git status -sb "..url,cwd))
-          p:close()
-          local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
-          if einfo and einfo ~= '' then
-            info= info..'\n'..einfo
-          end
-        end
+        info= get_filevcinfo(info)
       end
       if info ~= '' then
         buffer:call_tip_show(buffer.current_pos, info )
@@ -789,6 +811,9 @@ end
 
 --ACTION: vc_changes
 --Version control SVN/GIT changes
+function Proj.vc_changes_status()
+  return (buffer._is_svn and 1 or 2) --check
+end
 function Proj.vc_changes()
   if buffer._right_side then
     Proj.goto_filesview()
