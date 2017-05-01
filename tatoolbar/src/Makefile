@@ -1,4 +1,4 @@
-# Copyright 2007-2016 Mitchell mitchell.att.foicica.com. See LICENSE.
+# Copyright 2007-2017 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 CC = gcc
 CXX = g++
@@ -76,7 +76,7 @@ else
   bin_dir = $(PREFIX)/bin
   data_dir = $(PREFIX)/share/textadept
   XDG_DATA_DIR ?= $(PREFIX)/share/applications
-  svg_file = $(data_dir)/core/images/textadept.svg
+  PIXMAPS_DIR ?= /usr/share/pixmaps
   desktop_files := $(wildcard *.desktop)
   ifeq (, $(findstring curses, $(MAKECMDGOALS)))
     plat_flag = -DGTK
@@ -283,16 +283,20 @@ install: $(install_targets) | ../core ../doc ../init.lua ../lexers ../LICENSE \
 	ln -s $(subst .., $(data_dir), $^) $(DESTDIR)$(bin_dir)
 	if [ -d "$(XDG_DATA_DIR)" ]; then \
 		install -d $(DESTDIR)$(XDG_DATA_DIR); \
-		for desktop_file in $(desktop_files); do \
-			sed -e 's|Icon=textadept.svg|Icon=$(svg_file)|' $$desktop_file > \
-			$(DESTDIR)$(XDG_DATA_DIR)/$$desktop_file; \
-		done; \
+		install -t $(DESTDIR)$(XDG_DATA_DIR) $(desktop_files); \
+	fi
+	if [ -d "$(PIXMAPS_DIR)" ]; then \
+		install -d $(DESTDIR)$(PIXMAPS_DIR); \
+		ln -s $(data_dir)/core/images/textadept.svg $(DESTDIR)$(PIXMAPS_DIR); \
+		ln -s $(data_dir)/core/images/ta_48x48.png \
+			$(DESTDIR)$(PIXMAPS_DIR)/textadept.png; \
 	fi
 uninstall:
 	rm -r $(DESTDIR)$(bin_dir)/textadept* $(DESTDIR)$(data_dir)
 	if [ -d "$(XDG_DATA_DIR)" ]; then \
 		rm $(DESTDIR)$(XDG_DATA_DIR)/textadept*.desktop; \
 	fi
+	if [ -d "$(PIXMAPS_DIR)" ]; then rm $(DESTDIR)$(PIXMAPS_DIR)/textadept*; fi
 
 # Clean.
 
@@ -397,8 +401,7 @@ osx-deps: $(base_deps) gtkosx termkey
 
 ifndef NIGHTLY
   scinterm_url = http://foicica.com/scinterm/download/$@
-  #scintillua_url = http://foicica.com/scintillua/download/$@
-  scintillua_url = http://foicica.com/hg/scintillua/archive/$@
+  scintillua_url = http://foicica.com/scintillua/download/$@
   gtdialog_url = http://foicica.com/gtdialog/download/$@
   lspawn_url = http://foicica.com/lspawn/download/$@
 else
@@ -411,7 +414,7 @@ endif
 scintilla_tgz = scintilla373.tgz
 tre_zip = cdce45e8dd7a3b36954022b4a4d3570e1ac5a4f8.zip
 scinterm_zip = scinterm_1.8.zip
-scintillua_zip = 33298b6cbce3.zip
+scintillua_zip = scintillua_3.7.4-1.zip
 lua_tgz = lua-5.3.4.tar.gz
 lpeg_tgz = lpeg-1.0.0.tar.gz
 lfs_zip = v_1_6_3.zip
@@ -431,10 +434,15 @@ bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
 
 $(scintilla_tgz): ; wget http://prdownloads.sourceforge.net/scintilla/$@ -O $@
-scintilla: scintilla.patch | $(scintilla_tgz)
-	if [ -d $@ ]; then rm -r $@; fi
-	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
-	patch -d $@ -N -p1 < $<
+scintilla: $(wildcard scintilla_backports/*.patch) scintilla.patch | \
+           $(scintilla_tgz)
+	if [ -d $@/.hg ]; then \
+		hg --cwd $@ update -C -r rel-3-7-3; \
+	else \
+		if [ -d $@ ]; then rm -r $@; fi; \
+		mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@; \
+	fi
+	for patch in $^; do echo Applying $$patch; patch -d $@ -N -p1 < $$patch; done
 $(tre_zip): ; wget https://github.com/laurikari/tre/archive/$@ -O $@
 tre: tre.patch | $(tre_zip)
 	if [ -d $@ ]; then rm -r $@; fi
@@ -485,7 +493,7 @@ cdk: cdk.patch | $(cdk_tgz)
 $(termkey_tgz): ; wget http://www.leonerd.org.uk/code/libtermkey/$@
 termkey: termkey.patch | $(termkey_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
-	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
+	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@ && chmod +w $@/termkey.h
 	patch -d $@ -N -p1 < $<
 $(win32gtk_zip):
 	wget http://ftp.gnome.org/pub/gnome/binaries/win32/gtk+/2.24/$@
