@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
