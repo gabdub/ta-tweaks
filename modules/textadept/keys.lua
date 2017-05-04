@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 local keys, OSX = keys, OSX
 
 --list of accelerators (index= action)

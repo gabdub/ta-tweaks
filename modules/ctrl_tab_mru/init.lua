@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 -------------- ctrl+tab / ctrl+shift+tab MRU --------------------
 --HOLD control key DOWN and press tab = goto previous used buffers (MRU list)
 -- ctrl+tab       : forward

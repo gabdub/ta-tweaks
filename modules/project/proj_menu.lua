@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 local _L = _L
 local SEPARATOR = ""
 local Proj = Proj
