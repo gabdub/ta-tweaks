@@ -1,3 +1,4 @@
+// Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 /* ============================================================================= */
 /* GLUE between ta-toolbar and textadept/LUA/GTK                                 */
 /*   when modified, touch textadept.c to compile (because it's "included" there) */

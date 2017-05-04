@@ -1,4 +1,5 @@
 // Copyright 2007-2017 Mitchell mitchell.att.foicica.com. See LICENSE.
+// USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
