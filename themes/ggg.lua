@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 local buffer = buffer
 local property, property_int = buffer.property, buffer.property_int
 
