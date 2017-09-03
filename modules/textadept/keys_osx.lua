@@ -3,7 +3,7 @@
 --
 -- Unassigned keys (~ denotes keys reserved by the operating system):
 -- m:       C        ~  I JkK  ~M    p  ~    tT   V    yY  _   ) ] }   +   ~~\n
--- c:      cC D    gG H  J K L    oO  qQ             xXyYzZ_   ) ] }  *  /
+-- c:      cC D    gG H   J K L    oO  qQ            xXyYzZ_   ) ] }  *  /
 -- cm: aAbBcC~D   F  ~HiIjJkKlL~MnN  p q~rRsStTuUvVwWxXyYzZ_"'()[]{}<>*+-/=\t\n
 --
 -- CTRL = 'c' (Control ^)
@@ -27,7 +27,7 @@
 -- Unassigned keys (~ denotes keys reserved by the operating system):
 -- c:        g~~   ~            ~
 -- cm:   cd  g~~ k ~   q  t    yz
--- m:          e          J            qQ  sS    vVw   yY  _          +
+-- m:          e          J K          qQ  sS    vVw   yY  _          +
 -- Note: m[befhstv] may be used by Linux/BSD GUI terminals for menu access.
 --
 -- CTRL = 'c' (Control ^)
@@ -129,7 +129,7 @@ local default_accelerators= {
   "insert_snippet",         "a\t",          "m\t",
   "expand_snippet",         "\t",           "\t",
   "prev_snipplaceholder",   "s\t",          "s\t",
-  "cancel_snippet",         "as\t",         "mK",
+  "cancel_snippet",         "esc",          "esc",
   "complete_symbol",        "aesc",         "mesc",
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
   "show_style",             "mi",           "mi",

@@ -400,7 +400,8 @@ win32-deps: $(base_deps) win32gtk win32curses
 osx-deps: $(base_deps) gtkosx termkey
 
 ifndef NIGHTLY
-  scinterm_url = http://foicica.com/scinterm/download/$@
+  #scinterm_url = http://foicica.com/scinterm/download/$@
+  scinterm_url = http://foicica.com/hg/scinterm/archive/$@
   scintillua_url = http://foicica.com/scintillua/download/$@
   gtdialog_url = http://foicica.com/gtdialog/download/$@
   lspawn_url = http://foicica.com/lspawn/download/$@
@@ -413,7 +414,7 @@ endif
 
 scintilla_tgz = scintilla373.tgz
 tre_zip = cdce45e8dd7a3b36954022b4a4d3570e1ac5a4f8.zip
-scinterm_zip = scinterm_1.8.zip
+scinterm_zip = 30bef4e18cae.zip
 scintillua_zip = scintillua_3.7.4-1.zip
 lua_tgz = lua-5.3.4.tar.gz
 lpeg_tgz = lpeg-1.0.0.tar.gz
@@ -421,7 +422,7 @@ lfs_zip = v_1_6_3.zip
 lspawn_zip = lspawn_1.5.zip
 luajit_tgz = LuaJIT-2.0.3.tar.gz
 libluajit_tgz = libluajit_2.0.3.x86_64.tgz
-gtdialog_zip = gtdialog_1.3.zip
+gtdialog_zip = gtdialog_1.4.zip
 cdk_tgz = cdk-5.0-20150928.tgz
 termkey_tgz = libtermkey-0.17.tar.gz
 win32gtk_zip = gtk+-bundle_2.24.10-20120208_win32.zip
@@ -434,7 +435,7 @@ bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
 
 $(scintilla_tgz): ; wget http://prdownloads.sourceforge.net/scintilla/$@ -O $@
-scintilla: $(wildcard scintilla_backports/*.patch) scintilla.patch | \
+scintilla: $(sort $(wildcard scintilla_backports/*.patch)) scintilla.patch | \
            $(scintilla_tgz)
 	if [ -d $@/.hg ]; then \
 		hg --cwd $@ update -C -r rel-3-7-3; \

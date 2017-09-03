@@ -2,7 +2,7 @@
 -- GUI key bindings
 --
 -- Unassigned keys (~ denotes keys reserved by the operating system):
--- c:       C         H I            p  Q     T ~ V     Y  _   ) ] }   +
+-- c:       C         H I   K        p  Q     T ~ V     Y  _   ) ] }   +
 -- a:  aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ_   ) ] }  *+-/=\n\s
 -- ca: aAbBcCdD   F      jJkKlLmM N    qQ    t       xXy zZ_"'()[]{}<>*  /   \s
 --
@@ -27,7 +27,7 @@
 -- Unassigned keys (~ denotes keys reserved by the operating system):
 -- c:        g~~   ~            ~
 -- cm:   cd  g~~ k ~   q  t    yz
--- m:          e          J            qQ  sS    vVw   yY  _          +
+-- m:          e          J K          qQ  sS    vVw   yY  _          +
 -- Note: m[befhstv] may be used by Linux/BSD GUI terminals for menu access.
 --
 -- CTRL = 'c' (Control ^)
@@ -129,7 +129,7 @@ local default_accelerators= {
   "insert_snippet",         "ck",           "mk",
   "tab_key",                "\t",           "\t",
   "shift_tab_key",          "s\t",          "s\t",
-  "cancel_snippet",         "cK",           "mK",
+  "cancel_snippet",         "esc",          "esc",
   "complete_symbol",        "c ",           "c@", --CURSES: Win32:"c " + LINUX:c@
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
   "show_style",             "ci",           "mI",
