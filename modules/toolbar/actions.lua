@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 local default_icons= {
 --FILE
   "new",                    "document-new",

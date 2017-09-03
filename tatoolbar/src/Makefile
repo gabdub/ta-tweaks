@@ -1,5 +1,4 @@
 # Copyright 2007-2017 Mitchell mitchell.att.foicica.com. See LICENSE.
-
 CC = gcc
 CXX = g++
 ifeq (win, $(findstring win, $(MAKECMDGOALS)))

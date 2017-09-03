@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 ------------------ goto nearest occurrence --------------------------
 -- for local mode:
 --  replace M.last_search with buffer.last_search

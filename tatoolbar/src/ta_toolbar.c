@@ -1,3 +1,4 @@
+// Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 /* TA toolbar */
 #include <stdio.h>
 #include <stdlib.h>

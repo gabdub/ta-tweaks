@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 ------------ WIN32 & LINUX KEYS ------------
 -- GUI key bindings
 --

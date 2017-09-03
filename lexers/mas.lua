@@ -1,3 +1,4 @@
+-- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 -- MAS Assembly LPeg lexer.
 
 local l = require('lexer')
