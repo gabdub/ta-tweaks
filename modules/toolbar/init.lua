@@ -107,7 +107,8 @@ if toolbar then
     else
       tooltip= filename
     end
-    toolbar.settab(ntab, tabtext, tooltip)
+    toolbar.settab(ntab, tabtext:iconv('UTF-8',_CHARSET), tooltip:iconv('UTF-8',_CHARSET))
+    --toolbar.settab(ntab, tabtext, tooltip)
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
   end
 
