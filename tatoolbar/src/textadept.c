@@ -1241,7 +1241,7 @@ static int lbuf_closure(lua_State *L) {
     //if (lL_hasmetatable(L, 1, "ta_view"))
     //  lua_getfield(L, 1, "buffer"), lua_replace(L, 1); // use view.buffer
     int result = l_globaldoccompare(L, 1);
-    if (result != 0) view = (result > 0) ? dummy_view : command_entry;
+    if (result != 0) view = (result != -1) ? dummy_view : command_entry;
   }
   // Interface table is of the form {msg, rtype, wtype, ltype}.
   return l_callscintilla(L, view, l_rawgetiint(L, lua_upvalueindex(1), 1),
