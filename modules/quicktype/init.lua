@@ -90,6 +90,11 @@ local function multiline_comment()
   buffer:end_undo_action()
 end
 
+-- Alt+8 = SORT CURRENT BUFFER
+local function sort_curr_buffer()
+  if Util.confirm('Sort confirmation','Sort the current buffer?') then Util.sort_buffer() end
+end
+
 -- Alt+9 = MULTILINE TYPER
 -- [BEFORE]....[AFTER]
 -- [EMPTY]
@@ -215,6 +220,7 @@ if actions then
   actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
   actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
   actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
+  actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer, "a8")
   actions.add("multiline_typer",'Multiline typer',                multiline_typer,"a9")
 else
   keys["c,"] = function() find_begin(false) end
@@ -229,5 +235,6 @@ else
   keys.a5 = qt_c_switchcont
   keys.a7 = multiline_comment
   keys.a0 = qt_c_sep_line
+  keys.a8 = sort_curr_buffer
   keys.a9 = multiline_typer
 end

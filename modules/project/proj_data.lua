@@ -648,12 +648,8 @@ function Proj.add_files(p_buffer, flist, groupfiles)
     end
     all= true
     nadd= #flist
-    local confirm = (n_inprj == 0) or ui.dialogs.msgbox{
-      title = 'Add confirmation',
-      text = info..' already in the project',
-      informative_text = 'Do you want to add it/them again?',
-      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-    } == 1
+    local confirm = (n_inprj == 0) or Util.confirm( 'Add confirmation',
+      info..' already in the project', 'Do you want to add it/them again?')
     if (not confirm) and (#flist > n_inprj) then
       all= false
       nadd= #flist - n_inprj
@@ -662,12 +658,8 @@ function Proj.add_files(p_buffer, flist, groupfiles)
       else
         info= '' .. nadd .. ' files are'
       end
-      confirm = (n_inprj == 0) or ui.dialogs.msgbox{
-        title = 'Add confirmation',
-        text = info..' not in the project',
-        informative_text = 'Do you want to add it/them?',
-        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-      } == 1
+      confirm = (n_inprj == 0) or Util.confirm( 'Add confirmation',
+        info..' not in the project', 'Do you want to add it/them?')
     end
     if confirm then
       --prevent some events to fire for ever

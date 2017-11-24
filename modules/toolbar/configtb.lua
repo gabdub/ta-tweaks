@@ -437,12 +437,7 @@ local function cont_config_radio(text,tooltip,checked)
 end
 
 local function confirm_color_overwrite(title,dontask)
-  return dontask or (ui.dialogs.msgbox{
-      title = title,
-      text = 'All colors will be overwritten',
-      informative_text = 'Do you want to proceed?',
-      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-    } == 1)
+  return dontask or Util.confirm(title, 'All colors will be overwritten', 'Do you want to proceed?')
 end
 
 local function load_colors_from_theme(dontask)

@@ -13,6 +13,11 @@ function Util.info(msg,info)
   }
 end
 
+function Util.confirm(tit, txt, info)
+  return ui.dialogs.msgbox{ title = tit, text = txt, informative_text = info,
+      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel'] } == 1
+end
+
 function Util.goto_view(numview)
   if _VIEWS[view] ~= numview then
     if Util.TA_MAYOR_VER < 9 then
@@ -81,4 +86,12 @@ function Util.escape_match(x)
    return( x:gsub('%%', '%%%%'):gsub('^%^', '%%^'):gsub('%$$', '%%$'):gsub('%(', '%%(')
             :gsub('%)', '%%)'):gsub('%.', '%%.'):gsub('%[', '%%['):gsub('%]', '%%]')
             :gsub('%*', '%%*'):gsub('%+', '%%+'):gsub('%-', '%%-'):gsub('%?', '%%?') )
+end
+
+function Util.sort_buffer(b)
+  if not b then b= buffer end
+  local ls= {}
+  for l in b.get_text():gmatch('[^\n]+') do ls[#ls+1]=l end
+  table.sort(ls)
+  b.set_text(table.concat(ls, '\n'))
 end

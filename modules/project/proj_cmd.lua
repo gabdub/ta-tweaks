@@ -617,12 +617,8 @@ function Proj.open_sel_file()
 
   if action then
     --if there is more than one file in range, ask for confirmation
-    local confirm = (#list == 1) or ui.dialogs.msgbox{
-      title = action..' confirmation',
-      text = 'There are ' .. #list .. ' files selected',
-      informative_text = 'Do you want to open them?',
-      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-    } == 1
+    local confirm = (#list == 1) or Util.confirm( action..' confirmation',
+      'There are ' .. #list .. ' files selected', 'Do you want to open them?')
     if not confirm then
       return
     end
@@ -670,12 +666,8 @@ function Proj.add_this_file()
     file= buffer.filename
     if file then
       --if the file is already in the project, ask for confirmation
-      local confirm = (Proj.get_file_row(p_buffer, file) == nil) or ui.dialogs.msgbox{
-        title = 'Add confirmation',
-        text = 'The file ' .. file .. ' is already in the project',
-        informative_text = 'Do you want to add it again?',
-        icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
-      } == 1
+      local confirm = (Proj.get_file_row(p_buffer, file) == nil) or Util.confirm( 'Add confirmation',
+        'The file ' .. file .. ' is already in the project', 'Do you want to add it again?')
       if confirm then
         --prevent some events to fire for ever
         Proj.stop_update_ui(true)
