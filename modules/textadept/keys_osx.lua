@@ -128,8 +128,8 @@ local default_accelerators= {
   "open_currentdir",        "cmO",          "cmO",
   "open_projectdir",        "cmP",          "cmP",
   "insert_snippet",         "a\t",          "m\t",
-  "expand_snippet",         "\t",           "\t",
-  "prev_snipplaceholder",   "s\t",          "s\t",
+  "tab_key",                "\t",           "\t",
+  "shift_tab_key",          "s\t",          "s\t",
   "cancel_snippet",         "esc",          "esc",
   "complete_symbol",        "aesc",         "mesc",
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
@@ -175,8 +175,40 @@ local default_accelerators= {
 
 --HELP
   "show_manual",            "f1",           "",
-  "show_luadoc",            "sf1",          ""
+  "show_luadoc",            "sf1",          "",
 --"about",                  "",             ""
+
+--MOVE CURSOR
+  "left",                   "left",         "left",
+  "right",                  "right",        "right",
+  "up",                     "up",           "up",
+  "down",                   "down",         "down",
+  "home",                   "home",         "home",
+  "end",                    "end",          "end",
+  "word_left",              "cleft",        "cleft",
+  "word_right",             "cright",       "cright",
+  "doc_start",              "chome",        "chome",
+  "doc_end",                "cend",         "cend",
+  "page_up",                "pgup",         "pgup",
+  "page_down",              "pgdn",         "pgdn",
+--SELECTION
+  "sel_left",               "sleft",        "sleft",
+  "sel_right",              "sright",       "sright",
+  "sel_up",                 "sup",          "sup",
+  "sel_down",               "sdown",        "sdown",
+  "sel_home",               "shome",        "shome",
+  "sel_end",                "send",         "send",
+  "sel_word_left",          "csleft",       "csleft",
+  "sel_word_right",         "csright",      "csright",
+  "sel_doc_start",          "cshome",       "cshome",
+  "sel_doc_end",            "csend",        "csend",
+  "sel_page_up",            "spgup",        "spgup",
+  "sel_page_down",          "spgdn",        "spgdn",
+--DELETE
+  "del_back",               "\b",           "\b",
+  "del",                    "del",          "del",
+  "del_word_left",          "c\b",          "c\b",
+  "del_word_right",         "cdel",         "cdel"
 }
 
 local function load_accel_lists()
@@ -192,33 +224,35 @@ end
 load_accel_lists()
 
 -- Movement commands.
-keys.cf, keys.cF = buffer.char_right, buffer.char_right_extend
-keys.cmf, keys.cmF = buffer.word_right, buffer.word_right_extend
-keys.cb, keys.cB = buffer.char_left, buffer.char_left_extend
-keys.cmb, keys.cmB = buffer.word_left, buffer.word_left_extend
-keys.cn, keys.cN = buffer.line_down, buffer.line_down_extend
-keys.cp, keys.cP = buffer.line_up, buffer.line_up_extend
-keys.ca, keys.cA = buffer.vc_home, buffer.vc_home_extend
-keys.ce, keys.cE = buffer.line_end, buffer.line_end_extend
-keys.aright, keys.aleft = buffer.word_right, buffer.word_left
-keys.cd = buffer.clear
-keys.ck = function()
-  buffer:line_end_extend()
-  buffer:cut()
+if CURSES then
+  keys.cf, keys.cF = buffer.char_right, buffer.char_right_extend
+  keys.cmf, keys.cmF = buffer.word_right, buffer.word_right_extend
+  keys.cb, keys.cB = buffer.char_left, buffer.char_left_extend
+  keys.cmb, keys.cmB = buffer.word_left, buffer.word_left_extend
+  keys.cn, keys.cN = buffer.line_down, buffer.line_down_extend
+  keys.cp, keys.cP = buffer.line_up, buffer.line_up_extend
+  keys.ca, keys.cA = buffer.vc_home, buffer.vc_home_extend
+  keys.ce, keys.cE = buffer.line_end, buffer.line_end_extend
+  keys.aright, keys.aleft = buffer.word_right, buffer.word_left
+  keys.cd = buffer.clear
+  keys.ck = function()
+    buffer:line_end_extend()
+    buffer:cut()
+  end
+  keys.cl = buffer.vertical_centre_caret
+  -- UTF-8 input.
+  keys.utf8_input = {
+    ['\n'] = function()
+      return ui.command_entry.finish_mode(function(code)
+        buffer:add_text(utf8.char(tonumber(code, 16)))
+      end)
+    end
+  }
+  keys['mU'] = function()
+    ui.command_entry.enter_mode('utf8_input')
+  end
 end
-keys.cl = buffer.vertical_centre_caret
+
 -- GTK-OSX reports Fn-key as a single keycode which confuses Scintilla. Do
 -- not propagate it.
 keys.fn = function() return true end
-
--- UTF-8 input.
-keys.utf8_input = {
-  ['\n'] = function()
-    return ui.command_entry.finish_mode(function(code)
-      buffer:add_text(utf8.char(tonumber(code, 16)))
-    end)
-  end
-}
-keys['mU'] = function()
-  ui.command_entry.enter_mode('utf8_input')
-end

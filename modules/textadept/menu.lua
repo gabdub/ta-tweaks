@@ -348,6 +348,8 @@ actions.list = {
   ["shift_tab_key"]=        {'Shift+Tab/Unindent/Previous snippet placeholder',      shift_tab_key},
   ["doc_start"]=            {'Move cursor: document start', buffer.document_start},
   ["doc_end"]=              {'Move cursor: document end', buffer.document_end},
+  ["page_up"]=              {'Move cursor: page up',    buffer.page_up},
+  ["page_down"]=            {'Move cursor: page down',  buffer.page_down},
 --SELECTION
   ["sel_left"]=             {'Extend selection: left',  buffer.char_left_extend},
   ["sel_right"]=            {'Extend selection: right', buffer.char_right_extend},
@@ -359,6 +361,8 @@ actions.list = {
   ["sel_word_right"]=       {'Extend selection: word right', buffer.word_right_extend},
   ["sel_doc_start"]=        {'Extend selection: document start', buffer.document_start_extend},
   ["sel_doc_end"]=          {'Extend selection: document end', buffer.document_end_extend},
+  ["sel_page_up"]=          {'Extend selection: page up',    buffer.page_up_extend},
+  ["sel_page_down"]=        {'Extend selection: page down',  buffer.page_down_extend},
 --DELETE
   ["del_back"]=             {'Delete: back char',       buffer.delete_back},
   ["del"]=                  {'Delete: char',            buffer.clear},

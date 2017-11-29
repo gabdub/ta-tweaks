@@ -189,6 +189,8 @@ local default_accelerators= {
   "word_right",             "cright",       "cright",
   "doc_start",              "chome",        "chome",
   "doc_end",                "cend",         "cend",
+  "page_up",                "pgup",         "pgup",
+  "page_down",              "pgdn",         "pgdn",
 --SELECTION
   "sel_left",               "sleft",        "sleft",
   "sel_right",              "sright",       "sright",
@@ -200,12 +202,13 @@ local default_accelerators= {
   "sel_word_right",         "csright",      "csright",
   "sel_doc_start",          "cshome",       "cshome",
   "sel_doc_end",            "csend",        "csend",
+  "sel_page_up",            "spgup",        "spgup",
+  "sel_page_down",          "spgdn",        "spgdn",
 --DELETE
   "del_back",               "\b",           "\b",
   "del",                    "del",          "del",
   "del_word_left",          "c\b",          "c\b",
-  "del_word_right",         "cdel",         "cdel",
-
+  "del_word_right",         "cdel",         "cdel"
 }
 
 local function load_accel_lists()
