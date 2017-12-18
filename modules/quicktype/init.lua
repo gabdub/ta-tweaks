@@ -45,6 +45,18 @@ local function qt_c_sep_line()
   Util.type_before_after("/* ============================================================================= */\n", "")
 end
 
+-- Alt+6 = convert hexadecimal bytes to ascii
+local function convert_hex_2_ascii()
+  local s, e = buffer.selection_start, buffer.selection_end
+  if s ~= e then
+    local txthex= buffer:text_range(s,e)
+    local ascii= Util.Hex2Ascii(txthex)
+    if Util.confirm('Hex2Ascii', ascii, 'Copy to clipboard?') then buffer:copy_text(ascii) end
+  else
+    ui.statusbar_text= "No hexadecimal chars selected"
+  end
+end
+
 -- Alt+7 = prefix type comment - uncomment in column #1
 local function multiline_comment()
   local comment = textadept.editing.comment_string[buffer:get_lexer(true)] or ''
@@ -218,6 +230,7 @@ if actions then
   actions.add("type_c_define", 'Quicktype: C define',             qt_c_define,    "a3")
   actions.add("type_c_todo",   'Quicktype: C TODO',               qt_c_todo,      "a4")
   actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
+  actions.add("hex_to_ascii",   'Quicktype: convert selected text from hex to ascii', convert_hex_2_ascii, "a6")
   actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
   actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
   actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer, "a8")
@@ -233,6 +246,7 @@ else
   keys.a3 = qt_c_define
   keys.a4 = qt_c_todo
   keys.a5 = qt_c_switchcont
+  keys.a6 = convert_hex_2_ascii
   keys.a7 = multiline_comment
   keys.a0 = qt_c_sep_line
   keys.a8 = sort_curr_buffer

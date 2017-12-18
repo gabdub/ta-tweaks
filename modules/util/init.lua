@@ -7,14 +7,14 @@ Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
 function Util.info(msg,info)
   ui.dialogs.msgbox{
     title = 'Information',
-    text = msg,
-    informative_text = info,
+    text = msg or '',
+    informative_text = info or '',
     icon = 'gtk-dialog-info', button1 = _L['_OK']
   }
 end
 
 function Util.confirm(tit, txt, info)
-  return ui.dialogs.msgbox{ title = tit, text = txt, informative_text = info,
+  return ui.dialogs.msgbox{ title = tit or 'Confirmation', text = txt or '', informative_text = info or '',
       icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel'] } == 1
 end
 
@@ -94,4 +94,12 @@ function Util.sort_buffer(b)
   for l in b.get_text():gmatch('[^\n]+') do ls[#ls+1]=l end
   table.sort(ls)
   b.set_text(table.concat(ls, '\n'))
+end
+
+function Util.Hex2Ascii(str)
+  local res=''
+  for c in str:gmatch("%x%x") do
+    res= res .. string.char(tonumber(c, 16))
+  end
+  return res
 end
