@@ -3,6 +3,8 @@ local events = events
 local Proj = Proj
 local Util = Util
 
+local last_print_buftype
+
 --------hilight project's open files--------
 local indic_open = _SCINTILLA.next_indic_number()
 buffer.indic_fore[indic_open]= (tonumber(buffer.property['color.prj_open_mark']) or 0x404040)
@@ -510,15 +512,26 @@ end
 function Proj.clear_search_results()
   local sv= Proj.prefview[Proj.PRJV_SEARCH]
   if #_VIEWS < sv then return false end
-  Proj.goto_searchview()
-  buffer.read_only= false
+  Proj.beg_search_add()
    --delete search content
   textadept.bookmarks.clear()
   Proj.remove_search_from_pos_table()
   buffer:set_text('')
+  Proj.end_search_add()
+end
+
+--goto search view and activate text modifications
+function Proj.beg_search_add()
+  Proj.goto_searchview()
+  buffer.read_only= false
+end
+
+--end search text modifications
+function Proj.end_search_add(buftype)
   buffer:set_save_point()
   buffer.read_only= true
   buffer:set_lexer('myproj')
+  last_print_buftype= buftype
 end
 
 function Proj.close_search_view()
@@ -601,3 +614,19 @@ function Proj.check_panels()
   if #_VIEWS >= actv then Util.goto_view(actv) end
   Proj.stop_update_ui(false)
 end
+
+-------- overwrite default ui._print function -----
+-- Helper function for printing messages to buffers.
+local function proj_print(buffer_type, ...)
+  --print allways in search-view
+  Proj.beg_search_add()
+  --show buffer_type when changed
+  if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
+  buffer:goto_pos(buffer.length)
+  local args, n = {...}, select('#', ...)
+  for i = 1, n do args[i] = tostring(args[i]) end
+  buffer:append_text(table.concat(args, '\t'))
+  buffer:append_text('\n')
+  Proj.end_search_add(buffer_type)
+end
+function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end

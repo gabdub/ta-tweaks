@@ -756,9 +756,8 @@ function Proj.find_in_files(p_buffer, text, match_case, whole_word, escapetext, 
 
   Proj.stop_update_ui(true)
   --activate/create search view
-  Proj.goto_searchview()
+  Proj.beg_search_add()
 
-  buffer.read_only= false
   buffer:append_text('['..text..']\n')
   if escapetext then text= Util.escape_match(text) end
   if filterpath then buffer:append_text(' search dir '..filterpath..'::::\n') end
@@ -820,15 +819,13 @@ function Proj.find_in_files(p_buffer, text, match_case, whole_word, escapetext, 
 
   if nfound == 0 then buffer:append_text(' '.._L['No results found']..'\n') end
   buffer:append_text('\n')
-  buffer:set_save_point()
 
   local result= ''..nfound..' matches in '..nfiles..' of '..totfiles..' files'
   if filesnf > 0 then
     result= result .. ' / '..filesnf..' files NOT FOUND'
   end
   ui.statusbar_text= result
-  buffer:set_lexer('myproj')
-  buffer.read_only= true
+  Proj.end_search_add()
   --set search context menu
   Proj.set_contextm_search()
   Proj.stop_update_ui(false)
