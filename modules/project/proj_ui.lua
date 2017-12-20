@@ -538,6 +538,7 @@ function Proj.close_search_view()
   local sv= Proj.prefview[Proj.PRJV_SEARCH]
   --if more views are open, ignore the close
   if #_VIEWS > sv then return false end
+  last_print_buftype=''
   if #_VIEWS == sv then
     --remove search from position table
     Proj.remove_search_from_pos_table()
