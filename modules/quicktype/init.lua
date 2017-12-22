@@ -57,6 +57,23 @@ local function convert_hex_2_ascii()
   end
 end
 
+-- Alt+& (Shift 6) = generate S19 checksum
+local function generate_s19_checksum()
+  local s, e = buffer.selection_start, buffer.selection_end
+  if s ~= e then
+    local txthex= buffer:text_range(s,e)
+    if txthex:find('^S%d') then txthex = txthex:match('^S%d(.+)$') end
+    local chk=0
+    for c in txthex:gmatch("%x%x") do
+      chk= chk + tonumber(c, 16)
+    end
+    local schk= string.format("%02X", 255 - (chk & 255))
+    if Util.confirm('S19 Checksum', 'Checksum= '..schk, 'Copy to clipboard?') then buffer:copy_text(schk) end
+  else
+    ui.statusbar_text= "No hexadecimal chars selected"
+  end
+end
+
 -- Alt+7 = prefix type comment - uncomment in column #1
 local function multiline_comment()
   local comment = textadept.editing.comment_string[buffer:get_lexer(true)] or ''
@@ -231,6 +248,7 @@ if actions then
   actions.add("type_c_todo",   'Quicktype: C TODO',               qt_c_todo,      "a4")
   actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
   actions.add("hex_to_ascii",   'Quicktype: convert selected text from hex to ascii', convert_hex_2_ascii, "a6")
+  actions.add("s19_checksum",   'Quicktype: generate S19 checksum', generate_s19_checksum, "a&")
   actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
   actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
   actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer, "a8")
@@ -247,6 +265,7 @@ else
   keys.a4 = qt_c_todo
   keys.a5 = qt_c_switchcont
   keys.a6 = convert_hex_2_ascii
+  keys["a&"] = generate_s19_checksum
   keys.a7 = multiline_comment
   keys.a0 = qt_c_sep_line
   keys.a8 = sort_curr_buffer
