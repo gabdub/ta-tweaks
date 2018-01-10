@@ -3,6 +3,7 @@ actions= {}
 
 local _L = _L
 local SEPARATOR = ""
+local TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
 
 -- Commonly used functions in menu commands.
 local sel_enc = textadept.editing.select_enclosed
@@ -93,7 +94,7 @@ actions.list = {
   ["redo"]=                 {_L['_Redo'], buffer.redo},
   ["cut"]=                  {_L['Cu_t'], buffer.cut},
   ["copy"]=                 {_L['_Copy'], buffer.copy},
-  ["paste"]=                {_L['_Paste'], buffer.paste},
+  ["paste"]=                {_L['_Paste'], (TA_MAYOR_VER < 10) and buffer.paste or textadept.editing.paste},
   ["duplicate_line"]=       {_L['Duplicate _Line'], buffer.line_duplicate},
   ["delete_char"]=          {_L['_Delete'], buffer.clear},
   ["delete_word"]=          {_L['D_elete Word'], function()
@@ -101,7 +102,11 @@ actions.list = {
       buffer:delete_back()
     end},
   ["selectall"]=            {_L['Select _All'], buffer.select_all},
-  ["match_brace"]=          {_L['_Match Brace'], textadept.editing.match_brace},
+  ["match_brace"]=          {_L['_Match Brace'], (TA_MAYOR_VER < 10) and textadept.editing.match_brace or
+    function()
+      local match_pos = buffer:brace_match(buffer.current_pos, 0)
+      if match_pos >= 0 then buffer:goto_pos(match_pos) end
+    end},
   ["complete_word"]=        {_L['Complete _Word'], function()
       textadept.editing.autocomplete('word')
     end},
@@ -114,8 +119,9 @@ actions.list = {
     end},
 
 --EDIT + SELECT
-  ["sel_matchbrace"]=       {_L['Select to _Matching Brace'], function()
-      textadept.editing.match_brace('select')
+  ["sel_matchbrace"]=       {(TA_MAYOR_VER < 10) and _L['Select to _Matching Brace'] or
+    _L['Select between _Matching Delimiters'], function()
+      if TA_MAYOR_VER < 10 then textadept.editing.match_brace('select') else sel_enc() end
     end},
   ["sel_betweenxmltag"]=    {_L['Select between _XML Tags'], function() sel_enc('>', '<') end},
   ["sel_xmltag"]=           {_L['Select in XML _Tag'], function() sel_enc('<', '>') end},
