@@ -2,9 +2,13 @@
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
-if not CURSES then ui.set_theme('ggg') end
+--require('log')
 
 require('util')
+if not CURSES then
+  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else buffer.set_theme('ggg') end
+end
+
 require('export')
 require('project')
 require('goto_nearest')
@@ -12,9 +16,9 @@ require('ctrl_tab_mru')
 require('quicktype')
 
 --cf5 "List commands in a new buffer"
-if actions then
-  actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
-end
+--if actions then
+--  actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
+--end
 
 textadept.file_types.extensions.mas = 'mas'
 textadept.editing.comment_string.ansi_c = '//'
@@ -60,6 +64,6 @@ if toolbar then
 --  toolbar.cmd("window-new", showpopup, "TEST show popup")
 --  toolbar.create_popup()
 
-  --toolbars ready, show them
+  --toolbars are ready to show
   toolbar.ready()
 end

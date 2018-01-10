@@ -148,19 +148,6 @@ if toolbar then
     end
   end)
 
-  function toolbar.update_all_tabs()
-    --load existing buffers in tab-bar
-    if #_BUFFERS > 0 then
-      --rebuild the buffers list
-      toolbar.buffers={}
-      for i, buf in ipairs(_BUFFERS) do
-        buf._buffnum= nil --force: get a new tab buffnum
-        set_chg_tabbuf(buf)
-        toolbar.buffers[i]= _BUFFERS[i]._buffnum
-      end
-    end
-  end
-
   events_connect(events.SAVE_POINT_REACHED, set_chg_tabbuf)
   events_connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
 
@@ -685,15 +672,26 @@ if toolbar then
     --show status bar if enabled
     toolbar.shw_statusbar()
     toolbar.sel_top_bar()
-    if toolbar.tabpos > 0 then
-      toolbar.update_all_tabs()   --load existing buffers in tab-bar
-      toolbar.seltabbuf(buffer)  --select current buffer
-    end
     if toolbar.configpanel then
       --create the config panel
       toolbar.add_config_panel()
     end
   end
+
+  events_connect(events.INITIALIZED, function()
+    if toolbar.tabpos > 0 then
+      toolbar.sel_top_bar()
+      --load existing buffers in tab-bar
+      toolbar.buffers={}
+      if #_BUFFERS > 0 then
+        for i, buf in ipairs(_BUFFERS) do
+          set_chg_tabbuf(buf)
+          toolbar.buffers[i]= _BUFFERS[i]._buffnum
+        end
+      end
+      toolbar.seltabbuf(buffer)  --select current buffer
+    end
+  end)
 
   --set the configured theme
   function toolbar.set_theme_from_config()
