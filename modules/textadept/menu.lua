@@ -125,11 +125,6 @@ actions.list = {
     end},
   ["sel_betweenxmltag"]=    {_L['Select between _XML Tags'], function() sel_enc('>', '<') end},
   ["sel_xmltag"]=           {_L['Select in XML _Tag'], function() sel_enc('<', '>') end},
-  ["sel_singlequotes"]=     {_L['Select in _Single Quotes'], function() sel_enc("'", "'") end},
-  ["sel_doublequotes"]=     {_L['Select in _Double Quotes'], function() sel_enc('"', '"') end},
-  ["sel_parentheses"]=      {_L['Select in _Parentheses'], function() sel_enc('(', ')') end},
-  ["sel_brackets"]=         {_L['Select in _Brackets'], function() sel_enc('[', ']') end},
-  ["sel_braces"]=           {_L['Select in B_races'], function() sel_enc('{', '}') end},
   ["sel_word"]=             {_L['Select _Word'], textadept.editing.select_word},
   ["sel_line"]=             {_L['Select _Line'], textadept.editing.select_line},
   ["sel_paragraph"]=        {_L['Select Para_graph'], textadept.editing.select_paragraph},
@@ -376,6 +371,15 @@ actions.list = {
   ["del_word_right"]=       {'Delete: word right',      buffer.del_word_right},
 }
 
+--add pre TA10 actions
+if TA_MAYOR_VER < 10 then
+  actions.list["sel_singlequotes"]= {_L['Select in _Single Quotes'], function() sel_enc("'", "'") end}
+  actions.list["sel_doublequotes"]= {_L['Select in _Double Quotes'], function() sel_enc('"', '"') end}
+  actions.list["sel_parentheses"]=  {_L['Select in _Parentheses'], function() sel_enc('(', ')') end}
+  actions.list["sel_brackets"]=     {_L['Select in _Brackets'], function() sel_enc('[', ']') end}
+  actions.list["sel_braces"]=       {_L['Select in B_races'], function() sel_enc('{', '}') end}
+end
+
 ---
 -- The main menubar
 ---
@@ -395,8 +399,7 @@ actions.menubar = {
      "join_lines","filterthrough"},
     {
       title = _L['_Select'],
-      {"sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_singlequotes","sel_doublequotes",
-       "sel_parentheses","sel_brackets","sel_braces","sel_word","sel_line","sel_paragraph"}
+      {"sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_word","sel_line","sel_paragraph"} --TA10
     },
     {
       title = _L['Selectio_n'],
@@ -468,6 +471,13 @@ actions.menubar = {
      "about"}
   }
 }
+
+--change EDIT+SELECT for pre TA10
+if TA_MAYOR_VER < 10 then
+  actions.menubar[2][2][1]= {
+  "sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_singlequotes","sel_doublequotes",
+  "sel_parentheses","sel_brackets","sel_braces","sel_word","sel_line","sel_paragraph"}
+end
 
 ---
 -- The right-click context menu

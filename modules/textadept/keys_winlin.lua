@@ -72,11 +72,6 @@ local default_accelerators= {
   "sel_matchbrace",         "cM",          "mM",
   "sel_betweenxmltag",      "c<",          "m<",
   "sel_xmltag",             "c>",          "",
-  "sel_singlequotes",       "c'",          "m'",
-  "sel_doublequotes",       'c"',          'm"',
-  "sel_parentheses",        "c(",          "m(",
-  "sel_brackets",           "c[",          "m[",
-  "sel_braces",             "c{",          "m{",
   "sel_word",               "cD",          "mW",
   "sel_line",               "cN",          "mN",
   "sel_paragraph",          "cP",          "mP",
@@ -211,17 +206,30 @@ local default_accelerators= {
   "del_word_right",         "cdel",         "cdel"
 }
 
-local function load_accel_lists()
-  actions.accelerators = {}
+local default_acc_pre10= { --not in TA10 anymore
+  "sel_singlequotes",       "c'",          "m'",
+  "sel_doublequotes",       'c"',          'm"',
+  "sel_parentheses",        "c(",          "m(",
+  "sel_brackets",           "c[",          "m[",
+  "sel_braces",             "c{",          "m{"
+}
+local TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
+
+local function load_accel_list(lst)
   --load the accelerators for this OS
   local col= CURSES and 2 or 1
-  for i=1, #default_accelerators, 3 do
-    local act=default_accelerators[i]
-    local key=default_accelerators[i+col]
+  for i=1, #lst, 3 do
+    local act=lst[i]
+    local key=lst[i+col]
     actions.accelerators[act]=key
   end
 end
-load_accel_lists()
+
+actions.accelerators = {}
+load_accel_list(default_accelerators)
+if TA_MAYOR_VER < 10 then
+  load_accel_list(default_acc_pre10)
+end
 
 -- Movement commands.
 if CURSES then
