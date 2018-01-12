@@ -2,6 +2,7 @@
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
+#define TA_VERSION 96  //textadept version 9.6 (96) or 10 alpha (100)
 
 // Library includes.
 #include <errno.h>
@@ -1010,8 +1011,8 @@ static sptr_t l_todoc(lua_State *L, int index) {
 
 /**
  * Compares the Scintilla document at the given index with the global one and
- * returns 0 if they are equivalent, less than zero if that document belongs to
- * the command entry, and greater than zero otherwise.
+ * returns 0 if they are equivalent, -1 if that document belongs to the command
+ * entry, and any other value otherwise.
  * In the last case, loads the document in `dummy_view` for non-global document
  * use (unless it is already loaded). Raises and error if the value is not a
  * Scintilla document or if the document no longer exists.
@@ -1028,6 +1029,8 @@ static sptr_t l_globaldoccompare(lua_State *L, int index) {
     luaL_argcheck(L, (l_pushdoc(L, doc), lua_gettable(L, -2) != LUA_TNIL),
                   index, "this Buffer does not exist");
     lua_pop(L, 2); // buffer, ta_buffers
+    // TODO: technically, (uptr_t)-1 is a valid memory address, but in two's
+    // compliment, that is the absolute last byte, so unlikely to occur.
     if (doc == SS(command_entry, SCI_GETDOCPOINTER, 0, 0)) return -1;
     if (doc == SS(dummy_view, SCI_GETDOCPOINTER, 0, 0)) return doc; // keep
     return (SS(dummy_view, SCI_SETDOCPOINTER, 0, doc), doc);
@@ -1276,7 +1279,7 @@ static int lbuf_property(lua_State *L) {
     // Interface table is of the form {get_id, set_id, rtype, wtype}.
     if (!is_buffer) lua_getfield(L, 1, "buffer");
     int result = l_globaldoccompare(L, is_buffer ? 1 : -1);
-    if (result != 0) view = (result > 0) ? dummy_view : command_entry;
+    if (result != 0) view = (result != -1) ? dummy_view : command_entry;
     if (!is_buffer) lua_pop(L, 1);
     if (is_buffer && l_rawgetiint(L, -1, 4) != SVOID) { // indexible property
       lua_newtable(L);
@@ -1554,10 +1557,18 @@ static int lL_init(lua_State *L, int argc, char **argv, int reinit) {
     lua_setfield(L, LUA_REGISTRYINDEX, "ta_arg");
     lua_newtable(L), lua_setfield(L, LUA_REGISTRYINDEX, "ta_buffers");
     lua_newtable(L), lua_setfield(L, LUA_REGISTRYINDEX, "ta_views");
-  } else { // clear package.loaded and _G
+  } else {
+#if TA_VERSION < 100
+    //TA9: clear package.loaded and _G
     lua_getglobal(L, "package"), lua_getfield(L, -1, "loaded");
     lL_cleartable(L, lua_gettop(L));
     lua_pop(L, 2); // package.loaded and package
+#else
+    //TA10: clear _LOADED and _G
+    lua_getfield(L, LUA_REGISTRYINDEX, "_LOADED");
+    lL_cleartable(L, lua_gettop(L));
+    lua_pop(L, 1); // _LOADED
+#endif
 #if LUA_VERSION_NUM >= 502
     lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
     lL_cleartable(L, lua_gettop(L));
