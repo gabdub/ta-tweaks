@@ -300,8 +300,11 @@ function actions.run(act)
   if type(act) == 'table' then act=act[1] end
   if type(act) == 'number' then act=actions.action_fromid[act] end
   if act then
-    local typeact=act:match('^!(.*)')
+    local typeact=act:match('^[!|](.*)')
     if typeact then
+      if act:match('^|(.*)') then --"|": replace text (delete before type)
+        buffer.delete_range(buffer.current_pos, #typeact)
+      end
       buffer.add_text(typeact)  --type action
     else
       local action= actions.list[act][2]
@@ -334,18 +337,19 @@ events.connect(events.CHAR_ADDED, function(key)
       ui.statusbar_text="recorded #"..n..": "..k
       return
     end
+    local tcmd= buffer.overtype and "|" or "!"
     if n > 0 then
       local lastact=actions.recorded[n]
-      local prevk=lastact:match('^!(.*)')
+      local prevk=lastact:match('^'..tcmd..'(.*)')
       if prevk then --add to the end of last type action
         actions.recorded[n]= lastact..k
         ui.statusbar_text="recorded #"..n..": type "..prevk..k
         return
       end
     end
-    --create a new type action: "!"
+    --create a new type action: "!" / "|"
     n=n+1
-    actions.recorded[n]= "!"..k
+    actions.recorded[n]= tcmd..k
     ui.statusbar_text="recorded #"..n..": type "..k
   end
 end)
