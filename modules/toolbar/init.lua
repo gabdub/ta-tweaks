@@ -77,7 +77,7 @@ if toolbar then
       buf._buffnum= toolbar.buffnum
       toolbar.buffnum= toolbar.buffnum+1
       toolbar.buffers[_BUFFERS[buf]]= buf._buffnum
-    end
+    elseif buf._buffnum >= toolbar.buffnum then toolbar.buffnum= buf._buffnum+1 end --restore toolbar.buffnum after reset
     return buf._buffnum
   end
 
@@ -92,12 +92,7 @@ if toolbar then
     local filename = buf.filename or buf._type or _L['Untitled']
     local tabtext= string.match(filename, ".-([^\\/]*)$")
     --update modified indicator in tab
-    if toolbar.tabmodified == 0 then
-       --change tab text
-      if buf.modify then tabtext= tabtext .. "*" end
-    else
-      toolbar.modifiedtab(ntab, buf.modify)
-    end
+    if toolbar.tabmodified == 0 and buf.modify then tabtext= tabtext .. "*" end --modified: change tab text
     if buf._right_side then
       tabtext= ">"..tabtext
     end
@@ -110,6 +105,7 @@ if toolbar then
     toolbar.settab(ntab, tabtext:iconv('UTF-8',_CHARSET), tooltip:iconv('UTF-8',_CHARSET))
     --toolbar.settab(ntab, tabtext, tooltip)
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
+    if toolbar.tabmodified ~= 0 then toolbar.modifiedtab(ntab, buf.modify) end --modified: change tab color/img
   end
 
   --select a buffer's tab
