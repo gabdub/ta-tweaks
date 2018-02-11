@@ -110,7 +110,10 @@ actions.list = {
   ["complete_word"]=        {_L['Complete _Word'], function()
       textadept.editing.autocomplete('word')
     end},
-  ["highlight_word"]=       {_L['_Highlight Word'], textadept.editing.highlight_word},
+  ["highlight_word"]=       {_L['_Highlight Word'], function()
+      textadept.editing.highlight_word()
+      toolbar.minimap_bufload()
+    end},
   ["toggle_comment"]=       {_L['Toggle _Block Comment'], textadept.editing.block_comment},
   ["transpose_chars"]=      {_L['T_ranspose Characters'], textadept.editing.transpose_chars},
   ["join_lines"]=           {_L['_Join Lines'], textadept.editing.join_lines},

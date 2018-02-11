@@ -1264,10 +1264,23 @@ function toolbar.minimap_bufload()
     if nl2 <= nl then break end
     nl= nl2
   end
+  color= get_rgbcolor_prop('color.hilight')
+  local ind=textadept.editing.INDIC_HIGHLIGHT
+  local pos= buffer:indicator_end(ind,0)
+  while pos > 0 and pos < buffer.length do
+    nl= buffer:line_from_position(pos)+1
+    minimap.hilight(nl,color)
+    pos= buffer:indicator_end(ind,buffer:position_from_line(nl))
+  end
 end
 
 local function minimap_clicked()
-  ui.statusbar_text= "minimap clicked "..minimap.getclickline()
+  --ui.statusbar_text= "minimap clicked "..minimap.getclickline()
+  local nl= minimap.getclickline()
+  if nl > 0 then
+    if nl > buffer.line_count then nl= buffer.line_count end
+    textadept.editing.goto_line(nl-1)
+  end
 end
 
 function toolbar.minimap_setup()
