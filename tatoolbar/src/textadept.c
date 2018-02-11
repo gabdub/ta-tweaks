@@ -2395,11 +2395,12 @@ static void new_window() {
   gtk_box_pack_start(GTK_BOX(vboxp), hbox, TRUE, TRUE, 0);
 
 #ifdef USE_TA_TOOLBAR
-  create_tatoolbar(hbox,1);
+  create_tatoolbar(hbox,1); //VERTICAL    (left)
   GtkWidget *hboxED = gtk_hbox_new(FALSE, 0);
   gtk_box_pack_start(GTK_BOX(hbox), hboxED, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(hboxED), new_view(0), TRUE, TRUE, 0);
-  create_tatoolbar(hbox,3);
+  create_tatoolbar(hbox,4); //VERTICAL    (right #1)
+  create_tatoolbar(hbox,3); //VERTICAL    (right #2)
 #else
   gtk_box_pack_start(GTK_BOX(hbox), new_view(0), TRUE, TRUE, 0);
 #endif

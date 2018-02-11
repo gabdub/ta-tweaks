@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.4 (7 mar 2017)"
+#define TA_TOOLBAR_VERSION_STR "1.0.5 (6 feb 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -265,6 +265,9 @@ static void free_item_node( struct toolbar_item * p )
   if( ttb.cpick.pchosenB == p ){
     ttb.cpick.pchosenB= NULL;
   }
+  //if( ttb.minimap.pminimap == p ){
+    //ttb.minimap.pminimap= NULL;
+  //}
   if(p->name != NULL){
     free((void*)p->name);
   }
@@ -346,9 +349,21 @@ static void free_toolbar_num( int num )
   }
 }
 
+static void free_minimap_lines( void )
+{
+  struct minimap_line *pml;
+
+  while( ttb.minimap.lines != NULL ){
+    pml= ttb.minimap.lines;
+    ttb.minimap.lines= pml->next;
+    free(pml);
+  }
+}
+
 void free_tatoolbar( void )
 {
   int nt;
+
   for( nt= 0; nt < NTOOLBARS; nt++ ){
     free_toolbar_num(nt);
   }
@@ -366,6 +381,9 @@ void free_tatoolbar( void )
   ttb.cpick.pchosenR= NULL;
   ttb.cpick.pchosenG= NULL;
   ttb.cpick.pchosenB= NULL;
+
+  //ttb.minimap.pminimap= NULL;
+  free_minimap_lines();
 }
 
 /* ============================================================================= */
@@ -1495,6 +1513,8 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
     //drag over the same highlight
     if( p->back_color == BKCOLOR_PICKER ){
       color_pick_ev( p, 0, 1 ); //update color click
+    }else if( p->back_color == BKCOLOR_MINIMAP_CLICK ){
+      mini_map_ev( p, 0, 1 ); //update mini map click
     }
   }
 }
@@ -1559,6 +1579,11 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         if( (t->back_color == BKCOLOR_SEL_COL_R) || (t->back_color == BKCOLOR_SEL_COL_G) ||
             (t->back_color == BKCOLOR_SEL_COL_B) ){
           color_part_ev( t, dir );
+          return;
+        }
+        //MINI MAP
+        if( t->back_color == BKCOLOR_MINIMAP_CLICK ){
+          mini_map_ev( t, dir, 1 );
           return;
         }
       }
@@ -2571,6 +2596,15 @@ void init_tatoolbar_vars( void )
   ttb.cpick.pchosenR= NULL;
   ttb.cpick.pchosenG= NULL;
   ttb.cpick.pchosenB= NULL;
+
+  //init MINI MAP vars
+  //ttb.minimap.pminimap= NULL;
+  ttb.minimap.lines= NULL;
+  ttb.minimap.height= -1;
+  ttb.minimap.buffnum= -1;
+  ttb.minimap.linecount= 0;
+  ttb.minimap.yszbox= 4; //default size
+  ttb.minimap.lineinc= 1 << 4;
 }
 
 struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
@@ -2582,6 +2616,7 @@ struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
         memset( T, 0, sizeof(struct toolbar_data));
     }
     T->num=  ntoolbar;
+    //0: HORIZONTAL  (top) - 2: HORIZONTAL  (bottom)
     T->isvertical= ((ntoolbar != 0)&&(ntoolbar != 2));
     T->draw= draw;
   }
@@ -2743,14 +2778,135 @@ void ttb_settext( const char * name, const char * text, const char *tooltip, int
   }
 }
 
+static void minimap_set_lineinc( void );
+
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height)
 {
   if( T != NULL ){
     T->barwidth= width;
     T->barheight= height;
+    if( T->num == MINIMAP_TOOLBAR ){
+      ttb.minimap.height= height;
+      minimap_set_lineinc();
+    }
     //toolbar size changed, adjust groups layout
     update_layoutT(T);
   }
 }
 
+/* ============================================================================= */
+static void redraw_mini_map( void )
+{
+  //if( ttb.minimap.pminimap != NULL ){
+    //redraw_group(ttb.minimap.pminimap->group); //redraw MINI MAP
+  //}
+  redraw_toolbar( &ttb.tbdata[MINIMAP_TOOLBAR] );
+}
 
+static int MMlineclicked= 0;
+int minimap_getclickline( void )
+{
+  return MMlineclicked;
+}
+
+//MINI MAP: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
+void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
+{
+  struct minimap_line * pml= ttb.minimap.lines;
+  if( dir == 0 ){ //CLICK
+    int nbox= item_yoff / ttb.minimap.yszbox;
+    int nlin1= ((nbox * ttb.minimap.lineinc) >> 4)+1;
+    int nlin2= (((nbox+1) * ttb.minimap.lineinc) >> 4);
+    MMlineclicked= 0;
+    while( pml != NULL){
+      if( pml->linenum > nlin2 ){
+        break;
+      }
+      if( pml->linenum >= nlin1 ){
+        //first marked line in the block
+        MMlineclicked= pml->linenum;
+        break;
+      }
+      pml= pml->next;
+    }
+  }
+}
+
+static void minimap_set_lineinc( void )
+{
+  int linc= 1 << 4;
+  if( ttb.minimap.yszbox > 0 ){
+    int nbox= (ttb.minimap.height-1) / ttb.minimap.yszbox; //complete box count
+    if( nbox < 1){
+      nbox= 1;
+    }
+    int nlinc= (((ttb.minimap.linecount+1) << 4) + nbox-1) / nbox;
+    if( nlinc > linc ){
+      linc= nlinc;
+    }
+  }
+  if( ttb.minimap.lineinc != linc ){
+    ttb.minimap.lineinc= linc;
+    redraw_mini_map();
+  }
+}
+
+void minimap_init(int buffnum, int linecount, int yszbox)
+{
+  ttb.minimap.buffnum= buffnum;
+  ttb.minimap.linecount= linecount;
+  if( yszbox > 0 ){
+    ttb.minimap.yszbox= yszbox;
+  }
+  free_minimap_lines();
+  minimap_set_lineinc();
+  redraw_mini_map();
+}
+
+static struct minimap_line * new_minimapline( int linenum, int color )
+{
+  struct minimap_line *pml;
+  pml= (struct minimap_line *) malloc( sizeof(struct minimap_line));
+  if( pml != NULL ){
+    pml->next= NULL;
+    pml->linenum= linenum;
+    pml->color= color;
+  }
+  return pml;
+}
+
+void minimap_hilight(int linenum, int color)
+{
+  struct minimap_line *a, *pml, *p;
+  int found= 0;
+  a= NULL;
+  pml= ttb.minimap.lines;
+  while( pml != NULL ){
+    if( pml->linenum == linenum ){
+      if( pml->color == color ){
+        return; //already set
+      }
+      pml->color= color;
+      found= 1;
+      break;
+    }
+    if( pml->linenum > linenum ){
+      break; //insert before this node (sorted by linenum)
+    }
+    a= pml;
+    pml= a->next;
+  }
+  if( !found ){ //insert a new line
+    p= new_minimapline( linenum, color );
+    if( p == NULL){
+      return;
+    }
+    p->next= pml;
+    if( a == NULL ){
+      ttb.minimap.lines= p;
+    }else{
+      a->next= p;
+    }
+  }
+  redraw_mini_map();
+}

@@ -10,11 +10,13 @@
 //ntoolbar=0: HORIZONTAL  (top)
 //ntoolbar=1: VERTICAL    (left)
 //ntoolbar=2: HORIZONTAL  (bottom)
-//ntoolbar=3: VERTICAL    (right)
-//ntoolbar=4: VERTICAL    (POPUP)
+//ntoolbar=3: VERTICAL    (right #2)
+//ntoolbar=4: VERTICAL    (right #1)
+//ntoolbar=5: VERTICAL    (POPUP)
 #define STAT_TOOLBAR      2
-#define POPUP_FIRST       4
-#define NTOOLBARS         5
+#define MINIMAP_TOOLBAR   4
+#define POPUP_FIRST       5
+#define NTOOLBARS         6
 
 // toolbar -> group -> items
 
@@ -104,6 +106,9 @@
 #define BKCOLOR_SEL_COL_R  (-4)  //background color = RED, shows the chosen color, RED part in hex
 #define BKCOLOR_SEL_COL_G  (-5)  //same with GREEN part (scroll-wheel to edit)
 #define BKCOLOR_SEL_COL_B  (-6)  //same with BLUE part
+
+#define BKCOLOR_MINIMAP_DRAW  (-7)  //MINI MAP (back draw)
+#define BKCOLOR_MINIMAP_CLICK (-8)  //MINI MAP (click)
 
 struct toolbar_img
 {
@@ -272,6 +277,24 @@ struct color_picker_data
   struct toolbar_item * pchosenB; //same for the BLUE part
 };
 
+struct minimap_line
+{
+  struct minimap_line * next;
+  int linenum;
+  int color;
+};
+
+struct minimap_data
+{
+  //struct toolbar_item * pminimap; //item that shows the mini-map or NULL
+  struct minimap_line * lines;    //lines info
+  int height;     //visible height in pixels = toolbar height
+  int buffnum;    //asociated buffer ID
+  int linecount;  //number of buffer's lines
+  int yszbox;     //y-size of each box
+  int lineinc;    //line increment from box to box
+};
+
 struct all_toolbars_data
 {
   struct toolbar_data tbdata[NTOOLBARS]; //horizonal & vertical toolbars
@@ -285,6 +308,7 @@ struct all_toolbars_data
   char * img_base;
 
   struct color_picker_data cpick; //only one global color picker
+  struct minimap_data minimap;    //only one global MINI MAP
 };
 extern struct all_toolbars_data ttb;
 
@@ -393,4 +417,8 @@ void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
 
 void toolbar_set_win_title( const char *title );
 
+void mini_map_ev( struct toolbar_item *p, int dir, int redraw );
+void minimap_init(int buffnum, int linecount, int yszbox);
+void minimap_hilight(int linenum, int color);
+int minimap_getclickline( void );
 #endif

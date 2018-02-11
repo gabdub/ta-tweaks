@@ -26,6 +26,18 @@ function toolbar.toggle_showconfig()
   actions.updateaction("toggle_viewcfgpanel")
   toolbar.sel_config_bar()
   toolbar.show(toolbar.config_toolbar_shown)
+  --hide the minimap when the config is open
+  toolbar.show_hide_minimap()
+end
+
+function toolbar.show_hide_minimap()
+  --hide the minimap when the config is open
+  toolbar.sel_toolbar_n(4)
+  if toolbar.tbhidemmapcfg then
+    toolbar.show(toolbar.tbshowminimap and (not toolbar.config_toolbar_shown))
+  else
+    toolbar.show(toolbar.tbshowminimap)
+  end
 end
 
 function toolbar.hide_config()
@@ -340,9 +352,9 @@ local function add_cfg_prop(propname, x, tooltip)
     local prop= "color."..propname
     toolbar.gotopos(x, toolbar.cfgpnl_y)
     toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
-    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
     toolbar.setthemeicon(prop, "colorh", 2)
     toolbar.setthemeicon(prop, "colorp", 3)
+    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
     if toolbar.config_saveon then --save this color property in the config file
       toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
     end
@@ -483,6 +495,8 @@ local function reload_theme()
   toolbar.save_config()
   buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
   reset()
+    --hide the minimap when the config is open
+  toolbar.show_hide_minimap()
 end
 
 local function save_colors_in_TAtheme()
@@ -707,6 +721,8 @@ function update_buffer_cfg()
   if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg() end
   --update ALL actions in menus
   actions.update_menuitems()
+  --update minimap
+  toolbar.minimap_bufload()
 end
 
 events.connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
@@ -910,6 +926,11 @@ local function add_toolbar_cfg_panel()
     --NO HTML quicktype toolbar, add "HIDE" option
     cont_config_radio("Hide")
   end
+
+  add_config_label("MINI MAP",true)
+  add_config_check("tbshowminimap", "Show mini map", "", true)
+  add_config_check("tbhidemmapcfg", "Hide when config is open", "", true)
+  add_config_check("tbreplvscroll", "Replace vertical scrollbar", "", true)
   toolbar.config_saveon=false --end of config save options of this panel
 
   add_config_separator()
@@ -1197,6 +1218,8 @@ function toolbar.add_config_panel()
     buffer.reopen_config_panel= nil
     toolbar.toggle_showconfig()
   end
+  --hide the minimap when the config is open
+  toolbar.show_hide_minimap()
 end
 
 --------------------------------------------------------------
@@ -1228,4 +1251,37 @@ local m_vi= actions.getmenu_fromtitle(_L['_View'])
 if m_vi then
   local m=m_vi[#m_vi]
   m[#m+1]= "toggle_viewcfgpanel"
+end
+
+function toolbar.minimap_bufload()
+  minimap.init(buffer._buffnum, buffer.line_count, 6)
+  local mbit= 2^textadept.bookmarks.MARK_BOOKMARK
+  local color= get_rgbcolor_prop('color.bookmark')
+  local nl= buffer.marker_next(buffer, 0, mbit)
+  while nl >= 0 do
+    minimap.hilight(nl+1,color)
+    local nl2= buffer.marker_next(buffer, nl+1, mbit)
+    if nl2 <= nl then break end
+    nl= nl2
+  end
+end
+
+local function minimap_clicked()
+  ui.statusbar_text= "minimap clicked "..minimap.getclickline()
+end
+
+function toolbar.minimap_setup()
+-- TEST: MINI MAP (toolbar #4) --
+  toolbar.new(14, 14, 14, 4, toolbar.themepath)
+  --width=14 / height=expand
+  toolbar.addgroup(3, 7, 14, 0)
+  toolbar.setbackcolor("TOOLBAR", get_rgbcolor_prop('color.linenum_back'), false, true)
+  toolbar.setbackcolor("GROUP", -7, false, true) --MINI MAP DRAW (-7)
+  toolbar.adjust(14, 4096, 2,1,3,3)
+  toolbar.gotopos(0,0)
+  toolbar.cmd("minimap", minimap_clicked, "", "")
+  toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
+  toolbar.seticon("TOOLBAR", "", 2, true)
+  toolbar.seticon("TOOLBAR", "", 3, true)
+  toolbar.show(true)
 end

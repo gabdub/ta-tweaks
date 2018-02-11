@@ -57,7 +57,7 @@ static int ltoolbar_new(lua_State *L)
   }
   ttb_new_toolbar(num, lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3), imgpath );
   lua_pushinteger(L, num);  //toolbar num
-  return 0;
+  return 1;
 }
 
 /** `toolbar.adjust(bwidth,bheight,xmargin,ymargin,xoff,yoff)` Lua function. */
@@ -115,7 +115,7 @@ static int ltoolbar_addgroup(lua_State *L)
     num= g->num;
   }
   lua_pushinteger(L, num);  //toolbar num
-  return 0;
+  return 1;
 }
 
 /** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-drag],[xcontrol],[height])` Lua function. */
@@ -550,10 +550,26 @@ void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int 
   }
 }
 
+static int MMboxcount( struct minimap_line * pml, int b, int maxc )
+{
+  int n= 0;
+  while( pml->linenum < b ){
+    n++;
+    if( n >= maxc ){
+      break;
+    }
+    pml= pml->next;
+    if( pml == NULL ){
+      break;
+    }
+  }
+  return n;
+}
+
 void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
 {
   struct color3doubles c;
-  int i, j, xr, yr, dx, dy, a, hp;
+  int i, j, n, xr, yr, dx, dy, a, b, hp;
   double v, min, max, dv, tcol;
   char str[16];
   cairo_t *ctx= (cairo_t *) gcontext;
@@ -679,6 +695,51 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
     cairo_rectangle(ctx, xr+1, yr+1, PICKER_VSCROLLW-2, dy-2);
     cairo_fill(ctx);
 
+  }else if( color == BKCOLOR_MINIMAP_DRAW ){
+    //=== MINI MAP ===
+    struct minimap_line * pml= ttb.minimap.lines;
+    if( (ttb.minimap.height > 0) && (ttb.minimap.linecount > 0) && (pml != NULL) ){
+      if( h > ttb.minimap.height ){
+        h= ttb.minimap.height;
+      }
+      i= 1 << 4;
+      j= (ttb.minimap.linecount+1) << 4;
+      yr= y;
+      while( i <= j ){
+        a= i >> 4; //block first line
+        i += ttb.minimap.lineinc;
+        b= i >> 4; //next block first line
+        while( pml->linenum < a ){
+          pml= pml->next;
+          if( pml == NULL){
+            break;
+          }
+        }
+        if( pml == NULL){
+          break;
+        }
+        //count up to 3 items per box
+        n= MMboxcount( pml, b, 3 );
+        if( n > 0 ){
+          int wi= (w-n)/n;
+          int xi= x+1;
+          while(1){
+            setrgbcolor( pml->color, &c );
+            cairo_set_source_rgb(ctx, c.R, c.G, c.B );
+            cairo_rectangle(ctx, xi, yr, wi, ttb.minimap.yszbox-1);
+            cairo_fill(ctx);
+            xi += wi+1;
+            if( --n == 0 ){
+              break;
+            }
+            pml= pml->next;
+          };
+        }
+        yr += ttb.minimap.yszbox;
+      }
+    }
+  }else if( color == BKCOLOR_MINIMAP_CLICK ){
+    //it's a transparent button
   }else{
     str[0]= 0;
     tcol= 1; //text color= black (0) or white (1)
@@ -989,6 +1050,8 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         ttb.ntbhilight= T->num;
         if( ttb.phipress->back_color == BKCOLOR_PICKER ){
           color_pick_ev( ttb.phipress, 0, 0 ); //COLOR PICKER click
+        }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
+          mini_map_ev( ttb.phipress, 0, 0 );   //MINI MAP click
         }
         redraw_item(ttb.philight);
       }
@@ -1270,6 +1333,25 @@ static int lfilediff_strdiff(lua_State *L)
 }
 
 /* ============================================================================= */
+/** `minimap.init(buffnum, linecount, [yszbox] )` Lua function. */
+static int lminimap_init(lua_State *L)
+{
+  minimap_init(lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3));
+  return 0;
+}
+
+/** `minimap.hilight(linenum, color )` Lua function. */
+static int lminimap_hilight(lua_State *L)
+{
+  minimap_hilight(lua_tointeger(L, 1), lua_tointeger(L, 2));
+  return 0;
+}
+static int lminimap_getclickline(lua_State *L)
+{
+  lua_pushinteger( L, minimap_getclickline() );
+  return 1;
+}
+/* ============================================================================= */
 /*                          FUNCTIONS CALLED FROM TA                             */
 /* ============================================================================= */
 /* register LUA toolbar object */
@@ -1334,6 +1416,13 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "strdiff",      lfilediff_strdiff);     //compare to strings
   //filediff object
   lua_setglobal(L, "filediff");
+
+  //register "minimap" functions
+  lua_newtable(L);
+  l_setcfunction(L, -1, "init",         lminimap_init);	      //clear minimap
+  l_setcfunction(L, -1, "hilight",      lminimap_hilight);    //hilight a line
+  l_setcfunction(L, -1, "getclickline", lminimap_getclickline);//get clicked line number
+  lua_setglobal(L, "minimap");
 }
 
 /* status bar text changed */
@@ -1404,9 +1493,10 @@ void toolbar_set_win_title( const char *title )
 //ntoolbar=0: HORIZONTAL  (top)
 //ntoolbar=1: VERTICAL    (left)
 //ntoolbar=2: HORIZONTAL  (bottom)
-//ntoolbar=3: VERTICAL    (right)
-//ntoolbar=4: VERTICAL    (POPUP)
-static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
+//ntoolbar=3: VERTICAL    (right #2)
+//ntoolbar=4: VERTICAL    (right #1)
+//ntoolbar=5: VERTICAL    (POPUP)
+static void create_tatoolbar( GtkWidget *box, int ntoolbar )
 {
   struct toolbar_data *T;
   GtkWidget * draw;
@@ -1443,7 +1533,7 @@ static void create_tatoolbar( GtkWidget *vbox, int ntoolbar )
     signal(draw, "button-press-event",   ttb_button_ev);
     signal(draw, "button-release-event", ttb_button_ev);
 
-    gtk_box_pack_start(GTK_BOX(vbox), draw, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), draw, FALSE, FALSE, 0);
   }
 }
 

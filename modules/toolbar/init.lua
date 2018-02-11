@@ -732,14 +732,18 @@ if toolbar then
     local statbar= (toolbar.get_check_val("tbshowstatbar") and 1 or 0)
     --configpanel==true: add a button to show config panel and create the config panel
     toolbar.create(tabpos,nvertcols,statbar,true)
+    --hide vertical scrollbar
+    toolbar.tbshowminimap= toolbar.get_check_val("tbshowminimap")
+    toolbar.tbhidemmapcfg= toolbar.get_check_val("tbhidemmapcfg")
+    toolbar.tbreplvscroll= toolbar.get_check_val("tbreplvscroll")
   end
 
   --create the popup toolbar
-  local function closepopup()
-    toolbar.popup(4,false) --hide popup
+  local function closepopup(npop)
+    toolbar.popup(npop,false) --hide popup
   end
   function toolbar.create_popup()
-    toolbar.new(50, 24, 16, 4, toolbar.themepath)
+    toolbar.new(50, 24, 16, 5, toolbar.themepath)
     toolbar.addgroup(8,8,0,0)
     toolbar.adjust(24,24,3,3,4,4)
     toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
@@ -752,7 +756,7 @@ if toolbar then
     toolbar.cmdtext("Open recent...", closepopup, "", "n3")
   end
   function toolbar.show_popup(btname,relpos)
-    toolbar.popup(4,true,btname,relpos)
+    toolbar.popup(5,true,btname,relpos)
   end
   events_connect("popup_close", closepopup)
 

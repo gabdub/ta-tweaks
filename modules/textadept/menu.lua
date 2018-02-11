@@ -227,8 +227,14 @@ actions.list = {
     end},
 
 --TOOLS + BOOKMARK
-  ["toggle_bookmark"]=      {_L['_Toggle Bookmark'], textadept.bookmarks.toggle},
-  ["clear_bookmarks"]=      {_L['_Clear Bookmarks'], textadept.bookmarks.clear},
+  ["toggle_bookmark"]=      {_L['_Toggle Bookmark'], function()
+      textadept.bookmarks.toggle()
+      toolbar.minimap_bufload()
+    end},
+  ["clear_bookmarks"]=      {_L['_Clear Bookmarks'], function()
+      textadept.bookmarks.clear()
+      toolbar.minimap_bufload()
+    end},
   ["next_bookmark"]=        {_L['_Next Bookmark'], function()
       textadept.bookmarks.goto_mark(true)
     end},
