@@ -419,6 +419,6 @@ void toolbar_set_win_title( const char *title );
 
 void mini_map_ev( struct toolbar_item *p, int dir, int redraw );
 void minimap_init(int buffnum, int linecount, int yszbox);
-void minimap_hilight(int linenum, int color);
+void minimap_hilight(int linenum, int color, int exclusive);
 int minimap_getclickline( void );
 #endif

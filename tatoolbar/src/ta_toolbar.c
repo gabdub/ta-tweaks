@@ -2817,7 +2817,7 @@ void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
     int nbox= item_yoff / ttb.minimap.yszbox;
     int nlin1= ((nbox * ttb.minimap.lineinc) >> 4)+1;
     int nlin2= (((nbox+1) * ttb.minimap.lineinc) >> 4);
-    MMlineclicked= 0;
+    MMlineclicked= nlin1;
     while( pml != NULL){
       if( pml->linenum > nlin2 ){
         break;
@@ -2875,20 +2875,14 @@ static struct minimap_line * new_minimapline( int linenum, int color )
   return pml;
 }
 
-void minimap_hilight(int linenum, int color)
+void minimap_hilight(int linenum, int color, int exclusive)
 {
   struct minimap_line *a, *pml, *p;
-  int found= 0;
   a= NULL;
   pml= ttb.minimap.lines;
   while( pml != NULL ){
-    if( pml->linenum == linenum ){
-      if( pml->color == color ){
-        return; //already set
-      }
-      pml->color= color;
-      found= 1;
-      break;
+    if( (pml->linenum == linenum) && ((pml->color == color)||(exclusive)) ){
+      return; //already set
     }
     if( pml->linenum > linenum ){
       break; //insert before this node (sorted by linenum)
@@ -2896,17 +2890,16 @@ void minimap_hilight(int linenum, int color)
     a= pml;
     pml= a->next;
   }
-  if( !found ){ //insert a new line
-    p= new_minimapline( linenum, color );
-    if( p == NULL){
-      return;
-    }
-    p->next= pml;
-    if( a == NULL ){
-      ttb.minimap.lines= p;
-    }else{
-      a->next= p;
-    }
+  //insert a new line
+  p= new_minimapline( linenum, color );
+  if( p == NULL){
+    return;
+  }
+  p->next= pml;
+  if( a == NULL ){
+    ttb.minimap.lines= p;
+  }else{
+    a->next= p;
   }
   redraw_mini_map();
 }

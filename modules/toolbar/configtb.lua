@@ -1253,29 +1253,49 @@ if m_vi then
   m[#m+1]= "toggle_viewcfgpanel"
 end
 
-function toolbar.minimap_bufload()
-  minimap.init(buffer._buffnum, buffer.line_count, 6)
-  local mbit= 2^textadept.bookmarks.MARK_BOOKMARK
-  local color= get_rgbcolor_prop('color.bookmark')
-  local nl= buffer.marker_next(buffer, 0, mbit)
-  while nl >= 0 do
-    minimap.hilight(nl+1,color)
-    local nl2= buffer.marker_next(buffer, nl+1, mbit)
+--add markers to the minimap
+local function add_mmap_markers(markbit, colorprop)
+  local mbit= 2^markbit
+  local color= get_rgbcolor_prop(colorprop)
+  local nl= buffer.marker_next(buffer, 0, mbit)+1
+  while nl >= 1 do
+    minimap.hilight(nl,color)
+    local nl2= buffer.marker_next(buffer, nl, mbit)+1
     if nl2 <= nl then break end
     nl= nl2
   end
-  color= get_rgbcolor_prop('color.hilight')
-  local ind=textadept.editing.INDIC_HIGHLIGHT
-  local pos= buffer:indicator_end(ind,0)
+end
+
+--add indicators to the minimap
+local function add_mmap_indicators(indicator, colorprop)
+  local color= get_rgbcolor_prop(colorprop)
+  local pos= buffer:indicator_end(indicator, 0)
   while pos > 0 and pos < buffer.length do
-    nl= buffer:line_from_position(pos)+1
-    minimap.hilight(nl,color)
-    pos= buffer:indicator_end(ind,buffer:position_from_line(nl))
+    local nl= buffer:line_from_position(pos)+1
+    minimap.hilight(nl, color)
+    pos= buffer:indicator_end(indicator, buffer:position_from_line(nl))
   end
 end
 
+--load buffer markers/indicators into the minimap
+function toolbar.minimap_bufload()
+  minimap.init(buffer._buffnum, buffer.line_count, 6)
+  --bookmarks
+  add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
+  add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
+  add_mmap_markers(Proj.MARK_DELETION, 'color.red')
+  add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
+  --highlighted words
+  add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
+--  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
+--  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
+  --first/last line
+  color= get_rgbcolor_prop('color.curr_line_back')
+  minimap.hilight(1,color,true)
+  minimap.hilight(buffer.line_count,color,true)
+end
+
 local function minimap_clicked()
-  --ui.statusbar_text= "minimap clicked "..minimap.getclickline()
   local nl= minimap.getclickline()
   if nl > 0 then
     if nl > buffer.line_count then nl= buffer.line_count end
@@ -1284,7 +1304,7 @@ local function minimap_clicked()
 end
 
 function toolbar.minimap_setup()
--- TEST: MINI MAP (toolbar #4) --
+  --set toolbar #4 as a MINIMAP
   toolbar.new(14, 14, 14, 4, toolbar.themepath)
   --width=14 / height=expand
   toolbar.addgroup(3, 7, 14, 0)
@@ -1294,7 +1314,7 @@ function toolbar.minimap_setup()
   toolbar.gotopos(0,0)
   toolbar.cmd("minimap", minimap_clicked, "", "")
   toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
-  toolbar.seticon("TOOLBAR", "", 2, true)
+  toolbar.seticon("TOOLBAR", "", 2, true) --don't highlight
   toolbar.seticon("TOOLBAR", "", 3, true)
   toolbar.show(true)
 end

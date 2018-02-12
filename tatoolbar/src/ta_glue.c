@@ -1340,10 +1340,10 @@ static int lminimap_init(lua_State *L)
   return 0;
 }
 
-/** `minimap.hilight(linenum, color )` Lua function. */
+/** `minimap.hilight(linenum, color, [exclusive] )` Lua function. */
 static int lminimap_hilight(lua_State *L)
 {
-  minimap_hilight(lua_tointeger(L, 1), lua_tointeger(L, 2));
+  minimap_hilight(lua_tointeger(L, 1), lua_tointeger(L, 2), lua_toboolean(L, 3) );
   return 0;
 }
 static int lminimap_getclickline(lua_State *L)
@@ -1366,9 +1366,9 @@ void register_toolbar(lua_State *L)
   //register "toolbar" functions
   lua_newtable(L);
   //toolbars
-  l_setcfunction(L, -1, "new",          ltoolbar_new);	        //create a new toolbar (returns toolbar num)
-  l_setcfunction(L, -1, "adjust",       ltoolbar_adjust);	      //optionaly fine tune some parameters
-  l_setcfunction(L, -1, "show",         ltoolbar_show);	        //show/hide toolbar
+  l_setcfunction(L, -1, "new",          ltoolbar_new);          //create a new toolbar (returns toolbar num)
+  l_setcfunction(L, -1, "adjust",       ltoolbar_adjust);       //optionaly fine tune some parameters
+  l_setcfunction(L, -1, "show",         ltoolbar_show);         //show/hide toolbar
   //groups
   l_setcfunction(L, -1, "seltoolbar",   ltoolbar_seltoolbar);   //select which toolbar/group to edit
   l_setcfunction(L, -1, "addgroup",     ltoolbar_addgroup);     //add a new group (returns group num)
@@ -1379,11 +1379,11 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "addtext",      ltoolbar_addtext);      //add text button
   l_setcfunction(L, -1, "addlabel",     ltoolbar_addlabel);     //add a text label
   l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
-  l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);	    //change next button position
-  l_setcfunction(L, -1, "enable",       ltoolbar_enable);	      //enable/disable a button
-  l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);	    //change a button, GROUP or TOOLBAR icon
+  l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);      //change next button position
+  l_setcfunction(L, -1, "enable",       ltoolbar_enable);       //enable/disable a button
+  l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);      //change a button, GROUP or TOOLBAR icon
   l_setcfunction(L, -1, "setbackcolor", ltoolbar_setbackcolor); //change a button, GROUP or TOOLBAR back color
-  l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);	  //change a button tooltip
+  l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);   //change a button tooltip
   l_setcfunction(L, -1, "settext",      ltoolbar_settext);      //change a button text
   l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
   //tabs
@@ -1411,7 +1411,7 @@ void register_toolbar(lua_State *L)
   //register "filediff" functions
   lua_newtable(L);
   //file diff
-  l_setcfunction(L, -1, "setfile",      lfilediff_setfile);	    //load a file to compare
+  l_setcfunction(L, -1, "setfile",      lfilediff_setfile);     //load a file to compare
   l_setcfunction(L, -1, "getdiff",      lfilediff_getdiff);     //get file differences (int array)
   l_setcfunction(L, -1, "strdiff",      lfilediff_strdiff);     //compare to strings
   //filediff object
@@ -1419,9 +1419,9 @@ void register_toolbar(lua_State *L)
 
   //register "minimap" functions
   lua_newtable(L);
-  l_setcfunction(L, -1, "init",         lminimap_init);	      //clear minimap
-  l_setcfunction(L, -1, "hilight",      lminimap_hilight);    //hilight a line
-  l_setcfunction(L, -1, "getclickline", lminimap_getclickline);//get clicked line number
+  l_setcfunction(L, -1, "init",         lminimap_init);         //clear minimap
+  l_setcfunction(L, -1, "hilight",      lminimap_hilight);      //hilight a line
+  l_setcfunction(L, -1, "getclickline", lminimap_getclickline); //get clicked line number
   lua_setglobal(L, "minimap");
 }
 
