@@ -288,11 +288,15 @@ struct minimap_data
 {
   //struct toolbar_item * pminimap; //item that shows the mini-map or NULL
   struct minimap_line * lines;    //lines info
-  int height;     //visible height in pixels = toolbar height
-  int buffnum;    //asociated buffer ID
-  int linecount;  //number of buffer's lines
-  int yszbox;     //y-size of each box
-  int lineinc;    //line increment from box to box
+  int height;       //visible height in pixels = toolbar height
+  int buffnum;      //asociated buffer ID
+  int linecount;    //number of buffer's lines
+  int yszbox;       //y-size of each box
+  int lineinc;      //line increment from box to box
+  int boxesheight;  //used height
+  int linesscreen;  //number of completely visible lines
+  int firstvisible; //number of the line at the top
+  int scrcolor;     //scroll box color
 };
 
 struct all_toolbars_data
@@ -420,5 +424,7 @@ void toolbar_set_win_title( const char *title );
 void mini_map_ev( struct toolbar_item *p, int dir, int redraw );
 void minimap_init(int buffnum, int linecount, int yszbox);
 void minimap_hilight(int linenum, int color, int exclusive);
-int minimap_getclickline( void );
+int  minimap_getclickline( void );
+void minimap_scrollpos(int linesscreen, int firstvisible, int color);
+
 #endif

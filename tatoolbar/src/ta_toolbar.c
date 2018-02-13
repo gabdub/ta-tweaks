@@ -2605,6 +2605,10 @@ void init_tatoolbar_vars( void )
   ttb.minimap.linecount= 0;
   ttb.minimap.yszbox= 4; //default size
   ttb.minimap.lineinc= 1 << 4;
+  ttb.minimap.boxesheight= 1;
+  ttb.minimap.linesscreen= 0;
+  ttb.minimap.firstvisible= 0;
+  ttb.minimap.scrcolor= 0;
 }
 
 struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
@@ -2797,9 +2801,6 @@ void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height)
 /* ============================================================================= */
 static void redraw_mini_map( void )
 {
-  //if( ttb.minimap.pminimap != NULL ){
-    //redraw_group(ttb.minimap.pminimap->group); //redraw MINI MAP
-  //}
   redraw_toolbar( &ttb.tbdata[MINIMAP_TOOLBAR] );
 }
 
@@ -2834,6 +2835,7 @@ void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
 
 static void minimap_set_lineinc( void )
 {
+  int bh;
   int linc= 1 << 4;
   if( ttb.minimap.yszbox > 0 ){
     int nbox= (ttb.minimap.height-1) / ttb.minimap.yszbox; //complete box count
@@ -2845,8 +2847,10 @@ static void minimap_set_lineinc( void )
       linc= nlinc;
     }
   }
-  if( ttb.minimap.lineinc != linc ){
+  bh= (((ttb.minimap.linecount << 4) +linc-1)/ linc) * ttb.minimap.yszbox;
+  if( (ttb.minimap.lineinc != linc) || (ttb.minimap.boxesheight != bh) ){
     ttb.minimap.lineinc= linc;
+    ttb.minimap.boxesheight= bh;
     redraw_mini_map();
   }
 }
@@ -2901,5 +2905,13 @@ void minimap_hilight(int linenum, int color, int exclusive)
   }else{
     a->next= p;
   }
+  redraw_mini_map();
+}
+
+void minimap_scrollpos(int linesscreen, int firstvisible, int color)
+{
+  ttb.minimap.linesscreen=  linesscreen;
+  ttb.minimap.firstvisible= firstvisible;
+  ttb.minimap.scrcolor=     color;
   redraw_mini_map();
 }

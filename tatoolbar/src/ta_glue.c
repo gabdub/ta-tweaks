@@ -702,9 +702,30 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
       if( h > ttb.minimap.height ){
         h= ttb.minimap.height;
       }
+      //draw scrollbar if set
+      if( ttb.minimap.linesscreen > 0){
+        n= ttb.minimap.linesscreen;
+        if( n > ttb.minimap.linecount){
+          n= ttb.minimap.linecount;
+        }
+        yr= ttb.minimap.firstvisible-1;
+        if( (yr+n) > ttb.minimap.linecount ){
+          yr= ttb.minimap.linecount - n;
+        }
+        if( yr < 0 ){
+          yr= 0;
+        }
+        n= ((n+1) * ttb.minimap.boxesheight +ttb.minimap.linecount-1)/ttb.minimap.linecount;
+        yr= y + (yr * ttb.minimap.boxesheight +ttb.minimap.linecount-1)/ttb.minimap.linecount;
+        setrgbcolor( ttb.minimap.scrcolor, &c );
+        cairo_set_source_rgb(ctx, c.R, c.G, c.B );
+        cairo_rectangle(ctx, x, yr, w, n);
+        cairo_stroke(ctx);
+      }
+      //draw boxes
       i= 1 << 4;
       j= (ttb.minimap.linecount+1) << 4;
-      yr= y;
+      yr= y+1;
       while( i <= j ){
         a= i >> 4; //block first line
         i += ttb.minimap.lineinc;
@@ -721,7 +742,10 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
         //count up to 3 items per box
         n= MMboxcount( pml, b, 3 );
         if( n > 0 ){
-          int wi= (w-n)/n;
+          int wi= w-2;
+          if( n > 1){
+            wi= (w-n)/n;
+          }
           int xi= x+1;
           while(1){
             setrgbcolor( pml->color, &c );
@@ -1334,6 +1358,7 @@ static int lfilediff_strdiff(lua_State *L)
 
 /* ============================================================================= */
 /** `minimap.init(buffnum, linecount, [yszbox] )` Lua function. */
+/** init minimap: buffer number, buffer line count, change box size in pixels */
 static int lminimap_init(lua_State *L)
 {
   minimap_init(lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3));
@@ -1341,16 +1366,29 @@ static int lminimap_init(lua_State *L)
 }
 
 /** `minimap.hilight(linenum, color, [exclusive] )` Lua function. */
+/** set line color, exclusive = only if not previously set */
 static int lminimap_hilight(lua_State *L)
 {
   minimap_hilight(lua_tointeger(L, 1), lua_tointeger(L, 2), lua_toboolean(L, 3) );
   return 0;
 }
+
+/** `minimap.getclickline()` Lua function. */
+/** return last clicked line number */
 static int lminimap_getclickline(lua_State *L)
 {
   lua_pushinteger( L, minimap_getclickline() );
   return 1;
 }
+
+/** `minimap.scrollpos(linesscreen, firstvisible, color)` Lua function. */
+/** set scroll bar position and size */
+static int lminimap_scrollpos(lua_State *L)
+{
+  minimap_scrollpos(lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3) );
+  return 0;
+}
+
 /* ============================================================================= */
 /*                          FUNCTIONS CALLED FROM TA                             */
 /* ============================================================================= */
@@ -1422,6 +1460,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "init",         lminimap_init);         //clear minimap
   l_setcfunction(L, -1, "hilight",      lminimap_hilight);      //hilight a line
   l_setcfunction(L, -1, "getclickline", lminimap_getclickline); //get clicked line number
+  l_setcfunction(L, -1, "scrollpos",    lminimap_scrollpos);    //set scroll bar position and size
   lua_setglobal(L, "minimap");
 }
 
