@@ -4,11 +4,11 @@
 local Proj = Proj
 local Util = Util
 
-local MARK_ADDITION = _SCINTILLA.next_marker_number()
-local MARK_DELETION = _SCINTILLA.next_marker_number()
-local MARK_MODIFICATION = _SCINTILLA.next_marker_number()
-local INDIC_ADDITION = _SCINTILLA.next_indic_number()
-local INDIC_DELETION = _SCINTILLA.next_indic_number()
+Proj.MARK_ADDITION = _SCINTILLA.next_marker_number()
+Proj.MARK_DELETION = _SCINTILLA.next_marker_number()
+Proj.MARK_MODIFICATION = _SCINTILLA.next_marker_number()
+Proj.INDIC_ADDITION = _SCINTILLA.next_indic_number()
+Proj.INDIC_DELETION = _SCINTILLA.next_indic_number()
 
 local bit32_band = bit32.band
 
@@ -19,10 +19,10 @@ local synchronizing = false
 
 local function clear_buf_marks(b)
   if b then
-    for _, mark in ipairs{MARK_ADDITION, MARK_DELETION, MARK_MODIFICATION} do
+    for _, mark in ipairs{Proj.MARK_ADDITION, Proj.MARK_DELETION, Proj.MARK_MODIFICATION} do
       b:marker_delete_all(mark)
     end
-    for _, indic in ipairs{INDIC_ADDITION, INDIC_DELETION} do
+    for _, indic in ipairs{Proj.INDIC_ADDITION, Proj.INDIC_DELETION} do
       b.indicator_current = indic
       b:indicator_clear_range(0, b.length)
     end
@@ -118,7 +118,7 @@ local function mark_changes(goto_first)
   for i=1,#r1,2 do
     n1= n1 + r1[i+1]-r1[i]+1
     for j=r1[i],r1[i+1] do
-      buffer1:marker_add(j-1, MARK_ADDITION)
+      buffer1:marker_add(j-1, Proj.MARK_ADDITION)
     end
   end
   --enum lines that are only in buffer2
@@ -126,7 +126,7 @@ local function mark_changes(goto_first)
   for i=1,#r2,2 do
     n2= n2 + r2[i+1]-r2[i]+1
     for j=r2[i],r2[i+1] do
-      buffer2:marker_add(j-1, MARK_DELETION)
+      buffer2:marker_add(j-1, Proj.MARK_DELETION)
     end
   end
   --enum modified lines
@@ -134,8 +134,8 @@ local function mark_changes(goto_first)
   if #rm > 0 and (first == 0 or rm[1]<first) then first= rm[1] end
   local n3= #rm / 2
   for i=1, #rm, 2 do
-    buffer1:marker_add(rm[i]-1, MARK_MODIFICATION)
-    buffer2:marker_add(rm[i+1]-1, MARK_MODIFICATION)
+    buffer1:marker_add(rm[i]-1, Proj.MARK_MODIFICATION)
+    buffer2:marker_add(rm[i+1]-1, Proj.MARK_MODIFICATION)
   end
 
   --show the missing lines using annotations
@@ -154,10 +154,10 @@ local function mark_changes(goto_first)
   r= filediff.getdiff( 1, 4 )
   for i=1,#r,3 do
     if r[i] == 1 then
-      buffer1.indicator_current = INDIC_ADDITION
+      buffer1.indicator_current = Proj.INDIC_ADDITION
       buffer1:indicator_fill_range(r[i+1], r[i+2])
     else
-      buffer2.indicator_current = INDIC_DELETION
+      buffer2.indicator_current = Proj.INDIC_DELETION
       buffer2:indicator_fill_range(r[i+1], r[i+2])
     end
   end
@@ -234,14 +234,14 @@ end
 --TA-EVENT: VIEW_NEW
 function Proj.EVview_new()
   local markers = {
-    [MARK_ADDITION] = 'green', [MARK_DELETION] = 'red',
-    [MARK_MODIFICATION] = 'yellow'
+    [Proj.MARK_ADDITION] = 'green', [Proj.MARK_DELETION] = 'red',
+    [Proj.MARK_MODIFICATION] = 'yellow'
   }
   for mark, color in pairs(markers) do
     buffer:marker_define(mark, buffer.MARK_BACKGROUND)
     buffer.marker_back[mark] = buffer.property_int['color.'..color]
   end
-  local indicators = {[INDIC_ADDITION] = 'green', [INDIC_DELETION] = 'red'}
+  local indicators = {[Proj.INDIC_ADDITION] = 'green', [Proj.INDIC_DELETION] = 'red'}
   for indic, color in pairs(indicators) do
     buffer.indic_style[indic] = buffer.INDIC_FULLBOX
     buffer.indic_fore[indic] = buffer.property_int['color.'..color]

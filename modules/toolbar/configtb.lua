@@ -722,7 +722,7 @@ function update_buffer_cfg()
   --update ALL actions in menus
   actions.update_menuitems()
   --update minimap
-  toolbar.minimap_bufload()
+  toolbar.minimap_load()
 end
 
 events.connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
@@ -1278,22 +1278,28 @@ local function add_mmap_indicators(indicator, colorprop)
 end
 
 --load buffer markers/indicators into the minimap
-function toolbar.minimap_bufload()
-  minimap.init(buffer._buffnum, buffer.line_count, 6)
-  --bookmarks
-  add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
-  add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
-  add_mmap_markers(Proj.MARK_DELETION, 'color.red')
-  add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
-  --highlighted words
-  add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
---  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
---  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
-  --first/last line
-  color= get_rgbcolor_prop('color.curr_line_back')
-  minimap.hilight(1,color,true)
-  minimap.hilight(buffer.line_count,color,true)
+function toolbar.minimap_load()
+  if toolbar.tbshowminimap then
+    minimap.init(buffer._buffnum, buffer.line_count, 6)
+    --bookmarks
+    add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
+    add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
+    add_mmap_markers(Proj.MARK_DELETION, 'color.red')
+    add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
+    --highlighted words
+    add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
+  --  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
+  --  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
+    --first/last line
+    color= get_rgbcolor_prop('color.curr_line_back')
+    minimap.hilight(1,color,true)
+    minimap.hilight(buffer.line_count,color,true)
+  end
 end
+
+events.connect(events.UPDATE_UI, function(updated)
+  if updated and bit32.band(updated, buffer.UPDATE_CONTENT) > 0 then toolbar.minimap_load() end
+end)
 
 local function minimap_clicked()
   local nl= minimap.getclickline()
@@ -1316,5 +1322,5 @@ function toolbar.minimap_setup()
   toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
   toolbar.seticon("TOOLBAR", "", 2, true) --don't highlight
   toolbar.seticon("TOOLBAR", "", 3, true)
-  toolbar.show(true)
+  toolbar.show(toolbar.tbshowminimap)
 end

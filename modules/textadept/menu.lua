@@ -110,10 +110,7 @@ actions.list = {
   ["complete_word"]=        {_L['Complete _Word'], function()
       textadept.editing.autocomplete('word')
     end},
-  ["highlight_word"]=       {_L['_Highlight Word'], function()
-      textadept.editing.highlight_word()
-      toolbar.minimap_bufload()
-    end},
+  ["highlight_word"]=       {_L['_Highlight Word'], textadept.editing.highlight_word},
   ["toggle_comment"]=       {_L['Toggle _Block Comment'], textadept.editing.block_comment},
   ["transpose_chars"]=      {_L['T_ranspose Characters'], textadept.editing.transpose_chars},
   ["join_lines"]=           {_L['_Join Lines'], textadept.editing.join_lines},
@@ -230,14 +227,8 @@ actions.list = {
     end},
 
 --TOOLS + BOOKMARK
-  ["toggle_bookmark"]=      {_L['_Toggle Bookmark'], function()
-      textadept.bookmarks.toggle()
-      toolbar.minimap_bufload()
-    end},
-  ["clear_bookmarks"]=      {_L['_Clear Bookmarks'], function()
-      textadept.bookmarks.clear()
-      toolbar.minimap_bufload()
-    end},
+  ["toggle_bookmark"]=      {_L['_Toggle Bookmark'], textadept.bookmarks.toggle},
+  ["clear_bookmarks"]=      {_L['_Clear Bookmarks'], textadept.bookmarks.clear},
   ["next_bookmark"]=        {_L['_Next Bookmark'], function()
       textadept.bookmarks.goto_mark(true)
     end},
