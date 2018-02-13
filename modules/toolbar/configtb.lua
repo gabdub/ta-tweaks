@@ -1,6 +1,7 @@
 -- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 local Util = Util
 local toolbar = toolbar
+local events, events_connect = events, events.connect
 
 toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
 toolbar.cfgpnl_chkval={}
@@ -662,10 +663,8 @@ function toolbar.load_config(dontset_toolbar)
   end
 end
 
---on init load the configuration file but don't set the toolbar yet
---events.connect(events.INITIALIZED, function() toolbar.load_config(true) end)
 -- Save configuration changes on quit
-events.connect(events.QUIT, function() toolbar.save_config() end, 1)
+events_connect(events.QUIT, function() toolbar.save_config() end, 1)
 
 local function get_lexer()
   local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
@@ -725,10 +724,10 @@ function update_buffer_cfg()
   toolbar.minimap_load()
 end
 
-events.connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
-events.connect(events.VIEW_AFTER_SWITCH,   update_buffer_cfg)
-events.connect(events.BUFFER_NEW,          update_buffer_cfg)
-events.connect(events.FILE_OPENED,         update_buffer_cfg)
+events_connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
+events_connect(events.VIEW_AFTER_SWITCH,   update_buffer_cfg)
+events_connect(events.BUFFER_NEW,          update_buffer_cfg)
+events_connect(events.FILE_OPENED,         update_buffer_cfg)
 
 local function set_buffer_indent_as_cfg(updateui)
   --indentation width
@@ -753,7 +752,7 @@ local function set_buffer_indent_as_cfg(updateui)
   actions.updateaction("toggle_usetabs")
 end
 
-events.connect(events.LEXER_LOADED, set_buffer_indent_as_cfg)
+events_connect(events.LEXER_LOADED, set_buffer_indent_as_cfg)
 
 function toolbar.setcfg_from_tabwidth()
   if buffer.tab_width == 2 then buffer._cfg_bfindent= 2
@@ -1297,7 +1296,7 @@ function toolbar.minimap_load()
   end
 end
 
-events.connect(events.UPDATE_UI, function(updated)
+events_connect(events.UPDATE_UI, function(updated)
   if updated and bit32.band(updated, buffer.UPDATE_CONTENT) > 0 then toolbar.minimap_load() end
 end)
 
