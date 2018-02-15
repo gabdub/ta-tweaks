@@ -1277,21 +1277,29 @@ local function add_mmap_indicators(indicator, colorprop)
 end
 
 function toolbar.minimap_scroll()
-  minimap.scrollpos(buffer.lines_on_screen, buffer.first_visible_line+1, get_rgbcolor_prop('color.linenum_fore'))
+  local nl= buffer.lines_on_screen
+  local first= buffer.first_visible_line+1
+  if not buffer.all_lines_visible then
+    --add hidden lines
+    local n= 0
+    local i= 0
+    while n < buffer.first_visible_line and i < buffer.line_count do
+      if buffer.line_visible[i] then n=n+1 else first=first+1 end
+      i=i+1
+    end
+    n= 0
+    while n < buffer.lines_on_screen and i < buffer.line_count do
+      if buffer.line_visible[i] then n=n+1 else nl=nl+1 end
+      i=i+1
+    end
+  end
+  minimap.scrollpos(nl, first, get_rgbcolor_prop('color.linenum_fore'))
 end
 
 --load buffer markers/indicators into the minimap
 function toolbar.minimap_load()
   if toolbar.tbshowminimap then
-    --visible line count
-    local vlcount= buffer.line_count
---    if not buffer.all_lines_visible then
---      --substract hidden lines
---      for i=0,buffer.line_count-1 do
---        if not buffer.line_visible[i] then vlcount=vlcount-1 end
---      end
---    end
-    minimap.init(buffer._buffnum, vlcount, 6)
+    minimap.init(buffer._buffnum, buffer.line_count, 6)
     --bookmarks
     add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
     add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
@@ -1304,7 +1312,7 @@ function toolbar.minimap_load()
     --first/last line
     color= get_rgbcolor_prop('color.curr_line_back')
     minimap.hilight(1,color,true)
-    minimap.hilight(vlcount,color,true)
+    minimap.hilight(buffer.line_count,color,true)
     toolbar.minimap_scroll()
   end
 end
