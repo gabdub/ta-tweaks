@@ -17,7 +17,7 @@
 -- Key bindings available depend on your implementation of curses.
 --
 -- For ncurses (Linux, Mac OSX, BSD):
---   * The only Control keys recognized are 'ca'-'cz', 'c@', 'c\\', 'c]', 'c^',
+--   * The only Control keys recognized are 'ca'-'cz', 'c ', 'c\\', 'c]', 'c^',
 --     and 'c_'.
 --   * Control+Shift and Control+Meta+Shift keys are not recognized.
 --   * Modifiers for function keys F1-F12 are not recognized.
@@ -126,7 +126,7 @@ local default_accelerators= {
   "tab_key",                "\t",           "\t",
   "shift_tab_key",          "s\t",          "s\t",
   "cancel_snippet",         "esc",          "esc",
-  "complete_symbol",        "c ",           "c@", --CURSES: Win32:"c " + LINUX:c@
+  "complete_symbol",        "c ",           "c ",
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
   "show_style",             "ci",           "mI",
 
@@ -241,7 +241,7 @@ if CURSES then
   keys.mA, keys.mE = buffer.vc_home_extend, buffer.line_end_extend
   keys.mU, keys.mD = buffer.page_up_extend, buffer.page_down_extend
   keys.cma, keys.cme = buffer.document_start, buffer.document_end
-  keys.cd, keys.md = buffer.clear, keys.mdel
+  keys.cd, keys.md, keys.ch = buffer.clear, keys.mdel, buffer.delete_back
   keys.ck = function()
     buffer:line_end_extend()
     buffer:cut()
@@ -259,9 +259,7 @@ if CURSES then
   end
 
 --complete_word=   CURSES: Win32: c\n + LINUX:cmj
---complete_symbol= CURSES: Win32:"c " + LINUX:c@
   if WIN32 then
     actions.accelerators["complete_word"]=   "c\n"
-    actions.accelerators["complete_symbol"]= "c "
   end
 end

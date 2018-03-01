@@ -20,7 +20,7 @@
 -- Key bindings available depend on your implementation of curses.
 --
 -- For ncurses (Linux, Mac OSX, BSD):
---   * The only Control keys recognized are 'ca'-'cz', 'c@', 'c\\', 'c]', 'c^',
+--   * The only Control keys recognized are 'ca'-'cz', 'c ', 'c\\', 'c]', 'c^',
 --     and 'c_'.
 --   * Control+Shift and Control+Meta+Shift keys are not recognized.
 --   * Modifiers for function keys F1-F12 are not recognized.
@@ -126,7 +126,7 @@ local default_accelerators= {
   "tab_key",                "\t",           "\t",
   "shift_tab_key",          "s\t",          "s\t",
   "cancel_snippet",         "esc",          "esc",
-  "complete_symbol",        "aesc",         "mesc",
+  "complete_symbol",        "aesc",         "aesc",
   "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
   "show_style",             "mi",           "mi",
 
