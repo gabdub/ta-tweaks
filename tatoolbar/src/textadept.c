@@ -1,8 +1,12 @@
-// Copyright 2007-2017 Mitchell mitchell.att.foicica.com. See LICENSE.
+// Copyright 2007-2018 Mitchell mitchell.att.foicica.com. See LICENSE.
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 96  //textadept version 9.6 (96) or 10 alpha (100)
+#define TA_VERSION 100  //textadept version 9.6 (96) or 10 alpha (100)
+
+#if __linux__
+#define _XOPEN_SOURCE 500 // for readlink from unistd.h
+#endif
 
 // Library includes.
 #include <errno.h>
@@ -21,7 +25,6 @@
 #elif __APPLE__
 #include <mach-o/dyld.h>
 #elif (__FreeBSD__ || __NetBSD__ || __OpenBSD__)
-#define u_int unsigned int // 'u_int' undefined when _POSIX_SOURCE is defined
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
@@ -63,19 +66,11 @@
 typedef GtkWidget Scintilla;
 // Translate GTK 2.x API to GTK 3.0 for compatibility.
 #if GTK_CHECK_VERSION(3,0,0)
-#define GDK_Return GDK_KEY_Return
 #define GDK_Escape GDK_KEY_Escape
-#define gtk_container_add(c, w) \
-  (GTK_IS_BOX(c) ? gtk_box_pack_start(GTK_BOX(c), w, TRUE, TRUE, 0) \
-                 : gtk_container_add(c, w))
-#define gtk_hpaned_new() gtk_paned_new(GTK_ORIENTATION_HORIZONTAL)
-#define gtk_vpaned_new() gtk_paned_new(GTK_ORIENTATION_VERTICAL)
 #define gtk_combo_box_entry_new_with_model(m,_) \
   gtk_combo_box_new_with_model_and_entry(m)
 #define gtk_combo_box_entry_set_text_column gtk_combo_box_set_entry_text_column
 #define GTK_COMBO_BOX_ENTRY GTK_COMBO_BOX
-#define gtk_vbox_new(_,s) gtk_box_new(GTK_ORIENTATION_VERTICAL, s)
-#define gtk_hbox_new(_,s) gtk_box_new(GTK_ORIENTATION_HORIZONTAL, s)
 #endif
 // Win32 single-instance functionality.
 #if _WIN32
@@ -87,12 +82,16 @@ typedef GtkWidget Scintilla;
   (WaitNamedPipe("\\\\.\\pipe\\textadept.editor", NMPWAIT_WAIT_FOREVER) != 0)
 #define g_application_run(_,__,___) win32_application_run()
 #define gtk_main() \
-  HANDLE pipe = CreateNamedPipe("\\\\.\\pipe\\textadept.editor", \
-                                PIPE_ACCESS_INBOUND, PIPE_WAIT, 1, 0, 0, \
-                                INFINITE, NULL); \
-  HANDLE thread = CreateThread(NULL, 0, &pipe_listener, pipe, 0, NULL); \
+  HANDLE pipe = NULL, thread = NULL; \
+  if (!g_application_get_is_remote(app)) { \
+    pipe = CreateNamedPipe("\\\\.\\pipe\\textadept.editor", \
+                           PIPE_ACCESS_INBOUND, PIPE_WAIT, 1, 0, 0, INFINITE, \
+                           NULL); \
+    thread = CreateThread(NULL, 0, &pipe_listener, pipe, 0, NULL); \
+  } \
   gtk_main(); \
-  TerminateThread(thread, 0), CloseHandle(thread), CloseHandle(pipe);
+  if (pipe && thread) \
+    TerminateThread(thread, 0), CloseHandle(thread), CloseHandle(pipe);
 #endif
 #endif
 
@@ -158,16 +157,7 @@ static ListStore *find_store, *repl_store;
 #define set_label_text(l, t) gtk_label_set_text_with_mnemonic(GTK_LABEL(l), t)
 #define set_button_label(b, l) gtk_button_set_label(GTK_BUTTON(b), l)
 #define set_option_label(o, _, l) gtk_button_set_label(GTK_BUTTON(o), l)
-#if !GTK_CHECK_VERSION(3,4,0)
 #define attach(...) gtk_table_attach(GTK_TABLE(findbox), __VA_ARGS__)
-#else
-// GTK 3.4 deprecated tables; translate from 2.x for compatibility.
-#define gtk_table_new(...) \
-  gtk_grid_new(), gtk_grid_set_column_spacing(GTK_GRID(findbox), 5)
-#define attach(w, x1, _, y1, __, xo, ...) \
-  (gtk_widget_set_hexpand(w, xo & GTK_EXPAND), \
-   gtk_grid_attach(GTK_GRID(findbox), w, x1, y1, 1, 1))
-#endif
 #define FILL(option) (GtkAttachOptions)(GTK_FILL | GTK_##option)
 #define command_entry_focused gtk_widget_has_focus(command_entry)
 #elif CURSES
@@ -203,7 +193,7 @@ static int *match_case = &find_options[0], *whole_word = &find_options[1],
 static char *button_labels[4], *option_labels[4];
 typedef char * ListStore;
 static ListStore find_store[10], repl_store[10];
-#define max(a, b) (((a) > (b)) ? (a) : (b))
+#define max_(a, b) (((a) > (b)) ? (a) : (b))
 #define bind(k, d) (bindCDKObject(vENTRY, find_entry, k, entry_keypress, d), \
                     bindCDKObject(vENTRY, replace_entry, k, entry_keypress, d))
 #define toggled(find_option) *find_option
@@ -461,11 +451,11 @@ static int lfind_focus(lua_State *L) {
   if (findbox) return 0; // already active
   wresize(scintilla_get_window(focused_view), LINES - 4, COLS);
   findbox = initCDKScreen(newwin(2, 0, LINES - 3, 0)), eraseCDKScreen(findbox);
-  int b_width = max(strlen(button_labels[0]), strlen(button_labels[1])) +
-                max(strlen(button_labels[2]), strlen(button_labels[3])) + 3;
-  int o_width = max(strlen(option_labels[0]), strlen(option_labels[1])) +
-                max(strlen(option_labels[2]), strlen(option_labels[3])) + 3;
-  int l_width = max(strlen(flabel), strlen(rlabel));
+  int b_width = max_(strlen(button_labels[0]), strlen(button_labels[1])) +
+                max_(strlen(button_labels[2]), strlen(button_labels[3])) + 3;
+  int o_width = max_(strlen(option_labels[0]), strlen(option_labels[1])) +
+                max_(strlen(option_labels[2]), strlen(option_labels[3])) + 3;
+  int l_width = max_(strlen(flabel), strlen(rlabel));
   int e_width = COLS - o_width - b_width - l_width - 1;
   find_entry = newCDKEntry(findbox, l_width - strlen(flabel), TOP, NULL, flabel,
                            A_NORMAL, '_', vMIXED, e_width, 0, 64, FALSE, FALSE);
@@ -1420,11 +1410,11 @@ static int lquit(lua_State *L) {
   return 0;
 }
 
-#if _WIN32
-char *stpcpy(char *dest, const char *src) {
+// stpcpy() does not exist on _WIN32, but exists on other platforms with or
+// without feature test macros. In order to minimize confusion, just define it.
+char *stpcpy_(char *dest, const char *src) {
   return (strcpy(dest, src), dest + strlen(src));
 }
-#endif
 
 /**
  * Loads and runs the given file.
@@ -1434,7 +1424,7 @@ char *stpcpy(char *dest, const char *src) {
  */
 static int lL_dofile(lua_State *L, const char *filename) {
   char *file = malloc(strlen(textadept_home) + 1 + strlen(filename) + 1);
-  stpcpy(stpcpy(stpcpy(file, textadept_home), "/"), filename);
+  stpcpy_(stpcpy_(stpcpy_(file, textadept_home), "/"), filename);
   int ok = (luaL_dofile(L, file) == LUA_OK);
   if (!ok) {
 #if GTK
@@ -1750,14 +1740,14 @@ static void remove_views_from_pane(Pane *pane) {
  */
 static void pane_resize(Pane *pane, int rows, int cols, int y, int x) {
   if (pane->type == VSPLIT) {
-    int ssize = pane->split_size * cols / max(pane->cols, 1);
+    int ssize = pane->split_size * cols / max_(pane->cols, 1);
     if (ssize < 1 || ssize >= cols - 1) ssize = (ssize < 1) ? 1 : cols - 2;
     pane->split_size = ssize;
     pane_resize(pane->child1, rows, ssize, y, x);
     pane_resize(pane->child2, rows, cols - ssize - 1, y, x + ssize + 1);
     wresize(pane->win, rows, 1), mvwin(pane->win, y, x + ssize); // split bar
   } else if (pane->type == HSPLIT) {
-    int ssize = pane->split_size * rows / max(pane->rows, 1);
+    int ssize = pane->split_size * rows / max_(pane->rows, 1);
     if (ssize < 1 || ssize >= rows - 1) ssize = (ssize < 1) ? 1 : rows - 2;
     pane->split_size = ssize;
     pane_resize(pane->child1, ssize, cols, y, x);
@@ -2678,10 +2668,12 @@ int main(int argc, char **argv) {
                         LUA_TBOOLEAN, ctrl, LUA_TBOOLEAN, alt, -1))
       scintilla_send_key(view, ch, shift, ctrl, alt);
     else if (!ch && !scintilla_send_mouse(view, event, millis, button, y, x,
-                                          shift, ctrl, alt))
-      lL_event(lua, "mouse", LUA_TNUMBER, event, LUA_TNUMBER, button,
-               LUA_TNUMBER, y, LUA_TNUMBER, x, LUA_TBOOLEAN, shift,
-               LUA_TBOOLEAN, ctrl, LUA_TBOOLEAN, alt, -1);
+                                          shift, ctrl, alt) &&
+             !lL_event(lua, "mouse", LUA_TNUMBER, event, LUA_TNUMBER, button,
+                       LUA_TNUMBER, y, LUA_TNUMBER, x, LUA_TBOOLEAN, shift,
+                       LUA_TBOOLEAN, ctrl, LUA_TBOOLEAN, alt, -1))
+      scintilla_send_mouse(focused_view, event, millis, button, y, x, shift,
+                           ctrl, alt); // try again with possibly another view
     if (quit && !lL_event(lua, "quit", -1)) {
       l_close(lua);
       // Free some memory.
