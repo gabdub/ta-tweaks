@@ -1,158 +1,155 @@
 # Copyright 2007-2018 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 CC = gcc
+CFLAGS = -Os
 CXX = g++
+CXXFLAGS = -Os -std=c++11
 MAKE = make
 ifeq (win, $(findstring win, $(MAKECMDGOALS)))
-	# Cross-compile for Win32.
-	CROSS = i686-w64-mingw32-
-	CFLAGS = -mms-bitfields -Os
-	CXXFLAGS = -mms-bitfields -static-libgcc -static-libstdc++ -Os -std=c++0x
-	LUA_CFLAGS = -DLUA_BUILD_AS_DLL -DLUA_LIB
-	LDFLAGS = -Wl,--retain-symbols-file -Wl,lua.sym
-	ifeq (, $(findstring curses, $(MAKECMDGOALS)))
-		CXXFLAGS += -mwindows
-		LDFLAGS += -liconv
-	endif
-	WINDRES = windres
-	ifeq (, $(findstring curses, $(MAKECMDGOALS)))
-		plat_flag = -DGTK
-		GTK_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/win32gtk/lib/pkgconfig \
-												 pkg-config --define-variable=prefix=win32gtk \
-												 --cflags gtk+-2.0)
-		GTK_LIBS = $(shell PKG_CONFIG_PATH=`pwd`/win32gtk/lib/pkgconfig \
-											 pkg-config --define-variable=prefix=win32gtk \
-											 --libs gtk+-2.0)
-		GLIB_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/win32gtk/lib/pkgconfig \
-													pkg-config --define-variable=prefix=win32gtk \
-													--cflags glib-2.0)
-	else
-		plat_flag = -DCURSES
-		CURSES_CFLAGS = -DLIBICONV_STATIC -Iwin32curses/include
-		CURSES_LIBS = win32curses/lib/pdcurses.a win32curses/lib/libiconv.a
-	endif
-	libluajit = luajit/src/lua51.dll
+  # Cross-compile for Win32.
+  CROSS = i686-w64-mingw32-
+  CFLAGS += -mms-bitfields
+  CXXFLAGS += -mms-bitfields
+  LUA_CFLAGS = -DLUA_BUILD_AS_DLL -DLUA_LIB
+  LDFLAGS = -static-libgcc -static-libstdc++ -Wl,--retain-symbols-file \
+            -Wl,$(shell pwd)/lua.sym
+  ifeq (, $(findstring curses, $(MAKECMDGOALS)))
+    CXXFLAGS += -mwindows
+    LDFLAGS += -liconv
+  endif
+  WINDRES = windres
+  ifeq (, $(findstring curses, $(MAKECMDGOALS)))
+    plat_flag = -DGTK
+    GTK_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/win32gtk/lib/pkgconfig \
+                         pkg-config --define-variable=prefix=win32gtk \
+                         --cflags gtk+-2.0)
+    GTK_LIBS = $(shell PKG_CONFIG_PATH=`pwd`/win32gtk/lib/pkgconfig \
+                       pkg-config --define-variable=prefix=win32gtk \
+                       --libs gtk+-2.0)
+    GLIB_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/win32gtk/lib/pkgconfig \
+                          pkg-config --define-variable=prefix=win32gtk \
+                          --cflags glib-2.0)
+  else
+    plat_flag = -DCURSES
+    CURSES_CFLAGS = -DLIBICONV_STATIC -Iwin32curses/include
+    CURSES_LIBS = win32curses/lib/pdcurses.a win32curses/lib/libiconv.a
+  endif
+  libluajit = luajit/src/lua51.dll
 else ifeq (osx, $(findstring osx, $(MAKECMDGOALS)))
-	# Cross-compile for Mac OSX.
-	CROSS = i686-apple-darwin10-
-	CFLAGS = -m32 -arch i386 -mdynamic-no-pic -mmacosx-version-min=10.5 -Os
-	CXXFLAGS = -m32 -arch i386 -mdynamic-no-pic -mmacosx-version-min=10.5 -Os
-	LUA_CFLAGS = -DLUA_USE_MACOSX
-	LDFLAGS = -liconv -rdynamic
-	ifeq (, $(findstring curses, $(MAKECMDGOALS)))
-		plat_flag = -DGTK
-		GTK_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
-												 pkg-config --define-variable=prefix=gtkosx \
-												 --cflags gtk+-2.0)
-		GTK_LIBS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
-											 pkg-config --define-variable=prefix=gtkosx \
-											 --libs gtk+-2.0 gmodule-2.0 gtk-mac-integration) \
-											 -framework Cocoa
-		GLIB_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
-													pkg-config --define-variable=prefix=gtkosx \
-													--cflags glib-2.0)
-	else
-		plat_flag = -DCURSES
-		CURSES_LIBS = -lncurses
-	endif
-	libluajit = luajit/src/libluajit.osx.a
+  # Cross-compile for Mac OSX.
+  CROSS = i386-apple-darwin9-
+  CFLAGS += -mdynamic-no-pic
+  CXXFLAGS += -mdynamic-no-pic
+  LUA_CFLAGS = -DLUA_USE_MACOSX
+  LDFLAGS = -liconv -Wl,-read_only_relocs,suppress
+  ifeq (, $(findstring curses, $(MAKECMDGOALS)))
+    plat_flag = -DGTK
+    GTK_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
+                         pkg-config --define-variable=prefix=gtkosx \
+                         --cflags gtk+-2.0)
+    GTK_LIBS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
+                       pkg-config --define-variable=prefix=gtkosx \
+                       --libs gtk+-2.0 gmodule-2.0 gtk-mac-integration) \
+                       -framework Cocoa
+    GLIB_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
+                          pkg-config --define-variable=prefix=gtkosx \
+                          --cflags glib-2.0)
+  else
+    plat_flag = -DCURSES
+    CURSES_LIBS = -lncurses
+  endif
+  libluajit = luajit/src/libluajit.osx.a
 else
-	# Build for Linux/BSD.
-	CFLAGS = -Os
-	CXXFLAGS = -Os -std=c++0x
-	LUA_CFLAGS = -DLUA_USE_LINUX
-	LDFLAGS = -rdynamic -Wl,--retain-symbols-file -Wl,lua.sym
-	ifeq (Linux, $(shell uname -s))
-		LDFLAGS += -ldl
-	else
-		CC=cc
-		CXX=c++
-		LDFLAGS += -liconv
-		MAKE = gmake
-	endif
-	PREFIX ?= /usr/local
-	bin_dir = $(PREFIX)/bin
-	data_dir = $(PREFIX)/share/textadept
-	XDG_DATA_DIR ?= $(PREFIX)/share/applications
-	PIXMAPS_DIR ?= /usr/share/pixmaps
-	desktop_files := $(wildcard *.desktop)
-	ifeq (, $(findstring curses, $(MAKECMDGOALS)))
-		plat_flag = -DGTK
-		ifndef GTK3
-			GTK_CFLAGS = $(shell pkg-config --cflags gtk+-2.0 gmodule-2.0)
-			GTK_LIBS = $(shell pkg-config --libs gtk+-2.0 gmodule-2.0)
-		else
-			GTK_CFLAGS = $(shell pkg-config --cflags gtk+-3.0 gmodule-2.0) \
-									 -Wno-deprecated-declarations
-			GTK_LIBS = $(shell pkg-config --libs gtk+-3.0 gmodule-2.0)
-		endif
-		GLIB_CFLAGS = $(shell pkg-config --cflags glib-2.0)
-		install_targets = ../textadept ../textadeptjit
-	else
-		plat_flag = -DCURSES
-		CURSES_CFLAGS = $(shell pkg-config --silence-errors --cflags ncursesw  || \
-														pkg-config --silence-errors --cflags ncurses || \
-														pkg-config --silence-errors --cflags curses)
-		CURSES_LIBS = $(shell pkg-config --silence-errors --libs ncursesw || \
-													pkg-config --silence-errors --libs ncurses || \
-													pkg-config --silence-errors --libs curses || \
-													echo -lncursesw)
-		install_targets = ../textadept-curses ../textadeptjit-curses
-	endif
-	libluajit = luajit/src/libluajit.a
+  # Build for Linux/BSD.
+  LUA_CFLAGS = -DLUA_USE_LINUX
+  LDFLAGS = -rdynamic -Wl,--retain-symbols-file -Wl,$(shell pwd)/lua.sym
+  ifeq (Linux, $(shell uname -s))
+    LDFLAGS += -ldl
+  else
+    CC = cc
+    CXX = c++
+    LDFLAGS += -liconv
+    MAKE = gmake
+  endif
+  PREFIX ?= /usr/local
+  bin_dir = $(PREFIX)/bin
+  data_dir = $(PREFIX)/share/textadept
+  XDG_DATA_DIR ?= $(PREFIX)/share/applications
+  PIXMAPS_DIR ?= /usr/share/pixmaps
+  desktop_files := $(wildcard *.desktop)
+  ifeq (, $(findstring curses, $(MAKECMDGOALS)))
+    plat_flag = -DGTK
+    ifndef GTK3
+      GTK_CFLAGS = $(shell pkg-config --cflags gtk+-2.0 gmodule-2.0)
+      GTK_LIBS = $(shell pkg-config --libs gtk+-2.0 gmodule-2.0)
+    else
+      GTK_CFLAGS = $(shell pkg-config --cflags gtk+-3.0 gmodule-2.0) \
+                   -Wno-deprecated-declarations
+      GTK_LIBS = $(shell pkg-config --libs gtk+-3.0 gmodule-2.0)
+    endif
+    GLIB_CFLAGS = $(shell pkg-config --cflags glib-2.0)
+    install_targets = ../textadept ../textadeptjit
+  else
+    plat_flag = -DCURSES
+    CURSES_CFLAGS = $(shell pkg-config --silence-errors --cflags ncursesw  || \
+                            pkg-config --silence-errors --cflags ncurses || \
+                            pkg-config --silence-errors --cflags curses)
+    CURSES_LIBS = $(shell pkg-config --silence-errors --libs ncursesw || \
+                          pkg-config --silence-errors --libs ncurses || \
+                          pkg-config --silence-errors --libs curses || \
+                          echo -lncursesw)
+    install_targets = ../textadept-curses ../textadeptjit-curses
+  endif
+  libluajit = luajit/src/libluajit.a
 endif
 
 # Scintilla.
 
-sci_flags = -pedantic $(plat_flag) -DSCI_LEXER -DNDEBUG -DNO_CXX11_REGEX \
-						-DSCI_OWNREGEX -Iscintilla/include -Iscintilla/src \
-						-Iscintilla/lexlib -Itre/lib -Wall
+sci_flags = -pedantic $(plat_flag) -DSCI_LEXER -DLPEG_LEXER -DNDEBUG \
+            -Iscintilla/include -Iscintilla/src -Iscintilla/lexlib -Wall
 
 sci_objs = AutoComplete.o CallTip.o CaseConvert.o CaseFolder.o Catalogue.o \
-					 CellBuffer.o CharClassify.o ContractionState.o Decoration.o \
-					 Document.o EditModel.o Editor.o EditView.o ExternalLexer.o \
-					 Indicator.o KeyMap.o LineMarker.o MarginView.o PerLine.o \
-					 PositionCache.o RESearch.o RunStyles.o ScintillaBase.o Selection.o \
-					 Style.o UniConversion.o ViewStyle.o XPM.o
+           CellBuffer.o CharClassify.o ContractionState.o Decoration.o \
+           Document.o EditModel.o Editor.o EditView.o ExternalLexer.o \
+           Indicator.o KeyMap.o LineMarker.o MarginView.o PerLine.o \
+           PositionCache.o RESearch.o RunStyles.o ScintillaBase.o Selection.o \
+           Style.o UniConversion.o ViewStyle.o XPM.o
 sci_lex_objs = Accessor.o CharacterCategory.o CharacterSet.o LexerBase.o \
-							 LexerModule.o LexerNoExceptions.o LexerSimple.o PropSetSimple.o \
-							 StyleContext.o WordList.o
+               LexerModule.o LexerNoExceptions.o LexerSimple.o PropSetSimple.o \
+               StyleContext.o WordList.o
+sci_lexer_objs = LexLPeg.o LexLPegjit.o LexLPeg-curses.o LexLPegjit-curses.o
 sci_gtk_objs = PlatGTK.o ScintillaGTK.o ScintillaGTKAccessible.o
-regex_objs = regcomp.o regerror.o regexec.o tre-ast.o tre-compile.o \
-						 tre-filter.o tre-match-backtrack.o tre-match-parallel.o tre-mem.o \
-						 tre-parse.o tre-stack.o xmalloc.o
-lexlpeg_objs = LexLPeg.o LexLPegjit.o LexLPeg-curses.o LexLPegjit-curses.o
+sci_curses_objs = ScintillaCurses.o
 
 # Textadept.
 
-ta_flags = -std=c99 -pedantic $(plat_flag) -Iscintilla/include -Igtdialog \
-					 -Wall -Wextra -Wno-unused
+ta_flags = -std=c99 -pedantic $(plat_flag) -Iscintilla/include -Igtdialog -Wall
 
 textadept_gtk_objs = textadept.o textadeptjit.o
 textadept_curses_objs = textadept-curses.o textadeptjit-curses.o
 textadept_objs = $(textadept_gtk_objs) $(textadept_curses_objs)
 lua_objs = lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o \
-					 linit.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o \
-					 lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o \
-					 lauxlib.o lbaselib.o lbitlib.o lcorolib.o ldblib.o liolib.o \
-					 lmathlib.o loadlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o
+           linit.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o \
+           lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o \
+           lauxlib.o lbaselib.o lbitlib.o lcorolib.o ldblib.o liolib.o \
+           lmathlib.o loadlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o
 lua_lib_objs = lpcap.o lpcode.o lpprint.o lptree.o lpvm.o lfs.o
 luajit_lib_objs = lpcapjit.o lpcodejit.o lpprintjit.o lptreejit.o lpvmjit.o \
-									lfsjit.o lutf8libjit.o
+                  lfsjit.o lutf8libjit.o
 lua_spawn_objs = lspawn.o lspawnjit.o lspawn-curses.o lspawnjit-curses.o
 gtdialog_objs = gtdialog.o gtdialog-curses.o
 termkey_unix_objs = driver-ti.o driver-csi.o
 termkey_win32_objs = driver-win32-pdcurses.o
 termkey_objs = termkey.o $(termkey_unix_objs) $(termkey_win32_objs)
 cdk_objs = binding.o buttonbox.o cdk.o cdk_display.o cdk_objs.o cdkscreen.o \
-					 draw.o entry.o fselect.o itemlist.o label.o mentry.o popup_label.o \
-					 scroll.o scroller.o select_file.o selection.o traverse.o version.o
+           draw.o entry.o fselect.o itemlist.o label.o mentry.o popup_label.o \
+           scroll.o scroller.o select_file.o selection.o traverse.o version.o
 
 # Add debugging symbols and disable optimizations when DEBUG=1.
 # Note: In order to profile with gprof (-pg), do not retain symbols in LDFLAGS.
 ifdef DEBUG
-	CFLAGS += -g -O0
-	CXXFLAGS += -g -O0
+  CFLAGS += -g -O0
+  CXXFLAGS += -g -O0
 endif
 
 # Build.
@@ -168,17 +165,14 @@ $(sci_objs): %.o: scintilla/src/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $< -o $@
 $(sci_lex_objs): %.o: scintilla/lexlib/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $< -o $@
+$(sci_lexer_objs): scintilla/lexers/LexLPeg.cxx
+	$(CROSS)$(CXX) -c $(CXXFLAGS) $(LUA_CFLAGS) $(sci_flags) $< -o $@
 $(sci_gtk_objs): %.o: scintilla/gtk/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $(GTK_CFLAGS) $< -o $@
 scintilla-marshal.o: scintilla/gtk/scintilla-marshal.c
 	$(CROSS)$(CC) -c $(CFLAGS) $(GTK_CFLAGS) $< -o $@
-$(regex_objs): %.o: tre/lib/%.c
-	$(CROSS)$(CC) -c $(CFLAGS) -Itre/lib $< -o $@
-ScintillaTerm.o: scintilla/term/ScintillaTerm.cxx
-	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $(CURSES_CFLAGS) -DSCI_COMPAT_4 \
-		-DTA_PATCH $< -o $@
-$(lexlpeg_objs): LexLPeg.cxx
-	$(CROSS)$(CXX) -c $(CXXFLAGS) $(LUA_CFLAGS) $(sci_flags) $< -o $@
+$(sci_curses_objs): %.o: scintilla/curses/%.cxx
+	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $(CURSES_CFLAGS) $< -o $@
 $(textadept_objs): textadept.c
 	$(CROSS)$(CC) -c $(CFLAGS) $(LUA_CFLAGS) $(ta_flags) $< -o $@
 $(lua_objs): %.o: lua/src/%.c
@@ -190,14 +184,16 @@ $(luajit_lib_objs): %jit.o: lua/src/lib/%.c
 $(lua_spawn_objs): lua/src/lib/lspawn.c
 	$(CROSS)$(CC) -c $(CFLAGS) $(LUA_CFLAGS) -std=c99 -pedantic $(spawn_flags) \
 		$< -o $@
-luajit/src/libluajit.a: ; $(MAKE) -C luajit CC="$(CC) $(CFLAGS)"
+luajit/src/libluajit.a: ; $(MAKE) -C luajit CC="$(CC)" CFLAGS="$(CFLAGS)"
 luajit/src/lua51.dll:
-	$(MAKE) -C luajit HOST_CC="$(CC) -m32" CROSS=$(CROSS) TARGET_SYS=Windows
+	$(MAKE) -C luajit HOST_CC="$(CC) -m32" CROSS=$(CROSS) TARGET_SYS=Windows \
+		TARGET_SHLDFLAGS="-static-libgcc"
 luajit/src/libluajit.osx.a:
-	$(MAKE) -C luajit CC="$(CC) -m32" CROSS=$(CROSS) TARGET_SYS=Darwin \
+	$(MAKE) -C luajit HOST_CC="$(CC) -m32" CROSS=$(CROSS) TARGET_SYS=Darwin \
 		LUAJIT_A=$(notdir $@) || return 0
 $(gtdialog_objs): gtdialog/gtdialog.c
-	$(CROSS)$(CC) -c $(CFLAGS) -std=c99 -pedantic $(gtdialog_flags) $< -o $@
+	$(CROSS)$(CC) -c $(CFLAGS) -std=c99 -pedantic $(plat_flag) -DNOHELP \
+		-DLIBRARY $(gtdialog_flags) $< -o $@
 $(cdk_objs): %.o: cdk/%.c
 	$(CROSS)$(CC) -c $(CFLAGS) -D_GNU_SOURCE -Itermkey -Icdk $(CURSES_CFLAGS) $< \
 		-o $@
@@ -213,20 +209,18 @@ ta_filediff.o: ta_filediff.c
 
 # Target-specific variables.
 
-$(lexlpeg_objs): sci_flags += -DLPEG_LEXER -DNO_SCITE -Wno-long-long
 LexLPeg-curses.o LexLPegjit-curses.o: sci_flags += -DCURSES $(CURSES_CFLAGS)
 lua_dep_objs = LexLPeg.o LexLPeg-curses.o textadept.o textadept-curses.o \
-							 $(lua_objs) $(lua_lib_objs) lspawn.o lspawn-curses.o
+               $(lua_objs) $(lua_lib_objs) lspawn.o lspawn-curses.o
 luajit_dep_objs = LexLPegjit.o LexLPegjit-curses.o textadeptjit.o \
-									textadeptjit-curses.o $(luajit_lib_objs) lspawnjit.o \
-									lspawnjit-curses.o
+                  textadeptjit-curses.o $(luajit_lib_objs) lspawnjit.o \
+                  lspawnjit-curses.o
 $(lua_dep_objs): LUA_CFLAGS += -Ilua/src
 $(luajit_dep_objs): LUA_CFLAGS += -Iluajit/src
 $(textadept_gtk_objs): ta_flags += $(GTK_CFLAGS)
 $(textadept_curses_objs): \
-	ta_flags += -Iscintilla/term -Itermkey -Icdk $(CURSES_CFLAGS)
+  ta_flags += -Iscintilla/curses -Itermkey -Icdk $(CURSES_CFLAGS)
 lspawn.o lspawnjit.o: spawn_flags = -DGTK $(GLIB_CFLAGS)
-$(gtdialog_objs): gtdialog_flags = $(plat_flag) -DNOHELP -DLIBRARY
 gtdialog.o: gtdialog_flags += $(GTK_CFLAGS)
 gtdialog-curses.o: gtdialog_flags += -Icdk $(CURSES_CFLAGS)
 # Lua 5.3 compatibility with LuaJIT.
@@ -235,55 +229,53 @@ lutf8libjit.o: LUA_CFLAGS += -Ilua/src
 
 # Executables.
 
-textadept: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) scintilla-marshal.o \
-					 $(regex_objs) LexLPeg.o textadept.o ta_toolbar.o ta_filediff.o $(lua_objs) $(lua_lib_objs) \
-					 lspawn.o gtdialog.o
+textadept: $(sci_objs) $(sci_lex_objs) LexLPeg.o $(sci_gtk_objs) \
+           scintilla-marshal.o textadept.o ta_toolbar.o ta_filediff.o $(lua_objs) $(lua_lib_objs) \
+           lspawn.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
-textadeptjit: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) scintilla-marshal.o \
-							$(regex_objs) LexLPegjit.o textadeptjit.o ta_toolbar.o ta_filediff.o $(luajit_lib_objs) \
-							$(libluajit) lspawnjit.o gtdialog.o
+textadeptjit: $(sci_objs) $(sci_lex_objs) LexLPegjit.o $(sci_gtk_objs) \
+              scintilla-marshal.o textadeptjit.o ta_toolbar.o ta_filediff.o $(luajit_lib_objs) \
+              $(libluajit) lspawnjit.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
-textadept-curses: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o $(regex_objs) \
-									LexLPeg-curses.o textadept-curses.o $(lua_objs) \
-									$(lua_lib_objs) lspawn-curses.o gtdialog-curses.o termkey.o \
-									$(termkey_unix_objs) $(cdk_objs)
+textadept-curses: $(sci_objs) $(sci_lex_objs) LexLPeg-curses.o \
+                  $(sci_curses_objs) textadept-curses.o $(lua_objs) \
+                  $(lua_lib_objs) lspawn-curses.o gtdialog-curses.o termkey.o \
+                  $(termkey_unix_objs) $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
-textadeptjit-curses: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o $(regex_objs) \
-										 LexLPegjit-curses.o textadeptjit-curses.o \
-										 $(luajit_lib_objs) $(libluajit) lspawnjit-curses.o \
-										 gtdialog-curses.o termkey.o $(termkey_unix_objs) \
-										 $(cdk_objs)
+textadeptjit-curses: $(sci_objs) $(sci_lex_objs) LexLPegjit-curses.o \
+                     $(sci_curses_objs) textadeptjit-curses.o \
+                     $(luajit_lib_objs) $(libluajit) lspawnjit-curses.o \
+                     gtdialog-curses.o termkey.o $(termkey_unix_objs) \
+                     $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
-textadept.exe: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) scintilla-marshal.o \
-							 $(regex_objs) LexLPeg.o textadept.o ta_toolbar.o ta_filediff.o textadept_rc.o $(lua_objs) \
-							 $(lua_lib_objs) lspawn.o gtdialog.o
+textadept.exe: $(sci_objs) $(sci_lex_objs) LexLPeg.o $(sci_gtk_objs) \
+               scintilla-marshal.o textadept.o ta_toolbar.o ta_filediff.o textadept_rc.o $(lua_objs) \
+               $(lua_lib_objs) lspawn.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
-textadeptjit.exe: $(sci_objs) $(sci_lex_objs) $(sci_gtk_objs) \
-									scintilla-marshal.o $(regex_objs) LexLPegjit.o \
-									textadeptjit.o ta_toolbar.o ta_filediff.o textadept_rc.o $(luajit_lib_objs) \
-									$(libluajit) lspawnjit.o gtdialog.o
+textadeptjit.exe: $(sci_objs) $(sci_lex_objs) LexLPegjit.o $(sci_gtk_objs) \
+                  scintilla-marshal.o textadeptjit.o ta_toolbar.o ta_filediff.o textadept_rc.o \
+                  $(luajit_lib_objs) $(libluajit) lspawnjit.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
-textadept-curses.exe: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o \
-											$(regex_objs) LexLPeg-curses.o textadept-curses.o \
-											textadept_rc.o $(lua_objs) $(lua_lib_objs) \
-											lspawn-curses.o gtdialog-curses.o termkey.o \
-											$(termkey_win32_objs) $(cdk_objs)
+textadept-curses.exe: $(sci_objs) $(sci_lex_objs) LexLPeg-curses.o \
+                      $(sci_curses_objs) textadept-curses.o textadept_rc.o \
+                      $(lua_objs) $(lua_lib_objs) lspawn-curses.o \
+                      gtdialog-curses.o termkey.o $(termkey_win32_objs) \
+                      $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
-textadeptjit-curses.exe: $(sci_objs) $(sci_lex_objs) ScintillaTerm.o \
-												 $(regex_objs) LexLPegjit-curses.o \
-												 textadeptjit-curses.o textadept_rc.o \
-												 $(luajit_lib_objs) $(libluajit) lspawnjit-curses.o \
-												 gtdialog-curses.o termkey.o $(termkey_win32_objs) \
-												 $(cdk_objs)
+textadeptjit-curses.exe: $(sci_objs) $(sci_lex_objs) LexLPegjit-curses.o \
+                         $(sci_curses_objs) textadeptjit-curses.o \
+                         textadept_rc.o $(luajit_lib_objs) $(libluajit) \
+                         lspawnjit-curses.o gtdialog-curses.o termkey.o \
+                         $(termkey_win32_objs) $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
 
 # Install/uninstall.
 
 install: $(install_targets) | ../core ../doc ../init.lua ../lexers ../LICENSE \
-															../modules ../themes
+                              ../modules ../themes
 	install -d $(DESTDIR)$(bin_dir) $(DESTDIR)$(data_dir)
 	install $^ $(DESTDIR)$(data_dir)
-	cp -r $| $(DESTDIR)$(data_dir)
+	cp -rL $| $(DESTDIR)$(data_dir)
 	ln -s $(subst .., $(data_dir), $^) $(DESTDIR)$(bin_dir)
 	if [ -d "$(XDG_DATA_DIR)" ]; then \
 		install -d $(DESTDIR)$(XDG_DATA_DIR); \
@@ -320,43 +312,46 @@ luadoc: ../modules ../core ../lexers
 # Releases.
 
 ifndef NIGHTLY
-	basedir = textadept_$(shell grep -m 1 _RELEASE ../core/init.lua | \
-															cut -d ' ' -f4- | tr ' ' '_' | tr -d '"')
+  basedir = textadept_$(shell grep -m 1 _RELEASE ../core/init.lua | \
+                              cut -d ' ' -f4- | tr ' ' '_' | tr -d '"')
 else
-	basedir = textadept_NIGHTLY_$(shell date +"%F")
+  basedir = textadept_NIGHTLY_$(shell date +"%F")
 endif
 osxapp = Textadept.app
 osxapp_bin = $(osxapp)/Contents/MacOS
 osxapp_res = $(osxapp)/Contents/Resources
 osxapp_libs = libatk-1.0.0.dylib libcairo.2.dylib libexpat.1.dylib \
-							libffi.5.dylib libfontconfig.1.dylib libfreetype.6.dylib \
-							libgdk_pixbuf-2.0.0.dylib libgdk-quartz-2.0.0.dylib \
-							libgio-2.0.0.dylib libglib-2.0.0.dylib libgmodule-2.0.0.dylib \
-							libgobject-2.0.0.dylib libgthread-2.0.0.dylib \
-							libgtkmacintegration.2.dylib libgtk-quartz-2.0.0.dylib \
-							libintl.8.dylib libpango-1.0.0.dylib libpangocairo-1.0.0.dylib \
-							libpangoft2-1.0.0.dylib libpixman-1.0.dylib libpng14.14.dylib \
-							charset.alias gdk-pixbuf-2.0 gtk-2.0 pango
+              libffi.5.dylib libfontconfig.1.dylib libfreetype.6.dylib \
+              libgdk_pixbuf-2.0.0.dylib libgdk-quartz-2.0.0.dylib \
+              libgio-2.0.0.dylib libglib-2.0.0.dylib libgmodule-2.0.0.dylib \
+              libgobject-2.0.0.dylib libgthread-2.0.0.dylib \
+              libgtkmacintegration.2.dylib libgtk-quartz-2.0.0.dylib \
+              libintl.8.dylib libpango-1.0.0.dylib libpangocairo-1.0.0.dylib \
+              libpangoft2-1.0.0.dylib libpixman-1.0.dylib libpng14.14.dylib \
+              charset.alias gdk-pixbuf-2.0 gtk-2.0 pango
 
 release-all: release release64 win32-release osx-release modules-release
 
 $(basedir).i386: ; hg archive $@ -X ".hg*"
 release: $(basedir).i386
 	make deps clean doc sign-deps
-	PKG_CONFIG_PATH=/opt/gtk/lib/pkgconfig make -j4
-	make -j4 CURSES_CFLAGS=-I/opt/ncursesw/include/ncursesw \
+	PKG_CONFIG_PATH=/opt/gtk/lib/pkgconfig make -j4 \
+		LDFLAGS="$(LDFLAGS) -static-libstdc++"
+	make -j4 LDFLAGS="$(LDFLAGS) -static-libstdc++" \
+		CURSES_CFLAGS=-I/opt/ncursesw/include/ncursesw \
 		CURSES_LIBS="-L/opt/ncursesw/lib -lncursesw" curses
-	cp -r ../doc ../lexers ../textadept* $< && cp *.asc $</src
+	cp -rL ../doc ../lexers ../textadept* $< && cp *.asc $</src
 	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg -ab /tmp/$<.tgz
 $(basedir).x86_64: ; hg archive $@ -X ".hg*"
 release64: $(basedir).x86_64
 	make clean libluajit64
 	PKG_CONFIG_PATH=/opt/gtk64/lib/pkgconfig make -j4 CFLAGS="$(CFLAGS) -m64" \
-		CXXFLAGS="$(CXXFLAGS) -m64" || return 0
-	make -j4 CFLAGS="$(CFLAGS) -m64" CXXFLAGS="$(CXXFLAGS) -m64" \
+		CXXFLAGS="$(CXXFLAGS) -m64 -static-libstdc++" || return 0
+	make -j4 CFLAGS="$(CFLAGS) -m64" \
+		CXXFLAGS="$(CXXFLAGS) -m64 -static-libstdc++" \
 		CURSES_CFLAGS=-I/opt/ncursesw64/include/ncursesw \
 		CURSES_LIBS="-L/opt/ncursesw64/lib -lncursesw" curses || return 0
-	cp -r ../doc ../lexers ../textadept* $< && cp *.asc $</src
+	cp -rL ../doc ../lexers ../textadept* $< && cp *.asc $</src
 	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg -ab /tmp/$<.tgz
 $(basedir).win32: ; hg archive $@ -X ".hg*"
 win32-release: $(basedir).win32
@@ -366,7 +361,7 @@ win32-release: $(basedir).win32
 	rm -r $</lib/*.a $</lib/glib-2.0 $</lib/gtk-2.0/include $</lib/pkgconfig
 	make -j4 win32
 	make -j4 win32-curses
-	cp -r ../doc ../lexers ../textadept* luajit/src/lua51.dll $<
+	cp -rL ../doc ../lexers ../textadept* luajit/src/lua51.dll $<
 	cp *.asc $</src
 	zip -r /tmp/$<.zip $< && rm -rf $< && gpg -ab /tmp/$<.zip
 $(basedir).osx: ; mkdir $@ && cp ../scripts/osx/ta $@
@@ -383,12 +378,12 @@ modules-release: $(basedir).modules
 	zip -r /tmp/$<.zip $< && rm -r $< && gpg -ab /tmp/$<.zip
 
 osx-app: ../textadept ../textadeptjit ../textadept-curses \
-				 ../textadeptjit-curses ../scripts/osx/textadept_osx
+         ../textadeptjit-curses ../scripts/osx/textadept_osx
 	mkdir -p $(osxapp_bin) $(osxapp_res)
 	cp Info.plist $(osxapp_bin)/../
 	cp $^ $(osxapp_bin)/
 	hg archive $(osxapp_res) -X ".hg*"
-	cp -r ../doc ../lexers $(osxapp_res) && cp *.asc $(osxapp_res)/src
+	cp -rL ../doc ../lexers $(osxapp_res) && cp *.asc $(osxapp_res)/src
 	mv $(osxapp_res)/core/images/textadept.icns $(osxapp_res)/
 	cp -r gtkosx/etc gtkosx/share $(osxapp_res)/ && mkdir $(osxapp_res)/lib/
 	cp -r $(addprefix gtkosx/lib/, $(osxapp_libs)) $(osxapp_res)/lib/
@@ -397,37 +392,29 @@ osx-app: ../textadept ../textadeptjit ../textadept-curses \
 
 # External dependencies.
 
-base_deps = scintilla tre scintilla/term scintillua lua lualibs luajit \
-						gtdialog cdk ../doc/bombay
+base_deps = scintilla ../lexers lua lualibs luajit gtdialog cdk ../doc/bombay
 deps: $(base_deps) termkey
 win32-deps: $(base_deps) win32gtk win32curses
 osx-deps: $(base_deps) gtkosx termkey
 
 ifndef NIGHTLY
-	#scinterm_url = http://foicica.com/scinterm/download/$@
-	scinterm_url = http://foicica.com/hg/scinterm/archive/$@
-	#scintillua_url = http://foicica.com/scintillua/download/$@
-	scintillua_url = http://foicica.com/hg/scintillua/archive/$@
-	#gtdialog_url = http://foicica.com/gtdialog/download/$@
-	gtdialog_url = http://foicica.com/hg/gtdialog/archive/$@
-	#lspawn_url = http://foicica.com/lspawn/download/$@
-	lspawn_url = http://foicica.com/hg/lspawn/archive/$@
+  #gtdialog_url = http://foicica.com/gtdialog/download/$@
+  gtdialog_url = http://foicica.com/hg/gtdialog/archive/$@
+  #lspawn_url = http://foicica.com/lspawn/download/$@
+  lspawn_url = http://foicica.com/hg/lspawn/archive/$@
 else
-	scinterm_url = http://foicica.com/hg/scinterm/archive/tip.zip
-	scintillua_url = http://foicica.com/hg/scintillua/archive/tip.zip
-	gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
-	lspawn_url = http://foicica.com/hg/lspawn/archive/tip.zip
+  gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
+  lspawn_url = http://foicica.com/hg/lspawn/archive/tip.zip
 endif
 
-scintilla_tgz = scintilla373.tgz
-tre_zip = cdce45e8dd7a3b36954022b4a4d3570e1ac5a4f8.zip
-scinterm_zip = 46e218082338.zip
-scintillua_zip = 3d489664a2af.zip
+scintilla_zip = 80bcec2634db.zip
 lua_tgz = lua-5.3.4.tar.gz
 lpeg_tgz = lpeg-1.0.0.tar.gz
 lfs_zip = v_1_6_3.zip
 lspawn_zip = 9a8b4b5e4137.zip
 luajit_tgz = LuaJIT-2.0.3.tar.gz
+# Needed since LuaJIT will not cross-compile from x86 to x64 due to pointer size
+# mismatch.
 libluajit_tgz = libluajit_2.0.3.x86_64.tgz
 gtdialog_zip = 6435a42450c7.zip
 cdk_tgz = cdk-5.0-20150928.tgz
@@ -441,28 +428,16 @@ gtkosx_zip = gtkosx-2.24.16.zip
 bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
 
-$(scintilla_tgz): ; wget http://prdownloads.sourceforge.net/scintilla/$@ -O $@
-scintilla: $(sort $(wildcard scintilla_backports/*.patch)) scintilla.patch | \
-					 $(scintilla_tgz)
+$(scintilla_zip): ; wget http://foicica.com/hg/scintilla/archive/$@ -O $@
+scintilla: scintilla.patch | $(scintilla_zip)
 	if [ -d $@/.hg ]; then \
-		hg --cwd $@ update -C -r rel-3-7-3; \
+		hg --cwd $@ update -C LongTerm3; \
 	else \
 		if [ -d $@ ]; then rm -r $@; fi; \
-		mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@; \
+		mkdir $@ && unzip -d $@ $| && mv $@/*/* $@; \
 	fi
 	for patch in $^; do echo Applying $$patch; patch -d $@ -N -p1 < $$patch; done
-$(tre_zip): ; wget https://github.com/laurikari/tre/archive/$@ -O $@
-tre: tre.patch | $(tre_zip)
-	if [ -d $@ ]; then rm -r $@; fi
-	mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
-	patch -d $@ -N -p1 < $<
-$(scinterm_zip): ; wget $(scinterm_url) -O $@
-scintilla/term: | $(scinterm_zip) ; mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
-scintillua: ../lexers LexLPeg.cxx
-$(scintillua_zip): ; wget $(scintillua_url) -O $@
-../lexers: | $(scintillua_zip)
-	mkdir $@ && unzip -d $@ -j $| "*/lexers/*.lua" "*.txt" "*.cxx" -x "*/themes/*"
-LexLPeg.cxx: | ../lexers ; ln -s $|/$@ $@
+../lexers: | scintilla ; ln -s src/$|/lexlua $@
 $(lua_tgz): ; wget http://www.lua.org/ftp/$@
 $(lpeg_tgz): ; wget http://www.inf.puc-rio.br/~roberto/lpeg/$@
 $(lfs_zip): ; wget http://github.com/keplerproject/luafilesystem/archive/$@
@@ -531,23 +506,23 @@ $(bombay_zip): ; wget http://foicica.com/hg/bombay/archive/tip.zip -O $@
 	mkdir $(notdir $@) && unzip -d $(notdir $@) $| && \
 		mv $(notdir $@)/*/* $(dir $@)
 $(cloc): ; wget http://prdownloads.sourceforge.net/cloc/$@ -O $@
-sign-deps: | $(scintilla_tgz) $(scinterm_zip) $(scintillua_zip) $(lua_tgz) \
-						 $(lpeg_tgz) $(lfs_zip) $(lspawn_zip) $(luajit_tgz) \
-						 $(libluajit_tgz) $(gtdialog_zip) $(cdk_tgz) $(termkey_tgz) \
-						 $(win32gtk_zip) $(win32iconv_bin_zip) $(win32iconv_lib_zip) \
-						 $(win32curses_zip) $(pdcurses_zip) $(gtkosx_zip)
+sign-deps: | $(scintilla_tgz) $(lua_tgz) $(lpeg_tgz) $(lfs_zip) $(lspawn_zip) \
+             $(luajit_tgz) $(libluajit_tgz) $(gtdialog_zip) $(cdk_tgz) \
+             $(termkey_tgz) $(win32gtk_zip) $(win32iconv_bin_zip) \
+             $(win32iconv_lib_zip) $(win32curses_zip) $(pdcurses_zip) \
+             $(gtkosx_zip)
 	@for file in $|; do gpg -ab $$file; done
 verify-deps: | $(wildcard $(basename $(wildcard *.asc)))
 	@for file in $|; do echo "$$file"; gpg --verify $$file.asc || return 1; done
 
 clean-deps:
-	rm -rf scintilla tre ../lexers LexLPeg.cxx lua luajit gtdialog cdk termkey \
-		win32gtk win32curses gtkosx $(notdir ../doc/bombay)
+	rm -rf scintilla ../lexers lua luajit gtdialog cdk termkey win32gtk \
+		win32curses gtkosx $(notdir ../doc/bombay)
 
 # Count lines of code and generate ctags.
 
 sources = ../core ../modules/ansi_c ../modules/lua ../modules/textadept \
-					../themes textadept.c Makefile ../init.lua
+          ../themes textadept.c Makefile ../init.lua
 count: $(cloc) ; perl $< $(sources) --not-match-f=tadoc.lua
 ctags:
 	ctags -R --langdef=luax --langmap=luax:.lua --exclude="*doc*" \
@@ -557,4 +532,4 @@ ctags:
 		--regex-luax="/^\s*function\s+[^[:space:]\.]*\.?([[:alnum:]_]+)\(/\1/f/" \
 		--regex-luax="/^\s*local\s+function\s+([[:alnum:]_]+)\(/\1/F/" \
 		--regex-luax="/^[^[:space:]\.]*\.?([[:alnum:]_]+)\s*=\s*[{]/\1/t/" \
-		$(sources) LexLPeg.cxx scintilla gtdialog/gtdialog.c
+		$(sources) scintilla gtdialog/gtdialog.c
