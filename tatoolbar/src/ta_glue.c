@@ -857,7 +857,6 @@ static GtkWidget * get_draw_tb0_widget( void )
 int set_text_bt_width(struct toolbar_item * p )
 { //text button (text & no image)
   cairo_text_extents_t ext;
-  cairo_t *cr;
   int diff= 0;
   struct toolbar_group *G= p->group;
   if( p->text != NULL ){
