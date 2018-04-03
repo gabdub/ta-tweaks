@@ -6,7 +6,7 @@ keys.cf4 = reset
 
 require('util')
 if not CURSES then
-  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else buffer.set_theme('ggg') end
+  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else buffer:set_theme('ggg') end
 end
 
 require('export')
