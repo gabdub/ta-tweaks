@@ -144,10 +144,6 @@ if toolbar then
     end
   end)
 
-  events_connect("minimap_scroll", function(dir,line)
-    buffer:line_scroll( 0, dir*3)
-  end)
-
   events_connect(events.SAVE_POINT_REACHED, set_chg_tabbuf)
   events_connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
 

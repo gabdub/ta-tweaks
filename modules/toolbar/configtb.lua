@@ -1332,8 +1332,13 @@ local function minimap_clicked()
   if nl > 0 then
     if nl > buffer.line_count then nl= buffer.line_count end
     textadept.editing.goto_line(nl-1)
+    buffer:vertical_centre_caret()
   end
 end
+
+events_connect("minimap_scroll", function(dir,line)
+  buffer:line_scroll( 0, dir*3)
+end)
 
 function toolbar.minimap_setup()
   --set toolbar #4 as a MINIMAP
