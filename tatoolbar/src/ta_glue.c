@@ -1751,3 +1751,8 @@ void kill_tatoolbar( void )
   //free all filediff memory
   fdiff_killall();
 }
+
+void fire_minimap_scroll( int dir, int line )
+{
+  lL_event(lua, "minimap_scroll", LUA_TNUMBER, dir, LUA_TNUMBER, line, -1);
+}

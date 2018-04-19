@@ -2830,6 +2830,8 @@ void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
       }
       pml= pml->next;
     }
+  }else{
+    fire_minimap_scroll( dir, 0 );
   }
 }
 

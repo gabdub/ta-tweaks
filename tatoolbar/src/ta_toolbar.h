@@ -427,4 +427,7 @@ void minimap_hilight(int linenum, int color, int exclusive);
 int  minimap_getclickline( void );
 void minimap_scrollpos(int linesscreen, int firstvisible, int color);
 
+void fire_minimap_scroll( int dir, int line );
+
+
 #endif
