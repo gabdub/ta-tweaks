@@ -70,3 +70,9 @@ if toolbar then
   --toolbars are ready to show
   toolbar.ready()
 end
+
+--reload changed files without prompting
+events.connect(events.FILE_CHANGED, function()
+  io.reload_file()
+  return false
+end,1)
