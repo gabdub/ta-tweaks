@@ -1515,6 +1515,9 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
       color_pick_ev( p, 0, 1 ); //update color click
     }else if( p->back_color == BKCOLOR_MINIMAP_CLICK ){
       mini_map_ev( p, 0, 1 ); //update mini map click
+      if( ttb.philight != NULL ){
+        fire_tb_clicked_event(p); //scroll buffer while moving with mouse down
+      }
     }
   }
 }
@@ -2831,7 +2834,7 @@ void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
       pml= pml->next;
     }
   }else{
-    fire_minimap_scroll( dir, 0 );
+    fire_minimap_scroll( dir );
   }
 }
 

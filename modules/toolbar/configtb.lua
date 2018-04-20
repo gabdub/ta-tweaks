@@ -1336,7 +1336,7 @@ local function minimap_clicked()
   end
 end
 
-events_connect("minimap_scroll", function(dir,line)
+events_connect("minimap_scroll", function(dir)
   buffer:line_scroll( 0, dir*3)
 end)
 

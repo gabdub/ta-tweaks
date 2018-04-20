@@ -1055,6 +1055,13 @@ void fire_tab_clicked_event( struct toolbar_item * p )
   }
 }
 
+void fire_tb_clicked_event( struct toolbar_item * p )
+{
+  if( (p != NULL) && (p->name != NULL) ){
+    lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+  }
+}
+
 static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 {
   struct toolbar_item * p;
@@ -1075,6 +1082,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           color_pick_ev( ttb.phipress, 0, 0 ); //COLOR PICKER click
         }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
           mini_map_ev( ttb.phipress, 0, 0 );   //MINI MAP click
+          fire_tb_clicked_event(ttb.phipress); //scroll buffer now
         }
         redraw_item(ttb.philight);
       }
@@ -1094,16 +1102,16 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           scroll_toolbarT(T, event->x, event->y, p->num);
 
         }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
-          lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+          fire_tab_clicked_event(p);
           lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
 
         }else if( (p->flags & TTBF_TAB) == 0 ){
-          if((event->button == 1) && (p->name != NULL)){
-            lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, T->num, -1);
+          if( event->button == 1 ){
+            fire_tb_clicked_event(p);
           }
         }else{
           if(event->button == 1){
-            lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+            fire_tab_clicked_event(p);
           }else if(event->button == 3){
             if( lL_event(lua, "toolbar_tabRclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1) ){
               lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
@@ -1752,7 +1760,7 @@ void kill_tatoolbar( void )
   fdiff_killall();
 }
 
-void fire_minimap_scroll( int dir, int line )
+void fire_minimap_scroll( int dir )
 {
-  lL_event(lua, "minimap_scroll", LUA_TNUMBER, dir, LUA_TNUMBER, line, -1);
+  lL_event(lua, "minimap_scroll", LUA_TNUMBER, dir, -1);
 }

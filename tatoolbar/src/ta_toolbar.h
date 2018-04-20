@@ -335,6 +335,7 @@ int  get_text_width( const char * text, int fontsz );
 int  get_text_height( const char * text, int fontsz );
 void clear_tooltip_textT( struct toolbar_data *T );
 void fire_tab_clicked_event( struct toolbar_item * p );
+void fire_tb_clicked_event( struct toolbar_item * p );
 void set_hilight_tooltipT( struct toolbar_data *T );
 void set_toolbar_size(struct toolbar_data *T);
 void show_toolbar(struct toolbar_data *T, int show);
@@ -427,7 +428,7 @@ void minimap_hilight(int linenum, int color, int exclusive);
 int  minimap_getclickline( void );
 void minimap_scrollpos(int linesscreen, int firstvisible, int color);
 
-void fire_minimap_scroll( int dir, int line );
+void fire_minimap_scroll( int dir );
 
 
 #endif
