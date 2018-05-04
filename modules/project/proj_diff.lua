@@ -10,8 +10,6 @@ Proj.MARK_MODIFICATION = _SCINTILLA.next_marker_number()
 Proj.INDIC_ADDITION = _SCINTILLA.next_indic_number()
 Proj.INDIC_DELETION = _SCINTILLA.next_indic_number()
 
-local bit32_band = bit32.band
-
 local vfp1= Proj.prefview[Proj.PRJV_FILES]
 local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
 local compareon=false
@@ -219,7 +217,7 @@ end
 --Ensure the diff buffers are scrolled in sync
 function Proj.EVupdate_ui(updated)
   if updated and not synchronizing and check_comp_buffers() then
-    if bit32_band(updated, buffer.UPDATE_H_SCROLL + buffer.UPDATE_V_SCROLL + buffer.UPDATE_SELECTION) > 0 then
+    if updated & (buffer.UPDATE_H_SCROLL | buffer.UPDATE_V_SCROLL | buffer.UPDATE_SELECTION) > 0 then
       synchronize()
     end
   end
@@ -228,7 +226,7 @@ end
 --TA-EVENT: MODIFIED
 -- Highlight differences as text is typed and deleted.
 function Proj.EVmodified(modification_type)
-  if check_comp_buffers() and bit32_band(modification_type, 0x01 + 0x02) > 0 then mark_changes(false) end
+  if check_comp_buffers() and (modification_type & (0x01 | 0x02)) > 0 then mark_changes(false) end
 end
 
 --TA-EVENT: VIEW_NEW
