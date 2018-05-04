@@ -1319,9 +1319,9 @@ end
 
 events_connect(events.UPDATE_UI, function(updated)
   if updated then
-    if bit32.band(updated, buffer.UPDATE_CONTENT) > 0 then
+    if (updated & buffer.UPDATE_CONTENT) > 0 then
       toolbar.minimap_load()
-    elseif bit32.band(updated, buffer.UPDATE_V_SCROLL) > 0 then
+    elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
       toolbar.minimap_scroll()
     end
   end
