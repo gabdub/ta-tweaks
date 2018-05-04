@@ -34,14 +34,13 @@ ifeq (win, $(findstring win, $(MAKECMDGOALS)))
     CURSES_CFLAGS = -DLIBICONV_STATIC -Iwin32curses/include
     CURSES_LIBS = win32curses/lib/pdcurses.a win32curses/lib/libiconv.a
   endif
-  libluajit = luajit/src/lua51.dll
 else ifeq (osx, $(findstring osx, $(MAKECMDGOALS)))
   # Cross-compile for Mac OSX.
-  CROSS = i386-apple-darwin9-
+  CROSS = x86_64-apple-darwin9-
   CFLAGS += -mdynamic-no-pic
   CXXFLAGS += -mdynamic-no-pic
   LUA_CFLAGS = -DLUA_USE_MACOSX
-  LDFLAGS = -liconv -Wl,-read_only_relocs,suppress
+  LDFLAGS = -liconv
   ifeq (, $(findstring curses, $(MAKECMDGOALS)))
     plat_flag = -DGTK
     GTK_CFLAGS = $(shell PKG_CONFIG_PATH=`pwd`/gtkosx/lib/pkgconfig \
@@ -58,7 +57,6 @@ else ifeq (osx, $(findstring osx, $(MAKECMDGOALS)))
     plat_flag = -DCURSES
     CURSES_LIBS = -lncurses
   endif
-  libluajit = luajit/src/libluajit.osx.a
 else
   # Build for Linux/BSD.
   LUA_CFLAGS = -DLUA_USE_LINUX
@@ -88,7 +86,7 @@ else
       GTK_LIBS = $(shell pkg-config --libs gtk+-3.0 gmodule-2.0)
     endif
     GLIB_CFLAGS = $(shell pkg-config --cflags glib-2.0)
-    install_targets = ../textadept ../textadeptjit
+    install_targets = ../textadept
   else
     plat_flag = -DCURSES
     CURSES_CFLAGS = $(shell pkg-config --silence-errors --cflags ncursesw  || \
@@ -98,9 +96,8 @@ else
                           pkg-config --silence-errors --libs ncurses || \
                           pkg-config --silence-errors --libs curses || \
                           echo -lncursesw)
-    install_targets = ../textadept-curses ../textadeptjit-curses
+    install_targets = ../textadept-curses
   endif
-  libluajit = luajit/src/libluajit.a
 endif
 
 # Scintilla.
@@ -117,7 +114,7 @@ sci_objs = AutoComplete.o CallTip.o CaseConvert.o CaseFolder.o Catalogue.o \
 sci_lex_objs = Accessor.o CharacterCategory.o CharacterSet.o LexerBase.o \
                LexerModule.o LexerNoExceptions.o LexerSimple.o PropSetSimple.o \
                StyleContext.o WordList.o
-sci_lexer_objs = LexLPeg.o LexLPegjit.o LexLPeg-curses.o LexLPegjit-curses.o
+sci_lexer_objs = LexLPeg.o LexLPeg-curses.o
 sci_gtk_objs = PlatGTK.o ScintillaGTK.o ScintillaGTKAccessible.o
 sci_curses_objs = ScintillaCurses.o
 
@@ -125,8 +122,8 @@ sci_curses_objs = ScintillaCurses.o
 
 ta_flags = -std=c99 -pedantic $(plat_flag) -Iscintilla/include -Igtdialog -Wall
 
-textadept_gtk_objs = textadept.o textadeptjit.o
-textadept_curses_objs = textadept-curses.o textadeptjit-curses.o
+textadept_gtk_objs = textadept.o
+textadept_curses_objs = textadept-curses.o
 textadept_objs = $(textadept_gtk_objs) $(textadept_curses_objs)
 lua_objs = lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o \
            linit.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o \
@@ -134,9 +131,7 @@ lua_objs = lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o \
            lauxlib.o lbaselib.o lbitlib.o lcorolib.o ldblib.o liolib.o \
            lmathlib.o loadlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o
 lua_lib_objs = lpcap.o lpcode.o lpprint.o lptree.o lpvm.o lfs.o
-luajit_lib_objs = lpcapjit.o lpcodejit.o lpprintjit.o lptreejit.o lpvmjit.o \
-                  lfsjit.o lutf8libjit.o
-lua_spawn_objs = lspawn.o lspawnjit.o lspawn-curses.o lspawnjit-curses.o
+lua_spawn_objs = lspawn.o lspawn-curses.o
 gtdialog_objs = gtdialog.o gtdialog-curses.o
 termkey_unix_objs = driver-ti.o driver-csi.o
 termkey_win32_objs = driver-win32-pdcurses.o
@@ -154,12 +149,12 @@ endif
 
 # Build.
 
-all: textadept textadeptjit
-curses: textadept-curses textadeptjit-curses
-win32: textadept.exe textadeptjit.exe
-win32-curses: textadept-curses.exe textadeptjit-curses.exe
-osx: textadept textadeptjit
-osx-curses: textadept-curses textadeptjit-curses
+all: textadept
+curses: textadept-curses
+win32: textadept.exe
+win32-curses: textadept-curses.exe
+osx: textadept
+osx-curses: textadept-curses
 
 $(sci_objs): %.o: scintilla/src/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $< -o $@
@@ -179,18 +174,9 @@ $(lua_objs): %.o: lua/src/%.c
 	$(CROSS)$(CC) -c $(CFLAGS) $(LUA_CFLAGS) -ULUA_LIB $< -o $@
 $(lua_lib_objs): %.o: lua/src/lib/%.c
 	$(CROSS)$(CC) -c $(CFLAGS) $(LUA_CFLAGS) $< -o $@
-$(luajit_lib_objs): %jit.o: lua/src/lib/%.c
-	$(CROSS)$(CC) -c $(CFLAGS) $(LUA_CFLAGS) $< -o $@
 $(lua_spawn_objs): lua/src/lib/lspawn.c
 	$(CROSS)$(CC) -c $(CFLAGS) $(LUA_CFLAGS) -std=c99 -pedantic $(spawn_flags) \
 		$< -o $@
-luajit/src/libluajit.a: ; $(MAKE) -C luajit CC="$(CC)" CFLAGS="$(CFLAGS)"
-luajit/src/lua51.dll:
-	$(MAKE) -C luajit HOST_CC="$(CC) -m32" CROSS=$(CROSS) TARGET_SYS=Windows \
-		TARGET_SHLDFLAGS="-static-libgcc"
-luajit/src/libluajit.osx.a:
-	$(MAKE) -C luajit HOST_CC="$(CC) -m32" CROSS=$(CROSS) TARGET_SYS=Darwin \
-		LUAJIT_A=$(notdir $@) || return 0
 $(gtdialog_objs): gtdialog/gtdialog.c
 	$(CROSS)$(CC) -c $(CFLAGS) -std=c99 -pedantic $(plat_flag) -DNOHELP \
 		-DLIBRARY $(gtdialog_flags) $< -o $@
@@ -209,23 +195,16 @@ ta_filediff.o: ta_filediff.c
 
 # Target-specific variables.
 
-LexLPeg-curses.o LexLPegjit-curses.o: sci_flags += -DCURSES $(CURSES_CFLAGS)
-lua_dep_objs = LexLPeg.o LexLPeg-curses.o textadept.o textadept-curses.o \
+LexLPeg-curses.o: sci_flags += -DCURSES $(CURSES_CFLAGS)
+lua_dep_objs = LexLPeg.o LexLPeg-curses.o textadept.o ta_toolbar.o ta_filediff.o textadept-curses.o \
                $(lua_objs) $(lua_lib_objs) lspawn.o lspawn-curses.o
-luajit_dep_objs = LexLPegjit.o LexLPegjit-curses.o textadeptjit.o \
-                  textadeptjit-curses.o $(luajit_lib_objs) lspawnjit.o \
-                  lspawnjit-curses.o
 $(lua_dep_objs): LUA_CFLAGS += -Ilua/src
-$(luajit_dep_objs): LUA_CFLAGS += -Iluajit/src
 $(textadept_gtk_objs): ta_flags += $(GTK_CFLAGS)
 $(textadept_curses_objs): \
   ta_flags += -Iscintilla/curses -Itermkey -Icdk $(CURSES_CFLAGS)
-lspawn.o lspawnjit.o: spawn_flags = -DGTK $(GLIB_CFLAGS)
+lspawn.o: spawn_flags = -DGTK $(GLIB_CFLAGS)
 gtdialog.o: gtdialog_flags += $(GTK_CFLAGS)
 gtdialog-curses.o: gtdialog_flags += -Icdk $(CURSES_CFLAGS)
-# Lua 5.3 compatibility with LuaJIT.
-lbitlib.o linit.o: LUA_CFLAGS += -DLUA_COMPAT_BITLIB -DLUA_COMPAT_APIINTCASTS
-lutf8libjit.o: LUA_CFLAGS += -Ilua/src
 
 # Executables.
 
@@ -233,40 +212,20 @@ textadept: $(sci_objs) $(sci_lex_objs) LexLPeg.o $(sci_gtk_objs) \
            scintilla-marshal.o textadept.o ta_toolbar.o ta_filediff.o $(lua_objs) $(lua_lib_objs) \
            lspawn.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
-textadeptjit: $(sci_objs) $(sci_lex_objs) LexLPegjit.o $(sci_gtk_objs) \
-              scintilla-marshal.o textadeptjit.o ta_toolbar.o ta_filediff.o $(luajit_lib_objs) \
-              $(libluajit) lspawnjit.o gtdialog.o
-	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
 textadept-curses: $(sci_objs) $(sci_lex_objs) LexLPeg-curses.o \
                   $(sci_curses_objs) textadept-curses.o $(lua_objs) \
                   $(lua_lib_objs) lspawn-curses.o gtdialog-curses.o termkey.o \
                   $(termkey_unix_objs) $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
-textadeptjit-curses: $(sci_objs) $(sci_lex_objs) LexLPegjit-curses.o \
-                     $(sci_curses_objs) textadeptjit-curses.o \
-                     $(luajit_lib_objs) $(libluajit) lspawnjit-curses.o \
-                     gtdialog-curses.o termkey.o $(termkey_unix_objs) \
-                     $(cdk_objs)
-	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
 textadept.exe: $(sci_objs) $(sci_lex_objs) LexLPeg.o $(sci_gtk_objs) \
                scintilla-marshal.o textadept.o ta_toolbar.o ta_filediff.o textadept_rc.o $(lua_objs) \
                $(lua_lib_objs) lspawn.o gtdialog.o
-	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
-textadeptjit.exe: $(sci_objs) $(sci_lex_objs) LexLPegjit.o $(sci_gtk_objs) \
-                  scintilla-marshal.o textadeptjit.o ta_toolbar.o ta_filediff.o textadept_rc.o \
-                  $(luajit_lib_objs) $(libluajit) lspawnjit.o gtdialog.o
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(GTK_LIBS) $(LDFLAGS)
 textadept-curses.exe: $(sci_objs) $(sci_lex_objs) LexLPeg-curses.o \
                       $(sci_curses_objs) textadept-curses.o textadept_rc.o \
                       $(lua_objs) $(lua_lib_objs) lspawn-curses.o \
                       gtdialog-curses.o termkey.o $(termkey_win32_objs) \
                       $(cdk_objs)
-	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
-textadeptjit-curses.exe: $(sci_objs) $(sci_lex_objs) LexLPegjit-curses.o \
-                         $(sci_curses_objs) textadeptjit-curses.o \
-                         textadept_rc.o $(luajit_lib_objs) $(libluajit) \
-                         lspawnjit-curses.o gtdialog-curses.o termkey.o \
-                         $(termkey_win32_objs) $(cdk_objs)
 	$(CROSS)$(CXX) $(CXXFLAGS) -o ../$@ $^ $(CURSES_LIBS) $(LDFLAGS)
 
 # Install/uninstall.
@@ -296,9 +255,7 @@ uninstall:
 
 # Clean.
 
-clean:
-	$(MAKE) CC=$(CC) -C luajit clean
-	rm -f *.o ../textadept*
+clean: ; rm -f *.o ../textadept*
 
 # Documentation.
 
@@ -321,14 +278,15 @@ osxapp = Textadept.app
 osxapp_bin = $(osxapp)/Contents/MacOS
 osxapp_res = $(osxapp)/Contents/Resources
 osxapp_libs = libatk-1.0.0.dylib libcairo.2.dylib libexpat.1.dylib \
-              libffi.5.dylib libfontconfig.1.dylib libfreetype.6.dylib \
+              libffi.6.dylib libfontconfig.1.dylib libfreetype.6.dylib \
               libgdk_pixbuf-2.0.0.dylib libgdk-quartz-2.0.0.dylib \
               libgio-2.0.0.dylib libglib-2.0.0.dylib libgmodule-2.0.0.dylib \
               libgobject-2.0.0.dylib libgthread-2.0.0.dylib \
               libgtkmacintegration.2.dylib libgtk-quartz-2.0.0.dylib \
-              libintl.8.dylib libpango-1.0.0.dylib libpangocairo-1.0.0.dylib \
-              libpangoft2-1.0.0.dylib libpixman-1.0.dylib libpng14.14.dylib \
-              charset.alias gdk-pixbuf-2.0 gtk-2.0 pango
+              libharfbuzz.0.dylib libintl.8.dylib libpango-1.0.0.dylib \
+              libpangocairo-1.0.0.dylib libpangoft2-1.0.0.dylib \
+              libpixman-1.0.dylib libpng16.16.dylib charset.alias \
+              gdk-pixbuf-2.0 gtk-2.0
 
 release-all: release release64 win32-release osx-release modules-release
 
@@ -344,7 +302,7 @@ release: $(basedir).i386
 	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg -ab /tmp/$<.tgz
 $(basedir).x86_64: ; hg archive $@ -X ".hg*"
 release64: $(basedir).x86_64
-	make clean libluajit64
+	make clean
 	PKG_CONFIG_PATH=/opt/gtk64/lib/pkgconfig make -j4 CFLAGS="$(CFLAGS) -m64" \
 		CXXFLAGS="$(CXXFLAGS) -m64 -static-libstdc++" || return 0
 	make -j4 CFLAGS="$(CFLAGS) -m64" \
@@ -361,7 +319,7 @@ win32-release: $(basedir).win32
 	rm -r $</lib/*.a $</lib/glib-2.0 $</lib/gtk-2.0/include $</lib/pkgconfig
 	make -j4 win32
 	make -j4 win32-curses
-	cp -rL ../doc ../lexers ../textadept* luajit/src/lua51.dll $<
+	cp -rL ../doc ../lexers ../textadept* $<
 	cp *.asc $</src
 	zip -r /tmp/$<.zip $< && rm -rf $< && gpg -ab /tmp/$<.zip
 $(basedir).osx: ; mkdir $@ && cp ../scripts/osx/ta $@
@@ -377,8 +335,7 @@ $(basedir).modules:
 modules-release: $(basedir).modules
 	zip -r /tmp/$<.zip $< && rm -r $< && gpg -ab /tmp/$<.zip
 
-osx-app: ../textadept ../textadeptjit ../textadept-curses \
-         ../textadeptjit-curses ../scripts/osx/textadept_osx
+osx-app: ../textadept ../textadept-curses ../scripts/osx/textadept_osx
 	mkdir -p $(osxapp_bin) $(osxapp_res)
 	cp Info.plist $(osxapp_bin)/../
 	cp $^ $(osxapp_bin)/
@@ -392,7 +349,7 @@ osx-app: ../textadept ../textadeptjit ../textadept-curses \
 
 # External dependencies.
 
-base_deps = scintilla ../lexers lua lualibs luajit gtdialog cdk ../doc/bombay
+base_deps = scintilla ../lexers lua lualibs gtdialog cdk ../doc/bombay
 deps: $(base_deps) termkey
 win32-deps: $(base_deps) win32gtk win32curses
 osx-deps: $(base_deps) gtkosx termkey
@@ -407,15 +364,11 @@ else
   lspawn_url = http://foicica.com/hg/lspawn/archive/tip.zip
 endif
 
-scintilla_zip = 5135775cc8cc.zip
+scintilla_zip = b4eec2ff1794.zip
 lua_tgz = lua-5.3.4.tar.gz
 lpeg_tgz = lpeg-1.0.0.tar.gz
 lfs_zip = v_1_6_3.zip
 lspawn_zip = 9a8b4b5e4137.zip
-luajit_tgz = LuaJIT-2.0.3.tar.gz
-# Needed since LuaJIT will not cross-compile from x86 to x64 due to pointer size
-# mismatch.
-libluajit_tgz = libluajit_2.0.3.x86_64.tgz
 gtdialog_zip = 6435a42450c7.zip
 cdk_tgz = cdk-5.0-20150928.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
@@ -424,7 +377,7 @@ win32iconv_bin_zip = libiconv-bin-zip.php
 win32iconv_lib_zip = libiconv-lib-zip.php
 win32curses_zip = win32curses.zip
 pdcurses_zip = pdcurs34.zip
-gtkosx_zip = gtkosx-2.24.16.zip
+gtkosx_tgz = gtkosx-2.24.31.tar.gz
 bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
 
@@ -449,22 +402,11 @@ lua: lua.patch | $(lua_tgz)
 lualibs: lua/src/lib/lpeg lua/src/lib/lfs lua/src/lib/lspawn
 lua/src/lib/lpeg: | $(lpeg_tgz)
 	mkdir -p $@ && tar xzf $| -C $@ && mv $@/*/*.c $@/*/*.h $(dir $@)
-lua/src/lib/lfs: lfs.patch | $(lfs_zip)
+lua/src/lib/lfs: | $(lfs_zip)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir -p $@ && unzip -d $@ $| && mv $@/*/src/*.c $@/*/src/*.h $(dir $@)
-	patch -d $(dir $@) -N -p1 < $<
 lua/src/lib/lspawn: | $(lspawn_zip)
 	mkdir -p $@ && unzip -d $@ $| && mv $@/*/*.c $(dir $@)
-lua/src/lib/lutf8lib.c: lutf8libjit.patch
-	cp lua/src/$(notdir $@) $@
-	patch -d $(dir $@) -N -p1 < $<
-$(luajit_tgz): ; wget http://luajit.org/download/$@
-luajit: luajit.patch | $(luajit_tgz)
-	if [ -d $@ ]; then rm -r $@; fi
-	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
-	patch -d $@ -N -p1 < $<
-$(libluajit_tgz): ; wget http://foicica.com/textadept/download/$@
-libluajit64: | $(libluajit_tgz) ; tar xzf $|
 $(gtdialog_zip): ; wget $(gtdialog_url) -O $@
 gtdialog: | $(gtdialog_zip) ; mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
 $(cdk_tgz): ; wget http://invisible-mirror.net/archives/cdk/$@
@@ -499,25 +441,24 @@ win32curses: | $(win32curses_zip) $(pdcurses_zip)
 	cd $@/src/win32 && $(MAKE) -f gccwin32.mak CC="$(CROSS)$(CC) $(CFLAGS)" \
 		LIBEXE=$(CROSS)ar LINK="$(CROSS)$(CC) $(CFLAGS)" WIDE=Y UTF8=Y
 	cp $@/src/win32/pdcurses.a $@/lib/
-$(gtkosx_zip): ; wget http://foicica.com/textadept/download/$@
-gtkosx: | $(gtkosx_zip) ; mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
+$(gtkosx_tgz): ; wget http://foicica.com/textadept/download/$@
+gtkosx: | $(gtkosx_tgz) ; mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 $(bombay_zip): ; wget http://foicica.com/hg/bombay/archive/tip.zip -O $@
 ../doc/bombay: | $(bombay_zip)
 	mkdir $(notdir $@) && unzip -d $(notdir $@) $| && \
 		mv $(notdir $@)/*/* $(dir $@)
 $(cloc): ; wget http://prdownloads.sourceforge.net/cloc/$@ -O $@
 sign-deps: | $(scintilla_tgz) $(lua_tgz) $(lpeg_tgz) $(lfs_zip) $(lspawn_zip) \
-             $(luajit_tgz) $(libluajit_tgz) $(gtdialog_zip) $(cdk_tgz) \
-             $(termkey_tgz) $(win32gtk_zip) $(win32iconv_bin_zip) \
-             $(win32iconv_lib_zip) $(win32curses_zip) $(pdcurses_zip) \
-             $(gtkosx_zip)
+             $(gtdialog_zip) $(cdk_tgz) $(termkey_tgz) $(win32gtk_zip) \
+             $(win32iconv_bin_zip) $(win32iconv_lib_zip) $(win32curses_zip) \
+             $(pdcurses_zip) $(gtkosx_tgz)
 	@for file in $|; do gpg -ab $$file; done
 verify-deps: | $(wildcard $(basename $(wildcard *.asc)))
 	@for file in $|; do echo "$$file"; gpg --verify $$file.asc || return 1; done
 
 clean-deps:
-	rm -rf scintilla ../lexers lua luajit gtdialog cdk termkey win32gtk \
-		win32curses gtkosx $(notdir ../doc/bombay)
+	rm -rf scintilla ../lexers lua gtdialog cdk termkey win32gtk win32curses \
+		gtkosx $(notdir ../doc/bombay)
 
 # Count lines of code and generate ctags.
 
