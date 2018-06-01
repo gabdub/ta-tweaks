@@ -2,7 +2,7 @@
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 100  //textadept version 9.6 (96) or 10 alpha (100)
+#define TA_VERSION 100  //textadept version 9.6 (96) or 10 beta (100)
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
