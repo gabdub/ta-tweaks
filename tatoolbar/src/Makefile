@@ -99,6 +99,8 @@ else
     install_targets = ../textadept-curses
   endif
 endif
+version = $(shell grep -m 1 _RELEASE ../core/init.lua | cut -d ' ' -f4- | \
+                  tr ' ' '_' | tr -d '"')
 
 # Scintilla.
 
@@ -136,9 +138,11 @@ gtdialog_objs = gtdialog.o gtdialog-curses.o
 termkey_unix_objs = driver-ti.o driver-csi.o
 termkey_win32_objs = driver-win32-pdcurses.o
 termkey_objs = termkey.o $(termkey_unix_objs) $(termkey_win32_objs)
-cdk_objs = binding.o buttonbox.o cdk.o cdk_display.o cdk_objs.o cdkscreen.o \
-           draw.o entry.o fselect.o itemlist.o label.o mentry.o popup_label.o \
-           scroll.o scroller.o select_file.o selection.o traverse.o version.o
+cdk_objs = $(addprefix cdk-, binding.o buttonbox.o cdk.o cdk_display.o \
+                             cdk_objs.o cdkscreen.o draw.o entry.o fselect.o \
+                             itemlist.o label.o mentry.o popup_label.o \
+                             scroll.o scroller.o select_file.o selection.o \
+                             traverse.o version.o)
 
 # Add debugging symbols and disable optimizations when DEBUG=1.
 # Note: In order to profile with gprof (-pg), do not retain symbols in LDFLAGS.
@@ -180,7 +184,7 @@ $(lua_spawn_objs): lua/src/lib/lspawn.c
 $(gtdialog_objs): gtdialog/gtdialog.c
 	$(CROSS)$(CC) -c $(CFLAGS) -std=c99 -pedantic $(plat_flag) -DNOHELP \
 		-DLIBRARY $(gtdialog_flags) $< -o $@
-$(cdk_objs): %.o: cdk/%.c
+$(cdk_objs): cdk-%.o: cdk/%.c
 	$(CROSS)$(CC) -c $(CFLAGS) -D_GNU_SOURCE -Itermkey -Icdk $(CURSES_CFLAGS) $< \
 		-o $@
 $(termkey_objs): %.o: termkey/%.c
@@ -262,15 +266,20 @@ clean: ; rm -f *.o ../textadept*
 doc: manual luadoc
 manual: ../*.md ../doc/manual.md | ../doc/bombay
 	$| -d ../doc -t ../doc --title Textadept $^
+	sed -i -e "s/manual - Textadept/Textadept $(subst _, ,$(version)) Manual/;" \
+		../doc/manual.html
+	sed -i -e "s/Textadept Manual/Textadept $(subst _, ,$(version)) Manual/;" \
+		../doc/manual.html
 luadoc: ../modules ../core ../lexers
 	cd ../doc && luadoc -d . -t . --doclet markdowndoc $^/lexer.lua
+	sed -i -e "s/Textadept API/Textadept $(subst _, ,$(version)) API/;" \
+		../doc/api.html
 	cd ../modules && luadoc -d lua --doclet lua/tadoc $^/lexer.lua
 
 # Releases.
 
 ifndef NIGHTLY
-  basedir = textadept_$(shell grep -m 1 _RELEASE ../core/init.lua | \
-                              cut -d ' ' -f4- | tr ' ' '_' | tr -d '"')
+  basedir = textadept_$(version)
 else
   basedir = textadept_NIGHTLY_$(shell date +"%F")
 endif
