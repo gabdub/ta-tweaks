@@ -21,6 +21,7 @@ require('quicktype')
 --end
 
 textadept.file_types.extensions.mas = 'mas'
+textadept.file_types.extensions.inc = 'asm'
 textadept.editing.comment_string.ansi_c = '//'
 
 if toolbar then
