@@ -23,6 +23,7 @@ require('quicktype')
 textadept.file_types.extensions.mas = 'mas'
 textadept.file_types.extensions.inc = 'asm'
 textadept.editing.comment_string.ansi_c = '//'
+textadept.editing.comment_string.asm = ';'
 
 if toolbar then
   require('toolbar')
