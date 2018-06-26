@@ -176,7 +176,8 @@ function Proj.EVinitialize()
   --TODO: mark rigth side files
   for _, buff in ipairs(_BUFFERS) do
     --check buffer type
-    if Proj.get_buffertype(buff) == Proj.PRJB_PROJ_NEW then
+    local pt= Proj.get_buffertype(buff)
+    if pt == Proj.PRJB_PROJ_NEW or pt == Proj.PRJB_PROJ_SELECT then
       --activate project in the proper view
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Util.goto_buffer(buff)
