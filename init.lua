@@ -1,4 +1,4 @@
--- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
@@ -6,7 +6,9 @@ keys.cf4 = reset
 
 require('util')
 if not CURSES then
-  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else buffer:set_theme('ggg') end
+  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else
+    for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
+  end
 end
 
 require('export')
