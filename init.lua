@@ -62,11 +62,11 @@ if toolbar then
 
   if Proj then toolbar.addaction("trim_trailingspaces") end
 
-  local function showpopup()
-    toolbar.show_popup("window-new",33)
-  end
-  toolbar.cmd("window-new", showpopup, "TEST show popup")
-  toolbar.create_popup()
+--  local function showpopup()
+--    toolbar.show_popup("window-new",33)
+--  end
+--  toolbar.cmd("window-new", showpopup, "TEST show popup")
+--  toolbar.create_popup()
 
   -- MINI MAP (toolbar #4)
   if minimap then toolbar.minimap_setup() end
