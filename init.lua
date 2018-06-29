@@ -68,7 +68,7 @@ if toolbar then
   toolbar.cmd("window-new", showpopup, "TEST show popup")
   toolbar.create_popup()
 
-  -- TEST: MINI MAP (toolbar #4) --
+  -- MINI MAP (toolbar #4)
   if minimap then toolbar.minimap_setup() end
 
   --toolbars are ready to show

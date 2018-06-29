@@ -33,11 +33,13 @@ end
 
 function toolbar.show_hide_minimap()
   --hide the minimap when the config is open
-  toolbar.sel_toolbar_n(4)
-  if toolbar.tbhidemmapcfg then
-    toolbar.show(toolbar.tbshowminimap and (not toolbar.config_toolbar_shown))
-  else
-    toolbar.show(toolbar.tbshowminimap)
+  if minimap then
+    toolbar.sel_toolbar_n(4)
+    if toolbar.tbhidemmapcfg then
+      toolbar.show(toolbar.tbshowminimap and (not toolbar.config_toolbar_shown))
+    else
+      toolbar.show(toolbar.tbshowminimap)
+    end
   end
 end
 
@@ -496,7 +498,7 @@ local function reload_theme()
   toolbar.save_config()
   buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
   reset()
-    --hide the minimap when the config is open
+  --hide the minimap when the config is open
   toolbar.show_hide_minimap()
 end
 
@@ -721,7 +723,7 @@ function update_buffer_cfg()
   --update ALL actions in menus
   actions.update_menuitems()
   --update minimap
-  toolbar.minimap_load()
+  if minimap then toolbar.minimap_load() end
 end
 
 events_connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
@@ -926,10 +928,13 @@ local function add_toolbar_cfg_panel()
     cont_config_radio("Hide")
   end
 
-  add_config_label("MINI MAP",true)
-  add_config_check("tbshowminimap", "Show mini map", "", true)
-  add_config_check("tbhidemmapcfg", "Hide when config is open", "", true)
-  add_config_check("tbreplvscroll", "Replace vertical scrollbar", "", true)
+  if minimap then
+    add_config_label("MINI MAP",true)
+    add_config_check("tbshowminimap", "Show mini map", "", true)
+    add_config_check("tbhidemmapcfg", "Hide when config is open", "", true)
+    add_config_check("tbreplvscroll", "Replace vertical scrollbar", "", true)
+  end
+
   toolbar.config_saveon=false --end of config save options of this panel
 
   add_config_separator()
@@ -1252,106 +1257,108 @@ if m_vi then
   m[#m+1]= "toggle_viewcfgpanel"
 end
 
---add markers to the minimap
-local function add_mmap_markers(markbit, colorprop)
-  local mbit= 2^markbit
-  local color= get_rgbcolor_prop(colorprop)
-  local nl= buffer.marker_next(buffer, 0, mbit)+1
-  while nl >= 1 do
-    minimap.hilight(nl,color)
-    local nl2= buffer.marker_next(buffer, nl, mbit)+1
-    if nl2 <= nl then break end
-    nl= nl2
-  end
-end
-
---add indicators to the minimap
-local function add_mmap_indicators(indicator, colorprop)
-  local color= get_rgbcolor_prop(colorprop)
-  local pos= buffer:indicator_end(indicator, 0)
-  while pos > 0 and pos < buffer.length do
-    local nl= buffer:line_from_position(pos)+1
-    minimap.hilight(nl, color)
-    pos= buffer:indicator_end(indicator, buffer:position_from_line(nl))
-  end
-end
-
-function toolbar.minimap_scroll()
-  local nl= buffer.lines_on_screen
-  local first= buffer.first_visible_line+1
-  if not buffer.all_lines_visible then
-    --add hidden lines
-    local n= 0
-    local i= 0
-    while n < buffer.first_visible_line and i < buffer.line_count do
-      if buffer.line_visible[i] then n=n+1 else first=first+1 end
-      i=i+1
-    end
-    n= 0
-    while n < buffer.lines_on_screen and i < buffer.line_count do
-      if buffer.line_visible[i] then n=n+1 else nl=nl+1 end
-      i=i+1
+if minimap then
+  --add markers to the minimap
+  local function add_mmap_markers(markbit, colorprop)
+    local mbit= 2^markbit
+    local color= get_rgbcolor_prop(colorprop)
+    local nl= buffer.marker_next(buffer, 0, mbit)+1
+    while nl >= 1 do
+      minimap.hilight(nl,color)
+      local nl2= buffer.marker_next(buffer, nl, mbit)+1
+      if nl2 <= nl then break end
+      nl= nl2
     end
   end
-  minimap.scrollpos(nl, first, get_rgbcolor_prop('color.linenum_fore'))
-end
 
---load buffer markers/indicators into the minimap
-function toolbar.minimap_load()
-  if toolbar.tbshowminimap then
-    minimap.init(buffer._buffnum, buffer.line_count, 6)
-    --bookmarks
-    add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
-    add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
-    add_mmap_markers(Proj.MARK_DELETION, 'color.red')
-    add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
-    --highlighted words
-    add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
-  --  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
-  --  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
-    --first/last line
-    color= get_rgbcolor_prop('color.curr_line_back')
-    minimap.hilight(1,color,true)
-    minimap.hilight(buffer.line_count,color,true)
-    toolbar.minimap_scroll()
-  end
-end
-
-events_connect(events.UPDATE_UI, function(updated)
-  if updated then
-    if (updated & buffer.UPDATE_CONTENT) > 0 then
-      toolbar.minimap_load()
-    elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
-      toolbar.minimap_scroll()
+  --add indicators to the minimap
+  local function add_mmap_indicators(indicator, colorprop)
+    local color= get_rgbcolor_prop(colorprop)
+    local pos= buffer:indicator_end(indicator, 0)
+    while pos > 0 and pos < buffer.length do
+      local nl= buffer:line_from_position(pos)+1
+      minimap.hilight(nl, color)
+      pos= buffer:indicator_end(indicator, buffer:position_from_line(nl))
     end
   end
-end)
 
-local function minimap_clicked()
-  local nl= minimap.getclickline()
-  if nl > 0 then
-    if nl > buffer.line_count then nl= buffer.line_count end
-    textadept.editing.goto_line(nl-1)
-    buffer:vertical_centre_caret()
+  local function minimap_scroll()
+    local nl= buffer.lines_on_screen
+    local first= buffer.first_visible_line+1
+    if not buffer.all_lines_visible then
+      --add hidden lines
+      local n= 0
+      local i= 0
+      while n < buffer.first_visible_line and i < buffer.line_count do
+        if buffer.line_visible[i] then n=n+1 else first=first+1 end
+        i=i+1
+      end
+      n= 0
+      while n < buffer.lines_on_screen and i < buffer.line_count do
+        if buffer.line_visible[i] then n=n+1 else nl=nl+1 end
+        i=i+1
+      end
+    end
+    minimap.scrollpos(nl, first, get_rgbcolor_prop('color.linenum_fore'))
   end
-end
 
-events_connect("minimap_scroll", function(dir)
-  buffer:line_scroll( 0, dir*3)
-end)
+  --load buffer markers/indicators into the minimap
+  function toolbar.minimap_load()
+    if toolbar.tbshowminimap then
+      minimap.init(buffer._buffnum, buffer.line_count, 6)
+      --bookmarks
+      add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
+      add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
+      add_mmap_markers(Proj.MARK_DELETION, 'color.red')
+      add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
+      --highlighted words
+      add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
+    --  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
+    --  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
+      --first/last line
+      color= get_rgbcolor_prop('color.curr_line_back')
+      minimap.hilight(1,color,true)
+      minimap.hilight(buffer.line_count,color,true)
+      minimap_scroll()
+    end
+  end
 
-function toolbar.minimap_setup()
-  --set toolbar #4 as a MINIMAP
-  toolbar.new(14, 14, 14, 4, toolbar.themepath)
-  --width=14 / height=expand
-  toolbar.addgroup(3, 7, 14, 0)
-  toolbar.setbackcolor("TOOLBAR", get_rgbcolor_prop('color.linenum_back'), false, true)
-  toolbar.setbackcolor("GROUP", -7, false, true) --MINI MAP DRAW (-7)
-  toolbar.adjust(14, 4096, 2,1,3,3)
-  toolbar.gotopos(0,0)
-  toolbar.cmd("minimap", minimap_clicked, "", "")
-  toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
-  toolbar.seticon("TOOLBAR", "", 2, true) --don't highlight
-  toolbar.seticon("TOOLBAR", "", 3, true)
-  toolbar.show(toolbar.tbshowminimap)
+  events_connect(events.UPDATE_UI, function(updated)
+    if updated then
+      if (updated & buffer.UPDATE_CONTENT) > 0 then
+        toolbar.minimap_load()
+      elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
+        minimap_scroll()
+      end
+    end
+  end)
+
+  local function minimap_clicked()
+    local nl= minimap.getclickline()
+    if nl > 0 then
+      if nl > buffer.line_count then nl= buffer.line_count end
+      textadept.editing.goto_line(nl-1)
+      buffer:vertical_centre_caret()
+    end
+  end
+
+  events_connect("minimap_scroll", function(dir)
+    buffer:line_scroll( 0, dir*3)
+  end)
+
+  function toolbar.minimap_setup()
+    --set toolbar #4 as a MINIMAP
+    toolbar.new(14, 14, 14, 4, toolbar.themepath)
+    --width=14 / height=expand
+    toolbar.addgroup(3, 7, 14, 0)
+    toolbar.setbackcolor("TOOLBAR", get_rgbcolor_prop('color.linenum_back'), false, true)
+    toolbar.setbackcolor("GROUP", -7, false, true) --MINI MAP DRAW (-7)
+    toolbar.adjust(14, 4096, 2,1,3,3)
+    toolbar.gotopos(0,0)
+    toolbar.cmd("minimap", minimap_clicked, "", "")
+    toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
+    toolbar.seticon("TOOLBAR", "", 2, true) --don't highlight
+    toolbar.seticon("TOOLBAR", "", 3, true)
+    toolbar.show(toolbar.tbshowminimap)
+  end
 end
