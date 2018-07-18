@@ -1258,13 +1258,27 @@ if m_vi then
 end
 
 if minimap then
+  --add a hilight to the minimap (correcting annotation lines)
+  local function mmhilight(nl,color)
+    if buffer._annot_lines and (buffer._annot_lines > 0) then
+      local r= buffer._annot_list
+      local off= 0
+      for i=1,#r,2 do
+        if nl <= r[i] then break end
+        off= off + r[i+1]-1
+      end
+      nl= nl + off
+    end
+    minimap.hilight(nl,color)
+  end
+
   --add markers to the minimap
   local function add_mmap_markers(markbit, colorprop)
     local mbit= 2^markbit
     local color= get_rgbcolor_prop(colorprop)
     local nl= buffer.marker_next(buffer, 0, mbit)+1
     while nl >= 1 do
-      minimap.hilight(nl,color)
+      mmhilight(nl,color)
       local nl2= buffer.marker_next(buffer, nl, mbit)+1
       if nl2 <= nl then break end
       nl= nl2
@@ -1277,7 +1291,7 @@ if minimap then
     local pos= buffer:indicator_end(indicator, 0)
     while pos > 0 and pos < buffer.length do
       local nl= buffer:line_from_position(pos)+1
-      minimap.hilight(nl, color)
+      mmhilight(nl, color)
       pos= buffer:indicator_end(indicator, buffer:position_from_line(nl))
     end
   end
@@ -1285,19 +1299,14 @@ if minimap then
   local function minimap_scroll()
     local nl= buffer.lines_on_screen
     local first= buffer.first_visible_line+1
-    if not buffer.all_lines_visible then
-      --add hidden lines
-      local n= 0
-      local i= 0
-      while n < buffer.first_visible_line and i < buffer.line_count do
-        if buffer.line_visible[i] then n=n+1 else first=first+1 end
-        i=i+1
+    if buffer._annot_lines and (buffer._annot_lines > 0) then
+      local r= buffer._annot_list
+      local off= 0
+      for i=1,#r,2 do
+        if first <= r[i] then break end
+        off= off + r[i+1]-1
       end
-      n= 0
-      while n < buffer.lines_on_screen and i < buffer.line_count do
-        if buffer.line_visible[i] then n=n+1 else nl=nl+1 end
-        i=i+1
-      end
+      first= first + off
     end
     minimap.scrollpos(nl, first, get_rgbcolor_prop('color.linenum_fore'))
   end
@@ -1305,7 +1314,8 @@ if minimap then
   --load buffer markers/indicators into the minimap
   function toolbar.minimap_load()
     if toolbar.tbshowminimap then
-      minimap.init(buffer._buffnum, buffer.line_count, 6)
+      local totlin= buffer.line_count+(buffer._annot_lines or 0)
+      minimap.init(buffer._buffnum, totlin, 6)
       --bookmarks
       add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
       add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
@@ -1318,7 +1328,7 @@ if minimap then
       --first/last line
       color= get_rgbcolor_prop('color.curr_line_back')
       minimap.hilight(1,color,true)
-      minimap.hilight(buffer.line_count,color,true)
+      minimap.hilight(totlin,color,true)
       minimap_scroll()
     end
   end
@@ -1336,6 +1346,13 @@ if minimap then
   local function minimap_clicked()
     local nl= minimap.getclickline()
     if nl > 0 then
+      if buffer._annot_lines and (buffer._annot_lines > 0) then
+        local r= buffer._annot_list
+        for i=1,#r,2 do
+          if nl <= r[i] then break end
+          nl= nl - r[i+1] +1
+        end
+      end
       if nl > buffer.line_count then nl= buffer.line_count end
       textadept.editing.goto_line(nl-1)
       buffer:vertical_centre_caret()

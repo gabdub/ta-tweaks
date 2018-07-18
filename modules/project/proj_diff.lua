@@ -25,6 +25,8 @@ local function clear_buf_marks(b)
       b:indicator_clear_range(0, b.length)
     end
     b:annotation_clear_all()
+    b._annot_list= nil
+    b._annot_lines= 0
   end
 end
 
@@ -137,16 +139,25 @@ local function mark_changes(goto_first)
   end
 
   --show the missing lines using annotations
-  local r= filediff.getdiff( 1, 3 ) --buffer#1, 3=get blank lines list
+  buffer1._annot_list= filediff.getdiff( 1, 3 ) --buffer#1, 3=get blank lines list
+  local r= buffer1._annot_list
+  local nr= 0
   if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
   for i=1,#r,2 do
     buffer1.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
+    nr= nr + r[i+1]-1
   end
+  buffer1._annot_lines= nr
+
   --idem buffer #2
-  r= filediff.getdiff( 2, 3 )--buffer#2, 3=get blank lines list
+  buffer2._annot_list= filediff.getdiff( 2, 3 )--buffer#2, 3=get blank lines list
+  r= buffer2._annot_list
+  nr= 0
   for i=1,#r,2 do
     buffer2.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
+    nr= nr + r[i+1]-1
   end
+  buffer2._annot_lines= nr
 
   --mark text changes
   r= filediff.getdiff( 1, 4 )
