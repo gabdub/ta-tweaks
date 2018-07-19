@@ -145,7 +145,7 @@ local function mark_changes(goto_first)
   if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
   for i=1,#r,2 do
     buffer1.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
-    nr= nr + r[i+1]-1
+    nr= nr + r[i+1]
   end
   buffer1._annot_lines= nr
 
@@ -155,7 +155,7 @@ local function mark_changes(goto_first)
   nr= 0
   for i=1,#r,2 do
     buffer2.annotation_text[r[i]-1] = string.rep('\n', r[i+1]-1)
-    nr= nr + r[i+1]-1
+    nr= nr + r[i+1]
   end
   buffer2._annot_lines= nr
 

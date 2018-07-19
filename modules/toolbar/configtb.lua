@@ -1265,7 +1265,7 @@ if minimap then
       local off= 0
       for i=1,#r,2 do
         if nl <= r[i] then break end
-        off= off + r[i+1]-1
+        off= off + r[i+1]
       end
       nl= nl + off
     end
@@ -1304,7 +1304,7 @@ if minimap then
       local off= 0
       for i=1,#r,2 do
         if first <= r[i] then break end
-        off= off + r[i+1]-1
+        off= off + r[i+1]
       end
       first= first + off
     end
@@ -1350,7 +1350,7 @@ if minimap then
         local r= buffer._annot_list
         for i=1,#r,2 do
           if nl <= r[i] then break end
-          nl= nl - r[i+1] +1
+          nl= nl - r[i+1]
         end
       end
       if nl > buffer.line_count then nl= buffer.line_count end
