@@ -1302,7 +1302,6 @@ if minimap then
   --load buffer markers/indicators into the minimap
   function toolbar.minimap_load()
     if toolbar.tbshowminimap then
---      local totlin= buffer.line_count+(buffer._annot_lines or 0)
       local totlin= lin2vis(buffer.line_count)
       minimap.init(buffer._buffnum, totlin, 6)
       minimap.line_count= totlin
@@ -1334,7 +1333,7 @@ if minimap then
     end
   end)
 
-  --check if some lines change hidden status / window size
+  --check every second: hidden lines / window size
   local function check_vis_changes()
     if toolbar.tbshowminimap and Proj.update_ui == 0 and minimap.lines_screen then
       local totlin= lin2vis(buffer.line_count)
