@@ -1258,18 +1258,14 @@ if m_vi then
 end
 
 if minimap then
-  --add a hilight to the minimap (correcting annotation lines)
+  --"logical line number" (1..) to "visual line number" (1..)
+  local function lin2vis(nl)
+    return buffer:visible_from_doc_line(nl-1)+1
+  end
+
+  --add a hilight to the minimap (correcting annotation/hidden lines)
   local function mmhilight(nl,color)
-    if buffer._annot_lines and (buffer._annot_lines > 0) then
-      local r= buffer._annot_list
-      local off= 0
-      for i=1,#r,2 do
-        if nl <= r[i] then break end
-        off= off + r[i+1]
-      end
-      nl= nl + off
-    end
-    minimap.hilight(nl,color)
+    minimap.hilight(lin2vis(nl),color)
   end
 
   --add markers to the minimap
@@ -1299,23 +1295,17 @@ if minimap then
   local function minimap_scroll()
     local nl= buffer.lines_on_screen
     local first= buffer.first_visible_line+1
-    if buffer._annot_lines and (buffer._annot_lines > 0) then
-      local r= buffer._annot_list
-      local off= 0
-      for i=1,#r,2 do
-        if first <= r[i] then break end
-        off= off + r[i+1]
-      end
-      first= first + off
-    end
     minimap.scrollpos(nl, first, get_rgbcolor_prop('color.linenum_fore'))
+    minimap.lines_screen= nl
   end
 
   --load buffer markers/indicators into the minimap
   function toolbar.minimap_load()
     if toolbar.tbshowminimap then
-      local totlin= buffer.line_count+(buffer._annot_lines or 0)
+--      local totlin= buffer.line_count+(buffer._annot_lines or 0)
+      local totlin= lin2vis(buffer.line_count)
       minimap.init(buffer._buffnum, totlin, 6)
+      minimap.line_count= totlin
       --bookmarks
       add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
       add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
@@ -1334,7 +1324,8 @@ if minimap then
   end
 
   events_connect(events.UPDATE_UI, function(updated)
-    if updated then
+  --if we are updating, ignore this event
+    if updated and Proj.update_ui == 0 then
       if (updated & buffer.UPDATE_CONTENT) > 0 then
         toolbar.minimap_load()
       elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
@@ -1343,18 +1334,27 @@ if minimap then
     end
   end)
 
+  --check if some lines change hidden status / window size
+  local function check_vis_changes()
+    if toolbar.tbshowminimap and Proj.update_ui == 0 and minimap.lines_screen then
+      local totlin= lin2vis(buffer.line_count)
+      if minimap.line_count ~= totlin then
+        toolbar.minimap_load()
+      elseif minimap.lines_screen ~= buffer.lines_on_screen then
+        minimap_scroll()
+      end
+    end
+    return true
+  end
+  timeout(1, check_vis_changes)
+
   local function minimap_clicked()
     local nl= minimap.getclickline()
     if nl > 0 then
-      if buffer._annot_lines and (buffer._annot_lines > 0) then
-        local r= buffer._annot_list
-        for i=1,#r,2 do
-          if nl <= r[i] then break end
-          nl= nl - r[i+1]
-        end
-      end
-      if nl > buffer.line_count then nl= buffer.line_count end
-      textadept.editing.goto_line(nl-1)
+      --"visual line number" (1..) to "logical line number" (0..)
+      nl= buffer:doc_line_from_visible(nl-1)
+      if nl >= buffer.line_count then nl= buffer.line_count-1 end
+      textadept.editing.goto_line(nl)
       buffer:vertical_centre_caret()
     end
   end
