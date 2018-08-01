@@ -27,10 +27,9 @@ Each toolbar can be used as you wish but the default implementation is as follow
 * #0: The horizontal top toolbar is used to show buttons and tabs
 * #1: The vertical left toolbar is used to show buttons
 * #2: The horizontal bottom toolbar is used as a status bar replacement
-* #3: The vertical right toolbar is used as a configuration panel
-* #4: The vertical right toolbar is used to show the mini-map
-* #5: MINIMAP
-* #6: Pop-up toolbar
+* #3: The vertical right (external) toolbar is used as a configuration panel
+* #4: The vertical right (internal) toolbar is used to show the MINIMAP
+* #5: Pop-up toolbar
 
 ![4 toolbars in action](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win12.png "4 toolbars in action")
 
