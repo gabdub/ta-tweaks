@@ -29,7 +29,8 @@ Each toolbar can be used as you wish but the default implementation is as follow
 * #2: The horizontal bottom toolbar is used as a status bar replacement
 * #3: The vertical right toolbar is used as a configuration panel
 * #4: The vertical right toolbar is used to show the mini-map
-* #5: Pop-up toolbar
+* #5: MINIMAP
+* #6: Pop-up toolbar
 
 ![4 toolbars in action](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win12.png "4 toolbars in action")
 
@@ -37,7 +38,7 @@ Tatoolbar allows to gray and check menu items:
 
 ![Menu changes](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ttbmenu.png "Menu changes")
 
-and compare files:
+and compare files + MINIMAP:
 
 ![filediff](https://github.com/gabdub/ta-tweaks/wiki/img/filediff.png "File diff")
 
