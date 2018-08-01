@@ -1,4 +1,4 @@
-// Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
+// Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 /* TA toolbar */
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.5 (6 feb 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.6 (1 aug 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
