@@ -397,9 +397,10 @@ local function picker_clicked()
 end
 
 local function colorwheel_clicked()
-  local color= ui.dialogs.colorselect{title = 'Pick a Color', string_output = true}
-  if color then
-    local ncol= tonumber(string.match(color,"#(.*)"),16)
+  local pcolor= ui.dialogs.colorselect{title = 'Pick a Color', string_output = true,
+    color = string.format('#%06X', toolbar.getpickcolor())}
+  if pcolor then
+    local ncol= tonumber(string.match(pcolor,"#(.*)"),16)
     toolbar.setbackcolor("CPICKER", ncol)
   end
 end
