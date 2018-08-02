@@ -396,6 +396,14 @@ local function picker_clicked()
   --ui.statusbar_text= "picker clicked"
 end
 
+local function colorwheel_clicked()
+  local color= ui.dialogs.colorselect{title = 'Pick a Color', string_output = true}
+  if color then
+    local ncol= tonumber(string.match(color,"#(.*)"),16)
+    toolbar.setbackcolor("CPICKER", ncol)
+  end
+end
+
 local function add_config_colorpicker()
   toolbar.adjust(250,242,2,1,3,3)
   toolbar.gotopos(20, toolbar.cfgpnl_y)
@@ -412,6 +420,10 @@ local function add_config_colorpicker()
   add_color_preset(7,0x000000)
   add_color_preset(8,0xffffff)
   toolbar.cfgpnl_y= ynext
+  if Util.TA_MAYOR_VER >= 10 then
+    toolbar.gotopos(290, toolbar.cfgpnl_y)
+    toolbar.cmd("colorwheel", colorwheel_clicked, "Show color wheel", "edit-find", true)
+  end
 end
 
 local function _add_config_radio(name,text,tooltip,checked)
