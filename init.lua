@@ -22,8 +22,10 @@ require('quicktype')
 --  actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
 --end
 
+textadept.file_types.extensions.MAS = 'mas'
 textadept.file_types.extensions.mas = 'mas'
-textadept.file_types.extensions.inc = 'asm'
+textadept.file_types.extensions.inc = 'mas'
+textadept.file_types.extensions.INC = 'mas'
 textadept.editing.comment_string.ansi_c = '//'
 textadept.editing.comment_string.asm = ';'
 
