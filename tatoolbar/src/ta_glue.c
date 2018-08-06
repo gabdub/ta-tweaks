@@ -143,10 +143,10 @@ static int ltoolbar_addbutton(lua_State *L)
   return 0;
 }
 
-/** `toolbar.addtext(name,text,tooltiptext,width)` Lua function. */
+/** `toolbar.addtext(name,text,tooltiptext,width,dropbutton)` Lua function. */
 static int ltoolbar_addtext(lua_State *L)
 {
-  ttb_addtext( luaL_checkstring(L, 1), NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2), lua_tointeger(L, 4));
+  ttb_addtext( luaL_checkstring(L, 1), NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2), lua_tointeger(L, 4), lua_toboolean(L,5));
   return 0;
 }
 
@@ -566,10 +566,23 @@ static int MMboxcount( struct minimap_line * pml, int b, int maxc )
   return n;
 }
 
+void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill ){
+  struct color3doubles c;
+  cairo_t *ctx= (cairo_t *) gcontext;
+  setrgbcolor( color, &c );
+  cairo_set_source_rgb(ctx, c.R, c.G, c.B );
+  cairo_rectangle(ctx, x, y, w, h);
+  if( fill ){
+    cairo_fill(ctx);
+  }else{
+    cairo_stroke(ctx);
+  }
+}
+
 void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
 {
   struct color3doubles c;
-  int i, j, n, xr, yr, dx, dy, a, b, hp;
+  int i, j, n, xr, yr, dx, dy, a, b, hp, bwcol;
   double v, min, max, dv, tcol;
   char str[16];
   cairo_t *ctx= (cairo_t *) gcontext;
@@ -664,36 +677,28 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
     xr= x + PICKER_MARG_LEFT + ttb.cpick.HSV_x * dx;
     yr= y + PICKER_MARG_TOP + ttb.cpick.HSV_y * dy;
     cairo_set_line_width(ctx,1);
-    c.R= 0;
+    bwcol= 0;
     if( ttb.cpick.HSV_y == (PICKER_CELL_H-1) ){
       //last row (B/W)
       if( ttb.cpick.HSV_x < PICKER_CELL_W/2 ){
-        c.R= 1;
+        bwcol= 0xFFFFFF;
       }
     }else{
       //color
       if( (ttb.cpick.HSV_val < 0.7) ||
           (((ttb.cpick.HSV_rgb & 0xff) > 0x80) && (ttb.cpick.HSV_rgb & 0xff00) < 0x8000) ){
-        c.R= 1; //white over dark colors
+        bwcol= 0xFFFFFF;  //white over dark colors
       }
     }
-    cairo_set_source_rgb(ctx, c.R, c.R, c.R );
-    cairo_rectangle(ctx, xr, yr, dx, dy);
-    cairo_stroke(ctx);
+    draw_box( ctx, xr, yr, dx, dy, bwcol, 0 ); //box border
 
     //Vscroll bar
     xr= x+w-PICKER_VSCROLLW;
-    cairo_set_source_rgb(ctx, 0.5, 0.5, 0.5 );
-    cairo_rectangle(ctx, xr, y+PICKER_MARG_TOP, PICKER_VSCROLLW, hp);
-    cairo_fill(ctx);
+    draw_box( ctx, xr, y+PICKER_MARG_TOP, PICKER_VSCROLLW, hp, 0x808080, 1 ); //filled box 50% gray
     yr= y + PICKER_MARG_TOP + hp * (1-ttb.cpick.HSV_val) * (1-HSV_V_DELTA);
     dy= hp * HSV_V_DELTA;
-    cairo_set_source_rgb(ctx, 0.3, 0.3, 0.3 );
-    cairo_rectangle(ctx, xr, yr, PICKER_VSCROLLW, dy);
-    cairo_fill(ctx);
-    cairo_set_source_rgb(ctx, 0.6, 0.6, 0.6 );
-    cairo_rectangle(ctx, xr+1, yr+1, PICKER_VSCROLLW-2, dy-2);
-    cairo_fill(ctx);
+    draw_box( ctx, xr, yr, PICKER_VSCROLLW, dy, 0x4C4C4C, 1 ); //filled box 30% gray
+    draw_box( ctx, xr+1, yr+1, PICKER_VSCROLLW-2, dy-2, 0x989898, 1 ); //filled box 60% gray
 
   }else if( color == BKCOLOR_MINIMAP_DRAW ){
     //=== MINI MAP ===
@@ -717,10 +722,7 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
         }
         n= ((n+1) * ttb.minimap.boxesheight +ttb.minimap.linecount-1)/ttb.minimap.linecount;
         yr= y + (yr * ttb.minimap.boxesheight +ttb.minimap.linecount-1)/ttb.minimap.linecount;
-        setrgbcolor( ttb.minimap.scrcolor, &c );
-        cairo_set_source_rgb(ctx, c.R, c.G, c.B );
-        cairo_rectangle(ctx, x, yr, w, n);
-        cairo_stroke(ctx);
+        draw_box( ctx, x, yr, w, n, ttb.minimap.scrcolor, 0 ); //box border
       }
       //draw boxes
       i= 1 << 4;
@@ -748,10 +750,8 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
           }
           int xi= x+1;
           while(1){
-            setrgbcolor( pml->color, &c );
-            cairo_set_source_rgb(ctx, c.R, c.G, c.B );
-            cairo_rectangle(ctx, xi, yr, wi, ttb.minimap.yszbox-1);
-            cairo_fill(ctx);
+            draw_box( ctx, xi, yr, wi, ttb.minimap.yszbox-1, pml->color, 1 ); //filled box
+
             xi += wi+1;
             if( --n == 0 ){
               break;
@@ -795,10 +795,8 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
       sprintf( str, "%02X", ttb.cpick.HSV_rgb & 0xFF );
     }
     //solid color
-    setrgbcolor( color, &c );
-    cairo_set_source_rgb(ctx, c.R, c.G, c.B );
-    cairo_rectangle(ctx, x, y, w, h);
-    cairo_fill(ctx);
+    draw_box( ctx, x, y, w, h, color, 1 ); //filled box
+
     if( str[0] != 0 ){
       c.R= tcol;  c.G= tcol;   c.B= tcol;
       draw_txt(ctx, str, x+4, y+16, y, w-8, h, &c, 10, 0 );
@@ -860,8 +858,13 @@ int set_text_bt_width(struct toolbar_item * p )
   int diff= 0;
   struct toolbar_group *G= p->group;
   if( p->text != NULL ){
+    int h1= TTBI_TB_TXT_HIL1;
+    int h3= TTBI_TB_TXT_HIL3;
+    if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
+      h3= TTBI_TB_TXT_HIL4;
+    }
     //use toolbar #0 to measure text (pop-ups may not have a window yet)
-    cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window); //get_draw_widget(p->group->toolbar)->window);
+    cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window);
     cairo_set_font_size(cr, G->txtfontsz);
     cairo_text_extents( cr, p->text, &ext );
     p->textwidth= (int) ext.width;
@@ -869,15 +872,15 @@ int set_text_bt_width(struct toolbar_item * p )
       cairo_text_extents( cr, "H", &ext );
       G->txttexth= (int) ext.height;
       //center text verticaly + offset
-      G->txttexty= ((get_group_imgH(G,TTBI_TB_TXT_HIL1) + G->txttexth)/2) + G->txttextoff;
+      G->txttexty= ((get_group_imgH(G,h1) + G->txttexth)/2) + G->txttextoff;
       if( G->txttexty < 0){
         G->txttexty= 0;
       }
     }
     cairo_destroy(cr);
     diff= p->barx2;
-    p->prew= get_group_imgW(G,TTBI_TB_TXT_HIL1);
-    p->postw= get_group_imgW(G,TTBI_TB_TXT_HIL3);
+    p->prew= get_group_imgW(G,h1);
+    p->postw= get_group_imgW(G,h3);
     p->imgx= p->barx1 + p->prew;
     p->imgy= p->bary1 + G->txttexty;
     p->barx2= p->imgx + p->textwidth + p->postw;
@@ -887,7 +890,7 @@ int set_text_bt_width(struct toolbar_item * p )
       p->barx2= p->barx1+p->minwidth;
     }
     if( (p->maxwidth > 0) && (p->barx2 > (p->barx1+p->maxwidth)) ){
-      //reduce button (trimm text)
+      //reduce button (trim text)
       p->barx2= p->barx1+p->maxwidth;
     }
     diff= p->barx2 - diff;  //width diff
@@ -992,6 +995,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
         cairo_clip(cr);
         //draw visible group's items
         paint_group_items(g, cr, &drawarea, x0, y0, wt, ht, hibackpainted );
+        //draw_box(cr, x0, y0, wt, ht, 0x800000, 0); //debug: show group borders
         cairo_restore(cr);
       }
     }

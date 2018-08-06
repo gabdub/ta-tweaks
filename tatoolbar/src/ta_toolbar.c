@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.6 (1 aug 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.7 (6 aug 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -165,7 +165,7 @@ struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int 
   return add_groupT(T, flags);
 }
 
-struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth)
+struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags)
 { //add a new item to a group
   if( G == NULL ){
     return NULL;
@@ -173,12 +173,13 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
   struct toolbar_item * p= (struct toolbar_item *) malloc( sizeof(struct toolbar_item));
   if( p != NULL){
     memset( (void *)p, 0, sizeof(struct toolbar_item));
+    p->flags= flags;
     p->group= G;  //set parent
     p->name= alloc_str(name);
     p->text= alloc_str(text);
     p->tooltip= alloc_str(tooltip);
     if( (p->name != NULL) && (*(p->name) != 0) ){
-      p->flags= TTBF_SELECTABLE; //if a name is provided, it can be selected (it's a button)
+      p->flags |= TTBF_SELECTABLE; //if a name is provided, it can be selected (it's a button)
     }
     p->barx1= G->xnew;
     p->bary1= G->ynew;
@@ -196,8 +197,8 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
 
     }else if( p->text != NULL ){
       //text button (text & no image)
-      set_text_bt_width(p);
       p->flags |= TTBF_TEXT;
+      set_text_bt_width(p);
     }
     p->back_color= BKCOLOR_NOT_SET;
     if( G->isvertical ){
@@ -1764,6 +1765,10 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
     set_toolbar_img( T, TTBI_TB_TXT_HPR1, "ttb-back-press1" ); //hi-pressed
     set_toolbar_img( T, TTBI_TB_TXT_HPR2, "ttb-back-press2" );
     set_toolbar_img( T, TTBI_TB_TXT_HPR3, "ttb-back-press3" );
+    //version with drop down triangle
+    set_toolbar_img( T, TTBI_TB_TXT_NOR4, "ttb-back-no4" );
+    set_toolbar_img( T, TTBI_TB_TXT_HIL4, "ttb-back-hi4" );
+    set_toolbar_img( T, TTBI_TB_TXT_HPR4, "ttb-back-press4" );
 
     //set defaults
     T->buttonsize= buttonsize;
@@ -1935,7 +1940,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
       }
       if( !hide ){
         //show H separator in the middle
-        p= add_itemG(G, NULL, get_group_img(G,TTBI_TB_SEPARATOR)->fname, NULL, NULL, 0);
+        p= add_itemG(G, NULL, get_group_img(G,TTBI_TB_SEPARATOR)->fname, NULL, NULL, 0, 0);
         if( p != NULL ){
           asep= get_group_imgH(G,TTBI_TB_SEPARATOR); //minimun separator = image height
           if( sepsize < asep ){
@@ -1954,7 +1959,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
       }
       if( !hide ){
         //show V separator in the middle
-        p= add_itemG(G, NULL, get_group_img(G,TTBI_TB_SEPARATOR)->fname, NULL, NULL, 0);
+        p= add_itemG(G, NULL, get_group_img(G,TTBI_TB_SEPARATOR)->fname, NULL, NULL, 0, 0);
         if( p != NULL ){
           asep= get_group_imgW(G,TTBI_TB_SEPARATOR); //minimun separator = image width
           if( sepsize < asep ){
@@ -2407,7 +2412,15 @@ int paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pd
           x += phi->prew;
           xa= x0 + phi->barx2 - phi->postw;
           draw_fill_img(gcontext, get_group_img(g,h+1), x, y, xa-x, get_group_imgH(g,h) );
-          draw_img(gcontext, get_group_img(g,h+2), xa, y, 0 );
+          h +=2;
+          if( (phi->flags & TTBF_DROP_BUTTON) != 0 ){
+            if( h == TTBI_TB_TXT_HIL3 ){
+              h= TTBI_TB_TXT_HIL4;  //replace TTBI_TB_TXT_HIL3 (add a drop down button at the end)
+            }else{
+              h= TTBI_TB_TXT_HPR4;  //replace TTBI_TB_TXT_HPR3 (add a drop down button at the end)
+            }
+          }
+          draw_img(gcontext, get_group_img(g,h), xa, y, 0 );
         }
       }
     }
@@ -2554,7 +2567,11 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
                 x1= x0 + p->barx1 + p->prew;
                 xa= x0 + p->barx2 - p->postw;
                 draw_fill_img(gcontext, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
-                draw_img(gcontext, get_group_img(g,h+2), xa, y0+p->bary1, 0 );
+                h +=2;
+                if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
+                  h= TTBI_TB_TXT_NOR4;  //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)
+                }
+                draw_img(gcontext, get_group_img(g,h), xa, y0+p->bary1, 0 );
               }
             }
           }
@@ -2579,7 +2596,8 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
             x= x0 + p->barx1 + p->prew; //text is left aligned
           }
           xa= x0 + p->barx2 - p->postw;
-          draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa - x, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD) );
+          draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa-x+1, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD) );
+          //draw_box(gcontext, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1, 0x000080, 0); //debug: show text buttons
         }
       }
     }
@@ -2672,18 +2690,23 @@ void ttb_addbutton( const char *name, const char *tooltip )
   struct toolbar_group * g= current_buttongrp();
   if( g != NULL ){
     redraw_begG(g);
-    add_itemG( g, name, name, tooltip, NULL, 0);
+    add_itemG( g, name, name, tooltip, NULL, 0, 0);
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw
   }
 }
 
-void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth)
+void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton)
 {
+  struct toolbar_item * p;
+  int flags= 0;
   struct toolbar_group * g= current_buttongrp();
   if( g != NULL ){
     redraw_begG(g);
-    add_itemG( g, name, img, tooltip, text, chwidth );
+    if( dropbutton ){
+      flags= TTBF_DROP_BUTTON;  //draw a drop down button at the end of the text button
+    }
+    p= add_itemG( g, name, img, tooltip, text, chwidth, flags );
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw
   }
@@ -2695,10 +2718,9 @@ void ttb_addlabel( const char * name, const char * img, const char *tooltip, con
   struct toolbar_group * g= current_buttongrp();
   if( g != NULL ){
     redraw_begG(g);
-    p= add_itemG( g, name, img, tooltip, text, chwidth );
+    p= add_itemG( g, name, img, tooltip, text, chwidth, flags );
     if( p != NULL ){
       p->flags &= ~TTBF_SELECTABLE; //remove the selectable flag (it's not a button)
-      p->flags |= flags;
     }
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw

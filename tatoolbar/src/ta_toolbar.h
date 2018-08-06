@@ -32,6 +32,7 @@
 #define TTBF_SCROLL_BUT     0x00000100  //it's a scroll button
 #define TTBF_TEXT_LEFT      0x00000200  //draw text left aligned (default = center)
 #define TTBF_TEXT_BOLD      0x00000400  //draw text in bold
+#define TTBF_DROP_BUTTON    0x00000800  //draw a drop down button at the end of a text button
 //group flags
 #define TTBF_GRP_TABBAR     0x00010000  //tabs group
 #define TTBF_GRP_DRAGTAB    0x00020000  //tab dragging enabled in TTBF_TABBAR
@@ -88,7 +89,10 @@
 #define TTBI_TB_TXT_NOR1    31 //normal text button1 back
 #define TTBI_TB_TXT_NOR2    32 //normal text button2 back
 #define TTBI_TB_TXT_NOR3    33 //normal text button3 back
-#define TTBI_TB_N           34
+#define TTBI_TB_TXT_NOR4    34 //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)
+#define TTBI_TB_TXT_HIL4    35 //replace TTBI_TB_TXT_HIL3 (add a drop down button at the end)
+#define TTBI_TB_TXT_HPR4    36 //replace TTBI_TB_TXT_HPR3 (add a drop down button at the end)
+#define TTBI_TB_N           37
 
 #define BKCOLOR_NOT_SET (-1)  //background color = not set
 
@@ -328,6 +332,7 @@ void redraw_item( struct toolbar_item * p );
 void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold );
 void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int grayed );
 void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
+void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill );
 void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h );
 int  set_pti_img( struct toolbar_img *pti, const char *imgname );
 int  set_text_bt_width(struct toolbar_item * p );
@@ -352,7 +357,7 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden);
 void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclose, int modshow, int fntsz, int fntyoff, int wdrag, int xcontrol, int height);
 void ttb_show_groupG( struct toolbar_group *G, int show );
-struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth);
+struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags);
 void update_group_sizeG( struct toolbar_group *G, int redraw );
 void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isenabled );
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide);
@@ -411,7 +416,7 @@ int  get_group_imgW( struct toolbar_group *G, int nimg );
 int  get_group_imgH( struct toolbar_group *G, int nimg );
 void select_toolbar_n( int num, int ngrp );
 void ttb_addbutton( const char *name, const char *tooltip );
-void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth);
+void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton);
 void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags );
 void ttb_enable( const char * name, int isenabled, int onlythistb );
 void ttb_seticon( const char * name, const char *img, int nicon, int onlythistb );
