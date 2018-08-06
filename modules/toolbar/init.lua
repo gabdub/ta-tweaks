@@ -48,11 +48,11 @@ if toolbar then
     end
   end
 
-  function toolbar.cmdtext(text,func,tooltip,name,usebutsz)
+  function toolbar.cmdtext(text,func,tooltip,name,usebutsz,dropbt)
     if not name then name=text end
     local w=0
     if usebutsz then w=toolbar.butsize end
-    toolbar.addtext(name,text,tooltip,w)
+    toolbar.addtext(name,text,tooltip,w,dropbt)
     toolbar.cmds[name]= func
   end
 

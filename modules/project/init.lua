@@ -73,8 +73,24 @@ events_connect(events.KEYPRESS,             Proj.EVkeypress)
 events_connect(events.UPDATE_UI,            Proj.EVupdate_ui)
 events_connect(events.MODIFIED,             Proj.EVmodified)
 
+-- replace Open uri(s) code (core/ui.lua)
 events_connect(events.URI_DROPPED, function(utf8_uris)
-  Proj.getout_projview() --don't drop files in project views
+  ui.goto_view(view) -- work around any view focus synchronization issues
+  Proj.goto_filesview() --don't drop files in project views
+  for utf8_uri in utf8_uris:gmatch('[^\r\n]+') do
+    if utf8_uri:find('^file://') then
+      local uri = utf8_uri:iconv(_CHARSET, 'UTF-8')
+      uri = uri:match('^file://([^\r\n]+)'):gsub('%%(%x%x)', function(hex)
+        return string.char(tonumber(hex, 16))
+      end)
+      -- In WIN32, ignore a leading '/', but not '//' (network path).
+      if WIN32 and not uri:match('^//') then uri = uri:sub(2, -1) end
+      local mode = lfs.attributes(uri, 'mode')
+      if mode and mode ~= 'directory' then io.open_file(uri) end
+    end
+  end
+  Proj.update_after_switch()
+  return false
 end,1)
 
 ------------------- tab-clicked event ---------------
