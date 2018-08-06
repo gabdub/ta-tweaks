@@ -73,6 +73,9 @@ events_connect(events.KEYPRESS,             Proj.EVkeypress)
 events_connect(events.UPDATE_UI,            Proj.EVupdate_ui)
 events_connect(events.MODIFIED,             Proj.EVmodified)
 
+events_connect(events.URI_DROPPED, function(utf8_uris)
+  Proj.getout_projview() --don't drop files in project views
+end,1)
 
 ------------------- tab-clicked event ---------------
 --- when a tab is clicked, change the view if needed
