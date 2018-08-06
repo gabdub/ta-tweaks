@@ -1193,7 +1193,7 @@ local function add_picker_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Type123456", picker_type, "Type the selected color", "picker_type", false, true)
+  toolbar.cmdtext("Type", picker_type, "Type the selected color", "picker_type")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("Copy", picker_copy, "Copy the selected color to the clipboard", "picker_copy")
   pnly_add(21)
