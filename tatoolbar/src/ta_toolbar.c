@@ -2482,6 +2482,10 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
   struct color3doubles *color;
   struct toolbar_img * bback;
 
+  phi= NULL;
+  if( ttb.ntbhilight == g->toolbar->num ){
+    phi= ttb.philight;
+  }
   //draw group's items
   if( (g->flags & TTBF_GRP_TABBAR) != 0){
     //tab-bar
