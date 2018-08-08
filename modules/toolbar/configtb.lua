@@ -314,7 +314,7 @@ function toolbar.get_colorprop_val(prop)
 end
 
 --int color in 0xRRGGBB order
-local function get_rgbcolor_prop(prop)
+function toolbar.get_rgbcolor_prop(prop)
   local propval= toolbar.get_colorprop_val(prop)
   local v= string.match(propval,"0x(.*)")
   if v then propval= v end
@@ -325,7 +325,7 @@ end
 function toolbar.set_colorprop_val(prop,color,dontset_toolbar)
   toolbar.cfgpnl_colors[prop]= color
   if not dontset_toolbar then
-    toolbar.setbackcolor(prop,get_rgbcolor_prop(prop)) --update button background
+    toolbar.setbackcolor(prop,toolbar.get_rgbcolor_prop(prop)) --update button background
   end
 end
 
@@ -342,7 +342,7 @@ local function changeprop_clicked(name)
   toolbar.enable("picker_cancel", true)
   toolbar.settext("edproptit", "Edit property:", "", true)
   toolbar.settext("edproptxt", name, "", true)
-  local oldcolor= get_rgbcolor_prop(name)
+  local oldcolor= toolbar.get_rgbcolor_prop(name)
   toolbar.setbackcolor("CPICKER", oldcolor )
   toolbar.setbackcolor("oldcolor", oldcolor, true)
   if toolbar.cfgpnl_curgroup ~= toolbar.picker_panel then
@@ -357,7 +357,7 @@ local function add_cfg_prop(propname, x, tooltip)
     toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
     toolbar.setthemeicon(prop, "colorh", 2)
     toolbar.setthemeicon(prop, "colorp", 3)
-    toolbar.setbackcolor(prop, get_rgbcolor_prop(prop), true)
+    toolbar.setbackcolor(prop, toolbar.get_rgbcolor_prop(prop), true)
     if toolbar.config_saveon then --save this color property in the config file
       toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
     end
@@ -904,6 +904,16 @@ local function add_buffer_cfg_panel()
   toolbar.set_buffer_cfg()
 end
 
+local function add_config_combo(name,func,tooltip,txtarray,idx)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.combo(name,func,tooltip,txtarray,idx,toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2)
+  pnly_newrow()
+end
+
+--a new theme was chosen in the combo
+local function cbtheme_change(idx,value)
+end
+
 local function add_toolbar_cfg_panel()
   toolbar.config_saveon=true --save the config options of this panel
   toolbar.toolbar_panel= add_config_tabgroup("Toolbar", "Toolbar configuration")
@@ -912,6 +922,9 @@ local function add_toolbar_cfg_panel()
   add_config_radio("tbtheme", "bar-sm-light", "Light theme with small tabs", true)
   cont_config_radio( "bar-th-dark", "Dark theme with rounded tabs")
   cont_config_radio( "bar-ch-dark", "Dark theme with triangular tabs")
+
+  --choose theme using a combo
+  --add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")
@@ -1059,7 +1072,7 @@ local function picker_ok()
 end
 
 local function oldcolor_clicked()
-  toolbar.setbackcolor("CPICKER", get_rgbcolor_prop(toolbar.edit_color_prop))
+  toolbar.setbackcolor("CPICKER", toolbar.get_rgbcolor_prop(toolbar.edit_color_prop))
 end
 
 local function picker_type(toclipboard)
@@ -1221,7 +1234,7 @@ function toolbar.add_config_panel()
 
   --load config settings / set toolbar controls
   toolbar.load_config()
-  toolbar.setbackcolor("oldcolor", get_rgbcolor_prop(toolbar.edit_color_prop), true)
+  toolbar.setbackcolor("oldcolor", toolbar.get_rgbcolor_prop(toolbar.edit_color_prop), true)
 
   --check: hide toolbar + htmltoolbar => force 1 row
   if toolbar.get_radio_val("tbvertbar") == 3 and toolbar.add_html_toolbar ~= nil then
@@ -1284,7 +1297,7 @@ if minimap then
   --add markers to the minimap
   local function add_mmap_markers(markbit, colorprop)
     local mbit= 2^markbit
-    local color= get_rgbcolor_prop(colorprop)
+    local color= toolbar.get_rgbcolor_prop(colorprop)
     local nl= buffer.marker_next(buffer, 0, mbit)+1
     while nl >= 1 do
       mmhilight(nl,color)
@@ -1296,7 +1309,7 @@ if minimap then
 
   --add indicators to the minimap
   local function add_mmap_indicators(indicator, colorprop)
-    local color= get_rgbcolor_prop(colorprop)
+    local color= toolbar.get_rgbcolor_prop(colorprop)
     local pos= buffer:indicator_end(indicator, 0)
     while pos > 0 and pos < buffer.length do
       local nl= buffer:line_from_position(pos)+1
@@ -1308,7 +1321,7 @@ if minimap then
   local function minimap_scroll()
     local nl= buffer.lines_on_screen
     local first= buffer.first_visible_line+1
-    minimap.scrollpos(nl, first, get_rgbcolor_prop('color.linenum_fore'))
+    minimap.scrollpos(nl, first, toolbar.get_rgbcolor_prop('color.linenum_fore'))
     minimap.lines_screen= nl
   end
 
@@ -1328,7 +1341,7 @@ if minimap then
     --  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
     --  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
       --first/last line
-      color= get_rgbcolor_prop('color.curr_line_back')
+      color= toolbar.get_rgbcolor_prop('color.curr_line_back')
       minimap.hilight(1,color,true)
       minimap.hilight(totlin,color,true)
       minimap_scroll()
@@ -1380,7 +1393,7 @@ if minimap then
     toolbar.new(14, 14, 14, 4, toolbar.themepath)
     --width=14 / height=expand
     toolbar.addgroup(3, 7, 14, 0)
-    toolbar.setbackcolor("TOOLBAR", get_rgbcolor_prop('color.linenum_back'), false, true)
+    toolbar.setbackcolor("TOOLBAR", toolbar.get_rgbcolor_prop('color.linenum_back'), false, true)
     toolbar.setbackcolor("GROUP", -7, false, true) --MINI MAP DRAW (-7)
     toolbar.adjust(14, 4096, 2,1,3,3)
     toolbar.gotopos(0,0)

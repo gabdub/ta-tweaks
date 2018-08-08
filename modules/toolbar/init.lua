@@ -56,6 +56,42 @@ if toolbar then
     toolbar.cmds[name]= func
   end
 
+  local function closepopup(npop)
+    toolbar.popup(npop,false) --hide popup
+  end
+  events_connect("popup_close", closepopup)
+
+  local function combo_clicked(btname)
+    ui.statusbar_text= btname.." clicked"
+    closepopup()
+  end
+
+  local combo_data= {}
+  local combo_width= {}
+  local function show_combo_list(btname)
+    toolbar.new(28, 24, 16, 5, toolbar.themepath)
+    toolbar.addgroup(8,8,0,0)
+    toolbar.adjust(24,27,3,1,0,0)
+    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+    toolbar.seticon(tbglobalicon, "ttb-combo", 0, true)
+    for i=1,#combo_data[btname] do
+      local itname= btname.."#"..i
+      toolbar.addtext(itname,combo_data[btname][i],"",282)
+      toolbar.cmds_n[itname]= combo_clicked
+    end
+
+    toolbar.popup(5,true,btname,35,combo_width[btname]-2)
+  end
+
+  function toolbar.combo(name,func,tooltip,txtarray,idx,width)
+    if idx == 0 then idx=1 end
+    if width == 0 then width=300 end --configure this
+    combo_data[name]= txtarray
+    combo_width[name]= width
+    toolbar.addtext(name,txtarray[idx],tooltip,width,true) --show current value
+    toolbar.cmds_n[name]= show_combo_list --pass the combo name when clicked
+  end
+
   function toolbar.setthemeicon(name,icon,num)
     --set button icon, get icon from theme's icons folder
     toolbar.seticon(name,toolbar.iconspath..icon..".png",num)
@@ -739,16 +775,13 @@ if toolbar then
   end
 
   --create the popup toolbar
-  local function closepopup(npop)
-    toolbar.popup(npop,false) --hide popup
-  end
   function toolbar.create_popup()
     toolbar.new(50, 24, 16, 5, toolbar.themepath)
     toolbar.addgroup(8,8,0,0)
     toolbar.adjust(24,24,3,3,4,4)
     toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     --toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
-    toolbar.setbackcolor(tbglobalicon,toolbar.popup_back,fase,true)
+    toolbar.setbackcolor(tbglobalicon,toolbar.popup_back,false,true)
     toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
     toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
     toolbar.cmdtext("New", closepopup, "", "n1")
@@ -758,7 +791,6 @@ if toolbar then
   function toolbar.show_popup(btname,relpos)
     toolbar.popup(5,true,btname,relpos)
   end
-  events_connect("popup_close", closepopup)
 
   toolbar.set_defaults()
 end
