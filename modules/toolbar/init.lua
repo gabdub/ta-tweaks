@@ -56,19 +56,35 @@ if toolbar then
     toolbar.cmds[name]= func
   end
 
+  local combo_open= 0 --1:open 2:open + auto-close (timer running)
+  local function end_combo_open()
+    if combo_open == 2 then combo_open= 0 end
+    return false
+  end
+
   local function closepopup(npop)
     toolbar.popup(npop,false) --hide popup
+    if npop == 5 and combo_open == 1 then
+      combo_open= 2 --auto-close
+      timeout(1,end_combo_open)
+    end
   end
   events_connect("popup_close", closepopup)
 
   local function combo_clicked(btname)
+    combo_open= 0
+    closepopup(5)
     ui.statusbar_text= btname.." clicked"
-    closepopup()
   end
 
   local combo_data= {}
   local combo_width= {}
   local function show_combo_list(btname)
+    if combo_open > 0 then
+      combo_open= 0
+      return
+    end
+    combo_open= 1
     toolbar.new(28, 24, 16, 5, toolbar.themepath)
     toolbar.addgroup(8,8,0,0)
     toolbar.adjust(24,27,3,1,0,0)
@@ -79,7 +95,6 @@ if toolbar then
       toolbar.addtext(itname,combo_data[btname][i],"",282)
       toolbar.cmds_n[itname]= combo_clicked
     end
-
     toolbar.popup(5,true,btname,35,combo_width[btname]-2)
   end
 
