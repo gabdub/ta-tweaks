@@ -122,7 +122,11 @@ function Proj.update_after_switch()
     buffer.caret_line_visible_always= false
     --and the scrollbars shown
     buffer.h_scroll_bar= true
-    buffer.v_scroll_bar= not toolbar.tbreplvscroll --true --minimap replace V scrollbar
+    if toolbar then
+      buffer.v_scroll_bar= not toolbar.tbreplvscroll --minimap replace V scrollbar
+    else
+      buffer.v_scroll_bar=true
+    end
 
   else
     --project buffer--
