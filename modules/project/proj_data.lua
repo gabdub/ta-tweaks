@@ -75,14 +75,14 @@ function Proj.stop_update_ui(onoff)
     Proj.update_ui= Proj.update_ui+1
     if Proj.update_ui == 1 then
       --stop updating global buffer info like windows title / status bar
-      toolbar.updatebuffinfo(false)
+      if toolbar then toolbar.updatebuffinfo(false) end
     end
   else
     --restore normal mode
     Proj.update_ui= Proj.update_ui-1
     if Proj.update_ui == 0 then
       --update pending changes to global buffer info
-      toolbar.updatebuffinfo(true)
+      if toolbar then toolbar.updatebuffinfo(true) end
     end
   end
 end
@@ -452,7 +452,7 @@ function Proj.set_selectionmode(buff,selmode)
   end
   if toolbar then
     Proj.update_projview()  --update project view button
-    toolbar.seltabbuf(buff) --hide/show and select tab in edit mode
+    if toolbar then toolbar.seltabbuf(buff) end --hide/show and select tab in edit mode
   end
 end
 
