@@ -82,7 +82,7 @@ function Proj.onlykeep_projopen(keepone)
   end
   --check that at least one regular buffer remains after closing
   Proj.check_panels()
-  actions.updateaction("dont_close")
+  if actions then actions.updateaction("dont_close") end
   Proj.stop_update_ui(false)
 end
 
@@ -534,7 +534,7 @@ function Proj.toggle_keep_thisbuffer()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.getout_projview()
   if buffer._dont_close then buffer._dont_close=nil else buffer._dont_close= true end
-  actions.updateaction("dont_close")
+  if actions then actions.updateaction("dont_close") end
 end
 
 --ACTION: showin_rightpanel
@@ -560,7 +560,7 @@ function Proj.toggle_showin_rightpanel()
   --move the buffer to the other panel
   Util.goto_buffer(buf)
   Proj.stop_update_ui(false)
-  actions.updateaction("showin_rightpanel")
+  if actions then actions.updateaction("showin_rightpanel") end
 end
 
 --ACTION: open_projsel
@@ -846,7 +846,7 @@ function Proj.vc_changes()
       local lex= buffer:get_lexer()  --keep lexer
       local eol= buffer.eol_mode     --keep EOL
       --new buffer
-      actions.run("new")
+      if actions then actions.run("new") else Proj.new_file() end
       buffer.filename= orgfile..":HEAD"
       local cmd
       if verctrl == 1 then
