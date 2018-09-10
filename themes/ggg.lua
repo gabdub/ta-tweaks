@@ -87,3 +87,14 @@ buffer.indic_fore[INDIC_PLACEHOLDER] = property_int['color.placeholder']
 
 --Long Lines
 buffer.edge_colour = property_int['color.curr_line_back']
+
+-- User overrides (thanks Lukas)
+do
+  local thm = _USERHOME .. '/themes/ggg.' .. os.getenv("USERNAME") .. ".lua"
+
+  if lfs.attributes(thm) then
+    local fun = dofile(thm)
+
+    if type(fun) == "function" then fun(property) end
+  end
+end
