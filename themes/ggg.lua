@@ -90,7 +90,7 @@ buffer.edge_colour = property_int['color.curr_line_back']
 
 -- User overrides (thanks Lukas)
 do
-  local thm = _USERHOME .. '/themes/ggg.' .. os.getenv("USERNAME") .. ".lua"
+  local thm = _USERHOME .. '/themes/ggg.' .. (os.getenv("USERNAME") or os.getenv("USER") or '_') .. ".lua"
 
   if lfs.attributes(thm) then
     local fun = dofile(thm)
