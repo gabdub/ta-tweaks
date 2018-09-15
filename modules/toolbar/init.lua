@@ -707,10 +707,8 @@ if toolbar then
 
   --toolbar ready, show it
   function toolbar.ready()
-    if toolbar.add_html_toolbar ~= nil then
-      --HTML quicktype toolbar
-      toolbar.add_html_toolbar()
-    end
+    --add HTML quicktype toolbar if required
+    if toolbar.add_html_toolbar ~= nil then toolbar.add_html_toolbar() else toolbar.sel_left_bar() end
     if toolbar.configpanel then
       --add a button to show/hide the config panel
       toolbar.add_showconfig_button()
