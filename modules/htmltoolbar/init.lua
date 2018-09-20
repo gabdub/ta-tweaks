@@ -161,6 +161,7 @@ if toolbar then
         if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
       end
     end
+    if actions then actions.updateaction("toggle_viewhtmltb") end
   end
 
   --show vertical toolbar only in html files

@@ -726,6 +726,9 @@ function toolbar.set_buffer_cfg()
   if toolbar.html_toolbar_onoff ~= nil then
     toolbar.set_check_val("tbshowhtml", buffer.html_toolbar_on)
   end
+  if toolbar.list_toolbar_onoff ~= nil then
+    toolbar.set_check_val("tbshowlist", toolbar.list_tb)
+  end
   toolbar.set_check_val("tbshowguid", (buffer.indentation_guides == buffer.IV_LOOKBOTH))
   toolbar.set_check_val("tbvirtspc", (buffer.virtual_space_options == buffer.VS_USERACCESSIBLE))
 end
@@ -833,6 +836,9 @@ end
 function toolbar.setcfg_from_buff_checks()
   if toolbar.html_toolbar_onoff ~= nil then
     toolbar.set_check_val("tbshowhtml", buffer.html_toolbar_on)
+  end
+  if toolbar.list_toolbar_onoff ~= nil then
+    toolbar.set_check_val("tbshowlist", toolbar.list_tb)
   end
 end
 
@@ -947,11 +953,18 @@ local function add_toolbar_cfg_panel()
   add_config_check("tbshowstatbar", "Use toolbar status bar", "", true)
 
   add_config_label("VERTICAL BAR",true)
-  add_config_radio("tbvertbar", "1 Column", "", true)
-  cont_config_radio("2 Columns")
-  if toolbar.add_html_toolbar == nil then
-    --NO HTML quicktype toolbar, add "HIDE" option
-    cont_config_radio("Hide")
+  if toolbar.list_toolbar_onoff ~= nil then
+    local savecfg= toolbar.config_saveon
+    toolbar.config_saveon=false --don't save this check
+    add_config_check("tbshowlist", "Show LIST toolbar", "", false, toolbar.list_toolbar_onoff)
+    toolbar.config_saveon=savecfg
+  else
+    add_config_radio("tbvertbar", "1 Column", "", true)
+    cont_config_radio("2 Columns")
+    if toolbar.add_html_toolbar == nil then
+      --NO HTML quicktype toolbar, add "HIDE" option
+      cont_config_radio("Hide")
+    end
   end
 
   if minimap then
@@ -1361,7 +1374,7 @@ if minimap then
 
   --check every second: hidden lines / window size
   local function check_vis_changes()
-    if toolbar.tbshowminimap and Proj.update_ui == 0 and minimap.lines_screen then
+    if toolbar.tbshowminimap and Proj and Proj.update_ui == 0 and minimap.lines_screen then
       local totlin= lin2vis(buffer.line_count)
       if minimap.line_count ~= totlin then
         toolbar.minimap_load()

@@ -154,7 +154,6 @@ if toolbar then
       tooltip= filename
     end
     toolbar.settab(ntab, tabtext:iconv('UTF-8',_CHARSET), tooltip:iconv('UTF-8',_CHARSET))
-    --toolbar.settab(ntab, tabtext, tooltip)
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
     if toolbar.tabmodified ~= 0 then toolbar.modifiedtab(ntab, buf.modify) end --modified: change tab color/img
   end
@@ -298,7 +297,7 @@ if toolbar then
   end)
 
   events_connect(events.BUFFER_NEW, function()
-    if _BUFFERS[buffer] > 0 then --ignore TA start
+    if _BUFFERS[buffer] > 0 then --ignore command line TA
       --select the top toolbar and get the tab number of the buffer
       local ntab= getntabbuff(buffer)
       local filename = _L['Untitled']
@@ -374,6 +373,8 @@ if toolbar then
     toolbar.tb1= false
     toolbar.statbar= 0 --0:use default statusbar 1:create 2:already created
     toolbar.html_tb=false --html toolbar on/off
+    toolbar.list_tb=false --list toolbar on/off
+    toolbar.listwidth= 250 --list toolbar default width
     toolbar.barsize= 27
     toolbar.butsize= 24
     toolbar.imgsize= 16

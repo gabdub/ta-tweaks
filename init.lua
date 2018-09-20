@@ -31,7 +31,9 @@ textadept.editing.comment_string.asm = ';'
 
 if toolbar then
   require('toolbar')
-  require('htmltoolbar')
+  --require('htmltoolbar')
+  require('listtoolbar')
+  --toolbar.listwidth= 250
 
   --set the configured theme
   toolbar.set_theme_from_config()
@@ -75,6 +77,9 @@ if toolbar then
 
   --toolbars are ready to show
   toolbar.ready()
+
+  --create list toolbar
+  if toolbar.createlisttb then toolbar.createlisttb() end
 end
 
 --reload changed files without prompting
