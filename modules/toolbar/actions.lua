@@ -23,6 +23,7 @@ local default_icons= {
   "duplicate_line",         "lpi-translate",
   "delete_char",            "edit-clear",
 --"delete_word",            "",
+--"delete_line",            "",
   "selectall",              "edit-select-all",
 --"match_brace",            "",
   "complete_word",          "format-text-direction-ltr",

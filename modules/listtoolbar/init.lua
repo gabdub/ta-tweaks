@@ -44,7 +44,7 @@ if toolbar then
   local function list_addtag(name,line)
     --add an item to the list
     local gt= "gotag#"..line
-    toolbar.addtext(gt, name, "")
+    toolbar.addtext(gt, name, "") --, toolbar.listwidth-2)
     toolbar.cmds_n[gt]= gototag
     toolbar.tag_count=toolbar.tag_count+1
   end

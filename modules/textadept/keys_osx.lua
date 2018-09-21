@@ -62,6 +62,7 @@ local default_accelerators= {
   "duplicate_line",         "md",           "",
   "delete_char",            "del",          "del",
   "delete_word",            "cdel",         "cdel",
+  "delete_line",            "cl",           "cl",
   "selectall",              "ma",           "ma",
   "match_brace",            "cm",           "mm",
   "complete_word",          "cesc",         "cesc",
@@ -151,7 +152,7 @@ local default_accelerators= {
   "toggle_view_wrap",       "c\\",          "",
   "toggle_view_ws",         "cS",           "",
   "select_lexer",           "mL",           "mL",
-  "refresh_syntax",         "f5",           {"f5","cl"},
+  "refresh_syntax",         "f5",           "f5",
 
 --VIEW
   "next_view",              "ca\t",         {"++","cmv","n"},   --cmv n

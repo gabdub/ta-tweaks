@@ -102,6 +102,7 @@ actions.list = {
       textadept.editing.select_word()
       buffer:delete_back()
     end},
+  ["delete_line"]=          {'Delete line', buffer.line_delete},
   ["selectall"]=            {_L['Select _All'], buffer.select_all},
   ["match_brace"]=          {_L['_Match Brace'], (TA_MAYOR_VER < 10) and textadept.editing.match_brace or
     function()
@@ -395,7 +396,7 @@ actions.menubar = {
   {
     title = _L['_Edit'],
     {"undo","redo",SEPARATOR,
-     "cut","copy","paste","paste_special","duplicate_line","delete_char","delete_word","selectall",SEPARATOR,
+     "cut","copy","paste","paste_special","duplicate_line","delete_char","delete_word","delete_line","selectall",SEPARATOR,
      "match_brace","complete_word","highlight_word","toggle_comment","transpose_chars",
      "join_lines","filterthrough"},
     {

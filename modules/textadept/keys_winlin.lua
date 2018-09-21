@@ -62,6 +62,7 @@ local default_accelerators= {
   "duplicate_line",         "cd",          "",
   "delete_char",            "del",         "del",
   "delete_word",            "adel",        "mdel",
+  "delete_line",            "cl",          "cl",
   "selectall",              "ca",          "ma",
   "match_brace",            "cm",          "mm",
   "complete_word",          "c\n",         "cmj", --CURSES: Win32:c\n + LINUX:cmj
@@ -151,7 +152,7 @@ local default_accelerators= {
   "toggle_view_wrap",       "ca\\",         "",
   "toggle_view_ws",         "caS",          "",
   "select_lexer",           "cL",           "mL",
-  "refresh_syntax",         "f5",           {"f5","cl"},
+  "refresh_syntax",         "f5",           "f5",
 
 --VIEW
   "next_view",              "can",          {"++","cmv","n"},   --cmv n
