@@ -85,9 +85,9 @@ if toolbar then
       return
     end
     combo_open= 1
-    toolbar.new(28, 24, 16, 5, toolbar.themepath)
+    toolbar.new(27, 24, 16, 5, toolbar.themepath)
     toolbar.addgroup(8,8,0,0)
-    toolbar.adjust(24,27,3,1,0,0)
+    toolbar.adjust(24,27,3,3,0,0)
     toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
     toolbar.seticon(tbglobalicon, "ttb-combo__LRTB1", 0, true)
     for i=1,#combo_data[btname] do
@@ -95,6 +95,7 @@ if toolbar then
       toolbar.addtext(itname,combo_data[btname][i],"",282)
       toolbar.cmds_n[itname]= combo_clicked
     end
+    toolbar.adjust(24,27,0,0,0,0)
     toolbar.popup(5,true,btname,35,combo_width[btname]-2)
   end
 
