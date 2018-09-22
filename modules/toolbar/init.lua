@@ -89,7 +89,7 @@ if toolbar then
     toolbar.addgroup(8,8,0,0)
     toolbar.adjust(24,27,3,1,0,0)
     toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-    toolbar.seticon(tbglobalicon, "ttb-combo", 0, true)
+    toolbar.seticon(tbglobalicon, "ttb-combo__LRTB1", 0, true)
     for i=1,#combo_data[btname] do
       local itname= btname.."#"..i
       toolbar.addtext(itname,combo_data[btname][i],"",282)
