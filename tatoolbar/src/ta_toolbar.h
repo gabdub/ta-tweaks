@@ -114,11 +114,36 @@
 #define BKCOLOR_MINIMAP_DRAW  (-7)  //MINI MAP (back draw)
 #define BKCOLOR_MINIMAP_CLICK (-8)  //MINI MAP (click)
 
+// multi-part IMAGE
+//
+//  L=left     W=expand         R=right
+// +------+--------------------+------+
+// |      |                    |      | T=top
+// +------+--------------------+------+
+// |      |                    |      |
+// |      |                    |      |
+// |      |                    |      | H=expand
+// |      |                    |      |
+// |      |                    |      |
+// +------+--------------------+------+
+// |      |                    |      | B=bottom
+// +------+--------------------+------+
+//
 struct toolbar_img
 {
-  char * fname;
-  int  width;
-  int  height;
+  char * fname;   //filename format: fffff[__[L##][R##][T##][B##]].png
+                  //or __[W##] => L=R=(image_width-W)/2
+                  //or __[H##] => T=B=(image_height-H)/2
+
+  int  width;     //image width
+  int  width_l;   //left fixed part    (__...L##)
+  int  width_r;   //right fixed part   (__...R##)
+                  //expand width= width - width_l - width_r
+
+  int  height;    //image height
+  int  height_t;  //top fixed part     (__...T##)
+  int  height_b;  //bottom fixed part  (__...B##)
+                  //expand height= height - height_t - height_b
 };
 
 struct color3doubles
@@ -332,6 +357,7 @@ void redraw_item( struct toolbar_item * p );
 void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold );
 void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int grayed );
 void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
+void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
 void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill );
 void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h );
 int  set_pti_img( struct toolbar_img *pti, const char *imgname );

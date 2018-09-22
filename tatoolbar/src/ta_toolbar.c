@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.7 (6 aug 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.8 (22 sep 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -2357,7 +2357,7 @@ int paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pd
   //paint toolbar back color if set
   draw_fill_color(gcontext, T->back_color, 0, 0, T->barwidth, T->barheight );
   //draw toolbar background image (if any)
-  draw_fill_img(gcontext, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
+  draw_fill_mp_img(gcontext, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
   //draw groups back color / background (if any)
   for( g= T->group; (g != NULL); g= g->next ){
     if( (g->flags & (TTBF_HIDDEN|TTBF_GRP_TABBAR)) == 0 ){
@@ -2370,7 +2370,7 @@ int paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pd
         draw_fill_color(gcontext, g->back_color, x0, y0, wt, ht );
         //draw background image (if any)
         if(g->img[TTBI_TB_BACKGROUND].width > 0){
-          draw_fill_img(gcontext, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
+          draw_fill_mp_img(gcontext, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
         }
       }
     }
@@ -2411,7 +2411,7 @@ int paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pd
           draw_img(gcontext, get_group_img(g,h), x, y, 0 );
           x += phi->prew;
           xa= x0 + phi->barx2 - phi->postw;
-          draw_fill_img(gcontext, get_group_img(g,h+1), x, y, xa-x, get_group_imgH(g,h) );
+          draw_fill_mp_img(gcontext, get_group_img(g,h+1), x, y, xa-x, get_group_imgH(g,h) );
           h +=2;
           if( (phi->flags & TTBF_DROP_BUTTON) != 0 ){
             if( h == TTBI_TB_TXT_HIL3 ){
@@ -2457,7 +2457,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
     color= &(G->tabtextcolH);
   }
   draw_img(gcontext, get_group_img(G,h), x, y, 0 );
-  draw_fill_img(gcontext, get_group_img(G,h+1), x+t->prew, y,
+  draw_fill_mp_img(gcontext, get_group_img(G,h+1), x+t->prew, y,
       t->barx2 - t->prew - t->postw, get_group_imgH(G,TTBI_TB_NTAB2) );
 
   x3= x + t->barx2 - t->postw;
@@ -2489,7 +2489,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
   //draw group's items
   if( (g->flags & TTBF_GRP_TABBAR) != 0){
     //tab-bar
-    draw_fill_img(gcontext, get_group_img(g,TTBI_TB_TABBACK), x0, y0, wt, ht );
+    draw_fill_mp_img(gcontext, get_group_img(g,TTBI_TB_TABBACK), x0, y0, wt, ht );
     ta= NULL;
     xa= 0;
     x= x0 + g->tabxmargin;
@@ -2570,7 +2570,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
                 draw_img(gcontext, get_group_img(g,h), x0+p->barx1, y0+p->bary1, 0 );
                 x1= x0 + p->barx1 + p->prew;
                 xa= x0 + p->barx2 - p->postw;
-                draw_fill_img(gcontext, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
+                draw_fill_mp_img(gcontext, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
                 h +=2;
                 if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
                   h= TTBI_TB_TXT_NOR4;  //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)

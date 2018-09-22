@@ -530,6 +530,7 @@ void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int graye
   }
 }
 
+//Fill a rectangle with a normal IMAGE
 void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h )
 {
   if( pti->fname != NULL ){
@@ -549,6 +550,123 @@ void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int 
     }
   }
 }
+
+//Fill a rectangle with a multi-part IMAGE
+void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h )
+{
+  int xs[3], ys[3], ws[3], hs[3]; //source
+  int xd[3], yd[3], wd[3], hd[3]; //destination
+  int ht, hb, hh;
+  int wl, wr, ww;
+  int row, col;
+
+  if( ((pti->width == w)||((pti->width_l+pti->width_r) == 0)) && ((pti->height == h)||((pti->height_t+pti->height_b) == 0))  ){
+    //special case: if no change in size is needed or the image doesn't have borders (in both dimmensions):
+    // the rectangle can be filled in a "normal" way, it's quicker
+    draw_fill_img( gcontext, pti, x, y, w, h );
+    return;
+  }
+
+  cairo_t *ctx= (cairo_t *) gcontext;
+  if( (pti->fname != NULL) && (w > 0) && (h > 0) ){
+    cairo_surface_t *img= cairo_image_surface_create_from_png(pti->fname);
+    if( img != NULL ){
+      //--calc source--
+      wl= pti->width_l;
+      wr= pti->width_r;
+      if( pti->width == w ){
+        //special case: the image has the same width as the rectangle to fill
+        wl= w;  //draw it in one block
+        wr= 0;
+      }else if( (w < pti->width) && (w > wl+wr) ){
+        //special case: the rectangle to fill is smaller than the image but both borders are shown
+        wl= w - wr; //add the variable part to the left border
+      }
+      xs[0]= 0;
+      ws[0]= wl;
+      xs[1]= wl;
+      ws[1]= pti->width - wl - wr;
+      xs[2]= pti->width - wr;
+      ws[2]= wr;
+
+      ht= pti->height_t;
+      hb= pti->height_b;
+      if( pti->height == h ){
+        //special case: the image has the same height as the rectangle to fill
+        ht= h;  //draw it in one block
+        hb= 0;
+      }else if( (h < pti->height) && (h > ht+hb) ){
+        //special case: the rectangle to fill is smaller than the image but both borders are shown
+        ht= h - hb; //add the variable part to the top border
+      }
+      ys[0]= 0;
+      hs[0]= ht;
+      ys[1]= ht;
+      hs[1]= pti->height - ht - hb;
+      ys[2]= pti->height - hb;
+      hs[2]= hb;
+
+      //--calc destination--
+      if( wl >= w ){
+        wl= w;      //only a part of the left column is visible
+        wr= 0;
+        ww= 0;
+      }else if( (wl+wr) >= w ){
+        wr= w - wl; //only a part of the right column is visible
+        ww= 0;
+      }else{
+        ww= w - wl - wr;
+      }
+      xd[0]= x;
+      wd[0]= wl;
+      xd[1]= x + wl;
+      wd[1]= ww;
+      xd[2]= x + wl + ww;
+      wd[2]= wr;
+
+      if( ht >= h ){
+        ht= h;      //only a part of the top row is visible
+        hb= 0;
+        hh= 0;
+      }else if( (ht+hb) >= h ){
+        hb= h - ht; //only a part of the bottom row is visible
+        hh= 0;
+      }else{
+        hh= h - ht - hb;
+      }
+      yd[0]= y;
+      hd[0]= ht;
+      yd[1]= y + ht;
+      hd[1]= hh;
+      yd[2]= y + ht + hh;
+      hd[2]= hb;
+
+      //--fill the rectangle--
+      for( row= 0; row < 3; row++ ){
+        if( hs[row] > 0 ){
+          for( col= 0; col < 3; col++ ){
+            if( ws[col] > 0 ){
+              //draw a section of a multi-part IMAGE
+              cairo_surface_t *secimg= cairo_surface_create_for_rectangle( img, xs[col], ys[row], ws[col], hs[row] );
+              cairo_save(ctx);
+              cairo_translate(ctx, xd[col], yd[row]);
+              cairo_pattern_t *pattern= cairo_pattern_create_for_surface(secimg);
+              cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
+              cairo_set_source(ctx, pattern);
+              cairo_rectangle(ctx, 0, 0, wd[col], hd[row]);
+              cairo_fill(ctx);
+              cairo_pattern_destroy(pattern);
+              cairo_restore(ctx);
+              cairo_surface_destroy(secimg);
+            }
+          }
+        }
+      }
+      cairo_surface_destroy(img);
+    }
+  }
+}
+
 
 static int MMboxcount( struct minimap_line * pml, int b, int maxc )
 {
@@ -804,10 +922,80 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
   }
 }
 
+static int get_mp_param( char *s, char opt )
+{
+  s= strchr( s, opt );
+  if( s != NULL ){
+    while( (*s != 0) && (*s != '.') ){
+      if( (*s >= '0') && (*s <= '9') ){
+        return atoi(s);
+      }
+      s++;
+    }
+  }
+  return 0;
+}
+
+//get borders size of multi-part images from filename
+//filename format: fffff[__[L##][R##][T##][B##]].png
+//or __[W##] => L=R=(image_width-W)/2
+//or __[H##] => T=B=(image_height-H)/2
+//valid examples:
+//  f__ff__L10R15.png  : left border = 10, right= 15
+//  fff__LRTB5.png     : all borders = 5
+//  fff__LR5TB10.png   : left/right borders = 5, top/bottom borders = 10
+//  fff__WH16.png      : if the image size is 32x32, the center part = 16x16 and the borders are 8
+static void set_mp_borders( struct toolbar_img *pti )
+{
+  char *s, *last__;
+  int n;
+
+  //find the last "__"
+  last__= NULL;
+  s= strstr(pti->fname, "__");
+  while( s != NULL ){
+    last__= s;
+    s= strstr(s+2, "__");
+  }
+  if( last__ != NULL ){
+    //check that only valid chars are between "__" and "."
+    last__ += 2;
+    for( s= last__; (*s != 0)&&(*s != '.'); s++ ){
+      if( strchr( "0123456789LRTBWH", *s) == NULL ){
+        return; //invalid char found, ignore
+      }
+    }
+    n= get_mp_param( last__, 'W' );
+    if( (n > 0) && (n <= pti->width) ){
+      pti->width_l= (pti->width -n)/2;
+      pti->width_r= pti->width - n - pti->width_l;
+    }else{
+      pti->width_l= get_mp_param( last__, 'L' );
+      pti->width_r= get_mp_param( last__, 'R' );
+      if( (pti->width_l+pti->width_r) > pti->width ){
+        pti->width_l= 0;
+        pti->width_r= 0;
+      }
+    }
+    n= get_mp_param( last__, 'H' );
+    if( (n > 0) && (n <= pti->height) ){
+      pti->height_t= (pti->height -n)/2;
+      pti->height_b= pti->height - n - pti->height_t;
+    }else{
+      pti->height_t= get_mp_param( last__, 'T' );
+      pti->height_b= get_mp_param( last__, 'B' );
+      if( (pti->height_t+pti->height_b) > pti->height ){
+        pti->height_t= 0;
+        pti->height_b= 0;
+      }
+    }
+  }
+}
+
 int set_pti_img( struct toolbar_img *pti, const char *imgname )
 { //set a new item/group/toolbar image
   //return 1 if redraw is needed
-  char * simg;
+  char *simg;
 
   if( pti->fname != NULL ){
     if( (imgname != NULL) && (strcmp( pti->fname, imgname ) == 0) ){
@@ -817,7 +1005,11 @@ int set_pti_img( struct toolbar_img *pti, const char *imgname )
     free((void *)pti->fname);
     pti->fname= NULL;
     pti->width= 0;
+    pti->width_l= 0;
+    pti->width_r= 0;
     pti->height= 0;
+    pti->height_t= 0;
+    pti->height_b= 0;
   }
   if( imgname != NULL ){
     simg= alloc_img_str(imgname); //get img fname
@@ -828,6 +1020,8 @@ int set_pti_img( struct toolbar_img *pti, const char *imgname )
         pti->height= cairo_image_surface_get_height(cis);
         if( (pti->width > 0) && (pti->height > 0)){
           pti->fname= simg;
+          //get borders size of multi-part images from filename
+          set_mp_borders( pti );
           cairo_surface_destroy(cis);
           return 1; //image OK
         }
