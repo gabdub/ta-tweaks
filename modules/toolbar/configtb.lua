@@ -4,8 +4,6 @@ local toolbar = toolbar
 local events, events_connect = events, events.connect
 
 toolbar.CONFIG_FILE = _USERHOME..'/toolbar_config'
-toolbar.cfgpnl_chkval={}
-toolbar.cfgpnl_chknotify={}
 toolbar.cfgpnl_lexer_indent={}
 toolbar.cfgpnl_colors={}
 toolbar.cfgpnl_savelst={}
@@ -109,8 +107,7 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_tit={}
   toolbar.cfgpnl_group={}
   toolbar.cfgpnl_curgroup= startgroup
-  toolbar.cfgpnl_chkval={}
-  toolbar.cfgpnl_chknotify={}
+  toolbar.clear_checks_vars()
   toolbar.cfgpnl_colors={}
   toolbar.cfgpnl_savelst={}
   toolbar.config_saveon=true  --save config options by default
@@ -196,114 +193,21 @@ local function add_config_label(text,extrasep,notbold)
   end
 end
 
-local function set_notify_on_change(name,func)
-  toolbar.cfgpnl_chknotify[name]=func
-end
-
-function toolbar.set_check_val(name,checked,dontset_toolbar)
-  if checked then
-    toolbar.cfgpnl_chkval[name]= true
-    if not dontset_toolbar then toolbar.setthemeicon(name, "check1") end
-  else
-    toolbar.cfgpnl_chkval[name]= false
-    if not dontset_toolbar then toolbar.setthemeicon(name, "check0") end
-  end
-end
-
-function toolbar.get_check_val(name)
-  if toolbar.cfgpnl_chkval[name] then
-    return true
-  end
-  return false
-end
-
-local function check_clicked(name)
-  --toggle checkbox value
-  toolbar.set_check_val(name, not toolbar.get_check_val(name))
-  toolbar.config_change=true
-  if toolbar.cfgpnl_chknotify[name] ~= nil then
-    toolbar.cfgpnl_chknotify[name]()
-  end
-end
-
-local function add_config_check(name,text,tooltip,val,notify)
-  if val == nil then val=false end
+local function add_config_check(name,text,tooltip,checked,notify)
+  if checked == nil then checked=false end
   --text
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext,true)
   --checkbox
   toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
-  toolbar.cmd(name, check_clicked, tooltip, (val and "check1" or "check0"))
-  toolbar.setthemeicon(name, "check-hi", 2)
-  toolbar.setthemeicon(name, "check-pr", 3)
+  toolbar.cmd_check(name,tooltip,checked)
   pnly_newrow()
-  toolbar.cfgpnl_chkval[name]=val
   if toolbar.config_saveon then --save this check in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
   end
   if notify ~= nil then
-    set_notify_on_change(name, notify)
+    toolbar.set_notify_on_change(name, notify)
   end
-end
-
-local function radio_clicked(name,dontset_toolbar,dont_notify)
-  --set new radio button value
-  toolbar.cfgpnl_chkval[name]= true
-  if not dontset_toolbar then toolbar.setthemeicon(name, "radio1") end
-  --reset the others (same rname in "rname:option-value")
-  local rname=string.match(name, "(.-):.+$")
-  if rname then
-    local i=1
-    while toolbar.cfgpnl_chkval[rname..':'..i] ~= nil do
-      local rbn=rname..':'..i
-      if name ~= rbn and toolbar.cfgpnl_chkval[rbn] then
-        toolbar.cfgpnl_chkval[rbn]= false
-        if not dontset_toolbar then toolbar.setthemeicon(rbn, "radio0") end
-      end
-      i=i+1
-    end
-  end
-  toolbar.config_change=true
-  if (not dont_notify) and (toolbar.cfgpnl_chknotify[rname] ~= nil) then
-    toolbar.cfgpnl_chknotify[rname]()
-  end
-end
-
-function toolbar.set_radio_val(name,val,dontset_toolbar,maxnum)
-  if maxnum then --create all missing items
-    local i=1
-    while i <= maxnum do
-      if toolbar.cfgpnl_chkval[name..':'..i] == nil then
-        toolbar.cfgpnl_chkval[name..':'..i]=false
-      end
-      i=i+1
-    end
-  end
-  radio_clicked(name..":"..val,dontset_toolbar,true)
-end
-
-function toolbar.get_radio_val(name,maxnum)
-  local i=1
-  if maxnum then
-    while i <= maxnum do
-      if toolbar.cfgpnl_chkval[name..':'..i] then
-        return i
-      end
-      i=i+1
-    end
-  else
-    while toolbar.cfgpnl_chkval[name..':'..i] ~= nil do
-      if toolbar.cfgpnl_chkval[name..':'..i] then
-        return i
-      end
-      i=i+1
-    end
-  end
-  return 0
-end
-
-local function rgb_2_bgr(col)
-  return ((col >> 16) & 0xFF) | (col & 0x00FF00) | ((col << 16) & 0xFF0000)
 end
 
 --string color in 0xBBGGRR order
@@ -318,7 +222,7 @@ function toolbar.get_rgbcolor_prop(prop)
   local propval= toolbar.get_colorprop_val(prop)
   local v= string.match(propval,"0x(.*)")
   if v then propval= v end
-  return rgb_2_bgr(tonumber(propval,16))
+  return Util.rgb_2_bgr(tonumber(propval,16))
 end
 
 --string color in 0xBBGGRR order
@@ -332,7 +236,7 @@ end
  --int color in 0xRRGGBB order
 local function set_rgbcolor_prop(prop,rgb)
   toolbar.config_change=true
-  toolbar.set_colorprop_val(prop, string.format('0x%06X', rgb_2_bgr(rgb)))
+  toolbar.set_colorprop_val(prop, string.format('0x%06X', Util.rgb_2_bgr(rgb)))
 end
 
 local function changeprop_clicked(name)
@@ -435,11 +339,8 @@ local function _add_config_radio(name,text,tooltip,checked)
   toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext, true)
   --radio button
   toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
-  toolbar.cmd(name, radio_clicked, tooltip, (checked and "radio1" or "radio0"))
-  toolbar.setthemeicon(name, "radio-hi", 2)
-  toolbar.setthemeicon(name, "radio-pr", 3)
+  toolbar.cmd_radio(name,tooltip,checked)
   pnly_newrow()
-  toolbar.cfgpnl_chkval[name]=checked
 end
 
 --start a new radio button: name="rname:num" or "rname" (num=1)
@@ -462,6 +363,13 @@ end
 local function cont_config_radio(text,tooltip,checked)
   toolbar.last_rnum= toolbar.last_rnum+1
   _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
+end
+
+local function add_config_combo(name,func,tooltip,txtarray,idx)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmd_combo(name,func,tooltip,txtarray,idx,toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2)
+  --toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name..':1' --save as a radio
+  pnly_newrow()
 end
 
 local function confirm_color_overwrite(title,dontask)
@@ -881,7 +789,7 @@ local function add_buffer_cfg_panel()
     add_config_radio("bfeol", "CR+LF")
     cont_config_radio("LF (OS default)")
   end
-  set_notify_on_change("bfeol",buf_eolmode_change)
+  toolbar.set_notify_on_change("bfeol",buf_eolmode_change)
 
   add_config_label("INDENTATION",true)
   add_config_label("Tab width")
@@ -890,13 +798,13 @@ local function add_buffer_cfg_panel()
   cont_config_radio("Tab width: 3")
   cont_config_radio("Tab width: 4")
   cont_config_radio("Tab width: 8")
-  set_notify_on_change("bfindent",buf_indent_change)
+  toolbar.set_notify_on_change("bfindent",buf_indent_change)
 
   add_config_label("Spaces/tabs")
   add_config_radio("bfusetab", "Use Lexer default")
   cont_config_radio("Spaces")
   cont_config_radio("Tabs")
-  set_notify_on_change("bfusetab",buf_indent_change)
+  toolbar.set_notify_on_change("bfusetab",buf_indent_change)
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
@@ -908,12 +816,6 @@ local function add_buffer_cfg_panel()
 
   --show current buffer settings
   toolbar.set_buffer_cfg()
-end
-
-local function add_config_combo(name,func,tooltip,txtarray,idx)
-  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.combo(name,func,tooltip,txtarray,idx,toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2)
-  pnly_newrow()
 end
 
 --a new theme was chosen in the combo
@@ -930,7 +832,7 @@ local function add_toolbar_cfg_panel()
   cont_config_radio( "bar-ch-dark", "Dark theme with triangular tabs")
 
   --choose theme using a combo
-  --add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
+  add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")
@@ -1091,7 +993,7 @@ end
 local function picker_type(toclipboard)
   local col= toolbar.getpickcolor() --RGB
   if toolbar.get_radio_val("ctypeorder") == 2 then
-    col=rgb_2_bgr(col)
+    col=Util.rgb_2_bgr(col)
   end
   local scol
   if toolbar.get_radio_val("ctypeformat") == 3 then
@@ -1151,7 +1053,7 @@ local function picker_get(fromclipboard)
       local color
       if hex then color=tonumber(v,16) else color=tonumber(v) end
       if toolbar.get_radio_val("ctypeorder") == 2 then
-        color=rgb_2_bgr(color) --convert from BGR to RGB
+        color=Util.rgb_2_bgr(color) --convert from BGR to RGB
       end
       toolbar.setbackcolor("CPICKER", color)
       ui.statusbar_text= 'imported color= '..v

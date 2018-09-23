@@ -1,16 +1,12 @@
 -- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
 if toolbar then
   local Util = Util
-  if actions then
-    require('toolbar.actions')
-  end
-  --config panel on toolbar #3
-  require('toolbar.configtb')
+  if actions then require('toolbar.actions') end
+  require('toolbar.controls')
+  require('toolbar.configtb') --config panel on toolbar #3
 
   local events, events_connect = events, events.connect
   local tbglobalicon="TOOLBAR"
-  toolbar.cmds={}
-  toolbar.cmds_n={}
 
   --select a toolbar as current
   function toolbar.sel_toolbar_n(ntb, ngrp)
@@ -33,79 +29,6 @@ if toolbar then
   end
   function toolbar.sel_config_bar()
     toolbar.sel_toolbar_n(3)
-  end
-
-  --define a toolbar button
-  function toolbar.cmd(name,func,tooltip,icon,passname)
-    toolbar.addbutton(name,tooltip)
-    if passname then toolbar.cmds_n[name]= func else toolbar.cmds[name]= func end
-    if icon == nil then
-      toolbar.setthemeicon(name,name) --no icon: use 'name' from theme
-    elseif string.match(icon,"%.png") == nil then
-      toolbar.setthemeicon(name,icon) --no ".png": use 'icon' from theme
-    else
-      toolbar.seticon(name,icon)  --"icon.png": use the given icon file
-    end
-  end
-
-  function toolbar.cmdtext(text,func,tooltip,name,usebutsz,dropbt)
-    if not name then name=text end
-    local w=0
-    if usebutsz then w=toolbar.butsize end
-    toolbar.addtext(name,text,tooltip,w,dropbt)
-    toolbar.cmds[name]= func
-  end
-
-  local combo_open= 0 --1:open 2:open + auto-close (timer running)
-  local function end_combo_open()
-    if combo_open == 2 then combo_open= 0 end
-    return false
-  end
-
-  local function closepopup(npop)
-    toolbar.popup(npop,false) --hide popup
-    if npop == 5 and combo_open == 1 then
-      combo_open= 2 --auto-close
-      timeout(1,end_combo_open)
-    end
-  end
-  events_connect("popup_close", closepopup)
-
-  local function combo_clicked(btname)
-    combo_open= 0
-    closepopup(5)
-    ui.statusbar_text= btname.." clicked"
-  end
-
-  local combo_data= {}
-  local combo_width= {}
-  local function show_combo_list(btname)
-    if combo_open > 0 then
-      combo_open= 0
-      return
-    end
-    combo_open= 1
-    toolbar.new(27, 24, 16, 5, toolbar.themepath)
-    toolbar.addgroup(8,8,0,0)
-    toolbar.adjust(24,27,3,3,0,0)
-    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-    toolbar.seticon(tbglobalicon, "ttb-combo__LRTB1", 0, true)
-    for i=1,#combo_data[btname] do
-      local itname= btname.."#"..i
-      toolbar.addtext(itname,combo_data[btname][i],"",282)
-      toolbar.cmds_n[itname]= combo_clicked
-    end
-    toolbar.adjust(24,27,0,0,0,0)
-    toolbar.popup(5,true,btname,35,combo_width[btname]-2)
-  end
-
-  function toolbar.combo(name,func,tooltip,txtarray,idx,width)
-    if idx == 0 then idx=1 end
-    if width == 0 then width=300 end --configure this
-    combo_data[name]= txtarray
-    combo_width[name]= width
-    toolbar.addtext(name,txtarray[idx],tooltip,width,true) --show current value
-    toolbar.cmds_n[name]= show_combo_list --pass the combo name when clicked
   end
 
   function toolbar.setthemeicon(name,icon,num)
@@ -179,21 +102,6 @@ if toolbar then
     end
     return 0 --not found
   end
-
-  events_connect("toolbar_clicked", function(buttonname,ntoolbar)
-    if toolbar.cmds_n[buttonname] ~= nil then
-      toolbar.cmds_n[buttonname](buttonname) --pass the name of the button
-    elseif toolbar.cmds[buttonname] ~= nil then
-      --is a config checkbox?
-      if toolbar.cfgpnl_chkval ~= nil and toolbar.cfgpnl_chkval[buttonname] ~= nil then
-        toolbar.cmds[buttonname](buttonname) --pass the name of the checkbox
-      else
-        toolbar.cmds[buttonname]()
-      end
-    else
-      ui.statusbar_text= buttonname.." clicked"
-    end
-  end)
 
   events_connect(events.SAVE_POINT_REACHED, set_chg_tabbuf)
   events_connect(events.SAVE_POINT_LEFT, set_chg_tabbuf)
@@ -659,7 +567,7 @@ if toolbar then
     toolbar.current_toolbar= 2
     toolbar.current_tb_group= 0
     toolbar.seticon(tbglobalicon, toolbar.back[5], 0, true)
-    local i=5 --5=normal 8=disabled 11=hilight 14=active
+    local i=5 --5=normal 8=disabled 11=highlight 14=active
     while i < 15 do
       toolbar.seticon(tbglobalicon, "stat-ntab1", i,   true)
       toolbar.seticon(tbglobalicon, "stat-ntab2", i+1, true)
@@ -789,23 +697,23 @@ if toolbar then
     toolbar.tbreplvscroll= toolbar.get_check_val("tbreplvscroll")
   end
 
-  --create the popup toolbar
-  function toolbar.create_popup()
-    toolbar.new(50, 24, 16, 5, toolbar.themepath)
-    toolbar.addgroup(8,8,0,0)
-    toolbar.adjust(24,24,3,3,4,4)
-    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
-    --toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
-    toolbar.setbackcolor(tbglobalicon,toolbar.popup_back,false,true)
-    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
-    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
-    toolbar.cmdtext("New", closepopup, "", "n1")
-    toolbar.cmdtext("Open", closepopup, "", "n2")
-    toolbar.cmdtext("Open recent...", closepopup, "", "n3")
-  end
-  function toolbar.show_popup(btname,relpos)
-    toolbar.popup(5,true,btname,relpos)
-  end
-
+  --TEST: create a popup toolbar
+--  function toolbar.create_popup()
+--    toolbar.new(50, 24, 16, 5, toolbar.themepath)
+--    toolbar.addgroup(8,8,0,0)
+--    toolbar.adjust(24,24,3,3,4,4)
+--    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+--    --toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
+--    toolbar.setbackcolor(tbglobalicon,toolbar.popup_back,false,true)
+--    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
+--    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
+--    toolbar.cmdtext("New", closepopup, "", "n1")
+--    toolbar.cmdtext("Open", closepopup, "", "n2")
+--    toolbar.cmdtext("Open recent...", closepopup, "", "n3")
+--  end
+--  function toolbar.show_popup(btname,relpos)
+--    toolbar.popup(5,true,btname,relpos)
+--  end
+--
   toolbar.set_defaults()
 end

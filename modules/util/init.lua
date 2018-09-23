@@ -103,3 +103,7 @@ function Util.Hex2Ascii(str)
   end
   return res
 end
+
+function Util.rgb_2_bgr(col)
+  return ((col >> 16) & 0xFF) | (col & 0x00FF00) | ((col << 16) & 0xFF0000)
+end
