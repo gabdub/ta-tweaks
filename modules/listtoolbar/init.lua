@@ -6,7 +6,7 @@ if toolbar then
     toolbar.tag_count= 0
     toolbar.tag_listedfile= ""
     toolbar.sel_left_bar()
-    toolbar.new(toolbar.listwidth, toolbar.butsize, toolbar.imgsize, 1, toolbar.themepath)
+    toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
     --buttons group: fixed width=300 / align top + height=use buttons + vertical scroll
     toolbar.addgroup(0, 27, toolbar.listwidth, 0)
     --add/change some images

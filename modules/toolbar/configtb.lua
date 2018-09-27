@@ -120,27 +120,25 @@ local function add_config_start(startgroup)
   --config title: width=expand / height=27
   toolbar.addgroup(7, 0, 0, 27)
   toolbar.seticon("GROUP", "ttb-cback2", 0, true)
-  toolbar.textfont(toolbar.textfont_sz+4, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+  toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
-  toolbar.tabwithclose=false
-  toolbar.tabwidthmode=0
-  toolbar.tabwidthmin=0
-  toolbar.img[1]= "ttb-csep"
-  toolbar.img[4]= "ttb-ctab-back"
-  toolbar.img[31]= "ttb-back-no1"
-  toolbar.img[32]= "ttb-back-no2"
-  toolbar.img[33]= "ttb-back-no3"
-  if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
-  if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
-  if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end
-  if toolbar.img[16] == "" then toolbar.img[16]= "ttb-atab3nc" end
-  for i, img in ipairs(toolbar.img) do
+  toolbar.set_img(1,  "ttb-csep")
+  toolbar.set_img(4,  "ttb-ctab-back")
+  toolbar.set_img(31, "ttb-back-no1")
+  toolbar.set_img(32, "ttb-back-no2")
+  toolbar.set_img(33, "ttb-back-no3")
+  toolbar.set_img(7,  "ttb-ntab3nc", true) --only if not already set
+  toolbar.set_img(10, "ttb-dtab3nc", true) --only if not already set
+  toolbar.set_img(13, "ttb-htab3nc", true) --only if not already set
+  toolbar.set_img(16, "ttb-atab3nc", true) --only if not already set
+  for i=1, toolbar.get_img_count() do
+    local img= toolbar.get_img(i)
     if img ~= "" then toolbar.seticon("TOOLBAR", img, i, true) end
   end
-  toolbar.add_tabs_here(3)
+  toolbar.add_tabs_here(3,false,0,0)
 
-  toolbar.seticon("GROUP", toolbar.back[1], 0, true)  --horizontal back x 1row
+  toolbar.seticon("GROUP", toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
 end
 
 local function add_config_tabgroup(name,title,ngrp)
@@ -153,7 +151,7 @@ local function add_config_tabgroup(name,title,ngrp)
   local hidegrp=(n ~= toolbar.cfgpnl_curgroup) --only one tab group is visible at a time
   toolbar.addgroup(7,24,0,0,hidegrp) --show v-scroll when needed
   toolbar.adjust(48,24,2,1,3,3)
-  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   if n == toolbar.cfgpnl_curgroup then
     toolbar.settext("cfgtit", title, "", true)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
@@ -832,7 +830,7 @@ local function add_toolbar_cfg_panel()
   cont_config_radio( "bar-ch-dark", "Dark theme with triangular tabs")
 
   --choose theme using a combo
-  --add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
+  add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")

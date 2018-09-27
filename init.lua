@@ -39,8 +39,8 @@ if toolbar then
   toolbar.set_theme_from_config()
 
   --change theme defaults here
-  --toolbar.back[2]="ttb-back2-same"
-  --toolbar.back[2]="ttb-back2-down"
+  --toolbar.set_backimg(2, "ttb-back2-same")
+  --toolbar.set_backimg(2, "ttb-back2-down")
 
   --create the configured toolbars
   toolbar.create_from_config()

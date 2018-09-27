@@ -67,7 +67,7 @@ if toolbar then
     local filename = buf.filename or buf._type or _L['Untitled']
     local tabtext= string.match(filename, ".-([^\\/]*)$")
     --update modified indicator in tab
-    if toolbar.tabmodified == 0 and buf.modify then tabtext= tabtext .. "*" end --modified: change tab text
+    if toolbar.cfg.tabmodified == 0 and buf.modify then tabtext= tabtext .. "*" end --modified: change tab text
     if buf._right_side then
       tabtext= ">"..tabtext
     end
@@ -79,7 +79,7 @@ if toolbar then
     end
     toolbar.settab(ntab, tabtext:iconv('UTF-8',_CHARSET), tooltip:iconv('UTF-8',_CHARSET))
     toolbar.hidetab(ntab, toolbar.isbufhide(buf))
-    if toolbar.tabmodified ~= 0 then toolbar.modifiedtab(ntab, buf.modify) end --modified: change tab color/img
+    if toolbar.cfg.tabmodified ~= 0 then toolbar.modifiedtab(ntab, buf.modify) end --modified: change tab color/img
   end
 
   --select a buffer's tab
@@ -184,7 +184,7 @@ if toolbar then
   events_connect("toolbar_tab2clicked", function(ntab,ntoolbar)
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
-    if ntoolbar == 0 and toolbar.tab2clickclose then
+    if ntoolbar == 0 and toolbar.cfg.tab2clickclose then
       if Proj then Proj.close_buffer() else io.close_buffer() end
     end
   end)
@@ -272,6 +272,56 @@ if toolbar then
     return false
   end
 
+  --define config fields
+  local function tbconfig_int(var, defval)
+    local ci= Util.cfg_int
+    if type(defval) == "table" then ci= Util.cfg_int2 + #defval -2 end
+    Util.add_config_field(toolbar.cfg, var, ci, defval)
+  end
+  local function tbconfig_color(var, defval)
+    Util.add_config_field(toolbar.cfg, var, Util.cfg_hex, defval)
+  end
+  local function tbconfig_bool(var, defval)
+    Util.add_config_field(toolbar.cfg, var, Util.cfg_bool, defval)
+  end
+  local function tbconfig_str(var, defval)
+    Util.add_config_field(toolbar.cfg, var, Util.cfg_str, defval)
+  end
+  local function tbconfig_imgs(var, maxidx)
+    Util.add_config_field(toolbar.cfg, var, Util.cfg_str, "", maxidx)
+  end
+  --config images
+  function toolbar.get_img(idx)
+    return toolbar.cfg[ "toolbar_img#"..idx ]
+  end
+  function toolbar.set_img(idx, newimg, onlyifempty)
+    if onlyifempty and toolbar.get_img(idx) ~= "" then return end
+    toolbar.cfg[ "toolbar_img#"..idx ]= newimg
+  end
+  function toolbar.get_img_count()
+    return toolbar.cfg[toolbar.cfg[0]["toolbar_img#1"]][4]
+  end
+  function toolbar.get_backimg(idx)
+    return toolbar.cfg[ "toolbar_back#"..idx ]
+  end
+  function toolbar.set_backimg(idx, newimg, onlyifempty)
+    if onlyifempty and toolbar.get_backimg(idx) ~= "" then return end
+    toolbar.cfg[ "toolbar_back#"..idx ]= newimg
+  end
+  function toolbar.get_backimg_count()
+    return toolbar.cfg[toolbar.cfg[0]["toolbar_back#1"]][4]
+  end
+  --get adjust settings (idx=1..6)
+  local function tbconfig_getadj(idx)
+    local vadj= toolbar.cfg.toolbar_adj[idx]
+    --bwidth(idx=1) / bheight(idx=2): 0=use "butsize"
+    if vadj <= 0 and idx <= 2 then vadj= toolbar.cfg.butsize end
+    return vadj
+  end
+  local function tbconfig_is_adjset()
+    return (toolbar.cfg.toolbar_adj[1] >= 0) --(-1 not used)
+  end
+
   function toolbar.set_defaults()
     --set toolbar defaults
     toolbar.buffnum= 1  --assign a unique number to each buffer
@@ -284,59 +334,8 @@ if toolbar then
     toolbar.html_tb=false --html toolbar on/off
     toolbar.list_tb=false --list toolbar on/off
     toolbar.listwidth= 250 --list toolbar default width
-    toolbar.barsize= 27
-    toolbar.butsize= 24
-    toolbar.imgsize= 16
-    toolbar.newrowoff= 3
-    toolbar.adj= false
-    toolbar.adj_bw= 24
-    toolbar.adj_bh= 24
-    toolbar.adj_xm= 2
-    toolbar.adj_ym= 1
-    toolbar.adj_xoff= 4
-    toolbar.adj_yoff= 4
-    --text buttons
-    toolbar.textfont_sz= 12
-    toolbar.textfont_yoffset= 0
-    toolbar.textcolor_normal= 0x101010
-    toolbar.textcolor_grayed= 0x808080
     --tabs
     toolbar.hideproject= true --don't show project files in tabs
-    toolbar.tabxmargin= 5
-    toolbar.tabxsep= -1
-    toolbar.tabwithclose= false
-    toolbar.tab2clickclose= true
-    toolbar.tabwidthmode= 0  --0=text >0=fixed <0=expand
-    toolbar.tabwidthmin= 0
-    toolbar.tabwidthmax= 0
-    toolbar.tabmodified= 0
-    toolbar.tabfont_sz= 0
-    toolbar.tabfont_yoffset= 0
-    toolbar.tabcolor_normal= 0
-    toolbar.tabcolor_hilight= 0
-    toolbar.tabcolor_active= 0
-    toolbar.tabcolor_modif= 0x800000
-    toolbar.tabcolor_grayed= 0x808080
-    --status-bar
-    toolbar.statsize= 20
-    toolbar.statbutsize= 20
-    toolbar.statimgsize= 16
-    toolbar.statxmargin= -3
-    toolbar.statxsep= -1
-    toolbar.statfont_sz= 12
-    toolbar.statfont_yoffset=-2
-    toolbar.statcolor_normal= 0x202020
-    toolbar.statcolor_hilight= 0
-    toolbar.popup_back= 0x000000
-    --images
-    toolbar.img= {}
-    for i= 1, 33 do
-      toolbar.img[i]= ""
-    end
-    toolbar.back= {}
-    for i= 1, 5 do
-      toolbar.back[i]= ""
-    end
     --config panel
     toolbar.cfgpnl_width=350
     toolbar.cfgpnl_ymargin=3
@@ -346,91 +345,85 @@ if toolbar then
     toolbar.cfgpnl_xcontrol2=230
     toolbar.cfgpnl_xcontrol=290
     toolbar.cfgpnl_rheight=24
+
+    --toolbar config
+    toolbar.cfg= {}
+    --toolbar images
+    tbconfig_imgs(  "toolbar_img",      33)   --toolbar_img#1..#33
+    tbconfig_imgs(  "toolbar_back",     5)    --toolbar_back#1..#5
+    --icons theme
+    tbconfig_str(   "icons",            "light")
+    --adjust
+    tbconfig_int(   "toolbar_adj",      {-1, 0, 2, 1, 4, 4}) --0=use "butsize" (-1 not used)
+
+    tbconfig_int(   "barsize",          27)
+    tbconfig_int(   "butsize",          24)
+    tbconfig_int(   "imgsize",          16)
+    tbconfig_int(   "newrowoff",        3)
+    tbconfig_int(   "textfont_sz",      12)
+    tbconfig_int(   "textfont_yoffset", 0)
+    tbconfig_color( "textcolor_normal", 0x101010)
+    tbconfig_color( "textcolor_grayed", 0x808080)
+    --tabs
+    tbconfig_int(   "tabxmargin",       5)
+    tbconfig_int(   "tabxsep",          -1)
+    tbconfig_bool(  "tabwithclose",     false)
+    tbconfig_bool(  "tab2clickclose",   true)
+    tbconfig_int(   "tabmodified",      0)
+    tbconfig_int(   "tabfont_sz",       0)
+    tbconfig_int(   "tabfont_yoffset",  0)
+    tbconfig_color( "tabcolor_normal",  0x000000)
+    tbconfig_color( "tabcolor_hilight", 0x000000)
+    tbconfig_color( "tabcolor_active",  0x000000)
+    tbconfig_color( "tabcolor_modif",   0x800000)
+    tbconfig_color( "tabcolor_grayed",  0x808080)
+    tbconfig_int(   "tabwidthmode",     0) --0=text >0=fixed <0=expand
+    tbconfig_int(   "tabwidthmin",      0)
+    tbconfig_int(   "tabwidthmax",      0)
+    --status bar
+    tbconfig_int(   "statsize",         20)
+    tbconfig_int(   "statbutsize",      20)
+    tbconfig_int(   "statimgsize",      16)
+    tbconfig_int(   "statxmargin",      -3)
+    tbconfig_int(   "statxsep",         -1)
+    tbconfig_int(   "statfont_sz",      12)
+    tbconfig_int(   "statfont_yoffset", -2)
+    tbconfig_color( "statcolor_normal", 0x202020)
+    tbconfig_color( "statcolor_hilight",0x000000)
+    --pop-ups
+    tbconfig_color( "popup_back",       0x000000)
   end
 
   function toolbar.set_theme(theme)
     toolbar.themepath= _USERHOME.."/toolbar/"..theme.."/"
-    local f = io.open(toolbar.themepath.."toolbar.cfg", 'rb')
-    local img,i
-    if f then
-      for line in f:lines() do
-        --toolbar cfg--
-        if getCfgNum( line, 'barsize')          or
-           getCfgNum( line, 'butsize')          or
-           getCfgNum( line, 'imgsize')          or
-           getCfgNum( line, 'newrowoff')        or
-           getCfgNum( line, 'textfont_sz')      or
-           getCfgNum( line, 'textfont_yoffset') or
-           getCfgNum( line, 'textcolor_normal') or
-           getCfgNum( line, 'textcolor_grayed') or
-        --tabs cfg--
-           getCfgNum( line, 'tabxmargin')       or
-           getCfgNum( line, 'tabxsep')          or
-           getCfgBool(line, 'tabwithclose')     or
-           getCfgBool(line, 'tab2clickclose')   or
-           getCfgNum( line, 'tabmodified')      or
-           getCfgNum( line, 'tabfont_sz')       or
-           getCfgNum( line, 'tabfont_yoffset')  or
-           getCfgNum( line, 'tabcolor_normal')  or
-           getCfgNum( line, 'tabcolor_hilight') or
-           getCfgNum( line, 'tabcolor_active')  or
-           getCfgNum( line, 'tabcolor_modif')   or
-           getCfgNum( line, 'tabcolor_grayed')  or
-           getCfgNum( line, 'tabwidthmode')     or
-           getCfgNum( line, 'tabwidthmin')      or
-           getCfgNum( line, 'tabwidthmax')      or
-           getCfgNum( line, 'statcolor_normal') or
-           getCfgNum( line, 'statcolor_hilight') or
-           getCfgNum( line, 'popup_back') then
-
-        elseif line:find('^toolbar_img:') then
-          img, i = line:match('^toolbar_img:(.-),(.+)$')
-          toolbar.img[tonumber(i)]= img
-
-        elseif line:find('^toolbar_back:') then
-          img, i = line:match('^toolbar_back:(.-),(.+)$')
-          toolbar.back[tonumber(i)]= img
-
-        elseif line:find('^icons:') then
-          img = line:match('^icons:(%S+)%s-$')
-          toolbar.iconspath= _USERHOME.."/toolbar/icons/"..img.."/"
-
-        elseif line:find('^toolbar_adj:') then
-          bw,bh,xm,ym,xoff,yoff = line:match('^toolbar_adj:(.-),(.-),(.-),(.-),(.-),(.+)$')
-          toolbar.adj_bw = tonumber(bw)
-          toolbar.adj_bh = tonumber(bh)
-          toolbar.adj_xm = tonumber(xm)
-          toolbar.adj_ym = tonumber(ym)
-          toolbar.adj_xoff = tonumber(xoff)
-          toolbar.adj_yoff = tonumber(yoff)
-          toolbar.adj= true
-        end
-      end
-      f:close()
-    end
+    Util.load_config_file(toolbar.cfg, toolbar.themepath.."toolbar.cfg")
+    toolbar.iconspath= _USERHOME.."/toolbar/icons/"..toolbar.cfg.icons.."/"
   end
 
-  function toolbar.add_tabs_here(extrah)
+  function toolbar.add_tabs_here(extrah, tabwithclose, tabwidthmode, tabwidthmin)
     local xcontrol=4 --x-expanded: use all available space
     if toolbar.tabpos > 1 then
       xcontrol=5 --x-expanded + left align (new row)
     end
     if not extrah then extrah=0 end
+    if not tabwithclose then tabwithclose= toolbar.cfg.tabwithclose end
+    if not tabwidthmode then tabwidthmode= toolbar.cfg.tabwidthmode end
+    if not tabwidthmin  then tabwidthmin=  toolbar.cfg.tabwidthmin  end
     --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
-    toolbar.addtabs(toolbar.tabxmargin, toolbar.tabxsep, toolbar.tabwithclose, toolbar.tabmodified,
-        toolbar.tabfont_sz, toolbar.tabfont_yoffset,true,xcontrol,toolbar.barsize+extrah) --enable drag support
+    toolbar.addtabs(toolbar.cfg.tabxmargin, toolbar.cfg.tabxsep, tabwithclose, toolbar.cfg.tabmodified,
+        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
-    toolbar.tabfontcolor(toolbar.tabcolor_normal, toolbar.tabcolor_hilight, toolbar.tabcolor_active,
-        toolbar.tabcolor_modif, toolbar.tabcolor_grayed)
+    toolbar.tabfontcolor(toolbar.cfg.tabcolor_normal, toolbar.cfg.tabcolor_hilight, toolbar.cfg.tabcolor_active,
+        toolbar.cfg.tabcolor_modif, toolbar.cfg.tabcolor_grayed)
 
     --tabwidthmode: 0=text >0=fixed <0=expand
-    toolbar.tabwidth(0, toolbar.tabwidthmode, toolbar.tabwidthmin, toolbar.tabwidthmax)
+    toolbar.tabwidth(0, tabwidthmode, tabwidthmin, toolbar.cfg.tabwidthmax)
   end
 
   --put next buttons in a new row/column
   function toolbar.newrow(yoff)
-    toolbar.gotopos(toolbar.newrowoff + (yoff or 0)) --new row
+    toolbar.gotopos(toolbar.cfg.newrowoff + (yoff or 0)) --new row
   end
 
   --create the toolbar (tabpos, nvertcols)
@@ -454,51 +447,52 @@ if toolbar then
     toolbar.tb1= (nvertcols > 0)    --vertical
     toolbar.tb0= ((tabpos > 0) or (nvertcols==0)) --horizontal
 
-    local bsz0= toolbar.barsize
+    local bsz0= toolbar.cfg.barsize
     local butth= bsz0
     if tabpos >= 2 then
       bsz0= bsz0*2 +1 --two rows
       butth= butth+1
     end
-    local bsz1= toolbar.barsize
+    local bsz1= toolbar.cfg.barsize
     if nvertcols > 1 then
       bsz1= bsz1*2 +1 --two rows
     end
 
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb0 then   --create the horizontal toolbar
-      toolbar.new(bsz0, toolbar.butsize, toolbar.imgsize, 0, toolbar.themepath)
+      toolbar.new(bsz0, toolbar.cfg.butsize, toolbar.cfg.imgsize, 0, toolbar.themepath)
       toolbar.current_toolbar= 0
       toolbar.current_tb_group= 0
-      if not toolbar.tabwithclose then
+      if not toolbar.cfg.tabwithclose then
         --no close button in tabs, use a shorter tab end (part #3)
-        if toolbar.img[7]  == "" then toolbar.img[7]=  "ttb-ntab3nc" end
-        if toolbar.img[10] == "" then toolbar.img[10]= "ttb-dtab3nc" end
-        if toolbar.img[13] == "" then toolbar.img[13]= "ttb-htab3nc" end
-        if toolbar.img[16] == "" then toolbar.img[16]= "ttb-atab3nc" end
+        toolbar.set_img(7,  "ttb-ntab3nc", true) --only if not already set
+        toolbar.set_img(10, "ttb-dtab3nc", true) --only if not already set
+        toolbar.set_img(13, "ttb-htab3nc", true) --only if not already set
+        toolbar.set_img(16, "ttb-atab3nc", true) --only if not already set
       end
       --add/change some images
-      for i, img in ipairs(toolbar.img) do
+      for i=1, toolbar.get_img_count() do
+        local img= toolbar.get_img(i)
         if img ~= "" then toolbar.seticon(tbglobalicon, img, i) end
       end
       if tabpos == 1 then
-        toolbar.seticon(tbglobalicon, toolbar.back[1], 0, true)  --horizontal back x 1row
+        toolbar.seticon(tbglobalicon, toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
       elseif tabpos > 1 then
-        toolbar.seticon(tbglobalicon, toolbar.back[2], 0, true)  --horizontal back x 2rows
+        toolbar.seticon(tbglobalicon, toolbar.get_backimg(2), 0, true)  --horizontal back x 2rows
       end
       if tabpos == 2 then
         --2 rows, tabs at the top
         toolbar.add_tabs_here(1)
         --put buttons in another group
-        butth= toolbar.barsize
+        butth= toolbar.cfg.barsize
       end
       --buttons group: align left + width=use buttons / fixed height=butth
       toolbar.addgroup(9, 0, 0, butth)
-      if toolbar.adj then
+      if tbconfig_is_adjset() then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
-        toolbar.adjust(toolbar.adj_bw,toolbar.adj_bh,toolbar.adj_xm,toolbar.adj_ym,toolbar.adj_xoff,toolbar.adj_yoff)
+        toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),tbconfig_getadj(3),tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
       end
-      toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+      toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     else
       --hide the horizonatal (top) toolbar
       toolbar.sel_top_bar()
@@ -507,25 +501,26 @@ if toolbar then
 
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb1 then   --create the vertical toolbar
-      toolbar.new(bsz1, toolbar.butsize, toolbar.imgsize, 1, toolbar.themepath)
+      toolbar.new(bsz1, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
       toolbar.current_toolbar= 1
       toolbar.current_tb_group= 0
       --buttons group: align top + height=use buttons / fixed width
-      toolbar.addgroup(0, 9, toolbar.barsize, 0)
-      if toolbar.adj then
+      toolbar.addgroup(0, 9, toolbar.cfg.barsize, 0)
+      if tbconfig_is_adjset() then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
-        toolbar.adjust(toolbar.adj_bw,toolbar.adj_bh,toolbar.adj_xm,toolbar.adj_ym,toolbar.adj_xoff,toolbar.adj_yoff)
+        toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),tbconfig_getadj(3),tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
       end
       --add/change some images
-      for i, img in ipairs(toolbar.img) do
+      for i=1, toolbar.get_img_count() do
+        local img= toolbar.get_img(i)
         if img ~= "" then toolbar.seticon(tbglobalicon, img, i) end
       end
       if nvertcols < 2 then
-        toolbar.seticon(tbglobalicon, toolbar.back[3], 0, true)  --vertical back x 1col
+        toolbar.seticon(tbglobalicon, toolbar.get_backimg(3), 0, true)  --vertical back x 1col
       else
-        toolbar.seticon(tbglobalicon, toolbar.back[4], 0, true)  --vertical back x 2cols
+        toolbar.seticon(tbglobalicon, toolbar.get_backimg(4), 0, true)  --vertical back x 2cols
       end
-      toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+      toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
       toolbar.show(true)
     else
       --hide the vertical (left) toolbar
@@ -555,18 +550,18 @@ if toolbar then
 
   function toolbar.addrightgroup()
     --buttons group: align right + width=use buttons / fixed height=butth
-    toolbar.addgroup(10, 0, 0, toolbar.barsize)
-    if toolbar.adj then
+    toolbar.addgroup(10, 0, 0, toolbar.cfg.barsize)
+    if tbconfig_is_adjset() then
       --bwidth,bheight,xmargin,ymargin,xoff,yoff
-      toolbar.adjust(toolbar.adj_bw,toolbar.adj_bh,0,toolbar.adj_ym,toolbar.adj_xoff,toolbar.adj_yoff)
+      toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),0,tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
     end
   end
 
   function toolbar.create_statusbar()
-    toolbar.new(toolbar.statsize, toolbar.statbutsize, toolbar.statimgsize, 2, toolbar.themepath)
+    toolbar.new(toolbar.cfg.statsize, toolbar.cfg.statbutsize, toolbar.cfg.statimgsize, 2, toolbar.themepath)
     toolbar.current_toolbar= 2
     toolbar.current_tb_group= 0
-    toolbar.seticon(tbglobalicon, toolbar.back[5], 0, true)
+    toolbar.seticon(tbglobalicon, toolbar.get_backimg(5), 0, true)
     local i=5 --5=normal 8=disabled 11=highlight 14=active
     while i < 15 do
       toolbar.seticon(tbglobalicon, "stat-ntab1", i,   true)
@@ -574,7 +569,7 @@ if toolbar then
       toolbar.seticon(tbglobalicon, "stat-ntab3", i+2, true)
       i=i+3
     end
-    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     toolbar.statbar= 2 --created
   end
 
@@ -586,10 +581,10 @@ if toolbar then
     toolbar.sel_stat_bar()
     if toolbar.statbar == 2 then
       --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
-      toolbar.addtabs(toolbar.statxmargin, toolbar.statxsep, false, 0,
-        toolbar.statfont_sz, toolbar.statfont_yoffset, false, 4, toolbar.statsize) --x-expanded
-      toolbar.tabfontcolor( toolbar.statcolor_normal, toolbar.statcolor_hilight, toolbar.tabcolor_active,
-        toolbar.tabcolor_modif, toolbar.statcolor_normal ) --grayed= normal
+      toolbar.addtabs(toolbar.cfg.statxmargin, toolbar.cfg.statxsep, false, 0,
+        toolbar.cfg.statfont_sz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize) --x-expanded
+      toolbar.tabfontcolor( toolbar.cfg.statcolor_normal, toolbar.cfg.statcolor_hilight, toolbar.cfg.tabcolor_active,
+        toolbar.cfg.tabcolor_modif, toolbar.cfg.statcolor_normal ) --grayed= normal
       --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
       for i=1, 7 do
         toolbar.settab(i,"", "")  --create the status panels
@@ -666,12 +661,12 @@ if toolbar then
   --create the configured toolbars
   function toolbar.create_from_config()
     local tabclose= toolbar.get_radio_val("tbtabclose",3)
-    if tabclose == 1 then toolbar.tabwithclose=false
-    elseif tabclose == 2 then toolbar.tabwithclose=true end
+    if tabclose == 1 then toolbar.cfg.tabwithclose=false
+    elseif tabclose == 2 then toolbar.cfg.tabwithclose=true end
 
     tabclose= toolbar.get_radio_val("tbtab2clickclose",3)
-    if tabclose == 1 then toolbar.tab2clickclose=false
-    elseif tabclose == 2 then toolbar.tab2clickclose=true end
+    if tabclose == 1 then toolbar.cfg.tab2clickclose=false
+    elseif tabclose == 2 then toolbar.cfg.tab2clickclose=true end
 
     --create the toolbars (tabpos, nvertcols, stbar, configpanel)
     --tabpos=0: 1 row, use default tabs
@@ -702,9 +697,9 @@ if toolbar then
 --    toolbar.new(50, 24, 16, 5, toolbar.themepath)
 --    toolbar.addgroup(8,8,0,0)
 --    toolbar.adjust(24,24,3,3,4,4)
---    toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+--    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
 --    --toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
---    toolbar.setbackcolor(tbglobalicon,toolbar.popup_back,false,true)
+--    toolbar.setbackcolor(tbglobalicon,toolbar.cfg.popup_back,false,true)
 --    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
 --    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
 --    toolbar.cmdtext("New", closepopup, "", "n1")

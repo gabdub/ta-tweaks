@@ -28,7 +28,7 @@ end
 function toolbar.cmdtext(text,func,tooltip,name,usebutsz,dropbt)
   if not name then name=text end
   local w=0
-  if usebutsz then w=toolbar.butsize end
+  if usebutsz then w=toolbar.cfg.butsize end
   toolbar.addtext(name,text,tooltip,w,dropbt)
   toolbar.cmds[name]= func
 end
@@ -66,7 +66,7 @@ local function show_combo_list(btname)
   toolbar.new(27, 24, 16, 5, toolbar.themepath)
   toolbar.addgroup(8,8,0,0)
   toolbar.adjust(24,27,3,3,0,0)
-  toolbar.textfont(toolbar.textfont_sz, toolbar.textfont_yoffset, toolbar.textcolor_normal, toolbar.textcolor_grayed)
+  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.seticon(tbglobalicon, "ttb-combo__LRTB1", 0, true)
   for i=1,#combo_data[btname] do
     local itname= btname.."#"..i
