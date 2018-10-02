@@ -830,7 +830,7 @@ local function add_toolbar_cfg_panel()
   cont_config_radio( "bar-ch-dark", "Dark theme with triangular tabs")
 
   --choose theme using a combo
-  add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
+  --add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")
