@@ -39,7 +39,7 @@ if toolbar then
     toolbar.cmd(name, funct, tooltip or "", name, true)
   end
 
-  local function list_addinfo(text,bold,button,buttontooltip)
+  local function list_addinfo(text,bold)
     --add a text to the list
     toolbar.gotopos( 3, toolbar.listtb_y)
     toolbar.addlabel(text, "", toolbar.listright, true, bold)
