@@ -12,6 +12,8 @@ if toolbar then
     --add/change some images
     toolbar.seticon("TOOLBAR", "ttb-cback", 0, true) --background
     toolbar.seticon("TOOLBAR", "ttb-csep", 1, true) --separator
+    toolbar.listtb_y= 3
+    toolbar.listright= toolbar.listwidth
   end
 
   function toolbar.createlisttb()
@@ -31,9 +33,18 @@ if toolbar then
     toolbar.sel_top_bar()
   end
 
-  local function list_addinfo(text,bold)
+  local function list_addbutton(name, tooltip, funct)
+    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
+    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
+    toolbar.cmd(name, funct, tooltip or "", name, true)
+  end
+
+  local function list_addinfo(text,bold,button,buttontooltip)
     --add a text to the list
-    toolbar.addlabel(text, "", toolbar.listwidth, true, bold)
+    toolbar.gotopos( 3, toolbar.listtb_y)
+    toolbar.addlabel(text, "", toolbar.listright, true, bold)
+    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.barsize
+    toolbar.listright= toolbar.listwidth
   end
 
   local function gototag(cmd)
@@ -45,9 +56,17 @@ if toolbar then
   local function list_addtag(name,line)
     --add an item to the list
     local gt= "gotag#"..line
+    toolbar.gotopos( 3, toolbar.listtb_y)
     toolbar.addtext(gt, name, "") --, toolbar.listwidth-2)
     toolbar.cmds_n[gt]= gototag
     toolbar.tag_count=toolbar.tag_count+1
+    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.barsize
+  end
+
+  local function list_addseparator()
+    toolbar.gotopos( 3, toolbar.listtb_y)
+    toolbar.addspace()
+    toolbar.listtb_y= toolbar.listtb_y + 14
   end
 
   local function load_ctags()
@@ -79,8 +98,11 @@ if toolbar then
       return
     end
     toolbar.tag_listedfile= bname
-    list_addinfo(bname:match('[^/\\]+$'), true) -- filename only
-    toolbar.addspace()
+    local fname= bname:match('[^/\\]+$') -- filename only
+    list_addbutton("window-close", "Close list [Shift+F10]", toolbar.list_toolbar_onoff)
+    list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_update)
+    list_addinfo(fname, true)
+    list_addseparator()
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')
       local f = io.open(tag_files[i])
