@@ -63,7 +63,7 @@ events_connect(events.VIEW_BEFORE_SWITCH,   Proj.show_lost_focus)
 events_connect(events.BUFFER_AFTER_SWITCH,  Proj.EVafter_switch)
 events_connect(events.VIEW_AFTER_SWITCH,    Proj.EVafter_switch)
 
-events.connect(events.VIEW_NEW,             Proj.EVview_new)
+events_connect(events.VIEW_NEW,             Proj.EVview_new)
 events_connect(events.BUFFER_NEW,           Proj.EVbuffer_new)
 events_connect(events.BUFFER_DELETED,       Proj.EVbuffer_deleted)
 events_connect(events.FILE_OPENED,          Proj.EVfile_opened)

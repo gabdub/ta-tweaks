@@ -37,6 +37,7 @@ if toolbar then
   end
 
   local function gototag(cmd)
+    Proj.getout_projview()
     local linenum= tonumber(string.match(cmd,".-#(.*)"))
     Util.goto_line(buffer, linenum-1)
   end
@@ -52,9 +53,9 @@ if toolbar then
   local function load_ctags()
     --ignore project views
     if (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
+    list_clear()
     local bname= buffer.filename
     if bname == nil then return end
-    list_clear()
     if Proj == nil then
       list_addinfo('No project module found')
       return
@@ -80,22 +81,30 @@ if toolbar then
     toolbar.tag_listedfile= bname
     list_addinfo(bname:match('[^/\\]+$'), true) -- filename only
     toolbar.addspace()
-    local patt = '^([_%a]+)\t(%S+)\t(.-);"\t?(.*)$'
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')
       local f = io.open(tag_files[i])
       for line in f:lines() do
-        local tag, file, linenum, ext_fields = line:match(patt)
-        if tag then
+        local tag, file, linenum, ext_fields = line:match('^([_.%w]-)\t(.-)\t(.-);"\t?(.*)$')
+        if tag and (file == bname) then --only show current file
+          local extra
+          if ext_fields:find('.-\t.+') then ext_fields,extra=ext_fields:match('(.-)\t(.+)') end
+          if ext_fields == "f" then tag= tag.." ( )"
+          elseif ext_fields == "d" then tag= "# "..tag
+          elseif ext_fields == "s" then tag= "struct "..tag
+          elseif ext_fields == "m" and extra then tag= extra.."."..tag end
           if not file:find('^%a?:?[/\\]') then file = dir..file end
           if linenum:find('^/') then linenum = linenum:match('^/^(.+)$/$') end
-          --only show current file
-          if (file == bname) and linenum then list_addtag(tag, linenum) end
+          if linenum then list_addtag(tag, linenum) end
         end
       end
       f:close()
     end
     if toolbar.tag_count == 0 then list_addinfo('No CTAGS found in this file') end
+  end
+
+  function toolbar.list_toolbar_update()
+    if toolbar.list_tb then load_ctags() end
   end
 
   function toolbar.list_toolbar_onoff()
@@ -107,12 +116,13 @@ if toolbar then
       toolbar.list_tb= true
     end
     toolbar.sel_left_bar()
-    if toolbar.list_tb then load_ctags() end
+    toolbar.list_toolbar_update()
     toolbar.show(toolbar.list_tb)
     --check menuitem
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
     if actions then actions.updateaction("toggle_viewlisttb") end
   end
-
+  events.connect(events.BUFFER_AFTER_SWITCH,  toolbar.list_toolbar_update)
+  events.connect(events.VIEW_AFTER_SWITCH,    toolbar.list_toolbar_update)
 end
