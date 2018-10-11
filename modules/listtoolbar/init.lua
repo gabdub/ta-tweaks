@@ -9,6 +9,7 @@ if toolbar then
     toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
     --buttons group: fixed width=300 / align top + height=use buttons + vertical scroll
     toolbar.addgroup(0, 27, toolbar.listwidth, 0)
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
     toolbar.seticon("TOOLBAR", "ttb-cback", 0, true) --background
     toolbar.seticon("TOOLBAR", "ttb-csep", 1, true) --separator
@@ -100,7 +101,7 @@ if toolbar then
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
     list_addbutton("window-close", "Close list [Shift+F10]", toolbar.list_toolbar_onoff)
-    list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_update)
+    list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
     list_addinfo(fname, true)
     list_addseparator()
     for i = 1, #tag_files do
@@ -127,6 +128,27 @@ if toolbar then
 
   function toolbar.list_toolbar_update()
     if toolbar.list_tb then load_ctags() end
+  end
+
+  function toolbar.list_toolbar_reload()
+    if toolbar.list_tb then
+      local cmd
+      --locate project RUN command that updates TAGS (ctags)
+      if Proj then
+        local p_buffer = Proj.get_projectbuffer(false)
+        if p_buffer and p_buffer.proj_filestype then
+          for r=1, #p_buffer.proj_filestype do
+            if p_buffer.proj_filestype[r] == Proj.PRJF_RUN then
+              if p_buffer.proj_files[r]:match('ctags') then
+                cmd= p_buffer.proj_files[r]
+                break
+              end
+            end
+          end
+        end
+      end
+      if cmd then Proj.run_command(cmd) else load_ctags() end
+    end
   end
 
   function toolbar.list_toolbar_onoff()
