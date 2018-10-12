@@ -857,6 +857,8 @@ local function add_toolbar_cfg_panel()
     local savecfg= toolbar.config_saveon
     toolbar.config_saveon=false --don't save this check
     add_config_check("tbshowlist", "Show LIST toolbar", "", false, toolbar.list_toolbar_onoff)
+    toolbar.config_saveon=true --save this check
+    add_config_check("tblist_hideprj", "Auto hide project", "", true)
     toolbar.config_saveon=savecfg
   else
     add_config_radio("tbvertbar", "1 Column", "", true)

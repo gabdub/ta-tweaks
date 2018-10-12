@@ -1,6 +1,8 @@
 -- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
+  toolbar.listtb_hide_p= false
+
   local function list_clear()
     --remove all items
     toolbar.tag_count= 0
@@ -72,7 +74,7 @@ if toolbar then
 
   local function load_ctags()
     --ignore project views
-    if (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
+    if Proj and (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
     list_clear()
     local bname= buffer.filename
     if bname == nil then return end
@@ -153,11 +155,24 @@ if toolbar then
 
   function toolbar.list_toolbar_onoff()
     --if the current view is a project view, goto left/only files view. if not, keep the current view
-    Proj.getout_projview()
     if toolbar.list_tb == true then
       toolbar.list_tb= false
     else
       toolbar.list_tb= true
+    end
+    if Proj then
+      Proj.getout_projview()
+      local washidebylist= toolbar.listtb_hide_p
+      toolbar.listtb_hide_p= false
+      if toolbar.get_check_val("tblist_hideprj") then
+        if Proj.isin_editmode() then Proj.show_hide_projview() end --end edit mode
+        if (Proj.is_visible > 0) and toolbar.list_tb then
+          toolbar.listtb_hide_p= true
+          Proj.show_hide_projview()
+        elseif washidebylist and (Proj.is_visible == 0) and (not toolbar.list_tb) then
+          Proj.show_hide_projview()
+        end
+      end
     end
     toolbar.sel_left_bar()
     toolbar.list_toolbar_update()
@@ -169,4 +184,5 @@ if toolbar then
   end
   events.connect(events.BUFFER_AFTER_SWITCH,  toolbar.list_toolbar_update)
   events.connect(events.VIEW_AFTER_SWITCH,    toolbar.list_toolbar_update)
+  events.connect(events.BUFFER_NEW,           toolbar.list_toolbar_update)
 end
