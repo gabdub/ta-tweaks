@@ -76,15 +76,19 @@ if toolbar then
     --ignore project views
     if Proj and (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
     list_clear()
+    list_addbutton("window-close", "Close list [Shift+F10]", toolbar.list_toolbar_onoff)
     local bname= buffer.filename
-    if bname == nil then return end
+    if bname == nil then
+      list_addinfo('No filename')
+      return
+    end
     if Proj == nil then
-      list_addinfo('No project module found')
+      list_addinfo('The project module is not installed')
       return
     end
     local p_buffer = Proj.get_projectbuffer(true)
     if p_buffer == nil then
-      list_addinfo('No project found')
+      list_addinfo('No open project')
       return
     end
     local tag_files = {}
@@ -102,7 +106,6 @@ if toolbar then
     end
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
-    list_addbutton("window-close", "Close list [Shift+F10]", toolbar.list_toolbar_onoff)
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
     list_addinfo(fname, true)
     list_addseparator()
@@ -185,4 +188,7 @@ if toolbar then
   events.connect(events.BUFFER_AFTER_SWITCH,  toolbar.list_toolbar_update)
   events.connect(events.VIEW_AFTER_SWITCH,    toolbar.list_toolbar_update)
   events.connect(events.BUFFER_NEW,           toolbar.list_toolbar_update)
+  events.connect(events.FILE_OPENED,          toolbar.list_toolbar_update)
+  events.connect(events.FILE_CHANGED,         toolbar.list_toolbar_update)
+  events.connect(events.FILE_AFTER_SAVE,      toolbar.list_toolbar_update)
 end
