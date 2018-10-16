@@ -56,11 +56,23 @@ if toolbar then
     Util.goto_line(buffer, linenum-1)
   end
 
-  local function list_addtag(name,line)
+  local function list_addtag(name, line, ext_fields)
     --add an item to the list
-    local gt= "gotag#"..line
+    local bicon= "t_var"
+    local extra
+    if ext_fields:find('.-\t.+') then ext_fields,extra=ext_fields:match('(.-)\t(.+)') end
+    if extra and extra:find('.-\t.+') then extra=extra:match('(.-)\t.+') end
+    if ext_fields == "f" then name= name.." ( )" bicon="t_func"
+    elseif ext_fields == "d" then bicon="t_def"
+    elseif ext_fields == "s" then name= "struct "..name bicon="t_struct"
+    elseif ext_fields == "m" and extra then name= extra.."."..name bicon="t_struct" end
+
+    local gt= "gotag"..toolbar.tag_count.."#"..line
     toolbar.gotopos( 3, toolbar.listtb_y)
-    toolbar.addtext(gt, name, "") --, toolbar.listwidth-2)
+    toolbar.cmd(gt, gototag, "", bicon, true)
+
+    toolbar.gotopos( toolbar.cfg.barsize, toolbar.listtb_y)
+    toolbar.addtext(gt, name, "")
     toolbar.cmds_n[gt]= gototag
     toolbar.tag_count=toolbar.tag_count+1
     toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.barsize
@@ -115,15 +127,9 @@ if toolbar then
       for line in f:lines() do
         local tag, file, linenum, ext_fields = line:match('^([_.%w]-)\t(.-)\t(.-);"\t?(.*)$')
         if tag and (file == bname) then --only show current file
-          local extra
-          if ext_fields:find('.-\t.+') then ext_fields,extra=ext_fields:match('(.-)\t(.+)') end
-          if ext_fields == "f" then tag= tag.." ( )"
-          elseif ext_fields == "d" then tag= "# "..tag
-          elseif ext_fields == "s" then tag= "struct "..tag
-          elseif ext_fields == "m" and extra then tag= extra.."."..tag end
           if not file:find('^%a?:?[/\\]') then file = dir..file end
           if linenum:find('^/') then linenum = linenum:match('^/^(.+)$/$') end
-          if linenum then list_addtag(tag, linenum) end
+          if linenum then list_addtag(tag, linenum, ext_fields) end
         end
       end
       f:close()
