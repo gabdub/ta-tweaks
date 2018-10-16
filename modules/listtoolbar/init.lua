@@ -64,6 +64,7 @@ if toolbar then
     if extra and extra:find('.-\t.+') then extra=extra:match('(.-)\t.+') end
     if ext_fields == "f" then name= name.." ( )" bicon="t_func"
     elseif ext_fields == "d" then bicon="t_def"
+    elseif ext_fields == "t" then bicon="t_type"
     elseif ext_fields == "s" then name= "struct "..name bicon="t_struct"
     elseif ext_fields == "m" and extra then name= extra.."."..name bicon="t_struct" end
 
