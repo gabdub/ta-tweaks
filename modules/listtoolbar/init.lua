@@ -3,20 +3,24 @@
 if toolbar then
   toolbar.listtb_hide_p= false
 
+  local titgrp, itemsgrp
   local function list_clear()
     --remove all items
     toolbar.tag_count= 0
     toolbar.tag_listedfile= ""
     toolbar.sel_left_bar()
     toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
-    --buttons group: fixed width=300 / align top + height=use buttons + vertical scroll
-    toolbar.addgroup(0, 27, toolbar.listwidth, 0)
+    --title group: fixed width=300 / align top + height=use buttons
+    titgrp= toolbar.addgroup(0, 9, toolbar.listwidth, 0)
+    --items group: fixed width=300 / height=use buttons + vertical scroll
+    itemsgrp= toolbar.addgroup(0, 26, toolbar.listwidth, 0)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
     toolbar.seticon("TOOLBAR", "ttb-cback", 0, true) --background
     toolbar.seticon("TOOLBAR", "ttb-csep", 1, true) --separator
     toolbar.listtb_y= 3
     toolbar.listright= toolbar.listwidth
+    toolbar.seltoolbar(1,titgrp)
   end
 
   function toolbar.createlisttb()
@@ -54,6 +58,7 @@ if toolbar then
     Proj.getout_projview()
     local linenum= tonumber(string.match(cmd,".-#(.*)"))
     Util.goto_line(buffer, linenum-1)
+    buffer:vertical_centre_caret()
   end
 
   local function list_addtag(name, line, ext_fields)
@@ -122,6 +127,8 @@ if toolbar then
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
     list_addinfo(fname, true)
     list_addseparator()
+    toolbar.seltoolbar(1,itemsgrp)
+    toolbar.listtb_y= 3
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')
       local f = io.open(tag_files[i])
