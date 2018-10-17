@@ -3,24 +3,27 @@
 if toolbar then
   toolbar.listtb_hide_p= false
 
-  local titgrp, itemsgrp
+  local titgrp, itemsgrp, listwidth
   local function list_clear()
     --remove all items
     toolbar.tag_count= 0
     toolbar.tag_listedfile= ""
     toolbar.sel_left_bar()
-    toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
+    listwidth= toolbar.listwidth or 250
+    if Proj and Proj.select_width then listwidth= Proj.select_width end  --try to use the same width as the project
+    if listwidth < 100 then listwidth= toolbar.listwidth end
+    toolbar.new(listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
     --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(0, 1, toolbar.listwidth, toolbar.cfg.barsize)
+    titgrp= toolbar.addgroup(0, 1, listwidth, toolbar.cfg.barsize)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     toolbar.seticon("GROUP", "ttb-cback2", 0, true)
     --items group: fixed width=300 / height=use buttons + vertical scroll
-    itemsgrp= toolbar.addgroup(0, 26, toolbar.listwidth, 0)
+    itemsgrp= toolbar.addgroup(0, 26, listwidth, 0)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
     toolbar.seticon("TOOLBAR", "ttb-cback", 0, true) --background
     toolbar.listtb_y= 1
-    toolbar.listright= toolbar.listwidth
+    toolbar.listright= listwidth
     toolbar.seltoolbar(1,titgrp)
   end
 
@@ -52,7 +55,7 @@ if toolbar then
     toolbar.gotopos( 3, toolbar.listtb_y)
     toolbar.addlabel(text, "", toolbar.listright, true, bold)
     toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
-    toolbar.listright= toolbar.listwidth
+    toolbar.listright= listwidth
   end
 
   local function gototag(cmd)
