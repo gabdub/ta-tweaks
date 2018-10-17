@@ -10,15 +10,16 @@ if toolbar then
     toolbar.tag_listedfile= ""
     toolbar.sel_left_bar()
     toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
-    --title group: fixed width=300 / align top + height=use buttons
-    titgrp= toolbar.addgroup(0, 9, toolbar.listwidth, 0)
+    --title group: fixed width=300 / align top + fixed height
+    titgrp= toolbar.addgroup(0, 1, toolbar.listwidth, toolbar.cfg.barsize)
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.seticon("GROUP", "ttb-cback2", 0, true)
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(0, 26, toolbar.listwidth, 0)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
     toolbar.seticon("TOOLBAR", "ttb-cback", 0, true) --background
-    toolbar.seticon("TOOLBAR", "ttb-csep", 1, true) --separator
-    toolbar.listtb_y= 3
+    toolbar.listtb_y= 1
     toolbar.listright= toolbar.listwidth
     toolbar.seltoolbar(1,titgrp)
   end
@@ -50,7 +51,7 @@ if toolbar then
     --add a text to the list
     toolbar.gotopos( 3, toolbar.listtb_y)
     toolbar.addlabel(text, "", toolbar.listright, true, bold)
-    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.barsize
+    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
     toolbar.listright= toolbar.listwidth
   end
 
@@ -81,13 +82,7 @@ if toolbar then
     toolbar.addtext(gt, name, "")
     toolbar.cmds_n[gt]= gototag
     toolbar.tag_count=toolbar.tag_count+1
-    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.barsize
-  end
-
-  local function list_addseparator()
-    toolbar.gotopos( 3, toolbar.listtb_y)
-    toolbar.addspace()
-    toolbar.listtb_y= toolbar.listtb_y + 14
+    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
   end
 
   local function load_ctags()
@@ -126,7 +121,6 @@ if toolbar then
     local fname= bname:match('[^/\\]+$') -- filename only
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
     list_addinfo(fname, true)
-    list_addseparator()
     toolbar.seltoolbar(1,itemsgrp)
     toolbar.listtb_y= 3
     for i = 1, #tag_files do
@@ -199,8 +193,12 @@ if toolbar then
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
     if actions then actions.updateaction("toggle_viewlisttb") end
   end
-  events.connect(events.BUFFER_AFTER_SWITCH,  toolbar.list_toolbar_update)
-  events.connect(events.VIEW_AFTER_SWITCH,    toolbar.list_toolbar_update)
+
+  local function list_update() --update only when the file change
+    if toolbar.list_tb and (toolbar.tag_listedfile ~= buffer.filename) then load_ctags() end
+  end
+  events.connect(events.BUFFER_AFTER_SWITCH,  list_update)
+  events.connect(events.VIEW_AFTER_SWITCH,    list_update)
   events.connect(events.BUFFER_NEW,           toolbar.list_toolbar_update)
   events.connect(events.FILE_OPENED,          toolbar.list_toolbar_update)
   events.connect(events.FILE_CHANGED,         toolbar.list_toolbar_update)
