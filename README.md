@@ -25,7 +25,7 @@ compare files and strings (__compiling is required__):
 
 Each toolbar can be used as you wish but the default implementation is as follows:
 * #0: The horizontal top toolbar is used to show buttons and tabs
-* #1: The vertical left toolbar is used to show buttons
+* #1: The vertical left toolbar is used to show buttons or lists
 * #2: The horizontal bottom toolbar is used as a status bar replacement
 * #3: The vertical right (external) toolbar is used as a configuration panel
 * #4: The vertical right (internal) toolbar is used to show the MINIMAP
@@ -46,3 +46,4 @@ check the wiki:
 * [configuration panel](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---configuration-panel)
 * [status bar](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---status-bar)
 * [tabs & theming](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---tabs-&-theming)
+* [left panel](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---left-panel)
