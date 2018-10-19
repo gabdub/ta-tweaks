@@ -307,8 +307,12 @@ if toolbar then
     return toolbar.multipartimgs[img] or img
   end
 
+  function toolbar.themed_icon(name,icon,nicon,onlyinthistoolbar)
+    toolbar.seticon(name,toolbar.themed_multipart_img(icon),nicon,onlyinthistoolbar)
+  end
+
   function toolbar.get_img(idx)
-    return toolbar.themed_multipart_img(toolbar.cfg[ "toolbar_img#"..idx ])
+    return toolbar.cfg[ "toolbar_img#"..idx ]
   end
   function toolbar.set_img(idx, newimg, onlyifempty)
     if onlyifempty and toolbar.get_img(idx) ~= "" then return end
@@ -318,7 +322,7 @@ if toolbar then
     return toolbar.cfg[toolbar.cfg[0]["toolbar_img#1"]][4]
   end
   function toolbar.get_backimg(idx)
-    return toolbar.themed_multipart_img(toolbar.cfg[ "toolbar_back#"..idx ])
+    return toolbar.cfg[ "toolbar_back#"..idx ]
   end
   function toolbar.set_backimg(idx, newimg, onlyifempty)
     if onlyifempty and toolbar.get_backimg(idx) ~= "" then return end
@@ -489,12 +493,12 @@ if toolbar then
       --add/change some images
       for i=1, toolbar.get_img_count() do
         local img= toolbar.get_img(i)
-        if img ~= "" then toolbar.seticon(tbglobalicon, img, i) end
+        if img ~= "" then toolbar.themed_icon(tbglobalicon, img, i) end
       end
       if tabpos == 1 then
-        toolbar.seticon(tbglobalicon, toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
       elseif tabpos > 1 then
-        toolbar.seticon(tbglobalicon, toolbar.get_backimg(2), 0, true)  --horizontal back x 2rows
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(2), 0, true)  --horizontal back x 2rows
       end
       if tabpos == 2 then
         --2 rows, tabs at the top
@@ -529,12 +533,12 @@ if toolbar then
       --add/change some images
       for i=1, toolbar.get_img_count() do
         local img= toolbar.get_img(i)
-        if img ~= "" then toolbar.seticon(tbglobalicon, img, i) end
+        if img ~= "" then toolbar.themed_icon(tbglobalicon, img, i) end
       end
       if nvertcols < 2 then
-        toolbar.seticon(tbglobalicon, toolbar.get_backimg(3), 0, true)  --vertical back x 1col
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(3), 0, true)  --vertical back x 1col
       else
-        toolbar.seticon(tbglobalicon, toolbar.get_backimg(4), 0, true)  --vertical back x 2cols
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(4), 0, true)  --vertical back x 2cols
       end
       toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
       toolbar.show(true)
@@ -577,12 +581,12 @@ if toolbar then
     toolbar.new(toolbar.cfg.statsize, toolbar.cfg.statbutsize, toolbar.cfg.statimgsize, 2, toolbar.themepath)
     toolbar.current_toolbar= 2
     toolbar.current_tb_group= 0
-    toolbar.seticon(tbglobalicon, toolbar.get_backimg(5), 0, true)
+    toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(5), 0, true)
     local i=5 --5=normal 8=disabled 11=highlight 14=active
     while i < 15 do
-      toolbar.seticon(tbglobalicon, "stat-ntab1", i,   true)
-      toolbar.seticon(tbglobalicon, "stat-ntab2", i+1, true)
-      toolbar.seticon(tbglobalicon, "stat-ntab3", i+2, true)
+      toolbar.themed_icon(tbglobalicon, "stat-ntab1", i,   true)
+      toolbar.themed_icon(tbglobalicon, "stat-ntab2", i+1, true)
+      toolbar.themed_icon(tbglobalicon, "stat-ntab3", i+2, true)
       i=i+3
     end
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
@@ -714,7 +718,7 @@ if toolbar then
 --    toolbar.addgroup(8,8,0,0)
 --    toolbar.adjust(24,24,3,3,4,4)
 --    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
---    --toolbar.seticon(tbglobalicon, "ttb-cback", 0, true)
+--    --toolbar.themed_icon(tbglobalicon, "ttb-cback", 0, true)
 --    toolbar.setbackcolor(tbglobalicon,toolbar.cfg.popup_back,false,true)
 --    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
 --    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )

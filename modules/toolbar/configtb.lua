@@ -115,11 +115,11 @@ local function add_config_start(startgroup)
   toolbar.new(toolbar.cfgpnl_width, 24, 16, 3, toolbar.themepath)
   toolbar.current_toolbar= 3
   toolbar.current_tb_group= 0
-  toolbar.seticon("TOOLBAR", "ttb-cback", 0, true)  --vertical back
+  toolbar.themed_icon("TOOLBAR", "ttb-cback", 0, true)  --vertical back
 
   --config title: width=expand / height=27
   toolbar.addgroup(7, 0, 0, 27)
-  toolbar.seticon("GROUP", "ttb-cback2", 0, true)
+  toolbar.themed_icon("GROUP", "ttb-cback2", 0, true)
   toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
@@ -134,11 +134,11 @@ local function add_config_start(startgroup)
   toolbar.set_img(16, "ttb-atab3nc", true) --only if not already set
   for i=1, toolbar.get_img_count() do
     local img= toolbar.get_img(i)
-    if img ~= "" then toolbar.seticon("TOOLBAR", img, i, true) end
+    if img ~= "" then toolbar.themed_icon("TOOLBAR", img, i, true) end
   end
   toolbar.add_tabs_here(3,false,0,0)
 
-  toolbar.seticon("GROUP", toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
+  toolbar.themed_icon("GROUP", toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
 end
 
 local function add_config_tabgroup(name,title,ngrp)
@@ -157,7 +157,7 @@ local function add_config_tabgroup(name,title,ngrp)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
   end
   toolbar.cfgpnl_y= toolbar.cfgpnl_ymargin
-  --toolbar.seticon("GROUP", "ttb-cback2", 0, true)
+  --toolbar.themed_icon("GROUP", "ttb-cback2", 0, true)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";===[ "..name.." ]==="
   end
