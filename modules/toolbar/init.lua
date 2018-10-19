@@ -291,8 +291,24 @@ if toolbar then
     Util.add_config_field(toolbar.cfg, var, Util.cfg_str, "", maxidx)
   end
   --config images
+  local function load_multipart_img()
+    --already loaded?
+    if toolbar.multipartimgs and toolbar.multipartimgs[0] == toolbar.themepath then return end
+    toolbar.multipartimgs= {}
+    toolbar.multipartimgs[0]= toolbar.themepath --save theme path
+    for fname in lfs.dir(toolbar.themepath) do
+      local baseimg= string.match(fname, "(.-)__[LRTBWH0123456789]+%.png$")
+      if baseimg then toolbar.multipartimgs[baseimg]= string.match(fname, "(.-)%.png$") end
+    end
+  end
+  --add the multipart img suffix
+  function toolbar.themed_multipart_img(img)
+    load_multipart_img()
+    return toolbar.multipartimgs[img] or img
+  end
+
   function toolbar.get_img(idx)
-    return toolbar.cfg[ "toolbar_img#"..idx ]
+    return toolbar.themed_multipart_img(toolbar.cfg[ "toolbar_img#"..idx ])
   end
   function toolbar.set_img(idx, newimg, onlyifempty)
     if onlyifempty and toolbar.get_img(idx) ~= "" then return end
@@ -302,7 +318,7 @@ if toolbar then
     return toolbar.cfg[toolbar.cfg[0]["toolbar_img#1"]][4]
   end
   function toolbar.get_backimg(idx)
-    return toolbar.cfg[ "toolbar_back#"..idx ]
+    return toolbar.themed_multipart_img(toolbar.cfg[ "toolbar_back#"..idx ])
   end
   function toolbar.set_backimg(idx, newimg, onlyifempty)
     if onlyifempty and toolbar.get_backimg(idx) ~= "" then return end
