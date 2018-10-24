@@ -1,5 +1,5 @@
+-- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 --functions to define common controls like buttons, combo-boxes, etc in the toolbars
-
 local events, events_connect = events, events.connect
 local tbglobalicon="TOOLBAR"
 
@@ -20,7 +20,7 @@ function toolbar.cmd(name,func,tooltip,icon,passname)
   elseif string.match(icon,"%.png") == nil then
     toolbar.setthemeicon(name,icon) --no ".png": use 'icon' from theme
   else
-    toolbar.seticon(name,icon)  --"icon.png": use the given icon file
+    toolbar.seticon(name,icon,toolbar.TTBI_TB.NORMAL)  --"icon.png": use the given icon file
   end
 end
 
@@ -67,7 +67,7 @@ local function show_combo_list(btname)
   toolbar.addgroup(8,8,0,0)
   toolbar.adjust(24,27,3,3,0,0)
   toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-  toolbar.themed_icon(tbglobalicon, "ttb-combo", 0, true)
+  toolbar.themed_icon(tbglobalicon, "ttb-combo", toolbar.TTBI_TB.NORMAL, true)
   for i=1,#combo_data[btname] do
     local itname= btname.."#"..i
     toolbar.addtext(itname,combo_data[btname][i],"",282)
@@ -139,8 +139,8 @@ end
 
 function toolbar.cmd_check(name,tooltip,checked)
   toolbar.cmd(name, check_clicked, tooltip, (checked and "check1" or "check0"))
-  toolbar.setthemeicon(name, "check-hi", 2)
-  toolbar.setthemeicon(name, "check-pr", 3)
+  toolbar.setthemeicon(name, "check-hi", toolbar.TTBI_TB.HILIGHT)
+  toolbar.setthemeicon(name, "check-pr", toolbar.TTBI_TB.HIPRESSED)
   toolbar.cfgpnl_chkval[name]=checked
 end
 
@@ -169,8 +169,8 @@ end
 
 function toolbar.cmd_radio(name,tooltip,checked)
   toolbar.cmd(name, radio_clicked, tooltip, (checked and "radio1" or "radio0"))
-  toolbar.setthemeicon(name, "radio-hi", 2)
-  toolbar.setthemeicon(name, "radio-pr", 3)
+  toolbar.setthemeicon(name, "radio-hi", toolbar.TTBI_TB.HILIGHT)
+  toolbar.setthemeicon(name, "radio-pr", toolbar.TTBI_TB.HIPRESSED)
   toolbar.cfgpnl_chkval[name]=checked
 end
 

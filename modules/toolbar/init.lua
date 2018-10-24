@@ -1,6 +1,7 @@
--- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 if toolbar then
   local Util = Util
+  require('toolbar.constants')
   if actions then require('toolbar.actions') end
   require('toolbar.controls')
   require('toolbar.configtb') --config panel on toolbar #3
@@ -33,7 +34,7 @@ if toolbar then
 
   function toolbar.setthemeicon(name,icon,num)
     --set button icon, get icon from theme's icons folder
-    toolbar.seticon(name,toolbar.iconspath..icon..".png",num)
+    toolbar.seticon(name,toolbar.iconspath..icon..".png",num or toolbar.TTBI_TB.NORMAL)
   end
 
   function toolbar.isbufhide(buf)
@@ -308,7 +309,7 @@ if toolbar then
   end
 
   function toolbar.themed_icon(name,icon,nicon,onlyinthistoolbar)
-    toolbar.seticon(name,toolbar.themed_multipart_img(icon),nicon,onlyinthistoolbar)
+    toolbar.seticon(name,toolbar.themed_multipart_img(icon),nicon or toolbar.TTBI_TB.NORMAL,onlyinthistoolbar)
   end
 
   function toolbar.get_img(idx)
@@ -485,20 +486,21 @@ if toolbar then
       toolbar.current_tb_group= 0
       if not toolbar.cfg.tabwithclose then
         --no close button in tabs, use a shorter tab end (part #3)
-        toolbar.set_img(7,  "ttb-ntab3nc", true) --only if not already set
-        toolbar.set_img(10, "ttb-dtab3nc", true) --only if not already set
-        toolbar.set_img(13, "ttb-htab3nc", true) --only if not already set
-        toolbar.set_img(16, "ttb-atab3nc", true) --only if not already set
+        --only if not already set
+        toolbar.set_img(toolbar.TTBI_TB.NTAB3, "ttb-ntab3nc", true)
+        toolbar.set_img(toolbar.TTBI_TB.DTAB3, "ttb-dtab3nc", true)
+        toolbar.set_img(toolbar.TTBI_TB.HTAB3, "ttb-htab3nc", true)
+        toolbar.set_img(toolbar.TTBI_TB.ATAB3, "ttb-atab3nc", true)
       end
       --add/change some images
       for i=1, toolbar.get_img_count() do
         local img= toolbar.get_img(i)
         if img ~= "" then toolbar.themed_icon(tbglobalicon, img, i) end
       end
-      if tabpos == 1 then
-        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(1), 0, true)  --horizontal back x 1row
-      elseif tabpos > 1 then
-        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(2), 0, true)  --horizontal back x 2rows
+      if tabpos == 1 then --horizontal back x 1row
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(1), toolbar.TTBI_TB.BACKGROUND, true)
+      elseif tabpos > 1 then --horizontal back x 2rows
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(2), toolbar.TTBI_TB.BACKGROUND, true)
       end
       if tabpos == 2 then
         --2 rows, tabs at the top
@@ -535,10 +537,10 @@ if toolbar then
         local img= toolbar.get_img(i)
         if img ~= "" then toolbar.themed_icon(tbglobalicon, img, i) end
       end
-      if nvertcols < 2 then
-        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(3), 0, true)  --vertical back x 1col
-      else
-        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(4), 0, true)  --vertical back x 2cols
+      if nvertcols < 2 then --vertical back x 1col
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(3), toolbar.TTBI_TB.BACKGROUND, true)
+      else --vertical back x 2cols
+        toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(4), toolbar.TTBI_TB.BACKGROUND, true)
       end
       toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
       toolbar.show(true)
@@ -581,9 +583,9 @@ if toolbar then
     toolbar.new(toolbar.cfg.statsize, toolbar.cfg.statbutsize, toolbar.cfg.statimgsize, 2, toolbar.themepath)
     toolbar.current_toolbar= 2
     toolbar.current_tb_group= 0
-    toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(5), 0, true)
-    local i=5 --5=normal 8=disabled 11=highlight 14=active
-    while i < 15 do
+    toolbar.themed_icon(tbglobalicon, toolbar.get_backimg(5), toolbar.TTBI_TB.BACKGROUND, true)
+    local i= toolbar.TTBI_TB.NTAB1 --5=normal 8=disabled 11=highlight 14=active
+    while i < toolbar.TTBI_TB.ATAB2 do
       toolbar.themed_icon(tbglobalicon, "stat-ntab1", i,   true)
       toolbar.themed_icon(tbglobalicon, "stat-ntab2", i+1, true)
       toolbar.themed_icon(tbglobalicon, "stat-ntab3", i+2, true)
@@ -718,7 +720,7 @@ if toolbar then
 --    toolbar.addgroup(8,8,0,0)
 --    toolbar.adjust(24,24,3,3,4,4)
 --    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
---    --toolbar.themed_icon(tbglobalicon, "ttb-cback", 0, true)
+--    --toolbar.themed_icon(tbglobalicon, "ttb-cback", toolbar.TTBI_TB.BACKGROUND, true)
 --    toolbar.setbackcolor(tbglobalicon,toolbar.cfg.popup_back,false,true)
 --    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
 --    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )

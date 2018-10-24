@@ -1,4 +1,4 @@
--- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 local events = events
 local Proj = Proj
 local Util = Util

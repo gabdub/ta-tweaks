@@ -1,4 +1,4 @@
--- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 -- BASED ON: file_diff module, Copyright 2015-2017 Mitchell mitchell.att.foicica.com. See LICENSE.
 --
 local Proj = Proj
