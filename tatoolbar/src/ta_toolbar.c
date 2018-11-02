@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.8 (22 sep 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.9 (29 oct 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -198,6 +198,7 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
     }else if( p->text != NULL ){
       //text button (text & no image)
       p->flags |= TTBF_TEXT;
+      p->flags |= TTBF_SHOW_BORDER; //show button border
       set_text_bt_width(p);
     }
     p->back_color= BKCOLOR_NOT_SET;
@@ -279,7 +280,7 @@ static void free_item_node( struct toolbar_item * p )
     free((void*)p->tooltip);
   }
   //free item images
-  for(i= 0; (i < TTBI_NODE_N); i++){
+  for(i= 0; (i < TTBI_N_IT_IMGS); i++){
     if( p->img[i].fname != NULL ){
       free((void*)p->img[i].fname);
     }
@@ -302,7 +303,7 @@ static void free_group_node( struct toolbar_group * g )
   int i;
   free_item_list( g->list );
   //free group images
-  for(i= 0; (i < TTBI_TB_N); i++){
+  for(i= 0; (i < TTBI_N_TB_IMGS); i++){
     if( g->img[i].fname != NULL ){
       free((void*)g->img[i].fname);
     }
@@ -339,7 +340,7 @@ static void free_toolbar_num( int num )
       ttb.ntbhilight= -1;
     }
     //free toolbar images
-    for(i= 0; (i < TTBI_TB_N); i++){
+    for(i= 0; (i < TTBI_N_TB_IMGS); i++){
       if( T->img[i].fname != NULL ){
         free((void*)T->img[i].fname);
         T->img[i].fname= NULL;
@@ -643,7 +644,7 @@ static int set_toolbar_img( struct toolbar_data *T, int nimg, const char *imgnam
   //return 1 if a toolbar redraw is needed
   struct toolbar_img *pti;
   struct toolbar_group * g;
-  if( (T != NULL) && (nimg >= 0) && (nimg < TTBI_TB_N) ){
+  if( (T != NULL) && (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
     pti= &(T->img[nimg]);
     return set_pti_img(pti, imgname );
   }
@@ -654,7 +655,7 @@ static int set_group_img( struct toolbar_group *G, int nimg, const char *imgname
 { //set a group image
   //return 1 if a group redraw is needed
   struct toolbar_img *pti;
-  if( (G != NULL) && (nimg >= 0) && (nimg < TTBI_TB_N) ){
+  if( (G != NULL) && (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
     pti= &(G->img[nimg]);
     return set_pti_img(pti, imgname );
   }
@@ -664,7 +665,7 @@ static int set_group_img( struct toolbar_group *G, int nimg, const char *imgname
 int set_item_img( struct toolbar_item *p, int nimg, const char *imgname )
 { //set an item image
   //return 1 if redraw is needed
-  if( (p != NULL) && (nimg >= 0) && (nimg < TTBI_NODE_N) ){
+  if( (p != NULL) && (nimg >= 0) && (nimg < TTBI_N_IT_IMGS) ){
     return set_pti_img( &(p->img[nimg]), imgname );
   }
   return 0; //no redraw needed
@@ -672,42 +673,55 @@ int set_item_img( struct toolbar_item *p, int nimg, const char *imgname )
 
 static struct toolbar_img * get_toolbar_img( struct toolbar_data *T, int nimg )
 {
-  return &(T->img[nimg]); //use toolbar image
+  if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
+    return &(T->img[nimg]); //use toolbar image
+  }
+  return NULL;
 }
 
-
-static struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg )
+struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg )
 {
-  if(G->img[nimg].width > 0){
-    return &(G->img[nimg]);         //use group image
+  if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
+    if(G->img[nimg].width > 0){
+      return &(G->img[nimg]);         //use group image
+    }
+    return &(G->toolbar->img[nimg]);  //use toolbar image
   }
-  return &(G->toolbar->img[nimg]);  //use toolbar image
+  return NULL;
 }
 
-static struct toolbar_img * get_item_img( struct toolbar_item *p, int nimg )
+static struct toolbar_img * get_item_img( struct toolbar_item *p, int nimg, int base )
 {
-  struct toolbar_img *pti= &(p->img[nimg]); //use item image
-  if( (pti->width == 0) && ((nimg == TTBI_HIPRESSED) || (nimg == TTBI_HILIGHT)) ){
-    //no item image: use group/toolbar image (only for hilight)
-    pti= get_group_img(p->group, nimg);
+  if( (nimg >= 0) && (nimg < TTBI_N_IT_IMGS) ){
+    struct toolbar_img *pti= &(p->img[nimg]); //use item image
+    if( (pti->width == 0) && (base >= 0) ){    //no item image: use group/toolbar
+      pti= get_group_img(p->group, nimg + base);
+    }
+    return pti;
   }
-  return pti;
+  return NULL;
 }
 
 int get_group_imgW( struct toolbar_group *G, int nimg )
 {
-  if(G->img[nimg].width > 0){
-    return G->img[nimg].width; //use group image
+  if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
+    if(G->img[nimg].width > 0){
+      return G->img[nimg].width; //use group image
+    }
+    return G->toolbar->img[nimg].width; //use toolbar image
   }
-  return G->toolbar->img[nimg].width; //use toolbar image
+  return 0;
 }
 
 int get_group_imgH( struct toolbar_group *G, int nimg )
 {
-  if(G->img[nimg].width > 0){
-    return G->img[nimg].height; //use group image
+  if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
+    if(G->img[nimg].width > 0){
+      return G->img[nimg].height; //use group image
+    }
+    return G->toolbar->img[nimg].height; //use toolbar image
   }
-  return G->toolbar->img[nimg].height; //use toolbar image
+  return 0;
 }
 
 /* ============================================================================= */
@@ -841,14 +855,6 @@ static void update_tabs_sizeG( struct toolbar_group *G )
         remainsp -= p->barx2 - p->prew - p->postw;
       }
     }
-//    if( nexpv > 0){
-//      //at least one expand-tab is visible
-//      //expand tab-node to use all the extra space
-//      if( xend < groupwidth ){
-//        xend= groupwidth;
-//      }
-//    }
-//    G->barx2= xend
   }
 }
 
@@ -1205,9 +1211,14 @@ void calc_popup_sizeT( struct toolbar_data *T)
 }
 
 int get_tabtext_widthG(struct toolbar_group *G, const char * text )
-{ //return the width of the given text
+{ //return the width of the given text + TAB borders (or 0 if text is empty)
   if( (G != NULL) && (text != NULL) && (*text != 0) ){
-    return get_text_width( text, G->tabfontsz) + get_group_imgW(G,TTBI_TB_NTAB1) + get_group_imgW(G,TTBI_TB_NTAB3);
+    int wb= 0;
+    struct toolbar_img * tn= get_group_img(G,TTBI_TB_NTAB);
+    if( tn != NULL ){
+      wb= tn->width_l + tn->width_r;
+    }
+    return get_text_width( text, G->tabfontsz) + wb;
   }
   return 0;
 }
@@ -1437,7 +1448,7 @@ void mouse_leave_toolbar( struct toolbar_data *T )
 {
   if( T != NULL ){
     if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
-      //force hilight and tooltip OFF (in this toolbar only)
+      //force highlight and tooltip OFF (in this toolbar only)
       set_hilight_off();
       clear_tooltip_textT(T);
     }
@@ -1452,7 +1463,7 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
 
   p= item_fromXYT(T, x, y);
   if( p != ttb.philight ){
-    //hilight changed
+    //highlight changed
     if( (p != NULL) && (ttb.phipress != NULL) && ((p->group->flags & TTBF_GRP_DRAGTAB) != 0) &&
         (p != ttb.phipress) && ((p->flags & TTBF_TAB) != 0) && (ttb.phipress->group == p->group) ){
       //drag tab from "ttb.phipress" to "p" position (in the SAME tab group)
@@ -1493,19 +1504,19 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
       if( ok != 0 ){
         //update the last tab (insertion point)
         G->list_last= find_prev_itemG( G, NULL );
-        //hilight the dragged tab
+        //highlight the dragged tab
         p= ttb.phipress;
         //redraw the complete toolbar
         redraw_toolbar(T);
       }
     }
-    //clear previous hilight (in any toolbar)
+    //clear previous highlight (in any toolbar)
     if( (ttb.philight != NULL) && (ttb.ntbhilight >= 0) ){
       redraw_item(ttb.philight );
     }
     ttb.philight= p;
     ttb.ntbhilight= T->num;
-    //redraw new hilighted button in this toolbar
+    //redraw new highlighted button in this toolbar
     redraw_item(ttb.philight);
     //update tooltip text
     set_hilight_tooltipT(T);
@@ -1561,9 +1572,9 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         }
       }
       if( nhide != G->nitems_scroll ){
-        //update hilight
-        set_hilight_off();  //clear previous hilight
-        ttb.philight= item_fromXYT(T, x, y); //set new hilight
+        //update highlight
+        set_hilight_off();  //clear previous highlight
+        ttb.philight= item_fromXYT(T, x, y); //set new highlight
         ttb.ntbhilight= T->num;
         //update tooltip text
         set_hilight_tooltipT(T);
@@ -1604,9 +1615,9 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
           }
         }
         if( nhide != G->yvscroll ){
-          //update hilight after scrolling
-          set_hilight_off();  //clear previous hilight
-          ttb.philight= item_fromXYT(T, x, y); //set new hilight
+          //update highlight after scrolling
+          set_hilight_off();  //clear previous highlight
+          ttb.philight= item_fromXYT(T, x, y); //set new highlight
           ttb.ntbhilight= T->num;
           //update tooltip text
           set_hilight_tooltipT(T);
@@ -1625,6 +1636,7 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
 void set_tabtextG(struct toolbar_group *G, int ntab, const char * text, const char *tooltip, int redraw)
 {
   struct toolbar_item * p;
+  struct toolbar_img * tn;
   if( G != NULL ){
     redraw_begG(G);
     p= item_from_numG(G, ntab);
@@ -1642,11 +1654,18 @@ void set_tabtextG(struct toolbar_group *G, int ntab, const char * text, const ch
     p->tooltip= chg_alloc_str(p->tooltip, tooltip);
     p->barx1= 0;
     p->bary1= 0;
-    p->prew= get_group_imgW(G,TTBI_TB_NTAB1);
-    p->postw= get_group_imgW(G,TTBI_TB_NTAB3);
+    tn= get_group_img(G,TTBI_TB_NTAB);
+    if( tn != NULL ){
+      p->prew= tn->width_l;
+      p->postw= tn->width_r;
+      p->bary2= tn->height;
+    }else{
+      p->prew= 0;
+      p->postw= 0;
+      p->bary2= 0;
+    }
     p->imgx=  p->prew;	//text start
     p->imgy=  G->tabtexty;
-    p->bary2= get_group_imgH(G,TTBI_TB_NTAB1);
     p->textwidth= 0;
     set_tabwidth(p);
     //group size changed, update toolbar
@@ -1655,7 +1674,7 @@ void set_tabtextG(struct toolbar_group *G, int ntab, const char * text, const ch
 }
 
 void set_hilight_off( void )
-{ //force hilight off (in any toolbar)
+{ //force highlight off (in any toolbar)
   struct toolbar_item * p;
   p= ttb.philight;
   if( (p != NULL) && (ttb.ntbhilight >= 0) ){
@@ -1706,8 +1725,6 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
 { //reset toolbar content and start a new one
   struct toolbar_data *T;
   struct toolbar_group *G;
-  char str[32];
-  int i;
 
   T= toolbar_from_num(num);
   if( T != NULL ){
@@ -1728,47 +1745,36 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
       ttb.img_base= chg_alloc_str(ttb.img_base, imgpath);
     }
     //set default toolbar images
-    set_toolbar_img( T, TTBI_TB_HILIGHT,   "ttb-back-hi");
-    set_toolbar_img( T, TTBI_TB_HIPRESSED, "ttb-back-press");
+    //buttons
+    set_toolbar_img( T, TTBI_TB_BUT_NORMAL,  "ttb-button-normal__LRTB4");
+    set_toolbar_img( T, TTBI_TB_BUT_HILIGHT, "ttb-button-hilight__LRTB4");
+    set_toolbar_img( T, TTBI_TB_BUT_HIPRESS, "ttb-button-press__LRTB4");
+    //buttons with a drop down triangle
+    set_toolbar_img( T, TTBI_TB_DDBUT_NORMAL,  "ttb-button-normal-drop__LTB4R18" );
+    set_toolbar_img( T, TTBI_TB_DDBUT_HILIGHT, "ttb-button-hilight-drop__LTB4R18" );
+    set_toolbar_img( T, TTBI_TB_DDBUT_HIPRESS, "ttb-button-press-drop__LTB4R18" );
+    //separators
     if( T->isvertical ){
-      set_toolbar_img( T, TTBI_TB_SEPARATOR, "ttb-hsep" );
+      set_toolbar_img( T, TTBI_TB_SEPARATOR, "ttb-separator-h__LR2" );
     }else{
-      set_toolbar_img( T, TTBI_TB_SEPARATOR, "ttb-vsep" );
+      set_toolbar_img( T, TTBI_TB_SEPARATOR, "ttb-separator-v__TB2" );
     }
+    //tabs
+    set_toolbar_img( T, TTBI_TB_NTAB, "ttb-tab-normal__LR9" );
+    set_toolbar_img( T, TTBI_TB_DTAB, "ttb-tab-disabled__LR9" );
+    set_toolbar_img( T, TTBI_TB_HTAB, "ttb-tab-hilight__LR9" );
+    set_toolbar_img( T, TTBI_TB_ATAB, "ttb-tab-active__LR9" );
 
-    //3 images per tab state: beginning, middle, end
-    strcpy( str, "ttb-#tab#" );
-    for( i= 0; i < 3; i++){
-      str[8]= '1'+i;
-      str[4]= 'n';
-      set_toolbar_img( T, TTBI_TB_NTAB1+i, str ); //normal
-      str[4]= 'd';
-      set_toolbar_img( T, TTBI_TB_DTAB1+i, str ); //disabled
-      str[4]= 'h';
-      set_toolbar_img( T, TTBI_TB_HTAB1+i, str ); //hilight
-      str[4]= 'a';
-      set_toolbar_img( T, TTBI_TB_ATAB1+i, str ); //active
-    }
-    //set_toolbar_img( T, TTBI_TB_TABBACK, "ttb-tab-back" );   //tab background
-    set_toolbar_img( T, TTBI_TB_TAB_NSL,    "ttb-tab-sl"    ); //normal tab scroll left
-    set_toolbar_img( T, TTBI_TB_TAB_NSR,    "ttb-tab-sr"    ); //normal tab scroll right
-    set_toolbar_img( T, TTBI_TB_TAB_HSL,    "ttb-tab-hsl"   ); //hilight tab scroll left
-    set_toolbar_img( T, TTBI_TB_TAB_HSR,    "ttb-tab-hsr"   ); //hilight tab scroll right
-    set_toolbar_img( T, TTBI_TB_TAB_NCLOSE, "ttb-tab-close" ); //normal close button
-    set_toolbar_img( T, TTBI_TB_TAB_HCLOSE, "ttb-tab-hclose"); //hilight close button
-    set_toolbar_img( T, TTBI_TB_TAB_CHANGED,"ttb-tab-chg"   ); //change indicator
+    //set_toolbar_img( T, TTBI_TB_TABBACK, "ttb-tab-background" );   //tab background
+    set_toolbar_img( T, TTBI_TB_TAB_NSL,    "ttb-tab-sl-normal"    ); //normal tab scroll left
+    set_toolbar_img( T, TTBI_TB_TAB_NSR,    "ttb-tab-sr-normal"    ); //normal tab scroll right
+    set_toolbar_img( T, TTBI_TB_TAB_HSL,    "ttb-tab-sl-hilight"   ); //highlight tab scroll left
+    set_toolbar_img( T, TTBI_TB_TAB_HSR,    "ttb-tab-sr-hilight"   ); //highlight tab scroll right
+    set_toolbar_img( T, TTBI_TB_TAB_NCLOSE, "ttb-tab-close-normal" ); //normal close button
+    set_toolbar_img( T, TTBI_TB_TAB_HCLOSE, "ttb-tab-close-hilight"); //highlight close button
 
-    //3 images per text-button state: beginning, middle, end
-    set_toolbar_img( T, TTBI_TB_TXT_HIL1, "ttb-back-hi1" );    //hilight
-    set_toolbar_img( T, TTBI_TB_TXT_HIL2, "ttb-back-hi2" );
-    set_toolbar_img( T, TTBI_TB_TXT_HIL3, "ttb-back-hi3" );
-    set_toolbar_img( T, TTBI_TB_TXT_HPR1, "ttb-back-press1" ); //hi-pressed
-    set_toolbar_img( T, TTBI_TB_TXT_HPR2, "ttb-back-press2" );
-    set_toolbar_img( T, TTBI_TB_TXT_HPR3, "ttb-back-press3" );
-    //version with drop down triangle
-    set_toolbar_img( T, TTBI_TB_TXT_NOR4, "ttb-back-no4" );
-    set_toolbar_img( T, TTBI_TB_TXT_HIL4, "ttb-back-hi4" );
-    set_toolbar_img( T, TTBI_TB_TXT_HPR4, "ttb-back-press4" );
+    set_toolbar_img( T, TTBI_TB_TAB_CHANGED,"ttb-tab-modified" ); //modified buffer indicator
+
 
     //set defaults
     T->buttonsize= buttonsize;
@@ -1822,6 +1828,9 @@ void ttb_set_back_colorT(struct toolbar_data *T, const char *name, int color, in
     struct toolbar_item * p= item_from_nameT(T, name);
     if( p != NULL ){
       p->back_color= color;
+      if( !keepback ){
+        set_item_img( p, TTBI_TB_BACKGROUND, NULL );
+      }
       if( color == BKCOLOR_PICKER ){
         ttb.cpick.ppicker= p; //where is the color picker
       }else if( ttb.cpick.ppicker == p ){
@@ -1940,7 +1949,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
       }
       if( !hide ){
         //show H separator in the middle
-        p= add_itemG(G, NULL, get_group_img(G,TTBI_TB_SEPARATOR)->fname, NULL, NULL, 0, 0);
+        p= add_itemG(G, NULL, NULL, NULL, NULL, 0, TTBF_IS_SEPARATOR);
         if( p != NULL ){
           asep= get_group_imgH(G,TTBI_TB_SEPARATOR); //minimun separator = image height
           if( sepsize < asep ){
@@ -1959,7 +1968,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
       }
       if( !hide ){
         //show V separator in the middle
-        p= add_itemG(G, NULL, get_group_img(G,TTBI_TB_SEPARATOR)->fname, NULL, NULL, 0, 0);
+        p= add_itemG(G, NULL, NULL, NULL, NULL, 0, TTBF_IS_SEPARATOR);
         if( p != NULL ){
           asep= get_group_imgW(G,TTBI_TB_SEPARATOR); //minimun separator = image width
           if( sepsize < asep ){
@@ -2009,13 +2018,13 @@ void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclo
 
       G->tabtextoff= fntyoff;
       //center text verticaly + offset
-      G->tabtexty=  ((get_group_imgH(G,TTBI_TB_NTAB1) + G->tabtexth)/2)+G->tabtextoff;
+      G->tabtexty=  ((get_group_imgH(G,TTBI_TB_NTAB) + G->tabtexth)/2)+G->tabtextoff;
       if( G->tabtexty < 0){
         G->tabtexty= 0;
       }
       G->bary1= 0;
       G->tabheight= G->tabtexth; //use the tallest image or text
-      for(i= TTBI_TB_TABBACK; i <= TTBI_TB_ATAB3; i++ ){
+      for(i= TTBI_TB_TABBACK; i <= TTBI_TB_ATAB; i++ ){
         if( G->tabheight < get_group_imgH(G,i) ){
           G->tabheight= get_group_imgH(G,i);
         }
@@ -2036,7 +2045,7 @@ void ttb_set_tab_colorsG(struct toolbar_group *G, int ncol, int hcol, int acol, 
 {
   if( G != NULL ){
     setrgbcolor( ncol, &G->tabtextcolN);  //normal   color
-    setrgbcolor( hcol, &G->tabtextcolH);  //hilight  color
+    setrgbcolor( hcol, &G->tabtextcolH);  //highlight  color
     setrgbcolor( acol, &G->tabtextcolA);  //active   color
     setrgbcolor( mcol, &G->tabtextcolM);  //modified color
     setrgbcolor( gcol, &G->tabtextcolG);  //grayed   color
@@ -2078,7 +2087,7 @@ void ttb_activate_tabG(struct toolbar_group *G, int ntab)
         //the tab is left-hidden,
         //force "no scroll" to move this tab to the rightmost position
         if( ttb.ntbhilight == T->num ){
-          set_hilight_off(); //force hilight off (in this toolbar only)
+          set_hilight_off(); //force highlight off (in this toolbar only)
         }
         clear_tooltip_textT(T);
         G->nitems_scroll= 0; //
@@ -2138,7 +2147,7 @@ void ttb_activate_tabG(struct toolbar_group *G, int ntab)
         G->nitems_scroll= tabpos;
       }
       if( ttb.ntbhilight == T->num ){
-          set_hilight_off(); //force hilight off (in this toolbar only)
+          set_hilight_off(); //force highlight off (in this toolbar only)
       }
       clear_tooltip_textT(T);
     }
@@ -2347,13 +2356,12 @@ int need_redraw(struct area * pdrawarea, int x, int y, int xf, int yf)
   return ((x <= pdrawarea->x1) && (y <= pdrawarea->y1) && (xf >= pdrawarea->x0) && (yf >= pdrawarea->y0));
 }
 
-int paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pdrawarea)
+void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pdrawarea)
 {
   struct toolbar_item *phi;
   struct toolbar_group *g;
-  int x0, y0, wt, ht, x, y, h, hibackpainted, xa;
+  int x0, y0, wt, ht, x, y, h, base;
 
-  hibackpainted= 0;
   //paint toolbar back color if set
   draw_fill_color(gcontext, T->back_color, 0, 0, T->barwidth, T->barheight );
   //draw toolbar background image (if any)
@@ -2375,93 +2383,40 @@ int paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pd
       }
     }
   }
-
-  //draw hilighted background (before drawing buttons)
-  phi= NULL;
-  if( ttb.ntbhilight == T->num ){
-    phi= ttb.philight;
-  }
-  if( (phi != NULL) && ((phi->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT))==0) ){
-    g= phi->group;
-    x0= g->barx1;
-    y0= g->bary1 - g->yvscroll;
-    x= x0+phi->barx1;
-    y= y0+phi->bary1;
-    if( (y >= 0) && (need_redraw(pdrawarea, x, y, x0+phi->barx2, y0+phi->bary2)) && (phi->back_color != BKCOLOR_PICKER) ){
-      h= -1;
-      if(ttb.phipress == phi){
-        h= TTBI_HIPRESSED; //hilight as pressed
-      }else if(ttb.phipress == NULL){
-        h= TTBI_HILIGHT; //normal hilight (and no other button is pressed)
-      }
-      if( h >= 0){
-        hibackpainted= 1;
-        //paint back color if set
-        draw_fill_color(gcontext, phi->back_color, x, y, phi->barx2-phi->barx1, phi->bary2-phi->bary1 );
-        if( (phi->flags & TTBF_TEXT) == 0 ){
-          //graphic button
-          draw_img(gcontext, get_item_img(phi,h), x, y, 0 );
-        }else{
-          //text button
-          if( h == TTBI_HILIGHT ){
-            h= TTBI_TB_TXT_HIL1;  //normal hilight
-          }else{
-            h= TTBI_TB_TXT_HPR1;  //hilight as pressed
-          }
-          draw_img(gcontext, get_group_img(g,h), x, y, 0 );
-          x += phi->prew;
-          xa= x0 + phi->barx2 - phi->postw;
-          draw_fill_mp_img(gcontext, get_group_img(g,h+1), x, y, xa-x, get_group_imgH(g,h) );
-          h +=2;
-          if( (phi->flags & TTBF_DROP_BUTTON) != 0 ){
-            if( h == TTBI_TB_TXT_HIL3 ){
-              h= TTBI_TB_TXT_HIL4;  //replace TTBI_TB_TXT_HIL3 (add a drop down button at the end)
-            }else{
-              h= TTBI_TB_TXT_HPR4;  //replace TTBI_TB_TXT_HPR3 (add a drop down button at the end)
-            }
-          }
-          draw_img(gcontext, get_group_img(g,h), xa, y, 0 );
-        }
-      }
-    }
-  }
-  return hibackpainted;
 }
 
 static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_item *t, int x, int y)
 {
-  int h, hc, x3;
+  int h, hc, x3, ht;
   struct color3doubles *color= &(G->tabtextcolN);
-  h= TTBI_TB_NTAB1;
+  h= TTBI_TB_NTAB;
   hc= TTBI_TB_TAB_NCLOSE;
   if( G->closeintabs ){
     if( (ttb.philight != NULL) && (ttb.ntbhilight == G->toolbar->num) && ((ttb.philight->flags & TTBF_CLOSETAB_BUT) != 0) ){
       //a tab close button is hilited, is from this tab?
       if( ttb.philight->num == t->num ){
-        hc= TTBI_TB_TAB_HCLOSE;  //hilight close tab button
-        h=  TTBI_TB_HTAB1;       //and tab
+        hc= TTBI_TB_TAB_HCLOSE;  //highlight close tab button
+        h=  TTBI_TB_HTAB;        //and tab
         color= &(G->tabtextcolH);
       }
     }
   }
   if( (t->flags & TTBF_ACTIVE) != 0 ){
-    h= TTBI_TB_ATAB1;
+    h= TTBI_TB_ATAB;
     color= &(G->tabtextcolA);
 
   }else if( (t->flags & TTBF_GRAYED) != 0 ){
-    h= TTBI_TB_DTAB1;
+    h= TTBI_TB_DTAB;
     color= &(G->tabtextcolG);
 
   }else if( (t == ttb.philight)&&((ttb.phipress == NULL)||(ttb.phipress == t)) ){
-    h= TTBI_TB_HTAB1;
+    h= TTBI_TB_HTAB;
     color= &(G->tabtextcolH);
   }
-  draw_img(gcontext, get_group_img(G,h), x, y, 0 );
-  draw_fill_mp_img(gcontext, get_group_img(G,h+1), x+t->prew, y,
-      t->barx2 - t->prew - t->postw, get_group_imgH(G,TTBI_TB_NTAB2) );
+  ht= get_group_imgH(G,TTBI_TB_NTAB);
+  draw_fill_mp_img(gcontext, get_group_img(G,h), x, y, t->barx2-t->barx1, ht);
 
   x3= x + t->barx2 - t->postw;
-  draw_img(gcontext, get_group_img(G,h+2), x3, y, 0 );
   if( (t->flags & TTBF_CHANGED) != 0 ){
     if( G->tabmodshow == 1 ){
       draw_img(gcontext, get_group_img(G,TTBI_TB_TAB_CHANGED), x3, y, 0 );
@@ -2472,15 +2427,14 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
   if( G->closeintabs ){
     draw_img(gcontext, get_group_img(G,hc), x3, y, 0 );
   }
-  draw_txt(gcontext, t->text, x+t->imgx, y+t->imgy, y, x3-x-t->imgx, get_group_imgH(G,TTBI_TB_NTAB2), color, G->tabfontsz, 0 );
+  draw_txt(gcontext, t->text, x+t->imgx, y+t->imgy, y, x3-x-t->imgx, ht, color, G->tabfontsz, 0 );
 }
 
-void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht, int hibackpainted)
+void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
 {
   struct toolbar_item *p, *phi, *t, *ta;
-  int h, grayed, x, y, xa, nhide, x1;
+  int h, grayed, x, y, xa, nhide, x1, base, wt2, ht2;
   struct color3doubles *color;
-  struct toolbar_img * bback;
 
   phi= NULL;
   if( ttb.ntbhilight == g->toolbar->num ){
@@ -2553,43 +2507,45 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
         break;
       }
       if( (y0+p->bary1 >= 0) && need_redraw( pdrawarea, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
-        h= TTBI_NORMAL;
-        grayed= 0;
-        //paint back color / background if set and wasn't painted by highlight
-        if( (phi != p) || (!hibackpainted) ){
-          draw_fill_color(gcontext, p->back_color, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1 );
-          //draw a normal button background if the button is selectable
-          if( (p->flags & TTBF_SELECTABLE) != 0 ){
-            if( (p->flags & TTBF_TEXT) == 0 ){
-              //graphic button
-              draw_img(gcontext, get_group_img(g,TTBI_TB_HINORMAL), x0+p->barx1, y0+p->bary1, 0 );
-            }else{
-              //text button
-              h= TTBI_TB_TXT_NOR1;
-              if( get_group_imgW(g,h) > 0 ){
-                draw_img(gcontext, get_group_img(g,h), x0+p->barx1, y0+p->bary1, 0 );
-                x1= x0 + p->barx1 + p->prew;
-                xa= x0 + p->barx2 - p->postw;
-                draw_fill_mp_img(gcontext, get_group_img(g,h+1), x1, y0+p->bary1, xa-x1, get_group_imgH(g,h) );
-                h +=2;
-                if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
-                  h= TTBI_TB_TXT_NOR4;  //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)
-                }
-                draw_img(gcontext, get_group_img(g,h), xa, y0+p->bary1, 0 );
-              }
-            }
+        h= TTBI_BACKGROUND;
+        if( (p->flags & (TTBF_SHOW_BORDER|TTBF_DROP_BUTTON)) != 0 ){
+          h= TTBI_NORMAL; //draw a border
+        }
+        if( phi == p ){
+          if(ttb.phipress == phi){
+            h= TTBI_HIPRESSED; //highlight as pressed
+          }else if(ttb.phipress == NULL){
+            h= TTBI_HILIGHT; //normal highlight (and no other button is pressed)
           }
+        }
+        base= TTBI_TB_BUTTON_BASE;  //regular button
+        if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
+          base= TTBI_TB_DDBUT_BASE; //button with drop down triangle
+        }else if( (p->flags & TTBF_IS_SEPARATOR) != 0 ){
+          base= TTBI_TB_SEP_BASE;   //separator
+        }
+        grayed= 0;
+        wt2= p->barx2 - p->barx1;
+        ht2= p->bary2 - p->bary1;
+        //draw a normal button background if the button is selectable
+        if( (p->flags & TTBF_SELECTABLE) != 0 ){
+          //paint back color if set
+          draw_fill_color(gcontext, p->back_color, x0+p->barx1, y0+p->bary1, wt2, ht2 );
+          //draw highlight
+          draw_fill_mp_img(gcontext, get_item_img(p,h,base), x0+p->barx1, y0+p->bary1, wt2, ht2 );
         }
         if( (p->flags & TTBF_TEXT) == 0 ){
           //graphic button
+          h= TTBI_NORMAL;
           if( (p->flags & TTBF_GRAYED) != 0){
-            if( get_item_img(p,TTBI_DISABLED)->fname != NULL ){
+            struct toolbar_img * di= get_item_img(p,TTBI_DISABLED,base);
+            if( (di != NULL) && (di->fname != NULL) ){
               h= TTBI_DISABLED;
             }else{
-              grayed= 1; //there is no disabled image, gray it
+              grayed= 1; //there is no disabled image, gray the icon
             }
           }
-          draw_img(gcontext, get_item_img(p,h), x, y, grayed );
+          draw_img(gcontext, get_item_img(p,h,base), x, y, grayed );
         }else{
           //text button
           color= &(g->txttextcolN);

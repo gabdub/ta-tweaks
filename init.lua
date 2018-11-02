@@ -40,7 +40,6 @@ if toolbar then
 
   --change theme defaults here
   --toolbar.set_backimg(2, "ttb-back2-same")
-  --toolbar.set_backimg(2, "ttb-back2-down")
 
   --create the configured toolbars
   toolbar.create_from_config()

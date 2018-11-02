@@ -115,11 +115,12 @@ if toolbar then
     toolbar.addspace()
     toolbar.cmd("insert-link",            enc_html_link,        "HTML link")
     toolbar.cmd("insert-image",           enc_html_img,         "HTML image")
-    toolbar.addspace()
+    toolbar.addspace(8,true)
     toolbar.cmdtext("cl",                 enc_html_class,       "HTML insert class: OFF", "addclass", true)
+    toolbar.addspace(2,true)
     toolbar.cmdtext("id",                 enc_html_id,          "HTML insert id: OFF",    "addid",    true)
+    toolbar.addspace(2,true)
     toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
-    toolbar.addspace()
 
     if actions then
       toolbar.idviewhtmltb= actions.add("toggle_viewhtmltb", 'Show HTML Tool_Bar', toolbar.html_toolbar_onoff, "sf10", nil, function()

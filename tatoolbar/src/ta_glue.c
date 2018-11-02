@@ -257,8 +257,8 @@ static int ltoolbar_tabfontcolor(lua_State *L)
 {
   int ncol, hcol, acol, mcol, gcol;
   ncol= intluadef(L, 1, 0x000000);  //normal:   default black
-  hcol= intluadef(L, 2, ncol );     //hilight:  default == normal
-  acol= intluadef(L, 3, hcol );     //active:   default == hilight
+  hcol= intluadef(L, 2, ncol );     //highlight:default == normal
+  acol= intluadef(L, 3, hcol );     //active:   default == highlight
   mcol= intluadef(L, 4, ncol );     //modified: default == normal
   gcol= intluadef(L, 5, 0x808080);  //grayed:   default medium gray
   ttb_set_tab_colorsG(current_tabbar(), ncol, hcol, acol, mcol, gcol);
@@ -1049,13 +1049,13 @@ static GtkWidget * get_draw_tb0_widget( void )
 int set_text_bt_width(struct toolbar_item * p )
 { //text button (text & no image)
   cairo_text_extents_t ext;
+  struct toolbar_img * tn;
   int diff= 0;
   struct toolbar_group *G= p->group;
   if( p->text != NULL ){
-    int h1= TTBI_TB_TXT_HIL1;
-    int h3= TTBI_TB_TXT_HIL3;
+    int htb= TTBI_TB_BUT_HILIGHT;
     if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
-      h3= TTBI_TB_TXT_HIL4;
+      htb= TTBI_TB_DDBUT_HILIGHT;
     }
     //use toolbar #0 to measure text (pop-ups may not have a window yet)
     cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window);
@@ -1066,15 +1066,23 @@ int set_text_bt_width(struct toolbar_item * p )
       cairo_text_extents( cr, "H", &ext );
       G->txttexth= (int) ext.height;
       //center text verticaly + offset
-      G->txttexty= ((get_group_imgH(G,h1) + G->txttexth)/2) + G->txttextoff;
+      G->txttexty= ((get_group_imgH(G,htb) + G->txttexth)/2) + G->txttextoff;
       if( G->txttexty < 0){
         G->txttexty= 0;
       }
     }
     cairo_destroy(cr);
     diff= p->barx2;
-    p->prew= get_group_imgW(G,h1);
-    p->postw= get_group_imgW(G,h3);
+
+    tn= get_group_img(G,htb);
+    if( tn != NULL ){
+      p->prew= tn->width_l;
+      p->postw= tn->width_r;
+    }else{
+      p->prew= 0;
+      p->postw= 0;
+    }
+
     p->imgx= p->barx1 + p->prew;
     p->imgy= p->bary1 + G->txttexty;
     p->barx2= p->imgx + p->textwidth + p->postw;
@@ -1151,7 +1159,7 @@ static void ttb_size_ev(GtkWidget *widget, GdkRectangle *prec, void*__)
 static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 {
   UNUSED(__);
-  int x0, y0, wt, ht, hibackpainted;
+  int x0, y0, wt, ht;
   struct toolbar_group *g;
   struct area drawarea;
 
@@ -1173,8 +1181,8 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 
   cairo_t *cr = gdk_cairo_create(widget->window);
 
-  //paint background / draw hilighted background (before drawing items)
-  hibackpainted= paint_toolbar_back( T, cr, &drawarea );
+  //paint toolbar/group backgrounds
+  paint_toolbar_back( T, cr, &drawarea );
 
   //draw all visible groups
   for( g= T->group; (g != NULL); g= g->next ){
@@ -1188,7 +1196,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
         cairo_rectangle(cr, x0, y0, wt, ht );
         cairo_clip(cr);
         //draw visible group's items
-        paint_group_items(g, cr, &drawarea, x0, y0, wt, ht, hibackpainted );
+        paint_group_items(g, cr, &drawarea, x0, y0, wt, ht);
         //draw_box(cr, x0, y0, wt, ht, 0x800000, 0); //debug: show group borders
         cairo_restore(cr);
       }
@@ -1271,10 +1279,10 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 
   if( (event->button == 1)||(event->button == 3) ){
     if(event->type == GDK_BUTTON_PRESS){
-      set_hilight_off();  //clear previous hilight
+      set_hilight_off();  //clear previous highlight
       ttb.phipress= item_fromXYT(T, event->x, event->y);
       if( ttb.phipress != NULL ){
-        ttb.philight= ttb.phipress; //hilight as pressed
+        ttb.philight= ttb.phipress; //highlight as pressed
         ttb.ntbhilight= T->num;
         if( ttb.phipress->back_color == BKCOLOR_PICKER ){
           color_pick_ev( ttb.phipress, 0, 0 ); //COLOR PICKER click
@@ -1319,7 +1327,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       }else{
         redraw_item(p);      //redraw button under mouse (if any)
         if( ttb.ntbhilight == T->num ){
-          redraw_item(ttb.philight); //redraw hilighted button (if any in this toolbar)
+          redraw_item(ttb.philight); //redraw highlighted button (if any in this toolbar)
         }
       }
       ttb.phipress= NULL;
@@ -1663,7 +1671,7 @@ void register_toolbar(lua_State *L)
   //register "minimap" functions
   lua_newtable(L);
   l_setcfunction(L, -1, "init",         lminimap_init);         //clear minimap
-  l_setcfunction(L, -1, "hilight",      lminimap_hilight);      //hilight a line
+  l_setcfunction(L, -1, "hilight",      lminimap_hilight);      //highlight a line
   l_setcfunction(L, -1, "getclickline", lminimap_getclickline); //get clicked line number
   l_setcfunction(L, -1, "scrollpos",    lminimap_scrollpos);    //set scroll bar position and size
   lua_setglobal(L, "minimap");
@@ -1816,7 +1824,7 @@ void show_toolbar(struct toolbar_data *T, int show)
       //redraw the complete toolbar
       redraw_toolbar(T);
       if( T->num == 2 ){
-        gtk_widget_hide( statusbar[0] );
+        gtk_widget_hide( statusbar[0] ); //hide default statusbar
         gtk_widget_hide( statusbar[1] );
       }
     }else if( (!show) && (T->isvisible) ){
@@ -1824,7 +1832,7 @@ void show_toolbar(struct toolbar_data *T, int show)
       T->isvisible= 0;
       gtk_widget_hide( T->draw );
       if( T->num == 2 ){
-        gtk_widget_show( statusbar[0] );
+        gtk_widget_show( statusbar[0] ); //show default statusbar
         gtk_widget_show( statusbar[1] );
       }
     }

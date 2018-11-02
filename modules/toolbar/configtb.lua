@@ -112,36 +112,38 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_savelst={}
   toolbar.config_saveon=true  --save config options by default
 
-  toolbar.new(toolbar.cfgpnl_width, 24, 16, 3, toolbar.themepath)
+  toolbar.new(toolbar.cfgpnl_width, 24, 16, toolbar.RIGHT_TOOLBAR, toolbar.themepath)
   toolbar.current_toolbar= 3
   toolbar.current_tb_group= 0
-  toolbar.themed_icon("TOOLBAR", "ttb-cback", toolbar.TTBI_TB.BACKGROUND, true)  --vertical back
+  toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND, true)  --vertical back
 
   --config title: width=expand / height=27
   toolbar.addgroup(7, 0, 0, 27)
-  toolbar.themed_icon("GROUP", "ttb-cback2", toolbar.TTBI_TB.BACKGROUND, true)
+  toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND, true)
   toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
-  toolbar.set_img(toolbar.TTBI_TB.SEPARATOR, "ttb-csep")
-  toolbar.set_img(toolbar.TTBI_TB.TABBACK,   "ttb-ctab-back")
-  toolbar.set_img(toolbar.TTBI_TB.TXT_NOR1,  "ttb-back-no1")
-  toolbar.set_img(toolbar.TTBI_TB.TXT_NOR2,  "ttb-back-no2")
-  toolbar.set_img(toolbar.TTBI_TB.TXT_NOR3,  "ttb-back-no3")
+  toolbar.set_img(toolbar.TTBI_TB.SEPARATOR, "cfg-separator-h")
+  toolbar.set_img(toolbar.TTBI_TB.TAB_BACK,  "cfg-tab-back")
 
-  --only if not already set
-  toolbar.set_img(toolbar.TTBI_TB.NTAB3,     "ttb-ntab3nc", true)
-  toolbar.set_img(toolbar.TTBI_TB.DTAB3,     "ttb-dtab3nc", true)
-  toolbar.set_img(toolbar.TTBI_TB.HTAB3,     "ttb-htab3nc", true)
-  toolbar.set_img(toolbar.TTBI_TB.ATAB3,     "ttb-atab3nc", true)
+  if toolbar.TTBI_TB.TXT_NOR1 then
+    toolbar.set_img(toolbar.TTBI_TB.TXT_NOR1,  "ttb-back-no1")
+    toolbar.set_img(toolbar.TTBI_TB.TXT_NOR2,  "ttb-back-no2")
+    toolbar.set_img(toolbar.TTBI_TB.TXT_NOR3,  "ttb-back-no3")
+    --only if not already set
+    toolbar.set_img(toolbar.TTBI_TB.NTAB3,     "ttb-ntab3nc", true)
+    toolbar.set_img(toolbar.TTBI_TB.DTAB3,     "ttb-dtab3nc", true)
+    toolbar.set_img(toolbar.TTBI_TB.HTAB3,     "ttb-htab3nc", true)
+    toolbar.set_img(toolbar.TTBI_TB.ATAB3,     "ttb-atab3nc", true)
+  end
   for i=1, toolbar.get_img_count() do
     local img= toolbar.get_img(i)
-    if img ~= "" then toolbar.themed_icon("TOOLBAR", img, i, true) end
+    if img ~= "" then toolbar.themed_icon(toolbar.globalicon, img, i, true) end
   end
   toolbar.add_tabs_here(3,false,0,0)
 
   --horizontal back x 1row
-  toolbar.themed_icon("GROUP", toolbar.get_backimg(1), toolbar.TTBI_TB.BACKGROUND, true)
+  toolbar.themed_icon(toolbar.groupicon, toolbar.get_backimg(1), toolbar.TTBI_TB.BACKGROUND, true)
 end
 
 local function add_config_tabgroup(name,title,ngrp)
@@ -160,7 +162,7 @@ local function add_config_tabgroup(name,title,ngrp)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
   end
   toolbar.cfgpnl_y= toolbar.cfgpnl_ymargin
-  --toolbar.themed_icon("GROUP", "ttb-cback2", toolbar.TTBI_TB.BACKGROUND, true)
+  --toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND, true)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";===[ "..name.." ]==="
   end
@@ -260,8 +262,8 @@ local function add_cfg_prop(propname, x, tooltip)
     local prop= "color."..propname
     toolbar.gotopos(x, toolbar.cfgpnl_y)
     toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
-    toolbar.setthemeicon(prop, "colorh", toolbar.TTBI_TB.HILIGHT)
-    toolbar.setthemeicon(prop, "colorp", toolbar.TTBI_TB.HIPRESSED)
+    toolbar.setthemeicon(prop, "colorh", toolbar.TTBI_TB.IT_HILIGHT)
+    toolbar.setthemeicon(prop, "colorp", toolbar.TTBI_TB.IT_HIPRESSED)
     toolbar.setbackcolor(prop, toolbar.get_rgbcolor_prop(prop), true)
     if toolbar.config_saveon then --save this color property in the config file
       toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=prop
@@ -286,14 +288,19 @@ local function colorpreset_clicked(name)
   toolbar.setbackcolor("CPICKER", color)
 end
 
+local function set_img_colorbut( name, border )
+  toolbar.setthemeicon(name, "transparent", toolbar.TTBI_TB.IT_NORMAL)
+  toolbar.setthemeicon(name, border and "colorh" or "transparent", toolbar.TTBI_TB.IT_HILIGHT)
+  toolbar.setthemeicon(name, border and "colorp" or "transparent", toolbar.TTBI_TB.IT_HIPRESSED)
+end
+
 local function add_color_preset( n, color, bkcolor )
   if not bkcolor then bkcolor=color end
   toolbar.gotopos(290, toolbar.cfgpnl_y)
   local name= "preset"..color
   toolbar.cmd(name, colorpreset_clicked, "", "", true)
   toolbar.setbackcolor(name, bkcolor, true)
-  toolbar.setthemeicon(name, "colorh", toolbar.TTBI_TB.HILIGHT)
-  toolbar.setthemeicon(name, "colorp", toolbar.TTBI_TB.HIPRESSED)
+  set_img_colorbut(name, true) --border on over and click
   pnly_add(31)
 end
 
@@ -315,6 +322,7 @@ local function add_config_colorpicker()
   toolbar.gotopos(20, toolbar.cfgpnl_y)
   toolbar.cmd("picker", picker_clicked, "", "")
   toolbar.setbackcolor("picker", -2, true)  --COLOR PICKER=-2
+  set_img_colorbut("picker", false) --no borders
   local ynext= toolbar.cfgpnl_y + 250
   toolbar.adjust(48,24,2,1,3,3)
   add_color_preset(1,0xff0000,-4) --shows RED   value (scroll wheel to edit)
@@ -1085,15 +1093,13 @@ local function add_picker_cfg_panel()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmd("choosencolor", picker_clicked, "")
   toolbar.setbackcolor("choosencolor", -3, true)  --CHOSEN COLOR=-3
-  toolbar.setthemeicon("choosencolor", "colorh", toolbar.TTBI_TB.HILIGHT)
-  toolbar.setthemeicon("choosencolor", "colorp", toolbar.TTBI_TB.HIPRESSED)
+  set_img_colorbut("choosencolor", true) --border on over and click
 
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmd("oldcolor", oldcolor_clicked, "")
   toolbar.edit_color_prop= "color.text_back"
   toolbar.setbackcolor("oldcolor", 0, true) --set later
-  toolbar.setthemeicon("oldcolor", "colorh", toolbar.TTBI_TB.HILIGHT)
-  toolbar.setthemeicon("oldcolor", "colorp", toolbar.TTBI_TB.HIPRESSED)
+  set_img_colorbut("oldcolor", true) --border on over and click
   pnly_add(30)
 
   toolbar.gotopos(toolbar.cfgpnl_xtext-4, toolbar.cfgpnl_y)
@@ -1308,17 +1314,17 @@ if minimap then
 
   function toolbar.minimap_setup()
     --set toolbar #4 as a MINIMAP
-    toolbar.new(14, 14, 14, 4, toolbar.themepath)
+    toolbar.new(14, 14, 14, toolbar.MINIMAP_TOOLBAR, toolbar.themepath)
     --width=14 / height=expand
     toolbar.addgroup(3, 7, 14, 0)
-    toolbar.setbackcolor("TOOLBAR", toolbar.get_rgbcolor_prop('color.linenum_back'), false, true)
-    toolbar.setbackcolor("GROUP", -7, false, true) --MINI MAP DRAW (-7)
+    toolbar.setbackcolor(toolbar.globalicon, toolbar.get_rgbcolor_prop('color.linenum_back'), false, true)
+    toolbar.setbackcolor(toolbar.groupicon, -7, false, true) --MINI MAP DRAW (-7)
     toolbar.adjust(14, 4096, 2,1,3,3)
     toolbar.gotopos(0,0)
     toolbar.cmd("minimap", minimap_clicked, "", "")
     toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
-    toolbar.seticon("TOOLBAR", "", toolbar.TTBI_TB.HILIGHT, true) --don't highlight
-    toolbar.seticon("TOOLBAR", "", toolbar.TTBI_TB.HIPRESSED, true)
+    toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
+    toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
     toolbar.show(toolbar.tbshowminimap)
   end
 end

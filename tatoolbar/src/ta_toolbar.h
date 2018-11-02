@@ -23,7 +23,7 @@
 //item flags
 #define TTBF_SELECTABLE     0x00000001  //accepts click
 #define TTBF_HIDDEN         0x00000002  //not shown
-#define TTBF_TEXT           0x00000004  //it's a text button
+#define TTBF_TEXT           0x00000004  //it's a text button or icon + text
 #define TTBF_GRAYED         0x00000008  //show as disabled (grayed)
 #define TTBF_ACTIVE         0x00000010  //show as active
 #define TTBF_CHANGED        0x00000020  //show as changed
@@ -33,6 +33,8 @@
 #define TTBF_TEXT_LEFT      0x00000200  //draw text left aligned (default = center)
 #define TTBF_TEXT_BOLD      0x00000400  //draw text in bold
 #define TTBF_DROP_BUTTON    0x00000800  //draw a drop down button at the end of a text button
+#define TTBF_IS_SEPARATOR   0x00001000  //it's a separator
+#define TTBF_SHOW_BORDER    0x00002000  //draw a border (used in text buttons)
 //group flags
 #define TTBF_GRP_TABBAR     0x00010000  //tabs group
 #define TTBF_GRP_DRAGTAB    0x00020000  //tab dragging enabled in TTBF_TABBAR
@@ -48,51 +50,98 @@
 #define TTBF_GRP_VSCROLL    0x08000000  //this group shows a vertical scrollbar when needed
 
 //item images
-#define TTBI_NORMAL         0  //button/separator
-#define TTBI_DISABLED       1  //button
-#define TTBI_HILIGHT        2  //button/toolbar
-#define TTBI_HIPRESSED      3  //button/toolbar
-#define TTBI_NODE_N         4
+//#define TTBI_NORMAL         0  //button/separator
+//#define TTBI_DISABLED       1  //button
+//#define TTBI_HILIGHT        2  //button/toolbar
+//#define TTBI_HIPRESSED      3  //button/toolbar
+//#define TTBI_NODE_N         4
+#define TTBI_BACKGROUND     0
+#define TTBI_NORMAL         1
+#define TTBI_DISABLED       2
+#define TTBI_HILIGHT        3 //mouse over
+#define TTBI_HIPRESSED      4 //mouse down
+#define TTBI_SELECTED       5
+#define TTBI_N_IT_IMGS      6
 
 //TTB images
-#define TTBI_TB_BACKGROUND  0  //toolbar
-#define TTBI_TB_SEPARATOR   1  //toolbar
-#define TTBI_TB_HILIGHT     (TTBI_HILIGHT)     //button/toolbar
-#define TTBI_TB_HIPRESSED   (TTBI_HIPRESSED)   //button/toolbar
-#define TTBI_TB_TABBACK     4 //tab background
-#define TTBI_TB_NTAB1       5  //normal tab1
-#define TTBI_TB_NTAB2       6  //normal tab2
-#define TTBI_TB_NTAB3       7  //normal tab3
-#define TTBI_TB_DTAB1       8  //disabled tab1
-#define TTBI_TB_DTAB2       9  //disabled tab2
-#define TTBI_TB_DTAB3       10 //disabled tab3
-#define TTBI_TB_HTAB1       11 //hilight tab1
-#define TTBI_TB_HTAB2       12 //hilight tab2
-#define TTBI_TB_HTAB3       13 //hilight tab3
-#define TTBI_TB_ATAB1       14 //active tab1
-#define TTBI_TB_ATAB2       15 //active tab2
-#define TTBI_TB_ATAB3       16 //active tab3
-#define TTBI_TB_TAB_NSL     17 //tab scroll left
-#define TTBI_TB_TAB_NSR     18 //tab scroll right
-#define TTBI_TB_TAB_HSL     19 //tab scroll left
-#define TTBI_TB_TAB_HSR     20 //tab scroll right
-#define TTBI_TB_TAB_NCLOSE  21 //normal close button
-#define TTBI_TB_TAB_HCLOSE  22 //hilight close button
-#define TTBI_TB_TAB_CHANGED 23 //changed indicator
-#define TTBI_TB_TXT_HIL1    24 //hilight text button1
-#define TTBI_TB_TXT_HIL2    25 //hilight text button2
-#define TTBI_TB_TXT_HIL3    26 //hilight text button3
-#define TTBI_TB_TXT_HPR1    27 //hi-pressed text button1
-#define TTBI_TB_TXT_HPR2    28 //hi-pressed text button2
-#define TTBI_TB_TXT_HPR3    29 //hi-pressed text button3
-#define TTBI_TB_HINORMAL    30 //normal button back
-#define TTBI_TB_TXT_NOR1    31 //normal text button1 back
-#define TTBI_TB_TXT_NOR2    32 //normal text button2 back
-#define TTBI_TB_TXT_NOR3    33 //normal text button3 back
-#define TTBI_TB_TXT_NOR4    34 //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)
-#define TTBI_TB_TXT_HIL4    35 //replace TTBI_TB_TXT_HIL3 (add a drop down button at the end)
-#define TTBI_TB_TXT_HPR4    36 //replace TTBI_TB_TXT_HPR3 (add a drop down button at the end)
-#define TTBI_TB_N           37
+//#define TTBI_TB_BACKGROUND  0  //toolbar
+//#define TTBI_TB_SEPARATOR   1  //toolbar
+//#define TTBI_TB_HILIGHT     (TTBI_HILIGHT)     //button/toolbar
+//#define TTBI_TB_HIPRESSED   (TTBI_HIPRESSED)   //button/toolbar
+//#define TTBI_TB_TABBACK     4 //tab background
+//#define TTBI_TB_NTAB1       5  //normal tab1
+//#define TTBI_TB_NTAB2       6  //normal tab2
+//#define TTBI_TB_NTAB3       7  //normal tab3
+//#define TTBI_TB_DTAB1       8  //disabled tab1
+//#define TTBI_TB_DTAB2       9  //disabled tab2
+//#define TTBI_TB_DTAB3       10 //disabled tab3
+//#define TTBI_TB_HTAB1       11 //highlight tab1
+//#define TTBI_TB_HTAB2       12 //highlight tab2
+//#define TTBI_TB_HTAB3       13 //highlight tab3
+//#define TTBI_TB_ATAB1       14 //active tab1
+//#define TTBI_TB_ATAB2       15 //active tab2
+//#define TTBI_TB_ATAB3       16 //active tab3
+//#define TTBI_TB_TAB_NSL     17 //tab scroll left
+//#define TTBI_TB_TAB_NSR     18 //tab scroll right
+//#define TTBI_TB_TAB_HSL     19 //tab scroll left
+//#define TTBI_TB_TAB_HSR     20 //tab scroll right
+//#define TTBI_TB_TAB_NCLOSE  21 //normal close button
+//#define TTBI_TB_TAB_HCLOSE  22 //highlight close button
+//#define TTBI_TB_TAB_CHANGED 23 //changed indicator
+//#define TTBI_TB_TXT_HIL1    24 //highlight text button1
+//#define TTBI_TB_TXT_HIL2    25 //highlight text button2
+//#define TTBI_TB_TXT_HIL3    26 //highlight text button3
+//#define TTBI_TB_TXT_HPR1    27 //hi-pressed text button1
+//#define TTBI_TB_TXT_HPR2    28 //hi-pressed text button2
+//#define TTBI_TB_TXT_HPR3    29 //hi-pressed text button3
+//#define TTBI_TB_HINORMAL    30 //normal button back
+//#define TTBI_TB_TXT_NOR1    31 //normal text button1 back
+//#define TTBI_TB_TXT_NOR2    32 //normal text button2 back
+//#define TTBI_TB_TXT_NOR3    33 //normal text button3 back
+//#define TTBI_TB_TXT_NOR4    34 //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)
+//#define TTBI_TB_TXT_HIL4    35 //replace TTBI_TB_TXT_HIL3 (add a drop down button at the end)
+//#define TTBI_TB_TXT_HPR4    36 //replace TTBI_TB_TXT_HPR3 (add a drop down button at the end)
+//#define TTBI_TB_N           37
+#define TTBI_TB_BACK_BASE     0                                     //TOOLBAR/GROUP
+#define TTBI_TB_BACKGROUND    (TTBI_TB_BACK_BASE+TTBI_BACKGROUND)   //background
+
+#define TTBI_TB_SEP_BASE      (TTBI_TB_BACK_BASE+TTBI_N_IT_IMGS)    //SEPARATOR
+#define TTBI_TB_SEPARATOR     (TTBI_TB_SEP_BASE+TTBI_NORMAL)
+
+#define TTBI_TB_BUTTON_BASE   (TTBI_TB_SEP_BASE+TTBI_N_IT_IMGS)     //BUTTON
+#define TTBI_TB_BUT_NORMAL    (TTBI_TB_BUTTON_BASE+TTBI_NORMAL)     //shown by text buttons
+#define TTBI_TB_BUT_HILIGHT   (TTBI_TB_BUTTON_BASE+TTBI_HILIGHT)
+#define TTBI_TB_BUT_HIPRESS   (TTBI_TB_BUTTON_BASE+TTBI_HIPRESSED)
+
+#define TTBI_TB_TAB_BASE      (TTBI_TB_BUTTON_BASE+TTBI_N_IT_IMGS)  //TABS
+#define TTBI_TB_TABBACK       (TTBI_TB_TAB_BASE+TTBI_BACKGROUND)    //background
+#define TTBI_TB_NTAB          (TTBI_TB_TAB_BASE+TTBI_NORMAL)        //normal
+#define TTBI_TB_DTAB          (TTBI_TB_TAB_BASE+TTBI_DISABLED)      //disabled
+#define TTBI_TB_HTAB          (TTBI_TB_TAB_BASE+TTBI_HILIGHT)       //highlight
+#define TTBI_TB_ATAB          (TTBI_TB_TAB_BASE+TTBI_SELECTED)      //active
+
+#define TTBI_TB_TAB_SL_BASE   (TTBI_TB_TAB_BASE+TTBI_N_IT_IMGS)     //SCROLL LEFT TAB
+#define TTBI_TB_TAB_NSL       (TTBI_TB_TAB_SL_BASE+TTBI_NORMAL)
+#define TTBI_TB_TAB_HSL       (TTBI_TB_TAB_SL_BASE+TTBI_HIPRESSED)
+
+#define TTBI_TB_TAB_SR_BASE   (TTBI_TB_TAB_SL_BASE+TTBI_N_IT_IMGS)  //SCROLL RIGHT TAB
+#define TTBI_TB_TAB_NSR       (TTBI_TB_TAB_SR_BASE+TTBI_NORMAL)
+#define TTBI_TB_TAB_HSR       (TTBI_TB_TAB_SR_BASE+TTBI_HIPRESSED)
+
+#define TTBI_TB_TAB_CLOSE_BASE (TTBI_TB_TAB_SR_BASE+TTBI_N_IT_IMGS) //CLOSE TAB
+#define TTBI_TB_TAB_NCLOSE    (TTBI_TB_TAB_CLOSE_BASE+TTBI_NORMAL)
+#define TTBI_TB_TAB_HCLOSE    (TTBI_TB_TAB_CLOSE_BASE+TTBI_HIPRESSED)
+
+#define TTBI_TB_TAB_CHG_BASE  (TTBI_TB_TAB_CLOSE_BASE+TTBI_N_IT_IMGS) //CHANGED TAB INDICATOR
+#define TTBI_TB_TAB_CHANGED   (TTBI_TB_TAB_CHG_BASE+TTBI_NORMAL)
+
+#define TTBI_TB_DDBUT_BASE    (TTBI_TB_TAB_CHG_BASE+TTBI_N_IT_IMGS) //DROP DOWN BUTTON
+#define TTBI_TB_DDBUT_NORMAL  (TTBI_TB_DDBUT_BASE+TTBI_NORMAL)
+#define TTBI_TB_DDBUT_HILIGHT (TTBI_TB_DDBUT_BASE+TTBI_HILIGHT)
+#define TTBI_TB_DDBUT_HIPRESS (TTBI_TB_DDBUT_BASE+TTBI_HIPRESSED)
+
+#define TTBI_N_TB_IMGS        (TTBI_TB_DDBUT_BASE+TTBI_N_IT_IMGS)
+
 
 #define BKCOLOR_NOT_SET (-1)  //background color = not set
 
@@ -144,6 +193,8 @@ struct toolbar_img
   int  height_t;  //top fixed part     (__...T##)
   int  height_b;  //bottom fixed part  (__...B##)
                   //expand height= height - height_t - height_b
+
+//  int back_color; //0x00RRGGBB back color / BKCOLOR_... (-1=not set)
 };
 
 struct color3doubles
@@ -177,7 +228,7 @@ struct toolbar_item
   int minwidth;       //min tab width
   int maxwidth;       //max tab width
   int prew, postw;    //pre and post width (used in tabs and buttons)
-  struct toolbar_img img[TTBI_NODE_N];
+  struct toolbar_img img[ TTBI_N_IT_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
 };
 
@@ -244,7 +295,7 @@ struct toolbar_group
   int tabtexty;   //font baseline y pos
   int tabmodshow; //modified tab: 0:ignore 1:show icon 2:change text color
   struct color3doubles tabtextcolN; //normal
-  struct color3doubles tabtextcolH; //hilight
+  struct color3doubles tabtextcolH; //highlight
   struct color3doubles tabtextcolA; //active
   struct color3doubles tabtextcolM; //modified
   struct color3doubles tabtextcolG; //grayed
@@ -255,7 +306,7 @@ struct toolbar_group
   int tabmaxwidth;       //max tab width
 
   //group images (use toolbar images if NULL)
-  struct toolbar_img img[TTBI_TB_N];
+  struct toolbar_img img[ TTBI_N_TB_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
   int yvscroll;         //vertical scrollbar offset
 };
@@ -288,7 +339,7 @@ struct toolbar_data
   int _layout_chg;
 
   //toolbar images
-  struct toolbar_img img[TTBI_TB_N];
+  struct toolbar_img img[ TTBI_N_TB_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
 };
 
@@ -334,7 +385,7 @@ struct all_toolbars_data
 
   struct toolbar_item * philight;
   struct toolbar_item * phipress;
-  int ntbhilight;     //number of the toolbar with the hilighted button or -1
+  int ntbhilight;     //number of the toolbar with the highlighted button or -1
 
   int currentntb;     //current toolbar num
 
@@ -405,8 +456,8 @@ void ttb_change_tabwidthG(struct toolbar_group *G, int ntab, int percwidth, int 
 void ttb_goto_tabG(struct toolbar_group *G, int tabpos);
 void update_layoutT( struct toolbar_data *T);
 int  need_redraw(struct area * pdrawarea, int x, int y, int xf, int yf);
-int  paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pdrawarea);
-void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht, int hibackpainted);
+void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pdrawarea);
+void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht);
 void set_hilight_off( void );
 void calc_popup_sizeT( struct toolbar_data *T);
 
@@ -438,6 +489,7 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt);
 
 int  set_item_img( struct toolbar_item *p, int nimg, const char *imgname );
 void setrgbcolor(int rgb, struct color3doubles *pc);
+struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg );
 int  get_group_imgW( struct toolbar_group *G, int nimg );
 int  get_group_imgH( struct toolbar_group *G, int nimg );
 void select_toolbar_n( int num, int ngrp );

@@ -12,16 +12,18 @@ if toolbar then
     listwidth= toolbar.listwidth or 250
     if Proj and Proj.select_width then listwidth= Proj.select_width end  --try to use the same width as the project
     if listwidth < 100 then listwidth= toolbar.listwidth end
-    toolbar.new(listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, 1, toolbar.themepath)
+    --create a new empty toolbar
+    toolbar.new(listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.LEFT_TOOLBAR, toolbar.themepath)
     --title group: fixed width=300 / align top + fixed height
     titgrp= toolbar.addgroup(0, 1, listwidth, toolbar.cfg.barsize)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon("GROUP", "ttb-cback2", toolbar.TTBI_TB.BACKGROUND, true)
+    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND, true)
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(0, 26, listwidth, 0)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
-    toolbar.themed_icon("TOOLBAR", "ttb-cback", toolbar.TTBI_TB.BACKGROUND, true)
+    toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND, true)
+    if toolbar.TTBI_TB.BUT_NORMAL then toolbar.themed_icon(toolbar.globalicon, "transparent", toolbar.TTBI_TB.BUT_NORMAL, true) end
     toolbar.listtb_y= 1
     toolbar.listright= listwidth
     toolbar.seltoolbar(1,titgrp)
