@@ -150,7 +150,7 @@ function M.to_html(filename, out_filename)
   local f = io.open(out_filename, 'wb')
   f:write(table.concat(html))
   f:close()
-  spawn(format('%s "%s"', M.browser, out_filename))
+  os.spawn(format('%s "%s"', M.browser, out_filename))
 end
 
 -- Add a sub-menu.

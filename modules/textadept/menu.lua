@@ -25,7 +25,7 @@ local function set_encoding(encoding)
 end
 local function open_page(url)
   local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  spawn(string.format('%s "%s"', cmd, not OSX and url or 'file://'..url))
+  os.spawn(string.format('%s "%s"', cmd, not OSX and url or 'file://'..url))
 end
 
 local function tab_key()
@@ -95,7 +95,6 @@ actions.list = {
   ["cut"]=                  {_L['Cu_t'], buffer.cut},
   ["copy"]=                 {_L['_Copy'], buffer.copy},
   ["paste"]=                {_L['_Paste'], buffer.paste},
-  ["paste_special"]=        {_L['_Paste']..' Special', (TA_MAYOR_VER < 10) and buffer.paste or textadept.editing.paste},
   ["duplicate_line"]=       {_L['Duplicate _Line'], buffer.line_duplicate},
   ["delete_char"]=          {_L['_Delete'], buffer.clear},
   ["delete_word"]=          {_L['D_elete Word'], function()
@@ -396,7 +395,7 @@ actions.menubar = {
   {
     title = _L['_Edit'],
     {"undo","redo",SEPARATOR,
-     "cut","copy","paste","paste_special","duplicate_line","delete_char","delete_word","delete_line","selectall",SEPARATOR,
+     "cut","copy","paste","duplicate_line","delete_char","delete_word","delete_line","selectall",SEPARATOR,
      "match_brace","complete_word","highlight_word","toggle_comment","transpose_chars",
      "join_lines","filterthrough"},
     {
@@ -486,7 +485,7 @@ end
 ---
 actions.context_menu = {
   {"undo","redo",SEPARATOR,
-   "cut","copy","paste","paste_special","delete_char",SEPARATOR,
+   "cut","copy","paste","delete_char",SEPARATOR,
    "selectall"}
 }
 

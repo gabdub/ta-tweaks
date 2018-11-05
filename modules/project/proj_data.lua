@@ -609,7 +609,7 @@ function Proj.run_command(cmd)
     if string.len(Proj.last_run_command) > 40 then
       Proj.last_run_command= string.sub(Proj.last_run_command,1,40)..'...'
     end
-    local proc= spawn(cmd,nil,nil,nil,function(status)
+    local proc= os.spawn(cmd,nil,nil,function(status)
         ui.statusbar_text= 'RUN '..Proj.last_run_command..' ended with status '..status
         if Proj.last_run_tmpfile then
           os.remove(Proj.last_run_tmpfile)

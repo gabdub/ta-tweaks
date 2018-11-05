@@ -58,7 +58,6 @@ local default_accelerators= {
   "cut",                    "mx",           "mx",
   "copy",                   "mc",           "mc",
   "paste",                  "mv",           "mv",
-  "paste_special",          "mV",           "mV",
   "duplicate_line",         "md",           "",
   "delete_char",            "del",          "del",
   "delete_word",            "cdel",         "cdel",

@@ -171,13 +171,13 @@ if actions then
     },
     { --#2 project in EDIT mode
       {"undo","redo",SEPARATOR,
-       "cut","copy","paste","paste_special","delete_char",SEPARATOR,
+       "cut","copy","paste","delete_char",SEPARATOR,
        "selectall",SEPARATOR,
        "_end_editproj"}
     },
     { --#3 regular file
       {"undo","redo",SEPARATOR,
-       "cut","copy","paste","paste_special","delete_char",SEPARATOR,
+       "cut","copy","paste","delete_char",SEPARATOR,
        "selectall"
       },
       {

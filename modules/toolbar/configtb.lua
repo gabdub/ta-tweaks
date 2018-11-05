@@ -771,7 +771,7 @@ end
 local tatoobarweb= "https://github.com/gabdub/ta-tweaks"
 local function open_tatoolbar_web()
   local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  spawn(string.format('%s "%s"', cmd, tatoobarweb))
+  os.spawn(string.format('%s "%s"', cmd, tatoobarweb))
 end
 
 local function add_buffer_cfg_panel()

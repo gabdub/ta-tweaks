@@ -160,7 +160,7 @@ local function get_filevcinfo(fname)
     cmd= "git status -sb "..url
   end
   if cmd then
-    local p = assert(spawn(cmd,cwd))
+    local p = assert(os.spawn(cmd,cwd))
     p:close()
     local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
     if einfo and einfo ~= '' then
@@ -855,7 +855,7 @@ function Proj.vc_changes()
       else
         cmd= "git show HEAD:"..url
       end
-      local p = assert(spawn(cmd,cwd))
+      local p = assert(os.spawn(cmd,cwd))
       p:close()
       buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
       if enc ~= 'UTF-8' then buffer:set_encoding(enc) end

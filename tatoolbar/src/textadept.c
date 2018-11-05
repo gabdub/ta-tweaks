@@ -2,7 +2,7 @@
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 101  //textadept 10.1 (101) or version 9.6 (96)
+#define TA_VERSION 102  //update to textadept 10.2
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -219,8 +219,7 @@ static void new_buffer(sptr_t);
 static Scintilla *new_view(sptr_t);
 static int lL_init(lua_State *, int, char **, int);
 LUALIB_API int luaopen_lpeg(lua_State *), luaopen_lfs(lua_State *);
-LUALIB_API int luaopen_spawn(lua_State *);
-LUALIB_API int lspawn_pushfds(lua_State *), lspawn_readfds(lua_State *);
+LUALIB_API int os_spawn_pushfds(lua_State *), os_spawn_readfds(lua_State *);
 
 /**
  * Emits an event.
@@ -1476,30 +1475,21 @@ static int ltimeout(lua_State *L) {
 /** `string.iconv()` Lua function. */
 static int lstring_iconv(lua_State *L) {
   size_t inbytesleft = 0;
-//#if !_WIN32
   char *inbuf = (char *)luaL_checklstring(L, 1, &inbytesleft);
-//#else
-//  const char *inbuf = luaL_checklstring(L, 1, &inbytesleft);
-//#endif
   const char *to = luaL_checkstring(L, 2), *from = luaL_checkstring(L, 3);
   iconv_t cd = iconv_open(to, from);
   if (cd != (iconv_t)-1) {
-//    char *outbuf = malloc(inbytesleft + 1), *p = outbuf;
-//    size_t outbytesleft = inbytesleft, bufsize = inbytesleft;
     // Ensure the minimum buffer size can hold a potential output BOM and one
     // multibyte character.
     size_t bufsiz = 4 + ((inbytesleft > MB_LEN_MAX) ? inbytesleft : MB_LEN_MAX);
     char *outbuf = malloc(bufsiz + 1), *p = outbuf;
     size_t outbytesleft = bufsiz;
-
     int n = 1; // concat this many converted strings
     while (iconv(cd, &inbuf, &inbytesleft, &p, &outbytesleft) == (size_t)-1)
-//      if (errno == E2BIG) {
       if (errno == E2BIG && p - outbuf > 0) {
         // Buffer was too small to store converted string. Push the partially
         // converted string for later concatenation.
         lua_checkstack(L, 2), lua_pushlstring(L, outbuf, p - outbuf), n++;
-//        p = outbuf, outbytesleft = bufsize;
         p = outbuf, outbytesleft = bufsiz;
       } else free(outbuf), iconv_close(cd), luaL_error(L, "conversion failed");
     lua_pushlstring(L, outbuf, p - outbuf);
@@ -1538,31 +1528,16 @@ static int lL_init(lua_State *L, int argc, char **argv, int reinit) {
     lua_newtable(L), lua_setfield(L, LUA_REGISTRYINDEX, "ta_buffers");
     lua_newtable(L), lua_setfield(L, LUA_REGISTRYINDEX, "ta_views");
   } else { // clear package.loaded and _G
-#if TA_VERSION < 100
-    //TA9
-    lua_getglobal(L, "package"), lua_getfield(L, -1, "loaded");
-    lL_cleartable(L, lua_gettop(L));
-    lua_pop(L, 2); // package.loaded and package
-#if LUA_VERSION_NUM >= 502
-    lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
-    lL_cleartable(L, lua_gettop(L));
-    lua_pop(L, 1); // _G
-#else
-    lL_cleartable(L, LUA_GLOBALSINDEX);
-#endif
-#else
-    //TA10
     lua_getfield(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
     lL_cleartable(L, lua_gettop(L));
     lua_pop(L, 1); // package.loaded
     lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
     lL_cleartable(L, lua_gettop(L));
     lua_pop(L, 1); // _G
-#endif
   }
   lua_pushinteger(L, (sptr_t)L), lua_setglobal(L, "_LUA");
   luaL_openlibs(L);
-  lL_openlib(L, lpeg), lL_openlib(L, lfs), lL_openlib(L, spawn);
+  lL_openlib(L, lpeg), lL_openlib(L, lfs);
 
   lua_newtable(L);
   lua_newtable(L);
@@ -1978,20 +1953,9 @@ static void s_notify(Scintilla *view, int _, void *lParam, void*__) {
 }
 
 #if GTK
-/**
- * Signal for a Scintilla keypress.
- * Translate Ctrl-, or Meta-modified keys to their group 0 key values (which are
- * typically ASCII values) as necessary in order for bindings like Ctrl+Z to
- * work on international keyboards.
- * Do not modify Alt- keys since they may be composed.
- */
+/** Signal for a Scintilla keypress. */
 static int s_keypress(GtkWidget*_, GdkEventKey *event, void*__) {
   UNUSED(_); UNUSED(__);
-//  if (event->group > 0 &&
-//      (event->state & (GDK_CONTROL_MASK | GDK_META_MASK)))
-//    gdk_keymap_translate_keyboard_state(gdk_keymap_get_default(),
-//                                        event->hardware_keycode, 0, 0,
-//                                        &event->keyval, NULL, NULL, NULL);
   return lL_event(lua, "keypress", LUA_TNUMBER, event->keyval, event_mod(SHIFT),
                   event_mod(CONTROL), event_mod(MOD1), event_mod(META),
                   event_mod(LOCK), -1);
@@ -2503,12 +2467,12 @@ static TermKeyResult textadept_waitkey(TermKey *tk, TermKeyKey *key) {
     if (res != TERMKEY_RES_AGAIN && res != TERMKEY_RES_NONE) return res;
     if (res == TERMKEY_RES_AGAIN) force = TRUE;
     // Wait for input.
-    int nfds = lspawn_pushfds(lua);
+    int nfds = os_spawn_pushfds(lua);
     fd_set *fds = (fd_set *)lua_touserdata(lua, -1);
     FD_SET(0, fds); // monitor stdin
     if (select(nfds, fds, NULL, NULL, force ? &timeout : NULL) > 0) {
       if (FD_ISSET(0, fds)) termkey_advisereadable(tk);
-      if (lspawn_readfds(lua) > 0) refresh_all();
+      if (os_spawn_readfds(lua) > 0) refresh_all();
     }
     lua_pop(lua, 1); // fd_set
   }
