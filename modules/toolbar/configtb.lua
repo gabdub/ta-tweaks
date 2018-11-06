@@ -115,35 +115,24 @@ local function add_config_start(startgroup)
   toolbar.new(toolbar.cfgpnl_width, 24, 16, toolbar.RIGHT_TOOLBAR, toolbar.themepath)
   toolbar.current_toolbar= 3
   toolbar.current_tb_group= 0
-  toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND, true)  --vertical back
+  toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)  --vertical back
 
   --config title: width=expand / height=27
   toolbar.addgroup(7, 0, 0, 27)
-  toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND, true)
+  toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
   toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
   toolbar.set_img(toolbar.TTBI_TB.SEPARATOR, "cfg-separator-h")
   toolbar.set_img(toolbar.TTBI_TB.TAB_BACK,  "cfg-tab-back")
 
-  if toolbar.TTBI_TB.TXT_NOR1 then
-    toolbar.set_img(toolbar.TTBI_TB.TXT_NOR1,  "ttb-back-no1")
-    toolbar.set_img(toolbar.TTBI_TB.TXT_NOR2,  "ttb-back-no2")
-    toolbar.set_img(toolbar.TTBI_TB.TXT_NOR3,  "ttb-back-no3")
-    --only if not already set
-    toolbar.set_img(toolbar.TTBI_TB.NTAB3,     "ttb-ntab3nc", true)
-    toolbar.set_img(toolbar.TTBI_TB.DTAB3,     "ttb-dtab3nc", true)
-    toolbar.set_img(toolbar.TTBI_TB.HTAB3,     "ttb-htab3nc", true)
-    toolbar.set_img(toolbar.TTBI_TB.ATAB3,     "ttb-atab3nc", true)
-  end
+  --choose the right tab image
+  toolbar.add_close_tabimg(false)
   for i=1, toolbar.get_img_count() do
     local img= toolbar.get_img(i)
-    if img ~= "" then toolbar.themed_icon(toolbar.globalicon, img, i, true) end
+    if img ~= "" then toolbar.themed_icon(toolbar.globalicon, img, i) end
   end
   toolbar.add_tabs_here(3,false,0,0)
-
-  --horizontal back x 1row
-  toolbar.themed_icon(toolbar.groupicon, toolbar.get_backimg(1), toolbar.TTBI_TB.BACKGROUND, true)
 end
 
 local function add_config_tabgroup(name,title,ngrp)
@@ -162,7 +151,7 @@ local function add_config_tabgroup(name,title,ngrp)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
   end
   toolbar.cfgpnl_y= toolbar.cfgpnl_ymargin
-  --toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND, true)
+  --toolbar.themed_icon(toolbar.groupicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";===[ "..name.." ]==="
   end

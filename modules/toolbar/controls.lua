@@ -66,7 +66,7 @@ local function show_combo_list(btname)
   toolbar.addgroup(8,8,0,0)
   toolbar.adjust(24,24,3,3,0,0)
   toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-  toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND, true)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
 
   for i=1,#combo_data[btname] do
     local itname= btname.."#"..i

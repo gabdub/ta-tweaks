@@ -17,13 +17,13 @@ if toolbar then
     --title group: fixed width=300 / align top + fixed height
     titgrp= toolbar.addgroup(0, 1, listwidth, toolbar.cfg.barsize)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND, true)
+    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(0, 26, listwidth, 0)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
-    toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND, true)
-    if toolbar.TTBI_TB.BUT_NORMAL then toolbar.themed_icon(toolbar.globalicon, "transparent", toolbar.TTBI_TB.BUT_NORMAL, true) end
+    toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
+    if toolbar.TTBI_TB.BUT_NORMAL then toolbar.themed_icon(toolbar.globalicon, "transparent", toolbar.TTBI_TB.BUT_NORMAL) end
     toolbar.listtb_y= 1
     toolbar.listright= listwidth
     toolbar.seltoolbar(1,titgrp)
