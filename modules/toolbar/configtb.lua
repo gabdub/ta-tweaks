@@ -310,15 +310,15 @@ local function add_config_colorpicker()
   toolbar.adjust(250,242,2,1,3,3)
   toolbar.gotopos(20, toolbar.cfgpnl_y)
   toolbar.cmd("picker", picker_clicked, "", "")
-  toolbar.setbackcolor("picker", -2, true)  --COLOR PICKER=-2
+  toolbar.setbackcolor("picker", toolbar.BKCOLOR.PICKER, true)
   set_img_colorbut("picker", false) --no borders
   local ynext= toolbar.cfgpnl_y + 250
   toolbar.adjust(48,24,2,1,3,3)
-  add_color_preset(1,0xff0000,-4) --shows RED   value (scroll wheel to edit)
+  add_color_preset(1,0xff0000, toolbar.BKCOLOR.SEL_COL_R) --shows RED   value (scroll wheel to edit)
   add_color_preset(2,0xffff00)
-  add_color_preset(3,0x00ff00,-5) --shows GREEN value (scroll wheel to edit)
+  add_color_preset(3,0x00ff00, toolbar.BKCOLOR.SEL_COL_G) --shows GREEN value (scroll wheel to edit)
   add_color_preset(4,0x00ffff)
-  add_color_preset(5,0x0000ff,-6) --shows BLUE  value (scroll wheel to edit)
+  add_color_preset(5,0x0000ff, toolbar.BKCOLOR.SEL_COL_B) --shows BLUE  value (scroll wheel to edit)
   add_color_preset(6,0xff00ff)
   add_color_preset(7,0x000000)
   add_color_preset(8,0xffffff)
@@ -1081,7 +1081,7 @@ local function add_picker_cfg_panel()
 
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmd("choosencolor", picker_clicked, "")
-  toolbar.setbackcolor("choosencolor", -3, true)  --CHOSEN COLOR=-3
+  toolbar.setbackcolor("choosencolor", toolbar.BKCOLOR.SEL_COLOR, true)
   set_img_colorbut("choosencolor", true) --border on over and click
 
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
@@ -1307,11 +1307,11 @@ if minimap then
     --width=14 / height=expand
     toolbar.addgroup(3, 7, 14, 0)
     toolbar.setbackcolor(toolbar.globalicon, toolbar.get_rgbcolor_prop('color.linenum_back'), false, true)
-    toolbar.setbackcolor(toolbar.groupicon, -7, false, true) --MINI MAP DRAW (-7)
+    toolbar.setbackcolor(toolbar.groupicon, toolbar.BKCOLOR.MINIMAP_DRAW, false, true)
     toolbar.adjust(14, 4096, 2,1,3,3)
     toolbar.gotopos(0,0)
     toolbar.cmd("minimap", minimap_clicked, "", "")
-    toolbar.setbackcolor("minimap", -8, false, true) --MINI MAP CLICK (-8)
+    toolbar.setbackcolor("minimap", toolbar.BKCOLOR.MINIMAP_CLICK, false, true)
     toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
     toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
     toolbar.show(toolbar.tbshowminimap)

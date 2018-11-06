@@ -49,3 +49,14 @@ toolbar.TTBI_TB = {
   DDBUT_HIPRESSED=52,   --drop down button
   N             = 54
 }
+
+toolbar.BKCOLOR = {
+  NOT_SET       = -1,
+  PICKER        = -2,
+  SEL_COLOR     = -3,
+  SEL_COL_R     = -4,
+  SEL_COL_G     = -5,
+  SEL_COL_B     = -6,
+  MINIMAP_DRAW  = -7,
+  MINIMAP_CLICK = -8
+}
