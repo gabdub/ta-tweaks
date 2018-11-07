@@ -23,7 +23,8 @@ if toolbar then
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
     toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
-    if toolbar.TTBI_TB.BUT_NORMAL then toolbar.themed_icon(toolbar.globalicon, "transparent", toolbar.TTBI_TB.BUT_NORMAL) end
+    toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
+    toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
     toolbar.listtb_y= 1
     toolbar.listright= listwidth
     toolbar.seltoolbar(1,titgrp)

@@ -1100,7 +1100,7 @@ int set_text_bt_width(struct toolbar_item * p )
       cairo_text_extents( cr, "H", &ext );
       G->txttexth= (int) ext.height;
       //center text verticaly + offset
-      G->txttexty= ((get_group_imgH(G,htb) + G->txttexth)/2) + G->txttextoff;
+      G->txttexty= ((G->bheight + G->txttexth)/2) + G->txttextoff;
       if( G->txttexty < 0){
         G->txttexty= 0;
       }
@@ -1113,8 +1113,8 @@ int set_text_bt_width(struct toolbar_item * p )
       p->prew= tn->width_l;
       p->postw= tn->width_r;
     }else{
-      p->prew= 0;
-      p->postw= 0;
+      p->prew= 4;
+      p->postw= 4;
     }
 
     p->imgx= p->barx1 + p->prew;

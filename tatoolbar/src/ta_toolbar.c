@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.10 (6 nov 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.11 (Nov 7 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -1750,38 +1750,6 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
     if( imgpath != NULL ){
       ttb.img_base= chg_alloc_str(ttb.img_base, imgpath);
     }
-    //set default toolbar images
-    //buttons
-    set_toolbar_img( T, TTBI_TB_BUT_NORMAL,  "ttb-button-normal__LRTB4");
-    set_toolbar_img( T, TTBI_TB_BUT_HILIGHT, "ttb-button-hilight__LRTB4");
-    set_toolbar_img( T, TTBI_TB_BUT_HIPRESS, "ttb-button-press__LRTB4");
-    //buttons with a drop down triangle
-    set_toolbar_img( T, TTBI_TB_DDBUT_NORMAL,  "ttb-button-normal-drop__LTB4R18" );
-    set_toolbar_img( T, TTBI_TB_DDBUT_HILIGHT, "ttb-button-hilight-drop__LTB4R18" );
-    set_toolbar_img( T, TTBI_TB_DDBUT_HIPRESS, "ttb-button-press-drop__LTB4R18" );
-    //separators
-    if( T->isvertical ){
-      set_toolbar_img( T, TTBI_TB_SEPARATOR, "ttb-separator-h__LR2" );
-    }else{
-      set_toolbar_img( T, TTBI_TB_SEPARATOR, "ttb-separator-v__TB2" );
-    }
-    //tabs
-    set_toolbar_img( T, TTBI_TB_NTAB, "ttb-tab-normal__LR9" );
-    set_toolbar_img( T, TTBI_TB_DTAB, "ttb-tab-disabled__LR9" );
-    set_toolbar_img( T, TTBI_TB_HTAB, "ttb-tab-hilight__LR9" );
-    set_toolbar_img( T, TTBI_TB_ATAB, "ttb-tab-active__LR9" );
-
-    //set_toolbar_img( T, TTBI_TB_TABBACK, "ttb-tab-background" );   //tab background
-    set_toolbar_img( T, TTBI_TB_TAB_NSL,    "ttb-tab-sl-normal"    ); //normal tab scroll left
-    set_toolbar_img( T, TTBI_TB_TAB_NSR,    "ttb-tab-sr-normal"    ); //normal tab scroll right
-    set_toolbar_img( T, TTBI_TB_TAB_HSL,    "ttb-tab-sl-hilight"   ); //highlight tab scroll left
-    set_toolbar_img( T, TTBI_TB_TAB_HSR,    "ttb-tab-sr-hilight"   ); //highlight tab scroll right
-    set_toolbar_img( T, TTBI_TB_TAB_NCLOSE, "ttb-tab-close-normal" ); //normal close button
-    set_toolbar_img( T, TTBI_TB_TAB_HCLOSE, "ttb-tab-close-hilight"); //highlight close button
-
-    set_toolbar_img( T, TTBI_TB_TAB_CHANGED,"ttb-tab-modified" ); //modified buffer indicator
-
-
     //set defaults
     T->buttonsize= buttonsize;
     T->imgsize= imgsize;
@@ -1980,7 +1948,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
         p= add_itemG(G, NULL, NULL, NULL, NULL, 0, TTBF_IS_SEPARATOR);
         if( p != NULL ){
           p->imgbase= TTBI_TB_SEP_BASE;
-          asep= get_group_imgH(G,TTBI_TB_SEPARATOR); //minimun separator = image height
+          asep= get_group_imgH(G,TTBI_TB_HSEPARATOR); //minimun separator = image height
           if( sepsize < asep ){
             sepsize= asep;
           }
@@ -1999,8 +1967,9 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
         //show V separator in the middle
         p= add_itemG(G, NULL, NULL, NULL, NULL, 0, TTBF_IS_SEPARATOR);
         if( p != NULL ){
+          p->flags |= TTBF_SELECTED;  //show vertical separator img
           p->imgbase= TTBI_TB_SEP_BASE;
-          asep= get_group_imgW(G,TTBI_TB_SEPARATOR); //minimun separator = image width
+          asep= get_group_imgW(G,TTBI_TB_VSEPARATOR); //minimun separator = image width
           if( sepsize < asep ){
             sepsize= asep;
           }

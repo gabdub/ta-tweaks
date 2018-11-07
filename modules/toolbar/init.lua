@@ -370,8 +370,8 @@ if toolbar then
     --toolbar config
     toolbar.cfg= {}
     --toolbar images
-    tbconfig_imgs(  "toolbar_img",      33)   --toolbar_img#1..#33
-    tbconfig_imgs(  "toolbar_back",     5)    --toolbar_back#1..#5
+    tbconfig_imgs(  "toolbar_img",      toolbar.TTBI_TB.N) --toolbar_img#1..#N
+    tbconfig_imgs(  "toolbar_back",     5) --toolbar_back#1..#5
     --icons theme
     tbconfig_str(   "icons",            "light")
     --adjust
