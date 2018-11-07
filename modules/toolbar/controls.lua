@@ -11,8 +11,8 @@ toolbar.cfgpnl_chkval={}    --checks/radios value
 toolbar.cfgpnl_chknotify={} --checks/radios callbacks
 
 --define a graphical toolbar button
-function toolbar.cmd(name,func,tooltip,icon,passname)
-  toolbar.addbutton(name,tooltip)
+function toolbar.cmd(name,func,tooltip,icon,passname,base)
+  toolbar.addbutton(name,tooltip,base)
   if passname then toolbar.cmds_n[name]= func else toolbar.cmds[name]= func end
   if icon == nil then
     toolbar.setthemeicon(name,name) --no icon: use 'name' from theme
@@ -113,19 +113,12 @@ function toolbar.set_notify_on_change(name,func)
 end
 
 function toolbar.set_check_val(name,checked,dontset_toolbar)
-  if checked then
-    toolbar.cfgpnl_chkval[name]= true
-    if not dontset_toolbar then toolbar.setthemeicon(name, "check1") end
-  else
-    toolbar.cfgpnl_chkval[name]= false
-    if not dontset_toolbar then toolbar.setthemeicon(name, "check0") end
-  end
+  toolbar.cfgpnl_chkval[name]= checked
+  if not dontset_toolbar then toolbar.selected(name, checked) end
 end
 
 function toolbar.get_check_val(name)
-  if toolbar.cfgpnl_chkval[name] then
-    return true
-  end
+  if toolbar.cfgpnl_chkval[name] then return true end
   return false
 end
 
@@ -133,22 +126,19 @@ local function check_clicked(name)
   --toggle checkbox value
   toolbar.set_check_val(name, not toolbar.get_check_val(name))
   toolbar.config_change=true
-  if toolbar.cfgpnl_chknotify[name] ~= nil then
-    toolbar.cfgpnl_chknotify[name]()
-  end
+  if toolbar.cfgpnl_chknotify[name] ~= nil then toolbar.cfgpnl_chknotify[name]() end
 end
 
 function toolbar.cmd_check(name,tooltip,checked)
-  toolbar.cmd(name, check_clicked, tooltip, (checked and "check1" or "check0"))
-  toolbar.setthemeicon(name, "check-hi", toolbar.TTBI_TB.IT_HILIGHT)
-  toolbar.setthemeicon(name, "check-pr", toolbar.TTBI_TB.IT_HIPRESSED)
+  toolbar.cmd(name, check_clicked, tooltip, nil, nil, toolbar.TTBI_TB.CHECK_BASE)
+  toolbar.selected(name, checked)
   toolbar.cfgpnl_chkval[name]=checked
 end
 
 local function radio_clicked(name,dontset_toolbar,dont_notify)
   --set new radio button value
   toolbar.cfgpnl_chkval[name]= true
-  if not dontset_toolbar then toolbar.setthemeicon(name, "radio1") end
+  if not dontset_toolbar then toolbar.selected(name, true) end
   --reset the others (same rname in "rname:option-value")
   local rname=string.match(name, "(.-):.+$")
   if rname then
@@ -157,7 +147,7 @@ local function radio_clicked(name,dontset_toolbar,dont_notify)
       local rbn=rname..':'..i
       if name ~= rbn and toolbar.cfgpnl_chkval[rbn] then
         toolbar.cfgpnl_chkval[rbn]= false
-        if not dontset_toolbar then toolbar.setthemeicon(rbn, "radio0") end
+        if not dontset_toolbar then toolbar.selected(rbn, false) end
       end
       i=i+1
     end
@@ -169,9 +159,8 @@ local function radio_clicked(name,dontset_toolbar,dont_notify)
 end
 
 function toolbar.cmd_radio(name,tooltip,checked)
-  toolbar.cmd(name, radio_clicked, tooltip, (checked and "radio1" or "radio0"))
-  toolbar.setthemeicon(name, "radio-hi", toolbar.TTBI_TB.IT_HILIGHT)
-  toolbar.setthemeicon(name, "radio-pr", toolbar.TTBI_TB.IT_HIPRESSED)
+  toolbar.cmd(name, radio_clicked, tooltip, nil, nil, toolbar.TTBI_TB.RADIO_BASE)
+  toolbar.selected(name, checked)
   toolbar.cfgpnl_chkval[name]=checked
 end
 

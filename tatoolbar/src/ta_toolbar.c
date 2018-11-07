@@ -1918,14 +1918,14 @@ void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, i
   if( p != NULL){
     flg= p->flags;
     if( select ){
-      p->flags= flg | TTBF_SELECTED;
+      p->flags |= TTBF_SELECTED;
     }else{
-      p->flags= flg & ~TTBF_SELECTED;
+      p->flags &= ~TTBF_SELECTED;
     }
     if( press ){
-      p->flags= flg | TTBF_PRESSED;
+      p->flags |= TTBF_PRESSED;
     }else{
-      p->flags= flg & ~TTBF_PRESSED;
+      p->flags &= ~TTBF_PRESSED;
     }
     if( flg != p->flags ){
       redraw_item(p);
