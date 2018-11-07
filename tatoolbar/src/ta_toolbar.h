@@ -25,16 +25,17 @@
 #define TTBF_HIDDEN         0x00000002  //not shown
 #define TTBF_TEXT           0x00000004  //it's a text button or icon + text
 #define TTBF_GRAYED         0x00000008  //show as disabled (grayed)
-#define TTBF_ACTIVE         0x00000010  //show as active
-#define TTBF_CHANGED        0x00000020  //show as changed
-#define TTBF_TAB            0x00000040  //it's a tab
-#define TTBF_CLOSETAB_BUT   0x00000080  //it's a close tab button
-#define TTBF_SCROLL_BUT     0x00000100  //it's a scroll button
-#define TTBF_TEXT_LEFT      0x00000200  //draw text left aligned (default = center)
-#define TTBF_TEXT_BOLD      0x00000400  //draw text in bold
-#define TTBF_DROP_BUTTON    0x00000800  //draw a drop down button at the end of a text button
-#define TTBF_IS_SEPARATOR   0x00001000  //it's a separator
-#define TTBF_SHOW_BORDER    0x00002000  //draw a border (used in text buttons)
+#define TTBF_SELECTED       0x00000010  //show as selected / checked / active tab (normal=selected img)
+#define TTBF_PRESSED        0x00000020  //show as pressed (background=selected img)
+#define TTBF_CHANGED        0x00000040  //show as changed
+#define TTBF_TAB            0x00000080  //it's a tab
+#define TTBF_CLOSETAB_BUT   0x00000100  //it's a close tab button
+#define TTBF_SCROLL_BUT     0x00000200  //it's a scroll button
+#define TTBF_TEXT_LEFT      0x00000400  //draw text left aligned (default = center)
+#define TTBF_TEXT_BOLD      0x00000800  //draw text in bold
+#define TTBF_DROP_BUTTON    0x00001000  //draw a drop down button at the end of a text button
+#define TTBF_IS_SEPARATOR   0x00002000  //it's a separator
+#define TTBF_SHOW_BORDER    0x00004000  //draw a border (used in text buttons)
 //group flags
 #define TTBF_GRP_TABBAR     0x00010000  //tabs group
 #define TTBF_GRP_DRAGTAB    0x00020000  //tab dragging enabled in TTBF_TABBAR
@@ -50,11 +51,6 @@
 #define TTBF_GRP_VSCROLL    0x08000000  //this group shows a vertical scrollbar when needed
 
 //item images
-//#define TTBI_NORMAL         0  //button/separator
-//#define TTBI_DISABLED       1  //button
-//#define TTBI_HILIGHT        2  //button/toolbar
-//#define TTBI_HIPRESSED      3  //button/toolbar
-//#define TTBI_NODE_N         4
 #define TTBI_BACKGROUND     0
 #define TTBI_NORMAL         1
 #define TTBI_DISABLED       2
@@ -64,44 +60,6 @@
 #define TTBI_N_IT_IMGS      6
 
 //TTB images
-//#define TTBI_TB_BACKGROUND  0  //toolbar
-//#define TTBI_TB_SEPARATOR   1  //toolbar
-//#define TTBI_TB_HILIGHT     (TTBI_HILIGHT)     //button/toolbar
-//#define TTBI_TB_HIPRESSED   (TTBI_HIPRESSED)   //button/toolbar
-//#define TTBI_TB_TABBACK     4 //tab background
-//#define TTBI_TB_NTAB1       5  //normal tab1
-//#define TTBI_TB_NTAB2       6  //normal tab2
-//#define TTBI_TB_NTAB3       7  //normal tab3
-//#define TTBI_TB_DTAB1       8  //disabled tab1
-//#define TTBI_TB_DTAB2       9  //disabled tab2
-//#define TTBI_TB_DTAB3       10 //disabled tab3
-//#define TTBI_TB_HTAB1       11 //highlight tab1
-//#define TTBI_TB_HTAB2       12 //highlight tab2
-//#define TTBI_TB_HTAB3       13 //highlight tab3
-//#define TTBI_TB_ATAB1       14 //active tab1
-//#define TTBI_TB_ATAB2       15 //active tab2
-//#define TTBI_TB_ATAB3       16 //active tab3
-//#define TTBI_TB_TAB_NSL     17 //tab scroll left
-//#define TTBI_TB_TAB_NSR     18 //tab scroll right
-//#define TTBI_TB_TAB_HSL     19 //tab scroll left
-//#define TTBI_TB_TAB_HSR     20 //tab scroll right
-//#define TTBI_TB_TAB_NCLOSE  21 //normal close button
-//#define TTBI_TB_TAB_HCLOSE  22 //highlight close button
-//#define TTBI_TB_TAB_CHANGED 23 //changed indicator
-//#define TTBI_TB_TXT_HIL1    24 //highlight text button1
-//#define TTBI_TB_TXT_HIL2    25 //highlight text button2
-//#define TTBI_TB_TXT_HIL3    26 //highlight text button3
-//#define TTBI_TB_TXT_HPR1    27 //hi-pressed text button1
-//#define TTBI_TB_TXT_HPR2    28 //hi-pressed text button2
-//#define TTBI_TB_TXT_HPR3    29 //hi-pressed text button3
-//#define TTBI_TB_HINORMAL    30 //normal button back
-//#define TTBI_TB_TXT_NOR1    31 //normal text button1 back
-//#define TTBI_TB_TXT_NOR2    32 //normal text button2 back
-//#define TTBI_TB_TXT_NOR3    33 //normal text button3 back
-//#define TTBI_TB_TXT_NOR4    34 //replace TTBI_TB_TXT_NOR3 (add a drop down button at the end)
-//#define TTBI_TB_TXT_HIL4    35 //replace TTBI_TB_TXT_HIL3 (add a drop down button at the end)
-//#define TTBI_TB_TXT_HPR4    36 //replace TTBI_TB_TXT_HPR3 (add a drop down button at the end)
-//#define TTBI_TB_N           37
 #define TTBI_TB_BACK_BASE     0                                     //TOOLBAR/GROUP
 #define TTBI_TB_BACKGROUND    (TTBI_TB_BACK_BASE+TTBI_BACKGROUND)   //background
 
@@ -140,7 +98,19 @@
 #define TTBI_TB_DDBUT_HILIGHT (TTBI_TB_DDBUT_BASE+TTBI_HILIGHT)
 #define TTBI_TB_DDBUT_HIPRESS (TTBI_TB_DDBUT_BASE+TTBI_HIPRESSED)
 
-#define TTBI_N_TB_IMGS        (TTBI_TB_DDBUT_BASE+TTBI_N_IT_IMGS)
+#define TTBI_TB_CHECK_BASE    (TTBI_TB_DDBUT_BASE+TTBI_N_IT_IMGS)   //CHECK box
+#define TTBI_TB_CHECK_OFF     (TTBI_TB_CHECK_BASE+TTBI_NORMAL)      //unchecked
+#define TTBI_TB_CHECK_HILIGHT (TTBI_TB_CHECK_BASE+TTBI_HILIGHT)
+#define TTBI_TB_CHECK_HIPRESS (TTBI_TB_CHECK_BASE+TTBI_HIPRESSED)
+#define TTBI_TB_CHECK_ON      (TTBI_TB_CHECK_BASE+TTBI_SELECTED)    //checked
+
+#define TTBI_TB_RADIO_BASE    (TTBI_TB_CHECK_BASE+TTBI_N_IT_IMGS)   //RADIO box
+#define TTBI_TB_RADIO_OFF     (TTBI_TB_RADIO_BASE+TTBI_NORMAL)      //unchecked
+#define TTBI_TB_RADIO_HILIGHT (TTBI_TB_RADIO_BASE+TTBI_HILIGHT)
+#define TTBI_TB_RADIO_HIPRESS (TTBI_TB_RADIO_BASE+TTBI_HIPRESSED)
+#define TTBI_TB_RADIO_ON      (TTBI_TB_RADIO_BASE+TTBI_SELECTED)    //checked
+
+#define TTBI_N_TB_IMGS        (TTBI_TB_RADIO_BASE+TTBI_N_IT_IMGS)
 
 
 #define BKCOLOR_NOT_SET (-1)  //background color = not set
@@ -230,6 +200,7 @@ struct toolbar_item
   int prew, postw;    //pre and post width (used in tabs and buttons)
   struct toolbar_img img[ TTBI_N_IT_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
+  int imgbase;        //0, TTBI_TB_SEP_BASE, TTBI_TB_BUTTON_BASE, TTBI_TB_DDBUT_BASE, TTBI_TB_CHECK_BASE, ...
 };
 
 struct toolbar_group
@@ -437,6 +408,7 @@ void ttb_show_groupG( struct toolbar_group *G, int show );
 struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags);
 void update_group_sizeG( struct toolbar_group *G, int redraw );
 void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isenabled );
+void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, int press );
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide);
 void ttb_change_button_imgT(struct toolbar_data *T, const char *name, int nimg, const char *img );
 void set_color_pick_rgb( int color );
@@ -493,10 +465,12 @@ struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg );
 int  get_group_imgW( struct toolbar_group *G, int nimg );
 int  get_group_imgH( struct toolbar_group *G, int nimg );
 void select_toolbar_n( int num, int ngrp );
-void ttb_addbutton( const char *name, const char *tooltip );
+void ttb_addbutton( const char *name, const char *tooltip, int base );
 void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton);
 void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags );
 void ttb_enable( const char * name, int isenabled, int onlythistb );
+void ttb_setselected( const char * name, int selected, int pressed, int onlythistb );
+int  ttb_get_flags( const char * name  );
 void ttb_seticon( const char * name, const char *img, int nicon, int onlythistb );
 void ttb_setbackcolor( const char * name, int color, int keepback, int onlythistb );
 void ttb_settooltip( const char * name, const char *tooltip, int onlythistb );

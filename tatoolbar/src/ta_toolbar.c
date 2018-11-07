@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.9 (29 oct 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.10 (6 nov 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -202,6 +202,11 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
       set_text_bt_width(p);
     }
     p->back_color= BKCOLOR_NOT_SET;
+    if( (flags & TTBF_DROP_BUTTON) != 0){
+      p->imgbase= TTBI_TB_DDBUT_BASE;     //DROP DOWN BUTTON
+    }else{
+      p->imgbase= TTBI_TB_BUTTON_BASE;    //BUTTON
+    }
     if( G->isvertical ){
       G->ynew= p->bary2;
     }else{
@@ -235,6 +240,7 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
     p->minwidth= G->tabminwidth;
     p->maxwidth= G->tabmaxwidth;
     p->back_color= BKCOLOR_NOT_SET;
+    p->imgbase= TTBI_TB_TAB_BASE;
 
     //add the tab to the end of the list
     if( G->list_last != NULL ){
@@ -1937,6 +1943,28 @@ void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isenabled
   }
 }
 
+void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, int press )
+{
+  int flg;
+  struct toolbar_item * p= item_from_nameT(T, name);
+  if( p != NULL){
+    flg= p->flags;
+    if( select ){
+      p->flags= flg | TTBF_SELECTED;
+    }else{
+      p->flags= flg & ~TTBF_SELECTED;
+    }
+    if( press ){
+      p->flags= flg | TTBF_PRESSED;
+    }else{
+      p->flags= flg & ~TTBF_PRESSED;
+    }
+    if( flg != p->flags ){
+      redraw_item(p);
+    }
+  }
+}
+
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
 {
   struct toolbar_item * p;
@@ -1951,6 +1979,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
         //show H separator in the middle
         p= add_itemG(G, NULL, NULL, NULL, NULL, 0, TTBF_IS_SEPARATOR);
         if( p != NULL ){
+          p->imgbase= TTBI_TB_SEP_BASE;
           asep= get_group_imgH(G,TTBI_TB_SEPARATOR); //minimun separator = image height
           if( sepsize < asep ){
             sepsize= asep;
@@ -1970,6 +1999,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
         //show V separator in the middle
         p= add_itemG(G, NULL, NULL, NULL, NULL, 0, TTBF_IS_SEPARATOR);
         if( p != NULL ){
+          p->imgbase= TTBI_TB_SEP_BASE;
           asep= get_group_imgW(G,TTBI_TB_SEPARATOR); //minimun separator = image width
           if( sepsize < asep ){
             sepsize= asep;
@@ -2070,12 +2100,12 @@ void ttb_activate_tabG(struct toolbar_group *G, int ntab)
   n= 0;
   for( p= G->list; (p != NULL); p= p->next ){
     if( p->num == ntab){
-      p->flags |= TTBF_ACTIVE | TTBF_SELECTABLE;
+      p->flags |= TTBF_SELECTED | TTBF_SELECTABLE;
       p->flags &= ~TTBF_GRAYED;
       t= p;
       tabpos= n;
     }else{
-      p->flags &= ~TTBF_ACTIVE; //only one tab can be active
+      p->flags &= ~TTBF_SELECTED; //only one tab can be active
     }
     n++;
   }
@@ -2165,7 +2195,7 @@ void ttb_enable_tabG(struct toolbar_group *G, int ntab, int enable)
       p->flags |= TTBF_SELECTABLE;
     }else{
       p->flags |= TTBF_GRAYED;
-      p->flags &= ~(TTBF_ACTIVE | TTBF_SELECTABLE);
+      p->flags &= ~(TTBF_SELECTED | TTBF_SELECTABLE);
     }
     redraw_group(G);
   }
@@ -2301,7 +2331,7 @@ void ttb_goto_tabG(struct toolbar_group *G, int tabpos)
   if( G != NULL ){
     //find the current active tab
     for( pcurr= G->list; (pcurr != NULL); pcurr= pcurr->next ){
-      if( (pcurr->flags & TTBF_ACTIVE) != 0 ){
+      if( (pcurr->flags & TTBF_SELECTED) != 0 ){
         break;
       }
     }
@@ -2401,7 +2431,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
       }
     }
   }
-  if( (t->flags & TTBF_ACTIVE) != 0 ){
+  if( (t->flags & TTBF_SELECTED) != 0 ){
     h= TTBI_TB_ATAB;
     color= &(G->tabtextcolA);
 
@@ -2433,7 +2463,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
 void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
 {
   struct toolbar_item *p, *phi, *t, *ta;
-  int h, grayed, x, y, xa, nhide, x1, base, wt2, ht2;
+  int h, grayed, x, y, xa, nhide, x1, wt2, ht2;
   struct color3doubles *color;
 
   phi= NULL;
@@ -2454,7 +2484,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
     for( ; (t != NULL); t= t->next ){
       if( (t->flags & TTBF_HIDDEN) == 0 ){  //skip hidden tabs
         if( need_redraw( pdrawarea, x, y, x+t->barx2, y+t->bary2) ){
-          if( (t->flags & TTBF_ACTIVE) != 0 ){
+          if( (t->flags & TTBF_SELECTED) != 0 ){
             ta= t;
             xa= x;
           }else{
@@ -2508,7 +2538,9 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
       }
       if( (y0+p->bary1 >= 0) && need_redraw( pdrawarea, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
         h= TTBI_BACKGROUND;
-        if( (p->flags & (TTBF_SHOW_BORDER|TTBF_DROP_BUTTON)) != 0 ){
+        if( (p->flags & TTBF_PRESSED) != 0 ){
+          h= TTBI_SELECTED; //change background when pressed
+        }else if( (p->flags & (TTBF_SHOW_BORDER|TTBF_DROP_BUTTON)) != 0 ){
           h= TTBI_NORMAL; //draw a border
         }
         if( phi == p ){
@@ -2518,12 +2550,6 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
             h= TTBI_HILIGHT; //normal highlight (and no other button is pressed)
           }
         }
-        base= TTBI_TB_BUTTON_BASE;  //regular button
-        if( (p->flags & TTBF_DROP_BUTTON) != 0 ){
-          base= TTBI_TB_DDBUT_BASE; //button with drop down triangle
-        }else if( (p->flags & TTBF_IS_SEPARATOR) != 0 ){
-          base= TTBI_TB_SEP_BASE;   //separator
-        }
         grayed= 0;
         wt2= p->barx2 - p->barx1;
         ht2= p->bary2 - p->bary1;
@@ -2532,20 +2558,22 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
           //paint back color if set
           draw_fill_color(gcontext, p->back_color, x0+p->barx1, y0+p->bary1, wt2, ht2 );
           //draw highlight
-          draw_fill_mp_img(gcontext, get_item_img(p,h,base), x0+p->barx1, y0+p->bary1, wt2, ht2 );
+          draw_fill_mp_img(gcontext, get_item_img(p,h,p->imgbase), x0+p->barx1, y0+p->bary1, wt2, ht2 );
         }
         if( (p->flags & TTBF_TEXT) == 0 ){
           //graphic button
           h= TTBI_NORMAL;
           if( (p->flags & TTBF_GRAYED) != 0){
-            struct toolbar_img * di= get_item_img(p,TTBI_DISABLED,base);
+            struct toolbar_img * di= get_item_img(p,TTBI_DISABLED,p->imgbase);
             if( (di != NULL) && (di->fname != NULL) ){
               h= TTBI_DISABLED;
             }else{
               grayed= 1; //there is no disabled image, gray the icon
             }
+          }else if( (p->flags & TTBF_SELECTED) != 0 ){
+            h= TTBI_SELECTED; //change icon when checked
           }
-          draw_img(gcontext, get_item_img(p,h,base), x, y, grayed );
+          draw_img(gcontext, get_item_img(p,h,p->imgbase), x, y, grayed );
         }else{
           //text button
           color= &(g->txttextcolN);
@@ -2557,7 +2585,8 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
           }
           xa= x0 + p->barx2 - p->postw;
           draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa-x+1, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD) );
-          //draw_box(gcontext, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1, 0x000080, 0); //debug: show text buttons
+          //debug: show text buttons
+          //draw_box(gcontext, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1, 0x000080, 0);
         }
       }
     }
@@ -2645,12 +2674,16 @@ void select_toolbar_n( int num, int ngrp )
   }
 }
 
-void ttb_addbutton( const char *name, const char *tooltip )
+void ttb_addbutton( const char *name, const char *tooltip, int base )
 {
+  struct toolbar_item * p;
   struct toolbar_group * g= current_buttongrp();
   if( g != NULL ){
     redraw_begG(g);
-    add_itemG( g, name, name, tooltip, NULL, 0, 0);
+    p= add_itemG( g, name, name, tooltip, NULL, 0, 0);
+    if( (p != NULL) && (base > 0) ){
+      p->imgbase= base;
+    }
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw
   }
@@ -2699,6 +2732,36 @@ void ttb_enable( const char * name, int isenabled, int onlythistb )
       ttb_enable_buttonT(toolbar_from_num(i), name, isenabled );
     }
   }
+}
+
+void ttb_setselected( const char * name, int selected, int pressed, int onlythistb )
+{
+  int i;
+  if( onlythistb ){
+    //select button in this toolbar only
+    ttb_select_buttonT(current_toolbar(), name, selected, pressed );
+  }else{
+    //select button in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_select_buttonT(toolbar_from_num(i), name, selected, pressed );
+    }
+  }
+}
+
+int ttb_get_flags( const char * name  )
+{
+  if( strcmp(name, "GROUP") == 0 ){
+    struct toolbar_group * g= current_group();
+    if( g != NULL ){
+      return g->flags;
+    }
+  }else{
+    struct toolbar_item * p= item_from_nameT(current_toolbar(), name);
+    if( p != NULL ){
+      return p->flags;
+    }
+  }
+  return 0;
 }
 
 void ttb_seticon( const char * name, const char *img, int nicon, int onlythistb )

@@ -136,10 +136,10 @@ static int ltoolbar_showgroup(lua_State *L)
 }
 
 //----- BUTTONS -----
-/** `toolbar.addbutton(name,tooltiptext)` Lua function. */
+/** `toolbar.addbutton(name,tooltiptext,[base])` Lua function. */
 static int ltoolbar_addbutton(lua_State *L)
 {
-  ttb_addbutton( luaL_checkstring(L, 1), luaL_checkstring(L, 2) );
+  ttb_addbutton( luaL_checkstring(L, 1), luaL_checkstring(L, 2), lua_tointeger(L, 3) );
   return 0;
 }
 
@@ -204,6 +204,13 @@ static int ltoolbar_gotopos(lua_State *L)
 static int ltoolbar_enable(lua_State *L)
 {
   ttb_enable( luaL_checkstring(L, 1), lua_toboolean(L,2), lua_toboolean(L,3) );
+  return 0;
+}
+
+/** `toolbar.selected(name,selected,pressed,[onlyinthistoolbar])` Lua function. */
+static int ltoolbar_selected(lua_State *L)
+{
+  ttb_setselected( luaL_checkstring(L, 1), lua_toboolean(L,2), lua_toboolean(L,3), lua_toboolean(L,4) );
   return 0;
 }
 
@@ -338,10 +345,37 @@ static int ltoolbar_getpickcolor(lua_State *L)
   return 1;
 }
 
-/** `toolbar.getversion()` Lua function. */
+/** `toolbar.getversion([opt])` Lua function. */
 static int ltoolbar_getversion(lua_State *L)
 {
-  lua_pushstring(L,get_toolbar_version());
+  char str[200];
+  int opt= lua_tointeger(L, 1);
+  str[0]= 0;
+  switch( opt ){
+    case 1:   //1: compilation date
+      strcpy( str, __DATE__ );
+      break;
+
+    case 2:   //2: target TA version
+      sprintf( str, "%d.%d", TA_VERSION / 10, TA_VERSION % 10 );
+      break;
+
+    case 3:   //3: GTK version
+      sprintf( str, "%d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION );
+      break;
+
+    default:    //0: tatoolbar version
+      strcpy( str, get_toolbar_version() );
+      break;
+  }
+  lua_pushstring(L,str);
+  return 1;
+}
+
+/** `toolbar.getflags(name)` Lua function. */
+static int ltoolbar_getflags(lua_State *L)
+{
+  lua_pushinteger(L,ttb_get_flags(luaL_checkstring(L, 1)));
   return 1;
 }
 
@@ -1632,6 +1666,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
   l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);      //change next button position
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);       //enable/disable a button
+  l_setcfunction(L, -1, "selected",     ltoolbar_selected);     //un/select/press a button
   l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);      //change a button, GROUP or TOOLBAR icon
   l_setcfunction(L, -1, "setbackcolor", ltoolbar_setbackcolor); //change a button, GROUP or TOOLBAR back color
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);   //change a button tooltip
@@ -1650,6 +1685,7 @@ void register_toolbar(lua_State *L)
   //get
   l_setcfunction(L, -1, "getpickcolor", ltoolbar_getpickcolor); //return integer (RGB) current selected color in picker
   l_setcfunction(L, -1, "getversion",   ltoolbar_getversion);   //return string ta-toolbar version
+  l_setcfunction(L, -1, "getflags",     ltoolbar_getflags);     //return item/current group flags
   //popup
   l_setcfunction(L, -1, "popup",        ltoolbar_popup);        //show a popup toolbar
   //menuitem
