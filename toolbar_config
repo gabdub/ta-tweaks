@@ -1,6 +1,6 @@
 ;===[ Toolbar ]===
 ;THEME
-tbtheme:1
+cbo.theme:bar-sm-light
 ;TABS
 ;Tabs position
 tbtabs:2
@@ -11,7 +11,7 @@ tbtab2clickclose:2
 ;STATUS BAR
 tbshowstatbar:true
 ;VERTICAL BAR
-tbvertbar:1
+tblist_hideprj:true
 ;MINI MAP
 tbshowminimap:true
 tbhidemmapcfg:true
@@ -69,8 +69,6 @@ ctypeformat:1
 ;IMPORT
 ;===========
 LEXER:INDENT
-asm:s2
 lua:s2
-text:s2
 cpp:s2
 ansi_c:s2

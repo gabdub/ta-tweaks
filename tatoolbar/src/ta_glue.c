@@ -143,10 +143,11 @@ static int ltoolbar_addbutton(lua_State *L)
   return 0;
 }
 
-/** `toolbar.addtext(name,text,tooltiptext,width,dropbutton)` Lua function. */
+/** `toolbar.addtext(name,text,tooltiptext,width,dropbutton,leftalign,bold)` Lua function. */
 static int ltoolbar_addtext(lua_State *L)
 {
-  ttb_addtext( luaL_checkstring(L, 1), NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2), lua_tointeger(L, 4), lua_toboolean(L,5));
+  ttb_addtext( luaL_checkstring(L, 1), NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2),
+    lua_tointeger(L, 4), lua_toboolean(L,5), lua_toboolean(L,6), lua_toboolean(L,7));
   return 0;
 }
 
@@ -1445,6 +1446,10 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
     }
   }else{
     //HIDE POPUP
+    if( T->lock_group != NULL ){
+      T->lock_group->flags &= ~TTBF_GRP_VSCR_INH;  //end vertical scroll lock
+      T->lock_group= NULL;
+    }
     if( T->win != NULL ){
       show_toolbar( T, 0 );
       gtk_widget_destroy( T->win );
@@ -1501,7 +1506,9 @@ static int ltoolbar_popup(lua_State *L)
       x= 0; y= 0;
       gdk_window_get_origin( get_draw_widget( p->group->toolbar)->window, &x, &y );
       x += p->group->barx1;
-      y += p->group->bary1;
+      y += p->group->bary1 - p->group->yvscroll;
+      p->group->flags |= TTBF_GRP_VSCR_INH;  //inhibit vertical scroll while popup is open
+      T->lock_group= p->group;  //unlock when closed
       loc= intluadef(L, 4, 0);
       wx= loc & 7;
       switch( wx ){

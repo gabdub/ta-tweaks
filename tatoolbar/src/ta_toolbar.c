@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.11 (Nov 7 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.12 (Nov 12 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -1609,8 +1609,8 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         }
       }
 
-      if( (G->flags & TTBF_GRP_VSCROLL) != 0 ){
-        //V-SCROLL enabled
+      if( (G->flags & (TTBF_GRP_VSCROLL|TTBF_GRP_VSCR_INH)) == TTBF_GRP_VSCROLL ){
+        //V-SCROLL enabled and no inhibited
         nhide= G->yvscroll;
         if( (dir > 0) && (!G->islast_item_shown) ){
           G->yvscroll += 30;
@@ -2658,7 +2658,7 @@ void ttb_addbutton( const char *name, const char *tooltip, int base )
   }
 }
 
-void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton)
+void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold)
 {
   struct toolbar_item * p;
   int flags= 0;
@@ -2667,6 +2667,12 @@ void ttb_addtext( const char * name, const char * img, const char *tooltip, cons
     redraw_begG(g);
     if( dropbutton ){
       flags= TTBF_DROP_BUTTON;  //draw a drop down button at the end of the text button
+    }
+    if( leftalign ){
+      flags |= TTBF_TEXT_LEFT; //left align text
+    }
+    if( bold ){
+      flags |= TTBF_TEXT_BOLD; //use bold
     }
     p= add_itemG( g, name, img, tooltip, text, chwidth, flags );
     //group size changed, update toolbar

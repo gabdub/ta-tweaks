@@ -24,67 +24,103 @@ function toolbar.cmd(name,func,tooltip,icon,passname,base)
 end
 
 --define a text toolbar button
-function toolbar.cmdtext(text,func,tooltip,name,usebutsz,dropbt)
+function toolbar.cmdtext(text,func,tooltip,name,usebutsz,dropbt,leftalign,bold)
   if not name then name=text end
   local w=0
   if usebutsz then w=toolbar.cfg.butsize end
-  toolbar.addtext(name,text,tooltip,w,dropbt)
+  toolbar.addtext(name,text,tooltip,w,dropbt,leftalign,bold)
   toolbar.cmds[name]= func
 end
 
 --define a combo-box using a pop-up toolbar
 local combo_open= 0 --1:open 2:open + auto-close (timer running)
+local combo_op_name= ""
+local function end_combo_select()
+  if combo_op_name ~= "" then
+    toolbar.selected(combo_op_name, false, false)
+    combo_op_name= ""
+  end
+  combo_open= 0
+end
+
 local function end_combo_open()
-  if combo_open == 2 then combo_open= 0 end
+  if combo_open == 2 then end_combo_select() end
   return false
 end
 
 local function closepopup(npop)
   toolbar.popup(npop,false) --hide popup
-  if npop == 5 and combo_open == 1 then
+  if npop == toolbar.COMBO_POPUP and combo_open == 1 then
+    end_combo_select()
     combo_open= 2 --auto-close
     timeout(1,end_combo_open)
   end
 end
 events_connect("popup_close", closepopup)
 
-local function combo_clicked(btname)
-  combo_open= 0
-  closepopup(5)
-  ui.statusbar_text= btname.." clicked"
-end
-
 local combo_data= {}
 local combo_width= {}
+local combo_func= {}
+local combo_txt= {}
+local function combo_clicked(btname)
+  end_combo_select()
+  closepopup(5)
+  local cname, cval= string.match(btname, "(.-)#(.+)$")
+  if cname then
+    local newidx= tonumber(cval)
+    local newtxt= combo_data[cname][newidx]
+    combo_txt[cname]= newtxt
+    toolbar.settext(cname, newtxt)
+    local cback= combo_func[name]
+    if cback then cback(cname, newidx, newtxt) end
+  end
+end
+
+function toolbar.get_combo_txt(name)
+  return combo_txt[name]
+end
+
 local function show_combo_list(btname)
   if combo_open > 0 then
-    combo_open= 0
+    end_combo_select()
     return
   end
   combo_open= 1
-  toolbar.new(27, 24, 16, toolbar.POPUP_TOOLBAR, toolbar.themepath)
+  combo_op_name= btname
+  toolbar.selected(combo_op_name, false, true)
+  toolbar.new(27, 24, 16, toolbar.COMBO_POPUP, toolbar.themepath)
   toolbar.addgroup(8,8,0,0)
   toolbar.adjust(24,24,3,3,0,0)
   toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-  toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list",     toolbar.TTBI_TB.BACKGROUND)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-button-press",   toolbar.TTBI_TB.BUT_HIPRESSED)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-combo-selected", toolbar.TTBI_TB.BUT_SELECTED)
 
   for i=1,#combo_data[btname] do
     local itname= btname.."#"..i
-    toolbar.addtext(itname,combo_data[btname][i],"",282)
+    toolbar.addtext(itname,combo_data[btname][i],"",282,false,true)
     toolbar.cmds_n[itname]= combo_clicked
-    toolbar.setthemeicon(itname, "transparent", toolbar.TTBI_TB.IT_NORMAL)
+    --toolbar.setthemeicon(itname, "transparent", toolbar.TTBI_TB.IT_NORMAL)
   end
-  --toolbar.adjust(24,27,0,0,0,0)
-  toolbar.popup(5,true,btname,35,combo_width[btname]-2)
+  toolbar.popup(toolbar.COMBO_POPUP,true,btname,35,combo_width[btname]-2)
 end
 
-function toolbar.cmd_combo(name,func,tooltip,txtarray,idx,width)
+function toolbar.cmd_combo(name,func,tooltip,txtarray,txtval,width,bold)
   if idx == 0 then idx=1 end
   if width == 0 then width=300 end --configure this
   combo_data[name]= txtarray
   combo_width[name]= width
-  toolbar.addtext(name,txtarray[idx],tooltip,width,true) --show current value
+  if not txtval then txtval= txtarray[1] end
+  combo_txt[name]= txtval
+  toolbar.addtext(name,txtval,tooltip,width,true,true,bold) --show current value
   toolbar.cmds_n[name]= show_combo_list --pass the combo name when clicked
+  combo_func[name]= func
+end
+
+function toolbar.set_combo_txt(name, txtval,dontset_toolbar)
+  combo_txt[name]= txtval
+  if not dontset_toolbar then toolbar.settext(name, txtval) end
 end
 
 events_connect("toolbar_clicked", function(buttonname,ntoolbar)

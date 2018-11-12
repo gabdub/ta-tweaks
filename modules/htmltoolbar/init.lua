@@ -72,6 +72,7 @@ if toolbar then
       addclass=true
       toolbar.settext(b, "CL", "HTML insert class: ON")
     end
+    toolbar.selected(b, false, addclass)
   end
   local function enc_html_id()
     local b="addid"
@@ -82,6 +83,7 @@ if toolbar then
       addid=true
       toolbar.settext(b, "ID", "HTML insert id: ON")
     end
+    toolbar.selected(b, false, addid)
   end
   local function enc_html_style()
     local b="addstyle"
@@ -92,6 +94,7 @@ if toolbar then
       addstyle=true
       toolbar.settext(b, "ST", "HTML insert style: ON")
     end
+    toolbar.selected(b, false, addstyle)
   end
 
   --HTML quicktype toolbar

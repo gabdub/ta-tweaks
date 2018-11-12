@@ -363,10 +363,13 @@ local function cont_config_radio(text,tooltip,checked)
   _add_config_radio(toolbar.last_rname..":"..toolbar.last_rnum,text,tooltip,checked)
 end
 
-local function add_config_combo(name,func,tooltip,txtarray,idx)
+--combo name must begin with "cbo."
+local function add_config_combo(name,func,tooltip,txtarray,idx,bold)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmd_combo(name,func,tooltip,txtarray,idx,toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2)
-  --toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name..':1' --save as a radio
+  toolbar.cmd_combo(name,func,tooltip,txtarray,idx,toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,bold)
+  if toolbar.config_saveon then --save this combo in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
+  end
   pnly_newrow()
 end
 
@@ -517,18 +520,20 @@ function toolbar.save_config()
         if string.match(optname, ";.*$") then
           savedata[n] = optname --save comments
         else
-          local rname= string.match(optname, "(.-):.+$")
-          if rname then
-            --radio: name:index
-            savedata[n] = rname..":"..toolbar.get_radio_val(rname)
+          local cname= string.match(optname, "color%.(.+)$")
+          if cname then --color property: color.name:0xCCCCCC
+            savedata[n] = optname..':'..toolbar.get_colorprop_val(optname)
           else
-            local cname= string.match(optname, "color%.(.+)$")
-            if cname then
-              --color property: color.name
-              savedata[n] = optname..':'..toolbar.get_colorprop_val(optname)
+            cname= string.match(optname, "cbo%.(.+)$")
+            if cname then --combo property: cbo.name:item-string
+              savedata[n] = optname..":"..toolbar.get_combo_txt(optname)
             else
-              --check: name=true/false
-              savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
+              local rname= string.match(optname, "(.-):.+$")
+              if rname then --radio: name:index
+                savedata[n] = rname..":"..toolbar.get_radio_val(rname)
+              else --check: name=true/false
+                savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
+              end
             end
           end
         end
@@ -554,24 +559,24 @@ function toolbar.load_config(dontset_toolbar)
   local f = io.open(toolbar.CONFIG_FILE, 'rb')
   if f then
     for line in f:lines() do
-      rname,rnum= string.match(line, "([^;]-):(.+)$")
+      rname,rnum= string.match(line, "([^;]-):(.+)")
       if rname then
         if readlexer then
           toolbar.cfgpnl_lexer_indent[rname]=rnum
         elseif rname == "LEXER" and rnum == "INDENT" then
           readlexer=true
         else
-          if rnum == 'true' then
+          if string.match(rname,'color%..*') then   --"color.xxx" => color
+            toolbar.set_colorprop_val(rname,rnum,dontset_toolbar)
+            colors=true
+          elseif string.match(rname,'cbo%..*') then --"cbo.xxx" => combo
+            toolbar.set_combo_txt(rname,rnum,dontset_toolbar)
+          elseif rnum == 'true' then
             toolbar.set_check_val(rname,true,dontset_toolbar)
           elseif rnum == 'false' then
             toolbar.set_check_val(rname,false,dontset_toolbar)
           else
-            if string.match(rname,'color%..*') then
-              toolbar.set_colorprop_val(rname,rnum,dontset_toolbar)
-              colors=true
-            else
-              toolbar.set_radio_val(rname,rnum,dontset_toolbar)
-            end
+            toolbar.set_radio_val(rname,rnum,dontset_toolbar)
           end
         end
       end
@@ -817,7 +822,7 @@ local function add_buffer_cfg_panel()
 end
 
 --a new theme was chosen in the combo
-local function cbtheme_change(idx,value)
+local function cbtheme_change(cboname, newidx, newtxt)
 end
 
 local function add_toolbar_cfg_panel()
@@ -825,12 +830,7 @@ local function add_toolbar_cfg_panel()
   toolbar.toolbar_panel= add_config_tabgroup("Toolbar", "Toolbar configuration")
 
   add_config_label("THEME")
-  add_config_radio("tbtheme", "bar-sm-light", "Light theme with small tabs", true)
-  cont_config_radio( "bar-th-dark", "Dark theme with rounded tabs")
-  cont_config_radio( "bar-ch-dark", "Dark theme with triangular tabs")
-
-  --choose theme using a combo
-  --add_config_combo("cbtheme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},1)
+  add_config_combo("cbo.theme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},nil,true)
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")
@@ -884,7 +884,7 @@ local function add_toolbar_cfg_panel()
   pnly_add(21)
   add_config_separator()
 
-  --pnly_newrow()
+  pnly_newrow()
   add_config_label("About ta-toolbar", true)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addlabel("Version: "..toolbar.getversion(0), "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)

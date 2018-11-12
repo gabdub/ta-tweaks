@@ -12,11 +12,12 @@
 //ntoolbar=2: HORIZONTAL  (bottom)
 //ntoolbar=3: VERTICAL    (right #2)
 //ntoolbar=4: VERTICAL    (right #1)
-//ntoolbar=5: VERTICAL    (POPUP)
+//ntoolbar=5: VERTICAL    (POPUP:combo-list)
+//ntoolbar=6: VERTICAL    (POPUP)
 #define STAT_TOOLBAR      2
 #define MINIMAP_TOOLBAR   4
 #define POPUP_FIRST       5
-#define NTOOLBARS         6
+#define NTOOLBARS         7
 
 // toolbar -> group -> items
 
@@ -49,6 +50,7 @@
 #define TTBF_GRP_ITEM_W     0x02000000  //this group set width using items position
 #define TTBF_GRP_ITEM_H     0x04000000  //this group set height using items position
 #define TTBF_GRP_VSCROLL    0x08000000  //this group shows a vertical scrollbar when needed
+#define TTBF_GRP_VSCR_INH   0x10000000  //inhibit vertical scroll while popup is open
 
 //item images
 #define TTBI_BACKGROUND     0
@@ -296,6 +298,7 @@ struct toolbar_data
   struct toolbar_group * group_last;
   struct toolbar_group * curr_group;  //current BUTTON group
   struct toolbar_group * tab_group;   //current TAB group
+  struct toolbar_group * lock_group;  //inhibit vertical scroll while popup is open
 
   int ngroups;        //total number of groups
   int currentgroup;   //current group num: 0...
@@ -467,7 +470,7 @@ int  get_group_imgW( struct toolbar_group *G, int nimg );
 int  get_group_imgH( struct toolbar_group *G, int nimg );
 void select_toolbar_n( int num, int ngrp );
 void ttb_addbutton( const char *name, const char *tooltip, int base );
-void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton);
+void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold);
 void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags );
 void ttb_enable( const char * name, int isenabled, int onlythistb );
 void ttb_setselected( const char * name, int selected, int pressed, int onlythistb );

@@ -681,15 +681,8 @@ if toolbar then
   function toolbar.set_theme_from_config()
     --read the configuration file
     toolbar.load_config(true)
-    local theme= toolbar.get_radio_val("tbtheme",3)
-    --load toolbar theme from USERHOME
-    if theme == 2 then
-      toolbar.set_theme("bar-th-dark")
-    elseif theme == 3 then
-      toolbar.set_theme("bar-ch-dark")
-    else
-      toolbar.set_theme("bar-sm-light") --default
-    end
+    local theme= toolbar.get_combo_txt("cbo.theme") or "bar-sm-light"
+    toolbar.set_theme(theme)
   end
 
   --create the configured toolbars
@@ -741,7 +734,7 @@ if toolbar then
 --    toolbar.cmdtext("Open recent...", closepopup, "", "n3")
 --  end
 --  function toolbar.show_popup(btname,relpos)
---    toolbar.popup(5,true,btname,relpos)
+--    toolbar.popup(toolbar.POPUP_TOOLBAR,true,btname,relpos)
 --  end
 --
   toolbar.set_defaults()
