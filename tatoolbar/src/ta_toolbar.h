@@ -38,19 +38,28 @@
 #define TTBF_IS_SEPARATOR   0x00002000  //it's a separator
 #define TTBF_SHOW_BORDER    0x00004000  //draw a border (used in text buttons)
 //group flags
-#define TTBF_GRP_TABBAR     0x00010000  //tabs group
-#define TTBF_GRP_DRAGTAB    0x00020000  //tab dragging enabled in TTBF_TABBAR
-#define TTBF_GRP_AUTO       0x00040000  //auto created default group
-#define TTBF_GRP_LEFT       0x00080000  //anchor group to the left
-#define TTBF_GRP_RIGHT      0x00100000  //anchor group to the right
-#define TTBF_GRP_TOP        0x00200000  //anchor group to the top
-#define TTBF_GRP_BOTTOM     0x00400000  //anchor group to the bottom
-#define TTBF_GRP_VAR_W      0x00800000  //this group has variable width
-#define TTBF_GRP_VAR_H      0x01000000  //this group has variable height
-#define TTBF_GRP_ITEM_W     0x02000000  //this group set width using items position
-#define TTBF_GRP_ITEM_H     0x04000000  //this group set height using items position
-#define TTBF_GRP_VSCROLL    0x08000000  //this group shows a vertical scrollbar when needed
-#define TTBF_GRP_VSCR_INH   0x10000000  //inhibit vertical scroll while popup is open
+#define TTBF_GRP_SELECTABLE 0x00000001  //accepts click
+#define TTBF_GRP_HIDDEN     0x00000002  //not shown
+#define TTBF_GRP_VERTICAL   0x00000004  //it's vertical
+#define TTBF_GRP_TABBAR     0x00000008  //tabs group
+#define TTBF_GRP_DRAGTAB    0x00000010  //tab dragging enabled in TTBF_TABBAR
+#define TTBF_GRP_AUTO       0x00000020  //auto created default group
+#define TTBF_GRP_LEFT       0x00000040  //anchor group to the left
+#define TTBF_GRP_RIGHT      0x00000080  //anchor group to the right
+#define TTBF_GRP_TOP        0x00000100  //anchor group to the top
+#define TTBF_GRP_BOTTOM     0x00000200  //anchor group to the bottom
+#define TTBF_GRP_VAR_W      0x00000400  //this group has variable width
+#define TTBF_GRP_VAR_H      0x00000800  //this group has variable height
+#define TTBF_GRP_ITEM_W     0x00001000  //this group set width using items position
+#define TTBF_GRP_ITEM_H     0x00002000  //this group set height using items position
+#define TTBF_GRP_VSCROLL    0x00004000  //this group shows a vertical scrollbar when needed
+#define TTBF_GRP_VSCR_INH   0x00008000  //inhibit vertical scroll while popup is open
+#define TTBF_GRP_TRY_PACK   0x00010000  //after item delete try to scroll left
+#define TTBF_GRP_LASTIT_SH  0x00020000  //is the last item of the group shown
+//toolbar flags
+#define TTBF_TB_VERTICAL    0x00000001  //it's vertical
+#define TTBF_TB_VISIBLE     0x00000002  //it's visible
+#define TTBF_TB_REDRAW      0x00000004  //hold updates for now.. redraw later
 
 //item images
 #define TTBI_BACKGROUND     0
@@ -211,7 +220,6 @@ struct toolbar_group
   struct toolbar_group  * next;     //groups list
   struct toolbar_data   * toolbar;  //parent
   int num;                //number of group
-  int isvertical;         //is a vertical group
   int flags;              //TTBF_GRP_...
 
   struct toolbar_item   * list; //group's items list (like tabs)
@@ -232,8 +240,6 @@ struct toolbar_group
   int nitems_nothidden;   //number of items without HIDDEN flag
   int nitems_expand;      //number of items that expand to use all the free space
   int nitems_scroll;      //number of items not shown at the left = scroll support
-  int islast_item_shown;
-  int try_scrollpack;     //after item delete try to scroll left
   int scleftx1, scleftx2; //left/top scroll button position (scleftx1 < 0 if hidden)
   int sclefty1, sclefty2;
   int scrightx1, scrightx2;//right/bottom scroll button position (scrightx1 < 0 if hidden)
@@ -290,9 +296,7 @@ struct toolbar_data
   void * win;           //GtkWidget = POPUP Window or NULL
   void * draw;          //GtkWidget = *drawing_area of this toolbar
   int num;              //number of toolbar
-  int isvertical;       //is a vertical toolbar (#1=yes)
-  int isvisible;
-  int redrawlater;      //flag: hold updates for now.. redraw later
+  int flags;            //TTBF_TB_... flags
 
   struct toolbar_group * group;
   struct toolbar_group * group_last;

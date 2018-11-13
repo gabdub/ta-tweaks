@@ -27,7 +27,7 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
     toolbar.listtb_y= 1
     toolbar.listright= listwidth
-    toolbar.seltoolbar(1,titgrp)
+    toolbar.seltoolbar(toolbar.LEFT_TOOLBAR,titgrp)
   end
 
   function toolbar.createlisttb()
@@ -127,7 +127,7 @@ if toolbar then
     local fname= bname:match('[^/\\]+$') -- filename only
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
     list_addinfo(fname, true)
-    toolbar.seltoolbar(1,itemsgrp)
+    toolbar.seltoolbar(toolbar.LEFT_TOOLBAR,itemsgrp)
     toolbar.listtb_y= 3
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')

@@ -182,7 +182,7 @@ static int ltoolbar_gotopos(lua_State *L)
     x= lua_tointeger(L, 1);
     if( lua_isnone(L, 2) ){
       //only one parameter: new row/column
-      if( g->isvertical ){
+      if( (g->flags & TTBF_GRP_VERTICAL) != 0 ){
         //new column
         x= g->xnew + g->bwidth + x;
         y= g->ymargin;
@@ -431,7 +431,7 @@ void redraw_endG( struct toolbar_group *G )
   struct toolbar_data *T;
   if( G != NULL ){
     T= G->toolbar;
-    if( T->isvisible ){
+    if( (T->flags & TTBF_TB_VISIBLE) != 0 ){
       if( T->_layout_chg ){
         //layout has changed, redraw the complete toolbar
         T->_layout_chg= 0;
@@ -454,7 +454,7 @@ void redraw_endG( struct toolbar_group *G )
           gtk_widget_queue_draw_area(T->draw, G->barx1 + T->_grp_x1, G->bary1 + T->_grp_y1,
               T->_grp_x2 - T->_grp_x1 +1, T->_grp_y2 - T->_grp_y1 +1);
         }else{
-          T->redrawlater= 1;
+          T->flags |= TTBF_TB_REDRAW;
         }
       }
     }
@@ -463,23 +463,23 @@ void redraw_endG( struct toolbar_group *G )
 
 void redraw_toolbar( struct toolbar_data *T )
 { //redraw the complete toolbar
-  if( (T != NULL) && (T->isvisible) ){
+  if( (T != NULL) && ((T->flags & TTBF_TB_VISIBLE) != 0) ){
     if( update_ui ){
       gtk_widget_queue_draw(T->draw);
     }else{
-      T->redrawlater= 1;
+      T->flags |= TTBF_TB_REDRAW;
     }
   }
 }
 
 void redraw_group( struct toolbar_group *G )
 {
-  if( (G != NULL) && (G->toolbar->isvisible) && ((G->flags & TTBF_HIDDEN) == 0) ){
+  if( (G != NULL) && ((G->toolbar->flags & TTBF_TB_VISIBLE) != 0) && ((G->flags & TTBF_GRP_HIDDEN) == 0) ){
     if( update_ui ){
       gtk_widget_queue_draw_area(G->toolbar->draw, G->barx1, G->bary1,
         G->barx2 - G->barx1 +1, G->bary2 - G->bary1 +1 );
     }else{
-      G->toolbar->redrawlater= 1;
+      G->toolbar->flags |= TTBF_TB_REDRAW;
     }
   }
 }
@@ -489,7 +489,7 @@ void redraw_item( struct toolbar_item * p )
   struct toolbar_group *g;
   if( p != NULL ){
     g= p->group;
-    if( ((g->flags & TTBF_HIDDEN) == 0) && (g->toolbar->isvisible) ){
+    if( ((g->toolbar->flags & TTBF_TB_VISIBLE) != 0) && ((g->flags & TTBF_GRP_HIDDEN) == 0) ){
       //the group is visible
       if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT|TTBF_HIDDEN)) == 0 ){
         //redraw the area of one regular button
@@ -497,7 +497,7 @@ void redraw_item( struct toolbar_item * p )
           gtk_widget_queue_draw_area(g->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1 - g->yvscroll,
               p->barx2 - p->barx1 +1, p->bary2 - p->bary1 +1 );
         }else{
-          g->toolbar->redrawlater= 1;
+          g->toolbar->flags |= TTBF_TB_REDRAW;
         }
         return;
       }
@@ -512,9 +512,9 @@ void redraw_pending_toolbars( void )
 {
   int nt;
   for( nt= 0; nt < NTOOLBARS; nt++ ){
-    if( (ttb.tbdata[nt].redrawlater) && (ttb.tbdata[nt].draw != NULL) ){
+    if( ((ttb.tbdata[nt].flags & TTBF_TB_REDRAW) != 0) && (ttb.tbdata[nt].draw != NULL) ){
       gtk_widget_queue_draw(ttb.tbdata[nt].draw);
-      ttb.tbdata[nt].redrawlater= 0;
+      ttb.tbdata[nt].flags &= ~TTBF_TB_REDRAW;
     }
   }
 }
@@ -1221,7 +1221,7 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 
   //draw all visible groups
   for( g= T->group; (g != NULL); g= g->next ){
-    if( (g->flags & TTBF_HIDDEN) == 0 ){
+    if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
       x0= g->barx1;
       y0= g->bary1;
       if( need_redraw( &drawarea, x0, y0, g->barx2, g->bary2) ){
@@ -1730,7 +1730,7 @@ int toolbar_set_statusbar_text(const char *text, int bar)
   unsigned n, ntab;
 
   struct toolbar_data *T= &ttb.tbdata[STAT_TOOLBAR];
-  if( (text != NULL) && (T->isvisible) ){
+  if( (text != NULL) && ((T->flags & TTBF_TB_VISIBLE) != 0) ){
     G= T->tab_group;
     if( G != NULL ){
       if( bar == 0 ){
@@ -1812,7 +1812,7 @@ static void create_tatoolbar( GtkWidget *box, int ntoolbar )
     }else{
       //TOOLBAR
       T= init_tatoolbar( ntoolbar, draw, 1 );   //clear all
-      if( T->isvertical ){
+      if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
         gtk_widget_set_size_request(draw, 1, -1);
       }else{
         gtk_widget_set_size_request(draw, -1, 1);
@@ -1859,10 +1859,10 @@ void show_tatoolbar(int show)
 void show_toolbar(struct toolbar_data *T, int show)
 { //show/hide one toolbar
   if( T != NULL ){
-    if( (show) && (!T->isvisible) ){
+    if( (show) && ((T->flags & TTBF_TB_VISIBLE) == 0) ){
       //show this toolbar
       T->_layout_chg= 0;
-      T->isvisible= 1;
+      T->flags |= TTBF_TB_VISIBLE;
       gtk_widget_show( T->draw );
       //redraw the complete toolbar
       redraw_toolbar(T);
@@ -1870,9 +1870,9 @@ void show_toolbar(struct toolbar_data *T, int show)
         gtk_widget_hide( statusbar[0] ); //hide default statusbar
         gtk_widget_hide( statusbar[1] );
       }
-    }else if( (!show) && (T->isvisible) ){
+    }else if( (!show) && ((T->flags & TTBF_TB_VISIBLE) != 0) ){
       //hide this toolbar
-      T->isvisible= 0;
+      T->flags &= ~TTBF_TB_VISIBLE;
       gtk_widget_hide( T->draw );
       if( T->num == 2 ){
         gtk_widget_show( statusbar[0] ); //show default statusbar

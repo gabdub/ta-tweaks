@@ -19,16 +19,16 @@ if toolbar then
   end
   --select a toolbar by name
   function toolbar.sel_top_bar()
-    toolbar.sel_toolbar_n(0)
+    toolbar.sel_toolbar_n(toolbar.TOP_TOOLBAR)
   end
   function toolbar.sel_left_bar()
-    toolbar.sel_toolbar_n(1)
+    toolbar.sel_toolbar_n(toolbar.LEFT_TOOLBAR)
   end
   function toolbar.sel_stat_bar()
-    toolbar.sel_toolbar_n(2)
+    toolbar.sel_toolbar_n(toolbar.STAT_TOOLBAR)
   end
   function toolbar.sel_config_bar()
-    toolbar.sel_toolbar_n(3)
+    toolbar.sel_toolbar_n(toolbar.RIGHT_TOOLBAR)
   end
 
   function toolbar.setthemeicon(name,icon,num)
@@ -146,10 +146,10 @@ if toolbar then
 
   events_connect("toolbar_tabclicked", function(ntab,ntoolbar)
     --ui.statusbar_text= "tab "..ntab.." clicked"
-    if ntoolbar == 0 then
+    if ntoolbar == toolbar.TOP_TOOLBAR then
       --tab bar click
       toolbar.selecttab(ntab)
-    elseif ntoolbar == 2 then
+    elseif ntoolbar == toolbar.STAT_TOOLBAR then
       --status bar click
       if ntab == 2 then --Line
         if goto_line_col then
@@ -168,14 +168,14 @@ if toolbar then
       elseif ntab == 7 then --encoding
         change_encoding()
       end
-    elseif ntoolbar == 3 then
+    elseif ntoolbar == toolbar.RIGHT_TOOLBAR then
       --config panel
       toolbar.config_tab_click(ntab)
     end
   end)
 
   events_connect("toolbar_tabRclicked", function(ntab,ntoolbar)
-    if ntoolbar == 0 then
+    if ntoolbar == toolbar.TOP_TOOLBAR then
       toolbar.selecttab(ntab)
       return true --open context menu
     end

@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.12 (Nov 12 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.13 (Nov 13 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -65,10 +65,15 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
   if( T == NULL ){
     return NULL;
   }
+  if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
+    flg |= TTBF_GRP_VERTICAL;  //it's a vertical group
+  }else{
+    flg &= ~TTBF_GRP_VERTICAL; //it's horizontal
+  }
 
   g= T->group_last;
   //check for the auto created group
-  if( (g != NULL) && (flg != TTBF_GRP_AUTO) && (g->flags == TTBF_GRP_AUTO) ){
+  if( (g != NULL) && ((flg & TTBF_GRP_AUTO) ==0) && ((g->flags & TTBF_GRP_AUTO) != 0) ){
     g->flags= flg;  //set the new flags
     return g;
   }
@@ -86,8 +91,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->num= T->ngroups;   //number of group (0..)
     g->flags= flg;
     T->ngroups++;
-    g->isvertical= T->isvertical; //is a vertical group
-    if( g->isvertical ){
+    if( (g->flags & TTBF_GRP_VERTICAL) != 0 ){
       g->xmargin= 1;
       g->ymargin= 2;
     }else{
@@ -95,7 +99,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
       g->ymargin= 1;
     }
     //hide scroolbar buttons
-    g->islast_item_shown= 1;
+    g->flags |= TTBF_GRP_LASTIT_SH;
     g->scleftx1= -1;
     g->scrightx1= -1;
 
@@ -130,7 +134,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
   3:exclusive row/col  +4:expand  +8:use item size +16:vert-scroll */
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden)
 { //add a new group to a toolbar (row, col, hidden version)
-  int flags= TTBF_SELECTABLE;
+  int flags= TTBF_GRP_SELECTABLE;
 
   if( (xcontrol & 1) != 0 ){
     flags |= TTBF_GRP_LEFT;   //no groups before in the same row
@@ -160,7 +164,7 @@ struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int 
   }
 
   if( hidden ){
-    flags |= TTBF_HIDDEN;
+    flags |= TTBF_GRP_HIDDEN;
   }
   return add_groupT(T, flags);
 }
@@ -207,7 +211,7 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
     }else{
       p->imgbase= TTBI_TB_BUTTON_BASE;    //BUTTON
     }
-    if( G->isvertical ){
+    if( (G->flags & TTBF_GRP_VERTICAL) != 0 ){
       G->ynew= p->bary2;
     }else{
       G->xnew= p->barx2;
@@ -527,7 +531,7 @@ struct toolbar_group * group_fromXYT(struct toolbar_data *T, int x, int y)
   if( T != NULL ){
     for( g= T->group; (g != NULL); g= g->next ){
       //the group must be selectable and not hidden
-      if( ((g->flags & (TTBF_SELECTABLE|TTBF_HIDDEN)) == TTBF_SELECTABLE) &&
+      if( ((g->flags & (TTBF_GRP_SELECTABLE|TTBF_GRP_HIDDEN)) == TTBF_GRP_SELECTABLE) &&
           (x >= g->barx1) && (x <= g->barx2) && (y >= g->bary1) && (y <= g->bary2) ){
         return g;
       }
@@ -805,7 +809,7 @@ static void update_tabs_sizeG( struct toolbar_group *G )
   nexpv= 0;
   if( (G->nitems_expand > 0) && (groupwidth > 0) ){
     G->nitems_scroll= 0;
-    G->islast_item_shown= 1;
+    G->flags |= TTBF_GRP_LASTIT_SH;
     extrasp= groupwidth - xend; //extra space
     if( extrasp < 0 ){
       extrasp= 0; //no extra space
@@ -892,7 +896,7 @@ static struct toolbar_group * find_rowendG( struct toolbar_group * g)
   e= g;
   while( g->next != NULL ){
     g= g->next;
-    if( (g->flags & TTBF_HIDDEN) == 0 ){  //ignore hidden groups
+    if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){  //ignore hidden groups
       if( (g->flags & TTBF_GRP_LEFT) != 0 ){
         break;  //this group start a new row
       }
@@ -911,7 +915,7 @@ static struct toolbar_group * find_colendG( struct toolbar_group * g)
   e= g;
   while( g->next != NULL ){
     g= g->next;
-    if( (g->flags & TTBF_HIDDEN) == 0 ){  //ignore hidden groups
+    if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){  //ignore hidden groups
       if( (g->flags & TTBF_GRP_TOP) != 0 ){
         break;  //this group start a new col
       }
@@ -938,7 +942,7 @@ void update_layoutT( struct toolbar_data *T)
   th= T->barheight;
   tw= T->barwidth;
   n= 0;
-  if( T->isvertical ){   //---vertical toolbar---
+  if( (T->flags & TTBF_TB_VERTICAL) != 0 ){   //---vertical toolbar---
     x= 0;
     gs= T->group;
     while( gs != NULL ){
@@ -947,7 +951,7 @@ void update_layoutT( struct toolbar_data *T)
       g= gs;
       while( g != NULL ){
         w= 0;
-        if( (g->flags & TTBF_HIDDEN) == 0 ){
+        if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
           if( (g->flags & TTBF_GRP_VAR_H) == 0 ){
             h -= (g->bary2 - g->bary1); //fixed vert size
           }else{
@@ -975,7 +979,7 @@ void update_layoutT( struct toolbar_data *T)
       y= 0;
       g= gs;
       while( g != NULL ){
-        if( (g->flags & TTBF_HIDDEN) == 0 ){
+        if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
           if( (g->flags & TTBF_GRP_VAR_H) == 0 ){
             hg= g->bary2 - g->bary1;  //fixed vert size
           }else{
@@ -1016,7 +1020,7 @@ void update_layoutT( struct toolbar_data *T)
       g= gs;
       while( g != NULL ){
         h= 0;
-        if( (g->flags & TTBF_HIDDEN) == 0 ){
+        if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
           if( (g->flags & TTBF_GRP_VAR_W) == 0 ){
             w -= (g->barx2 - g->barx1); //fixed horz size
           }else{
@@ -1044,7 +1048,7 @@ void update_layoutT( struct toolbar_data *T)
       x= 0;
       g= gs;
       while( g != NULL ){
-        if( (g->flags & TTBF_HIDDEN) == 0 ){
+        if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
           if( (g->flags & TTBF_GRP_VAR_W) == 0 ){
             wg= g->barx2 - g->barx1;    //fixed horz size
           }else{
@@ -1079,7 +1083,7 @@ void update_layoutT( struct toolbar_data *T)
   }
   //adjust tabs inside tabgroups
   for( g= T->group; (g != NULL); g= g->next ){
-    if( (g->flags & (TTBF_GRP_TABBAR|TTBF_HIDDEN)) == TTBF_GRP_TABBAR ){
+    if( (g->flags & (TTBF_GRP_TABBAR|TTBF_GRP_HIDDEN)) == TTBF_GRP_TABBAR ){
       update_tabs_sizeG(g); //split free space in tabs that expand
     }
   }
@@ -1094,7 +1098,7 @@ void update_group_sizeG( struct toolbar_group *G, int redraw )
     //this group set its size using items position
     w= 0;
     h= 0;
-    if( (G->flags & TTBF_HIDDEN) == 0 ){
+    if( (G->flags & TTBF_GRP_HIDDEN) == 0 ){
       for( p= G->list; (p != NULL); p= p->next ){
         if( (p->flags & TTBF_HIDDEN) == 0 ){
           if( w < p->barx2 ){
@@ -1131,7 +1135,7 @@ void calc_popup_sizeT( struct toolbar_data *T)
 
   th= 0;
   tw= 0;
-  if( T->isvertical ){   //---vertical toolbar---
+  if( (T->flags & TTBF_TB_VERTICAL) != 0 ){   //---vertical toolbar---
     gs= T->group;
     while( gs != NULL ){
       ge= find_colendG(gs); //process one COLUMN at a time
@@ -1141,7 +1145,7 @@ void calc_popup_sizeT( struct toolbar_data *T)
       xmar= 0;
       ymar= 0;
       while( g != NULL ){
-        if( (g->flags & TTBF_HIDDEN) == 0 ){
+        if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
           if( (g->flags & TTBF_GRP_VAR_H) == 0 ){
             h += (g->bary2 - g->bary1); //fixed vert size
           }else{
@@ -1181,7 +1185,7 @@ void calc_popup_sizeT( struct toolbar_data *T)
       xmar= 0;
       ymar= 0;
       while( g != NULL ){
-        if( (g->flags & TTBF_HIDDEN) == 0 ){
+        if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
           if( (g->flags & TTBF_GRP_VAR_W) == 0 ){
             w += (g->barx2 - g->barx1); //fixed horz size
           }else{
@@ -1561,7 +1565,7 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         }
         G->nitems_scroll= nh;
       }
-      if((dir > 0)&&(!G->islast_item_shown) && (G->nitems_scroll < G->nitems-1)){
+      if((dir > 0)&&((G->flags & TTBF_GRP_LASTIT_SH) == 0) && (G->nitems_scroll < G->nitems-1)){
         nh= G->nitems_scroll+1;  //locate next tab
         for( t= G->list, n= nh; (n > 0)&&(t != NULL); n-- ){
           t= t->next;
@@ -1610,9 +1614,9 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
       }
 
       if( (G->flags & (TTBF_GRP_VSCROLL|TTBF_GRP_VSCR_INH)) == TTBF_GRP_VSCROLL ){
-        //V-SCROLL enabled and no inhibited
+        //V-SCROLL enabled and not inhibited
         nhide= G->yvscroll;
-        if( (dir > 0) && (!G->islast_item_shown) ){
+        if( (dir > 0) && ((G->flags & TTBF_GRP_LASTIT_SH) == 0) ){
           G->yvscroll += 30;
         }else if( (dir < 0) && (G->yvscroll > 0) ){
           G->yvscroll -= 30;
@@ -1710,9 +1714,9 @@ void ttb_show_groupG( struct toolbar_group *G, int show )
     redraw_begG(G);
     f= G->flags;
     if( show ){
-      f &= ~TTBF_HIDDEN;
+      f &= ~TTBF_GRP_HIDDEN;
     }else{
-      f |= TTBF_HIDDEN;
+      f |= TTBF_GRP_HIDDEN;
     }
     if( f != G->flags ){
       G->flags= f;
@@ -1739,7 +1743,7 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
     //set as current toolbar
     ttb.currentntb= num;
     //set size
-    if( T->isvertical ){
+    if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
       T->barwidth= barsize;
       T->barheight= -1;
     }else{
@@ -1939,7 +1943,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
   int asep;
   if( G != NULL ){
     redraw_begG(G);
-    if( G->isvertical ){
+    if( (G->flags & TTBF_GRP_VERTICAL) != 0 ){
       if( sepsize == 0 ){
         sepsize= G->bheight/2;
       }
@@ -2097,13 +2101,13 @@ void ttb_activate_tabG(struct toolbar_group *G, int ntab)
     }
     vistab= p;    //first visible tab
     if( t != NULL ){
-      if( ((p->num == ntab) || (G->try_scrollpack)) && (G->nitems_scroll > 0) ){
+      if( ((p->num == ntab) || ((G->flags & TTBF_GRP_TRY_PACK) != 0)) && (G->nitems_scroll > 0) ){
         //is the first visible tab or a tab was deleted: try to remove the left scroll button
         G->nitems_scroll= 0; //force "no scroll" to move this tab to the rightmost position
         p= G->list;
         vistab= p;    //first visible tab
       }
-      G->try_scrollpack= 0; //clear pack flag
+      G->flags &= ~TTBF_GRP_TRY_PACK; //clear pack flag
 
       for( ; (p != NULL); p= p->next ){
         if( (p->flags & TTBF_HIDDEN) == 0 ){
@@ -2278,7 +2282,7 @@ void ttb_delete_tabG(struct toolbar_group *G, int ntab)
     }
     //after tab delete, try to remove the left scroll button when a new tab is activated
     if( G->nitems_scroll > 0 ){
-      G->try_scrollpack= 1;
+      G->flags |= TTBF_GRP_TRY_PACK;
     }
     if(ttb.ntbhilight == G->toolbar->num){
       if( (ttb.philight == k) || (ttb.phipress == k) ){
@@ -2367,7 +2371,7 @@ void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * p
   draw_fill_mp_img(gcontext, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
   //draw groups back color / background (if any)
   for( g= T->group; (g != NULL); g= g->next ){
-    if( (g->flags & (TTBF_HIDDEN|TTBF_GRP_TABBAR)) == 0 ){
+    if( (g->flags & (TTBF_GRP_HIDDEN|TTBF_GRP_TABBAR)) == 0 ){
       if( need_redraw( pdrawarea, g->barx1, g->bary1, g->barx2, g->bary2) ){
         x0= g->barx1;
         y0= g->bary1;
@@ -2463,7 +2467,11 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
         x += t->barx2 + g->tabxsep;
       }
     }
-    g->islast_item_shown= (g->barx2 >= x );
+    if( g->barx2 >= x ){
+      g->flags |= TTBF_GRP_LASTIT_SH;
+    }else{
+      g->flags &= ~TTBF_GRP_LASTIT_SH;
+    }
     //draw the active tab over the other tabs
     if( ta != NULL ){
       draw_tabG( g, gcontext, ta, xa, y );
@@ -2482,7 +2490,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
       g->sclefty2= y0 + get_group_imgH(g,h);
       draw_img(gcontext, get_group_img(g,h), g->scleftx1, g->sclefty1, 0 );
     }
-    if( !g->islast_item_shown ){
+    if( (g->flags & TTBF_GRP_LASTIT_SH) == 0 ){
       h= TTBI_TB_TAB_NSR;
       if( (phi != NULL)&&(phi==ttb.phipress)&&(phi->flags==TTBF_SCROLL_BUT)&&(phi->num==1)){
         h= TTBI_TB_TAB_HSR;
@@ -2497,13 +2505,16 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
   }else{
     //buttons
     y0 -= g->yvscroll;  //vertical scroll support
-    g->islast_item_shown= 1;
+    g->flags |= TTBF_GRP_LASTIT_SH;
     for( p= g->list; (p != NULL); p= p->next ){
       x= x0 + p->imgx;
       y= y0 + p->imgy;
-      if( (y0+p->bary2) > g->toolbar->barheight ){
-        g->islast_item_shown= 0;
+      if( (y0+p->bary1) >= g->toolbar->barheight ){
+        g->flags &= ~TTBF_GRP_LASTIT_SH;    //item outside of view
         break;
+      }
+      if( (y0+p->bary2) > g->toolbar->barheight ){
+        g->flags &= ~TTBF_GRP_LASTIT_SH;    //item partially shown
       }
       if( (y0+p->bary1 >= 0) && need_redraw( pdrawarea, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
         h= TTBI_BACKGROUND;
@@ -2600,7 +2611,11 @@ struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
     }
     T->num=  ntoolbar;
     //0: HORIZONTAL  (top) - 2: HORIZONTAL  (bottom)
-    T->isvertical= ((ntoolbar != 0)&&(ntoolbar != 2));
+    if( (ntoolbar != 0) && (ntoolbar != 2) ){
+      T->flags |= TTBF_TB_VERTICAL; //it's vertical
+    }else{
+      T->flags &= ~TTBF_TB_VERTICAL; //it's horizontal
+    }
     T->draw= draw;
   }
   return T;
@@ -2725,7 +2740,12 @@ void ttb_setselected( const char * name, int selected, int pressed, int onlythis
 
 int ttb_get_flags( const char * name  )
 {
-  if( strcmp(name, "GROUP") == 0 ){
+  if( strcmp(name, "TOOLBAR") == 0 ){
+    struct toolbar_data * T= current_toolbar();
+    if( T != NULL ){
+      return T->flags;
+    }
+  }else if( strcmp(name, "GROUP") == 0 ){
     struct toolbar_group * g= current_group();
     if( g != NULL ){
       return g->flags;

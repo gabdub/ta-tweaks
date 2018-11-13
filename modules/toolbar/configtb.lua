@@ -32,7 +32,7 @@ end
 function toolbar.show_hide_minimap()
   --hide the minimap when the config is open
   if minimap then
-    toolbar.sel_toolbar_n(4)
+    toolbar.sel_toolbar_n(toolbar.MINIMAP_TOOLBAR)
     if toolbar.tbhidemmapcfg then
       toolbar.show(toolbar.tbshowminimap and (not toolbar.config_toolbar_shown))
     else
@@ -94,9 +94,9 @@ function toolbar.config_tab_click(ntab)
   toolbar.activatetab(ntab)
   toolbar.settext("cfgtit", toolbar.cfgpnl_tit[ntab], "", true)
   if toolbar.cfgpnl_group[ntab] > 0 then
-    toolbar.sel_toolbar_n(3,toolbar.cfgpnl_group[toolbar.cfgpnl_curgroup])
+    toolbar.sel_toolbar_n(toolbar.RIGHT_TOOLBAR, toolbar.cfgpnl_group[toolbar.cfgpnl_curgroup])
     toolbar.showgroup(false)
-    toolbar.sel_toolbar_n(3,toolbar.cfgpnl_group[ntab])
+    toolbar.sel_toolbar_n(toolbar.RIGHT_TOOLBAR, toolbar.cfgpnl_group[ntab])
     toolbar.showgroup(true)
     toolbar.cfgpnl_curgroup= ntab
   end
