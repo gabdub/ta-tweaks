@@ -14,17 +14,19 @@ if toolbar then
     if listwidth < 100 then listwidth= toolbar.listwidth end
     --create a new empty toolbar
     toolbar.new(listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.LEFT_TOOLBAR, toolbar.themepath)
-    --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(0, 1, listwidth, toolbar.cfg.barsize)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-    --items group: fixed width=300 / height=use buttons + vertical scroll
-    itemsgrp= toolbar.addgroup(0, 26, listwidth, 0)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     --add/change some images
     toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
+    toolbar.themed_icon(toolbar.globalicon, "group-vscroll-back", toolbar.TTBI_TB.VERTSCR_BACK)
+    toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
+    --title group: fixed width=300 / align top + fixed height
+    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME, toolbar.GRPC.FIRST, listwidth, toolbar.cfg.barsize)
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
+    --items group: fixed width=300 / height=use buttons + vertical scroll
+    itemsgrp= toolbar.addgroup(0, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, listwidth, 0) --show v-scroll when needed
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     toolbar.listtb_y= 1
     toolbar.listright= listwidth
     toolbar.seltoolbar(toolbar.LEFT_TOOLBAR,titgrp)

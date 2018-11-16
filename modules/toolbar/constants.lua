@@ -61,7 +61,10 @@ toolbar.TTBI_TB = {
     RADIO_HILIGHT = 63,
     RADIO_HIPRESS = 64,
     RADIO_ON      = 65,   --checked
-  N             = 66
+  VERT_SCROLL   = 66,
+    VERTSCR_BACK  = 66,   --vertical scrollbar background
+    VERTSCR_NORM  = 67,   --bar
+  N             = 72
 }
 
 toolbar.BKCOLOR = {
@@ -107,12 +110,24 @@ toolbar.TTBF ={
   GRP_VAR_H     = 0x00000800,   --this group has variable height
   GRP_ITEM_W    = 0x00001000,   --this group set width using items position
   GRP_ITEM_H    = 0x00002000,   --this group set height using items position
-  GRP_VSCROLL   = 0x00004000,   --this group shows a vertical scrollbar when needed
-  GRP_VSCR_INH  = 0x00008000,   --inhibit vertical scroll while popup is open
-  GRP_TRY_PACK  = 0x00010000,   --after item delete try to scroll left
-  GRP_LASTIT_SH = 0x00020000,   --is the last item of the group shown
+  GRP_VSCROLL   = 0x00004000,   --this group can be scrolled vertically when needed
+  GRP_SHOWVSCR  = 0x00008000,   --this group shows a vertical scrollbar when needed
+  GRP_VSCR_INH  = 0x00010000,   --inhibit vertical scroll while popup is open
+--GRP_TRY_PACK  = 0x00020000,   --after item delete try to scroll left (internal use)
+--GRP_LASTIT_SH = 0x00040000,   --is the last item of the group shown (internal use)
 --toolbar flags
   TB_VERTICAL   = 0x00000001,   --it's vertical
   TB_VISIBLE    = 0x00000002,   --it's visible
-  TB_REDRAW     = 0x00000004    --hold updates for now.. redraw later
+--TB_REDRAW     = 0x00000004,    --hold updates for now.. redraw later (internal use)
+}
+
+toolbar.GRPC ={
+--group control flags
+  FIRST         = 0x00000001,   --no groups at the left/top
+  LAST          = 0x00000002,   --no groups at the right/bottom
+  ONLYME        = 0x00000003,   --exclusive row/col (FIRST and LAST)
+  EXPAND        = 0x00000004,   --use all available space
+  ITEMSIZE      = 0x00000008,   --use item size
+  VERT_SCROLL   = 0x00000010,   --scroll items vertically but don't show a scroll bar
+  SHOW_V_SCROLL = 0x00000030,   --scroll items vertically and show a scroll bar
 }

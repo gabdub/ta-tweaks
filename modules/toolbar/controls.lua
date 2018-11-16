@@ -89,7 +89,7 @@ local function show_combo_list(btname)
   combo_op_name= btname
   toolbar.selected(combo_op_name, false, true)
   toolbar.new(27, 24, 16, toolbar.COMBO_POPUP, toolbar.themepath)
-  toolbar.addgroup(8,8,0,0)
+  toolbar.addgroup(toolbar.GRPC.ITEMSIZE, toolbar.GRPC.ITEMSIZE|toolbar.GRPC.VERT_SCROLL,0,0)
   toolbar.adjust(24,24,3,3,0,0)
   toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list",     toolbar.TTBI_TB.BACKGROUND)

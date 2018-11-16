@@ -96,7 +96,7 @@ static int ltoolbar_seltoolbar(lua_State *L)
 /** `toolbar.addgroup(xcontrol,ycontrol,width,height,[hidden])` Lua function. */
 /** x/y control:
   0:allow groups before and after 1:no groups at the left/top  2:no groups at the right/bottom
-  3:exclusive row/col  +4:expand  +8:use item size */
+  3:exclusive row/col  +4:expand  +8:use item size +16:vert-scroll +32:show-vscroll */
 /** returns group num */
 static int ltoolbar_addgroup(lua_State *L)
 { //create a new button group and set as current
@@ -112,6 +112,7 @@ static int ltoolbar_addgroup(lua_State *L)
     if( h > 0 ){
       g->bary2= g->bary1 + h;
     }
+    group_vscroll_onoff(g);
     num= g->num;
   }
   lua_pushinteger(L, num);  //toolbar num
@@ -1194,7 +1195,7 @@ static void ttb_size_ev(GtkWidget *widget, GdkRectangle *prec, void*__)
 static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 {
   UNUSED(__);
-  int x0, y0, wt, ht;
+  int x0, y0, wt, ht, y2;
   struct toolbar_group *g;
   struct area drawarea;
 
@@ -1224,9 +1225,13 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
     if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
       x0= g->barx1;
       y0= g->bary1;
-      if( need_redraw( &drawarea, x0, y0, g->barx2, g->bary2) ){
-        wt= g->barx2 - g->barx1;
-        ht= g->bary2 - g->bary1;
+      y2= g->bary2;
+      if( y2 > T->barheight ){
+        y2= T->barheight;
+      }
+      if( (y2 > y0) && need_redraw( &drawarea, x0, y0, g->barx2, y2) ){
+        wt= g->barx2 - g->barx1 - g->show_vscroll_w; //don't draw over the scrollbar
+        ht= y2 - y0;
         cairo_save(cr);
         cairo_rectangle(cr, x0, y0, wt, ht );
         cairo_clip(cr);
@@ -1234,6 +1239,9 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
         paint_group_items(g, cr, &drawarea, x0, y0, wt, ht);
         //draw_box(cr, x0, y0, wt, ht, 0x800000, 0); //debug: show group borders
         cairo_restore(cr);
+        if( g->show_vscroll_w > 0 ){ //draw the vertical scrollbar
+          paint_vscrollbar(g, cr, &drawarea, x0+wt, y0, g->show_vscroll_w, ht);
+        }
       }
     }
   }

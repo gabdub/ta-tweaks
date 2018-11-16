@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.13 (Nov 13 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.14 (Nov 16 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -115,6 +115,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->ynew= g->ymargin;
     g->back_color= BKCOLOR_NOT_SET;
     g->yvscroll= 0;
+    g->show_vscroll_w= 0;
 
     //add the group to the end of the list
     if( T->group_last != NULL ){
@@ -129,9 +130,47 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
   return g;
 }
 
+void group_vscroll_onoff( struct toolbar_group * g )
+{ //turn on the vertical scroll bar when enabled and needed
+  int orgvs= g->show_vscroll_w;
+  int orgys= g->yvscroll;
+  int tot= g->bary2 - g->bary1;
+  int vis= g->toolbar->barheight - g->bary1;
+
+  g->show_vscroll_w= 0;
+  if( ((g->flags & TTBF_GRP_VSCROLL) != 0) && (vis < tot) ){  //is needed?
+    if( (g->flags & TTBF_GRP_SHOWVSCR) != 0 ){  //show the scrollbar
+      g->show_vscroll_w= get_group_imgW(g,TTBI_TB_VERTSCR_BACK);
+    }
+    if( (vis+g->yvscroll) > tot ){ //dont' scroll beyond the end
+      g->yvscroll= tot - vis;
+      if( g->yvscroll < 0 ){
+        g->yvscroll= 0;
+      }
+    }
+  }else{
+    g->yvscroll= 0; //no scrollbar needed, go to the top
+  }
+
+  if( (orgvs != g->show_vscroll_w) || (orgys != g->yvscroll) ){
+    redraw_group(g); //redraw the group when the scroll change
+  }
+}
+
+void toolbar_vscroll_onoff( struct toolbar_data *T )
+{ //check the scrollbars of all the toolbar groups
+  struct toolbar_group * g;
+  if( T != NULL ){
+    for( g= T->group; (g != NULL); g= g->next ){
+      group_vscroll_onoff(g);
+    }
+  }
+}
+
+
 /** x/y control:
   0:allow groups before and after 1:no groups at the left/top  2:no groups at the right/bottom
-  3:exclusive row/col  +4:expand  +8:use item size +16:vert-scroll */
+  3:exclusive row/col  +4:expand  +8:use item size +16:vert-scroll +32:show-vscroll */
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden)
 { //add a new group to a toolbar (row, col, hidden version)
   int flags= TTBF_GRP_SELECTABLE;
@@ -160,7 +199,10 @@ struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int 
     flags |= TTBF_GRP_ITEM_H; //this group set height using items position
   }
   if( (ycontrol & 16) != 0 ){
-    flags |= TTBF_GRP_VSCROLL; //this group shows a vertical scrollbar when needed
+    flags |= TTBF_GRP_VSCROLL; //this group can be scrolled vertically when needed
+  }
+  if( (ycontrol & 32) != 0 ){
+    flags |= TTBF_GRP_SHOWVSCR; //this group shows a vertical scrollbar when needed
   }
 
   if( hidden ){
@@ -885,6 +927,7 @@ static void set_YlayoutG(struct toolbar_group * g, int y1, int height)
   if( (g->bary1 != y1) || (g->bary2 != y2) ){
     g->bary1= y1;
     g->bary2= y2;
+    group_vscroll_onoff(g);
     //layout changed, redraw the complete toolbar
     g->toolbar->_layout_chg= 1;
   }
@@ -1087,6 +1130,8 @@ void update_layoutT( struct toolbar_data *T)
       update_tabs_sizeG(g); //split free space in tabs that expand
     }
   }
+  //adjust scrollbars
+  toolbar_vscroll_onoff(T);
 }
 
 void update_group_sizeG( struct toolbar_group *G, int redraw )
@@ -2516,7 +2561,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
       if( (y0+p->bary2) > g->toolbar->barheight ){
         g->flags &= ~TTBF_GRP_LASTIT_SH;    //item partially shown
       }
-      if( (y0+p->bary1 >= 0) && need_redraw( pdrawarea, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
+      if( (y0+p->bary2 >= 0) && need_redraw( pdrawarea, x0+p->barx1, y0+p->bary1, x0+p->barx2, y0+p->bary2) ){
         h= TTBI_BACKGROUND;
         if( (p->flags & TTBF_PRESSED) != 0 ){
           h= TTBI_SELECTED; //change background when pressed
@@ -2570,6 +2615,39 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
         }
       }
     }
+  }
+}
+
+void paint_vscrollbar(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
+{
+  struct toolbar_img * img;
+  int imgborders;
+  int vis= ht;
+  int tot= g->bary2 - g->bary1;
+  int yb= y0;
+  int hb= ht;
+
+  //draw the scrollbar background
+  draw_fill_mp_img(gcontext, get_group_img(g,TTBI_TB_VERTSCR_BACK), x0, y0, wt, ht );
+  //draw the bar
+  img= get_group_img(g,TTBI_TB_VERTSCR_NORM);
+  if( img != NULL ){
+    imgborders= img->height_t + img->height_b;
+    if( (vis < tot) && (tot > 1) && (vis > imgborders) ){
+      //convert to (0.0, 1.0) range
+      double off= (double)g->yvscroll / (double) tot;
+      double bar= (double)vis / (double) tot;
+      //adjust to bar size
+      double visc= (double)(vis -imgborders);
+      off *= visc;
+      bar *= visc;
+      yb += (int)off;
+      hb= (int)bar + imgborders;
+      if( yb+hb > y0+ht ){
+        hb= y0+ht-yb;
+      }
+    }
+    draw_fill_mp_img(gcontext, img, x0, yb, wt, hb );
   }
 }
 

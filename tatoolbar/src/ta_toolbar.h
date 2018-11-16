@@ -52,14 +52,15 @@
 #define TTBF_GRP_VAR_H      0x00000800  //this group has variable height
 #define TTBF_GRP_ITEM_W     0x00001000  //this group set width using items position
 #define TTBF_GRP_ITEM_H     0x00002000  //this group set height using items position
-#define TTBF_GRP_VSCROLL    0x00004000  //this group shows a vertical scrollbar when needed
-#define TTBF_GRP_VSCR_INH   0x00008000  //inhibit vertical scroll while popup is open
-#define TTBF_GRP_TRY_PACK   0x00010000  //after item delete try to scroll left
-#define TTBF_GRP_LASTIT_SH  0x00020000  //is the last item of the group shown
+#define TTBF_GRP_VSCROLL    0x00004000  //this group can be scrolled vertically when needed
+#define TTBF_GRP_SHOWVSCR   0x00008000  //this group shows a vertical scrollbar when needed
+#define TTBF_GRP_VSCR_INH   0x00010000  //inhibit vertical scroll while popup is open
+#define TTBF_GRP_TRY_PACK   0x00020000  //after item delete try to scroll left (internal use)
+#define TTBF_GRP_LASTIT_SH  0x00040000  //is the last item of the group shown (internal use)
 //toolbar flags
 #define TTBF_TB_VERTICAL    0x00000001  //it's vertical
 #define TTBF_TB_VISIBLE     0x00000002  //it's visible
-#define TTBF_TB_REDRAW      0x00000004  //hold updates for now.. redraw later
+#define TTBF_TB_REDRAW      0x00000004  //hold updates for now.. redraw later (internal use)
 
 //item images
 #define TTBI_BACKGROUND     0
@@ -122,7 +123,11 @@
 #define TTBI_TB_RADIO_HIPRESS (TTBI_TB_RADIO_BASE+TTBI_HIPRESSED)
 #define TTBI_TB_RADIO_ON      (TTBI_TB_RADIO_BASE+TTBI_SELECTED)    //checked
 
-#define TTBI_N_TB_IMGS        (TTBI_TB_RADIO_BASE+TTBI_N_IT_IMGS)
+#define TTBI_TB_VERT_SCROLL   (TTBI_TB_RADIO_BASE+TTBI_N_IT_IMGS)   //vertical scrollbar
+#define TTBI_TB_VERTSCR_BACK  (TTBI_TB_VERT_SCROLL+TTBI_BACKGROUND) //background
+#define TTBI_TB_VERTSCR_NORM  (TTBI_TB_VERT_SCROLL+TTBI_NORMAL)     //normal bar
+
+#define TTBI_N_TB_IMGS        (TTBI_TB_VERT_SCROLL+TTBI_N_IT_IMGS)
 
 
 #define BKCOLOR_NOT_SET (-1)  //background color = not set
@@ -287,8 +292,9 @@ struct toolbar_group
 
   //group images (use toolbar images if NULL)
   struct toolbar_img img[ TTBI_N_TB_IMGS ];
-  int back_color;     //-1:not set, 0x00RRGGBB
+  int back_color;       //-1:not set, 0x00RRGGBB
   int yvscroll;         //vertical scrollbar offset
+  int show_vscroll_w;   //vertical scrollbar width (0=not shown)
 };
 
 struct toolbar_data
@@ -410,6 +416,8 @@ char * chg_alloc_str( char *sold, const char *snew );
 void free_tatoolbar( void );
 
 void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const char *imgpath);
+void group_vscroll_onoff( struct toolbar_group * g );
+void toolbar_vscroll_onoff( struct toolbar_data *T );
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden);
 void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclose, int modshow, int fntsz, int fntyoff, int wdrag, int xcontrol, int height);
 void ttb_show_groupG( struct toolbar_group *G, int show );
@@ -438,6 +446,7 @@ void update_layoutT( struct toolbar_data *T);
 int  need_redraw(struct area * pdrawarea, int x, int y, int xf, int yf);
 void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pdrawarea);
 void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht);
+void paint_vscrollbar(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht);
 void set_hilight_off( void );
 void calc_popup_sizeT( struct toolbar_data *T);
 

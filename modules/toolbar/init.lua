@@ -524,7 +524,7 @@ if toolbar then
         butth= toolbar.cfg.barsize
       end
       --buttons group: align left + width=use buttons / fixed height=butth
-      toolbar.addgroup(9, 0, 0, butth)
+      toolbar.addgroup(toolbar.GRPC.FIRST|toolbar.GRPC.ITEMSIZE, 0, 0, butth)
       if tbconfig_is_adjset() then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
         toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),tbconfig_getadj(3),tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
@@ -542,7 +542,7 @@ if toolbar then
       toolbar.current_toolbar= 1
       toolbar.current_tb_group= 0
       --buttons group: align top + height=use buttons / fixed width
-      toolbar.addgroup(0, 9, toolbar.cfg.barsize, 0)
+      toolbar.addgroup(0, toolbar.GRPC.FIRST|toolbar.GRPC.ITEMSIZE, toolbar.cfg.barsize, 0)
       if tbconfig_is_adjset() then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
         toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),tbconfig_getadj(3),tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
@@ -587,7 +587,7 @@ if toolbar then
 
   function toolbar.addrightgroup()
     --buttons group: align right + width=use buttons / fixed height=butth
-    toolbar.addgroup(10, 0, 0, toolbar.cfg.barsize)
+    toolbar.addgroup(toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE, 0, 0, toolbar.cfg.barsize)
     if tbconfig_is_adjset() then
       --bwidth,bheight,xmargin,ymargin,xoff,yoff
       toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),0,tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
@@ -722,7 +722,7 @@ if toolbar then
   --TEST: create a popup toolbar
 --  function toolbar.create_popup()
 --    toolbar.new(50, 24, 16, toolbar.POPUP_TOOLBAR, toolbar.themepath)
---    toolbar.addgroup(8,8,0,0)
+--    toolbar.addgroup(toolbar.GRPC.ITEMSIZE,toolbar.GRPC.ITEMSIZE,0,0)
 --    toolbar.adjust(24,24,3,3,4,4)
 --    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
 --    --toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)

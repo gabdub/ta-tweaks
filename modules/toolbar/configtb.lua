@@ -118,7 +118,7 @@ local function add_config_start(startgroup)
   toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)  --vertical back
 
   --config title: width=expand / height=27
-  toolbar.addgroup(7, 0, 0, 27)
+  toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 27)
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
   toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
@@ -143,7 +143,8 @@ local function add_config_tabgroup(name,title,ngrp)
   toolbar.settab(n, name, "")
   --create a group for each tab to hide its controls
   local hidegrp=(n ~= toolbar.cfgpnl_curgroup) --only one tab group is visible at a time
-  toolbar.addgroup(7,24,0,0,hidegrp) --show v-scroll when needed
+  toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND,
+    toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL,0,0,hidegrp) --show v-scroll when needed
   toolbar.adjust(48,24,2,1,3,3)
   toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   if n == toolbar.cfgpnl_curgroup then
@@ -1308,7 +1309,7 @@ if minimap then
     --set toolbar #4 as a MINIMAP
     toolbar.new(14, 14, 14, toolbar.MINIMAP_TOOLBAR, toolbar.themepath)
     --width=14 / height=expand
-    toolbar.addgroup(3, 7, 14, 0)
+    toolbar.addgroup(toolbar.GRPC.ONLYME, toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 14, 0)
     toolbar.setbackcolor(toolbar.globalicon, toolbar.get_rgbcolor_prop('color.linenum_back'), false, true)
     toolbar.setbackcolor(toolbar.groupicon, toolbar.BKCOLOR.MINIMAP_DRAW, false, true)
     toolbar.adjust(14, 4096, 2,1,3,3)
