@@ -97,11 +97,13 @@ local function show_combo_list(btname)
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-press",   toolbar.TTBI_TB.BUT_HIPRESSED)
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-selected", toolbar.TTBI_TB.BUT_SELECTED)
 
+  local currit= combo_txt[btname]
   for i=1,#combo_data[btname] do
     local itname= btname.."#"..i
-    toolbar.addtext(itname,combo_data[btname][i],"",282,false,true)
+    local ittxt= combo_data[btname][i]
+    toolbar.addtext(itname,ittxt,"",282,false,true)
+    if ittxt == currit then toolbar.selected(itname, false, true) end
     toolbar.cmds_n[itname]= combo_clicked
-    --toolbar.setthemeicon(itname, "transparent", toolbar.TTBI_TB.IT_NORMAL)
   end
   toolbar.popup(toolbar.COMBO_POPUP,true,btname,35,combo_width[btname]-2)
 end
