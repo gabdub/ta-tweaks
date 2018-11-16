@@ -216,6 +216,15 @@ static int ltoolbar_selected(lua_State *L)
   return 0;
 }
 
+/** `toolbar.ensurevisible(name,[onlyinthistoolbar])` Lua function. */
+/** ensure a button in a scrollable group is visible */
+static int ltoolbar_ensurevisible(lua_State *L)
+{
+  ttb_ensurevisible( luaL_checkstring(L, 1), lua_toboolean(L,2) );
+  return 0;
+}
+
+
 /** `toolbar.seticon(name,icon,[nicon],[onlyinthistoolbar])` Lua function. */
 /** name= button name or "TOOLBAR" or "GROUP" */
 static int ltoolbar_seticon(lua_State *L)
@@ -1682,6 +1691,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);      //change next button position
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);       //enable/disable a button
   l_setcfunction(L, -1, "selected",     ltoolbar_selected);     //un/select/press a button
+  l_setcfunction(L, -1, "ensurevisible",ltoolbar_ensurevisible);//ensure a button in a scrollable group is visible
   l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);      //change a button, GROUP or TOOLBAR icon
   l_setcfunction(L, -1, "setbackcolor", ltoolbar_setbackcolor); //change a button, GROUP or TOOLBAR back color
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);   //change a button tooltip

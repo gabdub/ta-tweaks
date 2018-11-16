@@ -418,6 +418,7 @@ void free_tatoolbar( void );
 void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const char *imgpath);
 void group_vscroll_onoff( struct toolbar_group * g );
 void toolbar_vscroll_onoff( struct toolbar_data *T );
+void ensure_item_isvisible(struct toolbar_item * p);
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden);
 void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclose, int modshow, int fntsz, int fntyoff, int wdrag, int xcontrol, int height);
 void ttb_show_groupG( struct toolbar_group *G, int show );
@@ -425,6 +426,7 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
 void update_group_sizeG( struct toolbar_group *G, int redraw );
 void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isenabled );
 void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, int press );
+void ttb_ensurevisibleT(struct toolbar_data *T, const char * name );
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide);
 void ttb_change_button_imgT(struct toolbar_data *T, const char *name, int nimg, const char *img );
 void set_color_pick_rgb( int color );
@@ -487,6 +489,7 @@ void ttb_addtext( const char * name, const char * img, const char *tooltip, cons
 void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags );
 void ttb_enable( const char * name, int isenabled, int onlythistb );
 void ttb_setselected( const char * name, int selected, int pressed, int onlythistb );
+void ttb_ensurevisible( const char * name, int onlythistb );
 int  ttb_get_flags( const char * name  );
 void ttb_seticon( const char * name, const char *img, int nicon, int onlythistb );
 void ttb_setbackcolor( const char * name, int color, int keepback, int onlythistb );

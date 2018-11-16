@@ -70,13 +70,15 @@ function toolbar.prev_configtab()
 end
 
 --show/hide buffer config panel
-function toolbar.toggle_buffer_configtab()
+function toolbar.toggle_buffer_configtab(indent)
   if (not toolbar.config_toolbar_shown) or toolbar.cfgpnl_curgroup == toolbar.buff_panel then
     toolbar.toggle_showconfig() --show/hide
   end
   if toolbar.config_toolbar_shown and toolbar.cfgpnl_curgroup ~= toolbar.buff_panel then
     toolbar.config_tab_click(toolbar.buff_panel) --activate buffer panel
   end
+  toolbar.ensurevisible("setlexercfg") --try to show all
+  toolbar.ensurevisible(indent and "INDENTATION" or "EOLMODE")
 end
 
 --add a button to show/hide the config panel
@@ -174,12 +176,12 @@ local function add_config_separator()
   pnly_add(toolbar.cfgpnl_rheight/2)
 end
 
-local function add_config_label(text,extrasep,notbold)
+local function add_config_label(text,extrasep,notbold,name)
   if extrasep then
     add_config_separator()
   end
   toolbar.gotopos(toolbar.cfgpnl_xmargin, toolbar.cfgpnl_y)
-  toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,not notbold)
+  toolbar.addlabel(text, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,not notbold,name)
   pnly_newrow()
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";"..text
@@ -785,7 +787,7 @@ local function add_buffer_cfg_panel()
   add_config_check("tbshowguid", "Show Indent Guides", "", false, view_guides_change)
   add_config_check("tbvirtspc", "Virtual Space", "", false, view_virtspace_change)
 
-  add_config_label("EOL MODE",true)
+  add_config_label("EOL MODE",true,false,"EOLMODE")
   if WIN32 then
     add_config_radio("bfeol", "CR+LF (OS default)")
     cont_config_radio("LF")
@@ -795,7 +797,7 @@ local function add_buffer_cfg_panel()
   end
   toolbar.set_notify_on_change("bfeol",buf_eolmode_change)
 
-  add_config_label("INDENTATION",true)
+  add_config_label("INDENTATION",true,false,"INDENTATION")
   add_config_label("Tab width")
   add_config_radio("bfindent", "Use Lexer default")
   cont_config_radio("Tab width: 2")

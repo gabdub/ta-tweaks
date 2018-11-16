@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.14 (Nov 16 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.15 (Nov 16 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -167,6 +167,27 @@ void toolbar_vscroll_onoff( struct toolbar_data *T )
   }
 }
 
+void ensure_item_isvisible(struct toolbar_item * p)
+{
+  if( (p->group->flags & TTBF_GRP_VSCROLL) != 0 ){
+    struct toolbar_group * g= p->group;
+    int orgys= g->yvscroll;
+    //ensure the bottom of the item is visible
+    if( p->bary2 + g->bary1 - g->yvscroll > g->toolbar->barheight ){
+      g->yvscroll= p->bary2 + g->bary1 - g->toolbar->barheight;
+      if( g->yvscroll < 0 ){
+        g->yvscroll= 0;
+      }
+    }
+    //ensure the top of the item is also visible
+    if( p->bary1 < g->yvscroll ){
+      g->yvscroll= p->bary1;
+    }
+    if( orgys != g->yvscroll ){
+      redraw_group(g); //redraw the group when the scroll change
+    }
+  }
+}
 
 /** x/y control:
   0:allow groups before and after 1:no groups at the left/top  2:no groups at the right/bottom
@@ -1982,6 +2003,14 @@ void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, i
   }
 }
 
+void ttb_ensurevisibleT(struct toolbar_data *T, const char * name )
+{
+  struct toolbar_item * p= item_from_nameT(T, name);
+  if( p != NULL){
+    ensure_item_isvisible(p);
+  }
+}
+
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
 {
   struct toolbar_item * p;
@@ -2812,6 +2841,20 @@ void ttb_setselected( const char * name, int selected, int pressed, int onlythis
     //select button in every toolbar
     for( i= 0; i < NTOOLBARS; i++){
       ttb_select_buttonT(toolbar_from_num(i), name, selected, pressed );
+    }
+  }
+}
+
+void ttb_ensurevisible( const char * name, int onlythistb )
+{
+  int i;
+  if( onlythistb ){
+    //select button in this toolbar only
+    ttb_ensurevisibleT(current_toolbar(), name );
+  }else{
+    //select button in every toolbar
+    for( i= 0; i < NTOOLBARS; i++){
+      ttb_ensurevisibleT(toolbar_from_num(i), name );
     }
   }
 }

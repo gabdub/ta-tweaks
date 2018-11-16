@@ -164,7 +164,7 @@ if toolbar then
       elseif ntab == 4 then --lexer
         textadept.file_types.select_lexer()
       elseif ntab == 5 or ntab == 6 then --eol / indent
-        toolbar.toggle_buffer_configtab()
+        toolbar.toggle_buffer_configtab(ntab == 6)
       elseif ntab == 7 then --encoding
         change_encoding()
       end
