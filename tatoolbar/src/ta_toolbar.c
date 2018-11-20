@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.15 (Nov 16 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.16 (Nov 20 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -642,6 +642,16 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
     xbutton.tooltip= NULL;
     xbutton.group= G;
     return &xbutton; //scroll right button
+  }
+  if((G->show_vscroll_w > 0)&&(xt >= G->barx2 - G->show_vscroll_w)&&(xt <= G->barx2)&&
+      (yt >= G->bary1)&&(yt <= G->toolbar->barheight)){
+    item_xoff= xt - (G->barx2 - G->show_vscroll_w);
+    item_yoff= yt - G->bary1;
+    xbutton.flags= TTBF_SCROLL_BAR;
+    xbutton.num= 1;
+    xbutton.tooltip= NULL;
+    xbutton.group= G;
+    return &xbutton; //vertical scrollbar
   }
   x= xt - G->barx1 - G->tabxmargin;
   y= yt - G->bary1;
@@ -1602,10 +1612,12 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
     if( p->back_color == BKCOLOR_PICKER ){
       color_pick_ev( p, 0, 1 ); //update color click
     }else if( p->back_color == BKCOLOR_MINIMAP_CLICK ){
-      mini_map_ev( p, 0, 1 ); //update mini map click
+      mini_map_ev( p, 0, 1 ); //update mini map click (drag)
       if( ttb.philight != NULL ){
         fire_tb_clicked_event(p); //scroll buffer while moving with mouse down
       }
+    }else if( (p->flags & TTBF_SCROLL_BAR) != 0 ){
+      vscroll_clickG(p->group); //update scrollbar click (drag)
     }
   }
 }
@@ -1678,7 +1690,6 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
           return;
         }
       }
-
       if( (G->flags & (TTBF_GRP_VSCROLL|TTBF_GRP_VSCR_INH)) == TTBF_GRP_VSCROLL ){
         //V-SCROLL enabled and not inhibited
         nhide= G->yvscroll;
@@ -2996,6 +3007,44 @@ void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
     }
   }else{
     fire_minimap_scroll( dir );
+  }
+}
+
+//GROUP SCROLLBAR click (try to center the view in "item_yoff")
+void vscroll_clickG( struct toolbar_group *g )
+{
+  struct toolbar_img * img;
+  int imgborders;
+  int vis= g->toolbar->barheight - g->bary1;
+  int tot= g->bary2 - g->bary1;
+  int yorg= g->yvscroll;
+  g->yvscroll= 0;
+  img= get_group_img(g,TTBI_TB_VERTSCR_NORM);
+  if( img != NULL ){
+    imgborders= img->height_t + img->height_b;
+    if( (vis < tot) && (tot > 1) && (vis > imgborders) ){
+      //convert to (0.0, 1.0) range
+      double visc= (double)(vis -imgborders);
+      double hbar= (double)(vis/2) / (double) tot;
+      double off= (double)(item_yoff - img->height_t);
+      if( off > 0 ){
+        off /= visc;
+        off -= hbar;
+        if( off > 0 ){
+          //adjust to item size
+          g->yvscroll= (int) (off * (double) tot);
+          if( g->yvscroll + vis > tot){
+            g->yvscroll= tot - vis;
+            if( g->yvscroll < 0){
+              g->yvscroll= 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  if( yorg != g->yvscroll ){
+    redraw_group(g);
   }
 }
 

@@ -501,7 +501,7 @@ void redraw_item( struct toolbar_item * p )
     g= p->group;
     if( ((g->toolbar->flags & TTBF_TB_VISIBLE) != 0) && ((g->flags & TTBF_GRP_HIDDEN) == 0) ){
       //the group is visible
-      if( (p->flags & (TTBF_TAB|TTBF_SCROLL_BUT|TTBF_CLOSETAB_BUT|TTBF_HIDDEN)) == 0 ){
+      if( (p->flags & (TTBF_TAB|TTBF_XBUTTON|TTBF_HIDDEN)) == 0 ){
         //redraw the area of one regular button
         if( update_ui ){
           gtk_widget_queue_draw_area(g->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1 - g->yvscroll,
@@ -1280,11 +1280,7 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
   }else{
     x = event->x;
     y = event->y;
-//    state = event->state;
   }
-//  if( (state & GDK_BUTTON1_MASK) == 0 ){
-//    if( ttb.phipress != NULL ) //mouse release event lost or coming?
-//  }
   mouse_move_toolbar(T, x, y);
   return TRUE;
 }
@@ -1341,6 +1337,8 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
           mini_map_ev( ttb.phipress, 0, 0 );   //MINI MAP click
           fire_tb_clicked_event(ttb.phipress); //scroll buffer now
+        }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
+          vscroll_clickG(ttb.phipress->group); //scrollbar click
         }
         redraw_item(ttb.philight);
       }

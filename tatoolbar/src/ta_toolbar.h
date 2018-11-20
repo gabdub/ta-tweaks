@@ -23,23 +23,26 @@
 
 //item flags
 #define TTBF_SELECTABLE     0x00000001  //accepts click
-#define TTBF_HIDDEN         0x00000002  //not shown
+#define TTBF_HIDDEN         0x00000002  //it's hidden
 #define TTBF_TEXT           0x00000004  //it's a text button or icon + text
 #define TTBF_GRAYED         0x00000008  //show as disabled (grayed)
 #define TTBF_SELECTED       0x00000010  //show as selected / checked / active tab (normal=selected img)
 #define TTBF_PRESSED        0x00000020  //show as pressed (background=selected img)
 #define TTBF_CHANGED        0x00000040  //show as changed
 #define TTBF_TAB            0x00000080  //it's a tab
-#define TTBF_CLOSETAB_BUT   0x00000100  //it's a close tab button
-#define TTBF_SCROLL_BUT     0x00000200  //it's a scroll button
-#define TTBF_TEXT_LEFT      0x00000400  //draw text left aligned (default = center)
-#define TTBF_TEXT_BOLD      0x00000800  //draw text in bold
-#define TTBF_DROP_BUTTON    0x00001000  //draw a drop down button at the end of a text button
-#define TTBF_IS_SEPARATOR   0x00002000  //it's a separator
-#define TTBF_SHOW_BORDER    0x00004000  //draw a border (used in text buttons)
+#define TTBF_TEXT_LEFT      0x00000100  //draw text left aligned (default = center)
+#define TTBF_TEXT_BOLD      0x00000200  //draw text in bold
+#define TTBF_DROP_BUTTON    0x00000400  //draw a drop down button at the end of a text button
+#define TTBF_IS_SEPARATOR   0x00000800  //it's a separator
+#define TTBF_SHOW_BORDER    0x00001000  //draw a border (used in text buttons)
+//iternal use item flags
+#define TTBF_CLOSETAB_BUT   0x01000000  //highlighted xbutton is a close tab button (internal use)
+#define TTBF_SCROLL_BUT     0x02000000  //highlighted xbutton is a scroll button (internal use)
+#define TTBF_SCROLL_BAR     0x04000000  //highlighted xbutton is a group scroll bar (internal use)
+#define TTBF_XBUTTON        (TTBF_CLOSETAB_BUT|TTBF_SCROLL_BUT|TTBF_SCROLL_BAR)
 //group flags
 #define TTBF_GRP_SELECTABLE 0x00000001  //accepts click
-#define TTBF_GRP_HIDDEN     0x00000002  //not shown
+#define TTBF_GRP_HIDDEN     0x00000002  //it's hidden
 #define TTBF_GRP_VERTICAL   0x00000004  //it's vertical
 #define TTBF_GRP_TABBAR     0x00000008  //tabs group
 #define TTBF_GRP_DRAGTAB    0x00000010  //tab dragging enabled in TTBF_TABBAR
@@ -54,13 +57,15 @@
 #define TTBF_GRP_ITEM_H     0x00002000  //this group set height using items position
 #define TTBF_GRP_VSCROLL    0x00004000  //this group can be scrolled vertically when needed
 #define TTBF_GRP_SHOWVSCR   0x00008000  //this group shows a vertical scrollbar when needed
-#define TTBF_GRP_VSCR_INH   0x00010000  //inhibit vertical scroll while popup is open
-#define TTBF_GRP_TRY_PACK   0x00020000  //after item delete try to scroll left (internal use)
-#define TTBF_GRP_LASTIT_SH  0x00040000  //is the last item of the group shown (internal use)
+//iternal use group flags
+#define TTBF_GRP_TRY_PACK   0x01000000  //after item delete try to scroll left (internal use)
+#define TTBF_GRP_LASTIT_SH  0x02000000  //is the last item of the group shown (internal use)
+#define TTBF_GRP_VSCR_INH   0x04000000  //inhibit vertical scroll while popup is open
 //toolbar flags
 #define TTBF_TB_VERTICAL    0x00000001  //it's vertical
 #define TTBF_TB_VISIBLE     0x00000002  //it's visible
-#define TTBF_TB_REDRAW      0x00000004  //hold updates for now.. redraw later (internal use)
+//iternal use toolbar flags
+#define TTBF_TB_REDRAW      0x01000000  //hold updates for now.. redraw later (internal use)
 
 //item images
 #define TTBI_BACKGROUND     0
@@ -500,6 +505,8 @@ void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
 void toolbar_set_win_title( const char *title );
 
 void mini_map_ev( struct toolbar_item *p, int dir, int redraw );
+void vscroll_clickG( struct toolbar_group *g );
+
 void minimap_init(int buffnum, int linecount, int yszbox);
 void minimap_hilight(int linenum, int color, int exclusive);
 int  minimap_getclickline( void );

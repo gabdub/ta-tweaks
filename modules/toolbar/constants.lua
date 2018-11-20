@@ -81,23 +81,21 @@ toolbar.BKCOLOR = {
 toolbar.TTBF ={
 --item flags
   SELECTABLE    = 0x00000001,   --accepts click
-  HIDDEN        = 0x00000002,   --not shown
+  HIDDEN        = 0x00000002,   --it's hidden
   TEXT          = 0x00000004,   --it's a text button or icon + text
   GRAYED        = 0x00000008,   --show as disabled (grayed)
   SELECTED      = 0x00000010,   --show as selected / checked / active tab (normal=selected img)
   PRESSED       = 0x00000020,   --show as pressed (background=selected img)
   CHANGED       = 0x00000040,   --show as changed
   TAB           = 0x00000080,   --it's a tab
-  CLOSETAB_BUT  = 0x00000100,   --it's a close tab button
-  SCROLL_BUT    = 0x00000200,   --it's a scroll button
-  TEXT_LEFT     = 0x00000400,   --draw text left aligned (default = center)
-  TEXT_BOLD     = 0x00000800,   --draw text in bold
-  DROP_BUTTON   = 0x00001000,   --draw a drop down button at the end of a text button
-  IS_SEPARATOR  = 0x00002000,   --it's a separator
-  SHOW_BORDER   = 0x00004000,   --draw a border (used in text buttons)
+  TEXT_LEFT     = 0x00000100,   --draw text left aligned (default = center)
+  TEXT_BOLD     = 0x00000200,   --draw text in bold
+  DROP_BUTTON   = 0x00000400,   --draw a drop down button at the end of a text button
+  IS_SEPARATOR  = 0x00000800,   --it's a separator
+  SHOW_BORDER   = 0x00001000,   --draw a border (used in text buttons)
 --group flags
   GRP_SELECTABLE= 0x00000001,   --accepts click
-  GRP_HIDDEN    = 0x00000002,   --not shown
+  GRP_HIDDEN    = 0x00000002,   --it's hidden
   GRP_VERTICAL  = 0x00000004,   --it's vertical
   GRP_TABBAR    = 0x00000008,   --tabs group
   GRP_DRAGTAB   = 0x00000010,   --tab dragging enabled in TTBF_TABBAR
@@ -112,13 +110,9 @@ toolbar.TTBF ={
   GRP_ITEM_H    = 0x00002000,   --this group set height using items position
   GRP_VSCROLL   = 0x00004000,   --this group can be scrolled vertically when needed
   GRP_SHOWVSCR  = 0x00008000,   --this group shows a vertical scrollbar when needed
-  GRP_VSCR_INH  = 0x00010000,   --inhibit vertical scroll while popup is open
---GRP_TRY_PACK  = 0x00020000,   --after item delete try to scroll left (internal use)
---GRP_LASTIT_SH = 0x00040000,   --is the last item of the group shown (internal use)
 --toolbar flags
   TB_VERTICAL   = 0x00000001,   --it's vertical
   TB_VISIBLE    = 0x00000002,   --it's visible
---TB_REDRAW     = 0x00000004,    --hold updates for now.. redraw later (internal use)
 }
 
 toolbar.GRPC ={
