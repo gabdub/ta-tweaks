@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.17 (Nov 21 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.18 (Nov 21 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -1539,16 +1539,16 @@ static void color_part_ev( struct toolbar_item *p, int dir )
 /* ============================================================================= */
 /*                                 EVENTS                                        */
 /* ============================================================================= */
-//void mouse_leave_toolbar( struct toolbar_data *T )
-//{
-//  if( T != NULL ){
-//    if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
-//      //force highlight and tooltip OFF (in this toolbar only)
-//      set_hilight_off();
-//      clear_tooltip_textT(T);
-//    }
-//  }
-//}
+void mouse_leave_toolbar( struct toolbar_data *T )
+{
+  if( (T != NULL) && (ttb.pdrag == NULL) ){
+    if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
+      //force highlight and tooltip OFF (in this toolbar only)
+      set_hilight_off();
+      clear_tooltip_textT(T);
+    }
+  }
+}
 
 void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
 {

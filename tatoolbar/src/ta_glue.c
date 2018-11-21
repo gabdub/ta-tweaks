@@ -1258,12 +1258,12 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   return TRUE;
 }
 
-//static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
-//{
-//  UNUSED(event);
-//  mouse_leave_toolbar( toolbar_from_widget(widget) );
-//  return FALSE;
-//}
+static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
+{
+  UNUSED(event);
+  mouse_leave_toolbar( toolbar_from_widget(widget) );
+  return FALSE;
+}
 
 static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
 {
@@ -1837,11 +1837,11 @@ static void create_tatoolbar( GtkWidget *box, int ntoolbar )
         gtk_widget_set_size_request(draw, -1, 1);
       }
     }
-    gtk_widget_set_events(draw, GDK_EXPOSURE_MASK| //GDK_LEAVE_NOTIFY_MASK
+    gtk_widget_set_events(draw, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
       GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
     signal(draw, "size-allocate",        ttb_size_ev);
     signal(draw, "expose_event",         ttb_paint_ev);
-//    signal(draw, "leave-notify-event",   ttb_mouseleave_ev);
+    signal(draw, "leave-notify-event",   ttb_mouseleave_ev);
     signal(draw, "motion_notify_event",  ttb_mousemotion_ev);
     signal(draw, "scroll-event",         ttb_scrollwheel_ev);
     signal(draw, "button-press-event",   ttb_button_ev);
