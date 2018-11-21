@@ -1258,12 +1258,12 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
   return TRUE;
 }
 
-static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
-{
-  UNUSED(event);
-  mouse_leave_toolbar( toolbar_from_widget(widget) );
-  return FALSE;
-}
+//static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
+//{
+//  UNUSED(event);
+//  mouse_leave_toolbar( toolbar_from_widget(widget) );
+//  return FALSE;
+//}
 
 static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
 {
@@ -1337,8 +1337,10 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
           mini_map_ev( ttb.phipress, 0, 0 );   //MINI MAP click
           fire_tb_clicked_event(ttb.phipress); //scroll buffer now
+          start_drag(event->x, event->y);  //drag the minimap until the mouse button is released
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
           vscroll_clickG(ttb.phipress->group); //scrollbar click
+          start_drag(event->x, event->y);  //drag the scrollbar until the mouse button is released
         }
         redraw_item(ttb.philight);
       }
@@ -1381,6 +1383,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }
       }
       ttb.phipress= NULL;
+      ttb.pdrag= NULL;
       return TRUE;
     }
     if(event->type == GDK_2BUTTON_PRESS){ //double click
@@ -1834,11 +1837,11 @@ static void create_tatoolbar( GtkWidget *box, int ntoolbar )
         gtk_widget_set_size_request(draw, -1, 1);
       }
     }
-    gtk_widget_set_events(draw, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
+    gtk_widget_set_events(draw, GDK_EXPOSURE_MASK| //GDK_LEAVE_NOTIFY_MASK
       GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
     signal(draw, "size-allocate",        ttb_size_ev);
     signal(draw, "expose_event",         ttb_paint_ev);
-    signal(draw, "leave-notify-event",   ttb_mouseleave_ev);
+//    signal(draw, "leave-notify-event",   ttb_mouseleave_ev);
     signal(draw, "motion_notify_event",  ttb_mousemotion_ev);
     signal(draw, "scroll-event",         ttb_scrollwheel_ev);
     signal(draw, "button-press-event",   ttb_button_ev);

@@ -375,6 +375,8 @@ struct all_toolbars_data
 
   struct toolbar_item * philight;
   struct toolbar_item * phipress;
+  struct toolbar_item * pdrag;
+
   int ntbhilight;     //number of the toolbar with the highlighted button or -1
 
   int currentntb;     //current toolbar num
@@ -383,6 +385,8 @@ struct all_toolbars_data
 
   struct color_picker_data cpick; //only one global color picker
   struct minimap_data minimap;    //only one global MINI MAP
+
+  int drag_x, drag_y; //initial difference between mouse and item_xoff/yoff position
 };
 extern struct all_toolbars_data ttb;
 
@@ -481,6 +485,7 @@ struct toolbar_group * group_fromXYT(struct toolbar_data *T, int x, int y);
 extern int item_xoff;
 extern int item_yoff;
 struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt);
+void start_drag( int x, int y );
 
 
 int  set_item_img( struct toolbar_item *p, int nimg, const char *imgname );

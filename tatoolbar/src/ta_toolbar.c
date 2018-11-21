@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.16 (Nov 20 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.17 (Nov 21 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -410,6 +410,7 @@ static void free_toolbar_num( int num )
     if(ttb.ntbhilight == num){
       ttb.philight= NULL;
       ttb.phipress= NULL;
+      ttb.pdrag= NULL;
       ttb.ntbhilight= -1;
     }
     //free toolbar images
@@ -449,6 +450,7 @@ void free_tatoolbar( void )
   }
   ttb.philight= NULL;
   ttb.phipress= NULL;
+  ttb.pdrag= NULL;
   ttb.ntbhilight= -1;
   ttb.currentntb= 0;
   ttb.cpick.ppicker= NULL;
@@ -717,6 +719,13 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
     }
   }
   return NULL;
+}
+
+void start_drag( int x, int y )
+{
+  ttb.pdrag= ttb.phipress;
+  ttb.drag_x= item_xoff - x;  //initial difference between mouse and item_xoff/yoff position
+  ttb.drag_y= item_yoff - y;
 }
 
 /* ============================================================================= */
@@ -1530,16 +1539,16 @@ static void color_part_ev( struct toolbar_item *p, int dir )
 /* ============================================================================= */
 /*                                 EVENTS                                        */
 /* ============================================================================= */
-void mouse_leave_toolbar( struct toolbar_data *T )
-{
-  if( T != NULL ){
-    if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
-      //force highlight and tooltip OFF (in this toolbar only)
-      set_hilight_off();
-      clear_tooltip_textT(T);
-    }
-  }
-}
+//void mouse_leave_toolbar( struct toolbar_data *T )
+//{
+//  if( T != NULL ){
+//    if( (ttb.philight != NULL) && (ttb.ntbhilight == T->num) ){
+//      //force highlight and tooltip OFF (in this toolbar only)
+//      set_hilight_off();
+//      clear_tooltip_textT(T);
+//    }
+//  }
+//}
 
 void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
 {
@@ -1547,7 +1556,15 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
   struct toolbar_item * p, *prev;
   struct toolbar_group *G;
 
-  p= item_fromXYT(T, x, y);
+  if( ttb.pdrag != NULL ){
+    //dragging: keep the selected item until the mouse button is released
+    p= ttb.pdrag;
+    //keep the position relative to the start point
+    item_xoff= ttb.drag_x + x;
+    item_yoff= ttb.drag_y + y;
+  }else{
+    p= item_fromXYT(T, x, y);
+  }
   if( p != ttb.philight ){
     //highlight changed
     if( (p != NULL) && (ttb.phipress != NULL) && ((p->group->flags & TTBF_GRP_DRAGTAB) != 0) &&
@@ -1767,6 +1784,7 @@ void set_hilight_off( void )
   if( (p != NULL) && (ttb.ntbhilight >= 0) ){
     ttb.philight= NULL;
     ttb.phipress= NULL;
+    ttb.pdrag= NULL;
     redraw_item( p );
     ttb.ntbhilight= -1;
   }
@@ -2373,6 +2391,7 @@ void ttb_delete_tabG(struct toolbar_group *G, int ntab)
       if( (ttb.philight == k) || (ttb.phipress == k) ){
         ttb.philight= NULL;
         ttb.phipress= NULL;
+        ttb.pdrag= NULL;
         ttb.ntbhilight= -1;
       }
     }
