@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.18 (Nov 21 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.19 (Nov 22 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -169,22 +169,24 @@ void toolbar_vscroll_onoff( struct toolbar_data *T )
 
 void ensure_item_isvisible(struct toolbar_item * p)
 {
-  if( (p->group->flags & TTBF_GRP_VSCROLL) != 0 ){
-    struct toolbar_group * g= p->group;
-    int orgys= g->yvscroll;
-    //ensure the bottom of the item is visible
-    if( p->bary2 + g->bary1 - g->yvscroll > g->toolbar->barheight ){
-      g->yvscroll= p->bary2 + g->bary1 - g->toolbar->barheight;
-      if( g->yvscroll < 0 ){
-        g->yvscroll= 0;
+  if( p != NULL ){
+    if( (p->group->flags & TTBF_GRP_VSCROLL) != 0 ){
+      struct toolbar_group * g= p->group;
+      int orgys= g->yvscroll;
+      //ensure the bottom of the item is visible
+      if( p->bary2 + g->bary1 - g->yvscroll > g->toolbar->barheight ){
+        g->yvscroll= p->bary2 + g->bary1 - g->toolbar->barheight;
+        if( g->yvscroll < 0 ){
+          g->yvscroll= 0;
+        }
       }
-    }
-    //ensure the top of the item is also visible
-    if( p->bary1 < g->yvscroll ){
-      g->yvscroll= p->bary1;
-    }
-    if( orgys != g->yvscroll ){
-      redraw_group(g); //redraw the group when the scroll change
+      //ensure the top of the item is also visible
+      if( p->bary1 < g->yvscroll ){
+        g->yvscroll= p->bary1;
+      }
+      if( orgys != g->yvscroll ){
+        redraw_group(g); //redraw the group when the scroll change
+      }
     }
   }
 }
@@ -2034,10 +2036,7 @@ void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, i
 
 void ttb_ensurevisibleT(struct toolbar_data *T, const char * name )
 {
-  struct toolbar_item * p= item_from_nameT(T, name);
-  if( p != NULL){
-    ensure_item_isvisible(p);
-  }
+  ensure_item_isvisible( item_from_nameT(T, name) );
 }
 
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)

@@ -1330,6 +1330,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       set_hilight_off();  //clear previous highlight
       ttb.phipress= item_fromXYT(T, event->x, event->y);
       if( ttb.phipress != NULL ){
+        ensure_item_isvisible(ttb.phipress);
         ttb.philight= ttb.phipress; //highlight as pressed
         ttb.ntbhilight= T->num;
         if( ttb.phipress->back_color == BKCOLOR_PICKER ){
