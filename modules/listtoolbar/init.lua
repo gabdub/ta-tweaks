@@ -35,7 +35,7 @@ if toolbar then
   function toolbar.createlisttb()
     list_clear()
     if actions then
-      toolbar.idviewlisttb= actions.add("toggle_viewlisttb", 'Show LIST Tool_Bar', toolbar.list_toolbar_onoff, "sf10", nil, function()
+      toolbar.idviewlisttb= actions.add("toggle_viewlisttb", 'Show LIST Tool_Bar', toolbar.list_toolbar_onoff, "sf10", "t_struct", function()
         return (toolbar.list_tb and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_View'])
       if med then
@@ -199,7 +199,10 @@ if toolbar then
     --check menuitem
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
-    if actions then actions.updateaction("toggle_viewlisttb") end
+    if actions then
+      actions.updateaction("toggle_viewlisttb")
+      toolbar.selected("toggle_viewlisttb", false, toolbar.list_tb)
+    end
   end
 
   local function list_update() --update only when the file change

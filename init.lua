@@ -45,6 +45,12 @@ if toolbar then
   toolbar.create_from_config()
 
   --add some buttons
+  --create list toolbar
+  if toolbar.createlisttb then
+    toolbar.createlisttb()
+    toolbar.addaction("toggle_viewlisttb")
+  end
+
   if Proj then
     toolbar.addaction("toggle_viewproj")
     toolbar.addspace(4,true)
@@ -76,9 +82,6 @@ if toolbar then
 
   --toolbars are ready to show
   toolbar.ready()
-
-  --create list toolbar
-  if toolbar.createlisttb then toolbar.createlisttb() end
 end
 
 --reload changed files without prompting
