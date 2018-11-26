@@ -9,26 +9,29 @@ if toolbar then
   local events, events_connect = events, events.connect
 
   --select a toolbar as current
-  function toolbar.sel_toolbar_n(ntb, ngrp)
+  function toolbar.sel_toolbar_n(ntb, ngrp, emptygrp)
     if ngrp == nil then ngrp = 0 end
-    if toolbar.current_toolbar ~= ntb or toolbar.current_tb_group ~= ngrp then
+    if toolbar.current_toolbar ~= ntb or toolbar.current_tb_group ~= ngrp or emptygrp then
       toolbar.current_toolbar= ntb
       toolbar.current_tb_group= ngrp
-      toolbar.seltoolbar(ntb,ngrp)
+      toolbar.seltoolbar(ntb,ngrp,emptygrp)
     end
   end
   --select a toolbar by name
-  function toolbar.sel_top_bar()
-    toolbar.sel_toolbar_n(toolbar.TOP_TOOLBAR)
+  function toolbar.sel_top_bar(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.TOP_TOOLBAR, ngrp, emptygrp)
   end
-  function toolbar.sel_left_bar()
-    toolbar.sel_toolbar_n(toolbar.LEFT_TOOLBAR)
+  function toolbar.sel_left_bar(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.LEFT_TOOLBAR, ngrp, emptygrp)
   end
-  function toolbar.sel_stat_bar()
-    toolbar.sel_toolbar_n(toolbar.STAT_TOOLBAR)
+  function toolbar.sel_stat_bar(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.STAT_TOOLBAR, ngrp, emptygrp)
   end
-  function toolbar.sel_config_bar()
-    toolbar.sel_toolbar_n(toolbar.RIGHT_TOOLBAR)
+  function toolbar.sel_config_bar(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.RIGHT_TOOLBAR, ngrp, emptygrp)
+  end
+  function toolbar.sel_minimap(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.MINIMAP_TOOLBAR)
   end
 
   function toolbar.setthemeicon(name,icon,num)

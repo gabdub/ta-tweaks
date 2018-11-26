@@ -8,6 +8,12 @@ if toolbar then
     --remove all items
     toolbar.tag_count= 0
     toolbar.tag_listedfile= ""
+    toolbar.listtb_y= 1
+    toolbar.listright= listwidth
+    toolbar.sel_left_bar(titgrp,true) --empty title group
+  end
+
+  function toolbar.createlisttb()
     toolbar.sel_left_bar()
     listwidth= toolbar.listwidth or 250
     if Proj and Proj.select_width then listwidth= Proj.select_width end  --try to use the same width as the project
@@ -27,12 +33,7 @@ if toolbar then
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(0, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, listwidth, 0) --show v-scroll when needed
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.listtb_y= 1
-    toolbar.listright= listwidth
-    toolbar.seltoolbar(toolbar.LEFT_TOOLBAR,titgrp)
-  end
 
-  function toolbar.createlisttb()
     list_clear()
     if actions then
       toolbar.idviewlisttb= actions.add("toggle_viewlisttb", 'Show LIST Tool_Bar', toolbar.list_toolbar_onoff, "sf10", "t_struct", function()
@@ -129,7 +130,7 @@ if toolbar then
     local fname= bname:match('[^/\\]+$') -- filename only
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
     list_addinfo(fname, true)
-    toolbar.seltoolbar(toolbar.LEFT_TOOLBAR,itemsgrp)
+    toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.listtb_y= 3
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')
