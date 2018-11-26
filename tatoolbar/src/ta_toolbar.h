@@ -493,7 +493,7 @@ void setrgbcolor(int rgb, struct color3doubles *pc);
 struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg );
 int  get_group_imgW( struct toolbar_group *G, int nimg );
 int  get_group_imgH( struct toolbar_group *G, int nimg );
-void select_toolbar_n( int num, int ngrp );
+void select_toolbar_n( int num, int ngrp, int emptygroup );
 void ttb_addbutton( const char *name, const char *tooltip, int base );
 void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold);
 void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags );

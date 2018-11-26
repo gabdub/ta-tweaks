@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.19 (Nov 22 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.20 (Nov 26 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -57,6 +57,34 @@ char * chg_alloc_str( char *sold, const char *snew )
   return alloc_str(snew);
 }
 
+static void reset_group_vars( struct toolbar_group * g )
+{
+  if( (g->flags & TTBF_GRP_VERTICAL) != 0 ){
+    g->xmargin= 1;
+    g->ymargin= 2;
+  }else{
+    g->xmargin= 2;
+    g->ymargin= 1;
+  }
+  //hide scroolbar buttons
+  g->flags |= TTBF_GRP_LASTIT_SH;
+  g->scleftx1= -1;
+  g->scrightx1= -1;
+
+  //default: square buttons
+  g->bwidth= g->toolbar->buttonsize;
+  g->bheight= g->bwidth;
+  g->xoff= (g->bwidth - g->toolbar->imgsize)/2;
+  if( g->xoff < 0){
+    g->xoff= 0;
+  }
+  g->yoff= g->xoff;
+  g->xnew= g->xmargin;
+  g->ynew= g->ymargin;
+  g->yvscroll= 0;
+  g->show_vscroll_w= 0;
+}
+
 static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
 { //add a new group to a toolbar (flags version)
   int i;
@@ -86,36 +114,14 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
     g->txtfontsz= 12;  //text button font size in points (default = 12 points)
     g->txttexty= -1;
     setrgbcolor( 0x808080, &g->txttextcolG); //gray
+    g->back_color= BKCOLOR_NOT_SET;
 
     g->toolbar= T;        //set parent
     g->num= T->ngroups;   //number of group (0..)
     g->flags= flg;
     T->ngroups++;
-    if( (g->flags & TTBF_GRP_VERTICAL) != 0 ){
-      g->xmargin= 1;
-      g->ymargin= 2;
-    }else{
-      g->xmargin= 2;
-      g->ymargin= 1;
-    }
-    //hide scroolbar buttons
-    g->flags |= TTBF_GRP_LASTIT_SH;
-    g->scleftx1= -1;
-    g->scrightx1= -1;
 
-    //default: square buttons
-    g->bwidth= T->buttonsize;
-    g->bheight= g->bwidth;
-    g->xoff= (g->bwidth - T->imgsize)/2;
-    if( g->xoff < 0){
-      g->xoff= 0;
-    }
-    g->yoff= g->xoff;
-    g->xnew= g->xmargin;
-    g->ynew= g->ymargin;
-    g->back_color= BKCOLOR_NOT_SET;
-    g->yvscroll= 0;
-    g->show_vscroll_w= 0;
+    reset_group_vars(g);
 
     //add the group to the end of the list
     if( T->group_last != NULL ){
@@ -2771,7 +2777,7 @@ struct toolbar_group * current_buttongrp( void )
   return g;
 }
 
-void select_toolbar_n( int num, int ngrp )
+void select_toolbar_n( int num, int ngrp, int emptygroup )
 {
   struct toolbar_data *T;
   struct toolbar_group *G;
@@ -2788,6 +2794,15 @@ void select_toolbar_n( int num, int ngrp )
         if( (G->flags & TTBF_GRP_TABBAR) != 0){
           //the group is a tab-bar, set as default
           T->tab_group= G;
+        }
+        if( emptygroup ){
+          //remove all the items in the group (keep toolbar/group images)
+          free_item_list( G->list );
+          G->list= NULL;
+          G->list_last= NULL;
+          reset_group_vars(G);
+          //group size changed, update toolbar
+          update_group_sizeG(G, 1); //redraw
         }
       }
     }

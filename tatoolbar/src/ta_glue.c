@@ -85,11 +85,11 @@ static int ltoolbar_show(lua_State *L)
 }
 
 //----- GROUPS -----
-/** `toolbar.seltoolbar(toolbarnum/isvertical, [groupnum])` Lua function. */
+/** `toolbar.seltoolbar(toolbarnum/isvertical, [groupnum], [emptygroup])` Lua function. */
 static int ltoolbar_seltoolbar(lua_State *L)
 {
   //set the current toolbar num
-  select_toolbar_n( intlua_ntoolbar(L,1), lua_tointeger(L, 2) );
+  select_toolbar_n( intlua_ntoolbar(L,1), lua_tointeger(L, 2), lua_toboolean(L,3) );
   return 0;
 }
 
