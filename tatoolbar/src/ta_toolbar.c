@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.20 (Nov 26 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.21 (Nov 27 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -2801,8 +2801,8 @@ void select_toolbar_n( int num, int ngrp, int emptygroup )
           G->list= NULL;
           G->list_last= NULL;
           reset_group_vars(G);
-          //group size changed, update toolbar
-          update_group_sizeG(G, 1); //redraw
+          update_group_sizeG(G, 0);
+          redraw_toolbar(T);  //redraw the complete toolbar
         }
       }
     }

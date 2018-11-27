@@ -77,10 +77,10 @@ static int ltoolbar_adjust(lua_State *L)
   return 0;
 }
 
-/** `toolbar.show(show)` Lua function. */
+/** `toolbar.show(show,[newsize])` Lua function. */
 static int ltoolbar_show(lua_State *L)
 {
-  show_toolbar(current_toolbar(), lua_toboolean(L,1));
+  show_toolbar(current_toolbar(), lua_toboolean(L,1), lua_tointeger(L, 2));
   return 0;
 }
 
@@ -1459,7 +1459,7 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
         gtk_container_add(GTK_CONTAINER(T->win), vbox);
         create_tatoolbar(vbox, ntb);
         gtk_widget_show_all(T->win);
-        show_toolbar( T, 1 );
+        show_toolbar( T, 1, 0 );
         gtk_widget_grab_focus(T->win);
       }
     }
@@ -1470,7 +1470,7 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
       T->lock_group= NULL;
     }
     if( T->win != NULL ){
-      show_toolbar( T, 0 );
+      show_toolbar( T, 0, 0 );
       gtk_widget_destroy( T->win );
       T->win= NULL;
       T->draw= NULL;
@@ -1876,9 +1876,22 @@ void show_tatoolbar(int show)
   }
 }
 
-void show_toolbar(struct toolbar_data *T, int show)
+void show_toolbar(struct toolbar_data *T, int show, int newsize)
 { //show/hide one toolbar
   if( T != NULL ){
+    if( (newsize > 0) && (T->num < POPUP_FIRST) ){
+      if( (T->flags & TTBF_TB_VERTICAL) != 0 ){ //vertical toolbar: change width
+        if( T->barwidth != newsize ){
+          T->barwidth= newsize;
+          set_toolbar_size(T);
+        }
+      }else{  //horizontal toolbar: change height
+        if( T->barheight != newsize ){
+          T->barheight= newsize;
+          set_toolbar_size(T);
+        }
+      }
+    }
     if( (show) && ((T->flags & TTBF_TB_VISIBLE) == 0) ){
       //show this toolbar
       T->_layout_chg= 0;
