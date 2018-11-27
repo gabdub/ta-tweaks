@@ -3,23 +3,28 @@
 if toolbar then
   toolbar.listtb_hide_p= false
 
-  local titgrp, itemsgrp, listwidth
+  local titgrp, itemsgrp
   local function list_clear()
     --remove all items
-    toolbar.tag_count= 0
+    toolbar.tag_list= {}
     toolbar.tag_listedfile= ""
+    toolbar.tag_list_find= ""
     toolbar.listtb_y= 1
-    toolbar.listright= listwidth
+    toolbar.listright= toolbar.listwidth
     toolbar.sel_left_bar(titgrp,true) --empty title group
+  end
+
+  local function set_list_width()
+    if not toolbar.listwidth then toolbar.listwidth=250 end
+    if Proj and Proj.select_width then toolbar.listwidth= Proj.select_width end  --try to use the same width as the project
+    if toolbar.listwidth < 100 then toolbar.listwidth=100 end
   end
 
   function toolbar.createlisttb()
     toolbar.sel_left_bar()
-    listwidth= toolbar.listwidth or 250
-    if Proj and Proj.select_width then listwidth= Proj.select_width end  --try to use the same width as the project
-    if listwidth < 100 then listwidth= toolbar.listwidth end
+    set_list_width()
     --create a new empty toolbar
-    toolbar.new(listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.LEFT_TOOLBAR, toolbar.themepath)
+    toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.LEFT_TOOLBAR, toolbar.themepath)
     --add/change some images
     toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
@@ -27,11 +32,11 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-back", toolbar.TTBI_TB.VERTSCR_BACK)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
     --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME, toolbar.GRPC.FIRST, listwidth, toolbar.cfg.barsize)
+    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.FIRST, 0, toolbar.cfg.barsize)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     --items group: fixed width=300 / height=use buttons + vertical scroll
-    itemsgrp= toolbar.addgroup(0, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, listwidth, 0) --show v-scroll when needed
+    itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0) --show v-scroll when needed
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
 
     list_clear()
@@ -45,7 +50,7 @@ if toolbar then
       end
     end
     toolbar.list_tb= false --hide for now...
-    toolbar.show(false)
+    toolbar.show(false, toolbar.listwidth)
 
     toolbar.sel_top_bar()
   end
@@ -61,7 +66,7 @@ if toolbar then
     toolbar.gotopos( 3, toolbar.listtb_y)
     toolbar.addlabel(text, "", toolbar.listright, true, bold)
     toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
-    toolbar.listright= listwidth
+    toolbar.listright= toolbar.listwidth
   end
 
   local function gototag(cmd)
@@ -83,15 +88,36 @@ if toolbar then
     elseif ext_fields == "s" then name= "struct "..name bicon="t_struct"
     elseif ext_fields == "m" and extra then name= extra.."."..name bicon="t_struct" end
 
-    local gt= "gotag"..toolbar.tag_count.."#"..line
-    toolbar.gotopos( 3, toolbar.listtb_y)
-    toolbar.cmd(gt, gototag, "", bicon, true)
+    local gt= "gotag"..#toolbar.tag_list.."#"..line
+    toolbar.tag_list[#toolbar.tag_list+1]= {gt, name, bicon}
+  end
 
-    toolbar.gotopos( toolbar.cfg.barsize, toolbar.listtb_y)
-    toolbar.addtext(gt, name, "")
-    toolbar.cmds_n[gt]= gototag
-    toolbar.tag_count=toolbar.tag_count+1
-    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
+  local function filter_ctags()
+    --show the tags that pass the filter
+    toolbar.sel_left_bar(itemsgrp,true) --empty items group
+    toolbar.listtb_y= 3
+    if #toolbar.tag_list == 0 then
+      list_addinfo('No CTAGS found in this file')
+    else
+      local y= 3
+      local n=0
+      for i=1,#toolbar.tag_list do
+        local name=  toolbar.tag_list[i][2]
+        if toolbar.tag_list_find == '' or name:match(toolbar.tag_list_find) then
+          local gt= toolbar.tag_list[i][1]
+          local bicon= toolbar.tag_list[i][3]
+          toolbar.gotopos( 3, y)
+          toolbar.cmd(gt, gototag, "", bicon, true)
+          toolbar.gotopos( toolbar.cfg.barsize, y)
+          toolbar.addtext(gt, name, "")
+          toolbar.cmds_n[gt]= gototag
+          y= y + toolbar.cfg.butsize
+          n= n+1
+        end
+      end
+      toolbar.listtb_y= y
+      if n == 0 then list_addinfo('No CTAGS match the filter') end
+    end
   end
 
   local function load_ctags()
@@ -129,9 +155,8 @@ if toolbar then
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
+    list_addbutton("edit-find", "Find symbol [F11]", toolbar.list_find_sym)
     list_addinfo(fname, true)
-    toolbar.sel_left_bar(itemsgrp,true) --empty items group
-    toolbar.listtb_y= 3
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')
       local f = io.open(tag_files[i])
@@ -145,7 +170,16 @@ if toolbar then
       end
       f:close()
     end
-    if toolbar.tag_count == 0 then list_addinfo('No CTAGS found in this file') end
+    filter_ctags()
+  end
+
+  function toolbar.list_find_sym()
+    local orgfind = toolbar.tag_list_find
+    local word = ''
+    r,word= ui.dialogs.inputbox{title = 'Tag search', width = 400, text = toolbar.tag_list_find}
+    toolbar.tag_list_find= ''
+    if r == 1 then toolbar.tag_list_find= Util.escape_match(Util.str_trim(word)) end
+    if orgfind ~= toolbar.tag_list_find then filter_ctags() end --filter changed: update
   end
 
   function toolbar.list_toolbar_update()
@@ -194,9 +228,10 @@ if toolbar then
         end
       end
     end
+    set_list_width()
     toolbar.sel_left_bar()
     toolbar.list_toolbar_update()
-    toolbar.show(toolbar.list_tb)
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)
     --check menuitem
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
