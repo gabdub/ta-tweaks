@@ -56,6 +56,8 @@ actions.status= {
   ["set_tab_3"]= function() return(buffer.tab_width == 3 and 3 or 4) end,
   ["set_tab_4"]= function() return(buffer.tab_width == 4 and 3 or 4) end,
   ["set_tab_8"]= function() return(buffer.tab_width == 8 and 3 or 4) end,
+  ["set_tab_12"]=function() return(buffer.tab_width == 12 and 3 or 4) end,
+  ["set_tab_16"]=function() return(buffer.tab_width == 16 and 3 or 4) end,
 
   ["set_eol_crlf"]= function() return(buffer.eol_mode == buffer.EOL_CRLF and 19 or 20) end, --first-radio
   ["set_eol_lf"]=   function() return(buffer.eol_mode == buffer.EOL_LF   and 3 or 4) end,
@@ -278,6 +280,8 @@ actions.list = {
   ["set_tab_3"]=            {_L['Tab width: _3'], function() set_indentation(3) end}, --radio
   ["set_tab_4"]=            {_L['Tab width: _4'], function() set_indentation(4) end}, --radio
   ["set_tab_8"]=            {_L['Tab width: _8'], function() set_indentation(8) end}, --radio
+  ["set_tab_12"]=           {'Tab width: _12',function() set_indentation(12) end}, --radio
+  ["set_tab_16"]=           {'Tab width: 1_6',function() set_indentation(16) end}, --radio
   ["toggle_usetabs"]=       {_L['_Toggle Use Tabs'], function() --check
       buffer.use_tabs = not buffer.use_tabs
       events.emit(events.UPDATE_UI) -- for updating statusbar
@@ -444,7 +448,7 @@ actions.menubar = {
     {"next_buffer","prev_buffer","switch_buffer",SEPARATOR},
     {
       title = _L['_Indentation'],
-      {"set_tab_2","set_tab_3","set_tab_4","set_tab_8",SEPARATOR,
+      {"set_tab_2","set_tab_3","set_tab_4","set_tab_8","set_tab_12","set_tab_16",SEPARATOR,
        "toggle_usetabs","convert_indentation"}
     },
     {

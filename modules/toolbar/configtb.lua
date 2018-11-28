@@ -337,7 +337,7 @@ local function _add_config_radio(name,text,tooltip,checked)
   if tooltip == nil then tooltip="" end
   --text
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext, true)
+  toolbar.addlabel(text, tooltip, toolbar.cfgpnl_xcontrol-toolbar.cfgpnl_xtext, true, false, name.."_lbl")
   --radio button
   toolbar.gotopos(toolbar.cfgpnl_xcontrol, toolbar.cfgpnl_y)
   toolbar.cmd_radio(name,tooltip,checked)
@@ -564,6 +564,7 @@ function toolbar.load_config(dontset_toolbar)
     for line in f:lines() do
       rname,rnum= string.match(line, "([^;]-):(.+)")
       if rname then
+        rnum= Util.str_trim(rnum)
         if readlexer then
           toolbar.cfgpnl_lexer_indent[rname]=rnum
         elseif rname == "LEXER" and rnum == "INDENT" then
@@ -619,17 +620,29 @@ local function get_lexer_ind_width(lexer)
   return string.match(ind,"[st](.-)$")
 end
 
+def_lexer_shown=""
+local function update_lexerdefaults(force)
+  local lx= get_lexer()
+  if lx and (force or (def_lexer_shown ~= lx)) then
+    def_lexer_shown= lx
+    toolbar.settext("bfindent:1_lbl","Use "..lx.." default ("..get_lexer_ind_width(lx)..")" )
+    toolbar.settext("bfusetab:1_lbl","Use "..lx.." default ("..(get_lexer_ind_use_tabs(lx) and "tabs" or "spaces")..")" )
+  end
+end
+
 local function set_lexer_cfg()
   --Use current settings as Lexer default
   local lexer= get_lexer()
   local indent=string.format('%s%d', buffer.use_tabs and 't' or 's', buffer.tab_width)
   toolbar.cfgpnl_lexer_indent[lexer]=indent
   toolbar.config_change=true
+  update_lexerdefaults(true)
 end
 
 function toolbar.set_buffer_cfg()
   toolbar.set_radio_val("bfindent", (buffer._cfg_bfindent ~= nil and buffer._cfg_bfindent or 1))
   toolbar.set_radio_val("bfusetab", (buffer._cfg_bfusetab ~= nil and buffer._cfg_bfusetab or 1))
+  update_lexerdefaults()
   local em=1
   if buffer._cfg_bfeol ~= nil then  em= buffer._cfg_bfeol
   elseif buffer.eol_mode == buffer.EOL_LF then em=2 end
@@ -668,6 +681,8 @@ local function set_buffer_indent_as_cfg(updateui)
   elseif iw == 3 then   buffer.tab_width= 3
   elseif iw == 4 then   buffer.tab_width= 4
   elseif iw == 5 then   buffer.tab_width= 8
+  elseif iw == 6 then   buffer.tab_width= 12
+  elseif iw == 7 then   buffer.tab_width= 16
   else                  buffer.tab_width= get_lexer_ind_width(get_lexer())   end
   --indentation char
   local ut= buffer._cfg_bfusetab
@@ -681,6 +696,8 @@ local function set_buffer_indent_as_cfg(updateui)
   actions.updateaction("set_tab_3")
   actions.updateaction("set_tab_4")
   actions.updateaction("set_tab_8")
+  actions.updateaction("set_tab_12")
+  actions.updateaction("set_tab_16")
   actions.updateaction("toggle_usetabs")
 end
 
@@ -691,6 +708,8 @@ function toolbar.setcfg_from_tabwidth()
   elseif buffer.tab_width == 3 then buffer._cfg_bfindent= 3
   elseif buffer.tab_width == 4 then buffer._cfg_bfindent= 4
   elseif buffer.tab_width == 8 then buffer._cfg_bfindent= 5
+  elseif buffer.tab_width == 12 then buffer._cfg_bfindent= 6
+  elseif buffer.tab_width == 16 then buffer._cfg_bfindent= 7
   else buffer._cfg_bfindent= 1 end
   update_buffer_cfg()
 end
@@ -804,6 +823,8 @@ local function add_buffer_cfg_panel()
   cont_config_radio("Tab width: 3")
   cont_config_radio("Tab width: 4")
   cont_config_radio("Tab width: 8")
+  cont_config_radio("Tab width: 12")
+  cont_config_radio("Tab width: 16")
   toolbar.set_notify_on_change("bfindent",buf_indent_change)
 
   add_config_label("Spaces/tabs")
