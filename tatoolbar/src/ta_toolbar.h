@@ -356,7 +356,6 @@ struct minimap_line
 
 struct minimap_data
 {
-  //struct toolbar_item * pminimap; //item that shows the mini-map or NULL
   struct minimap_line * lines;    //lines info
   int height;       //visible height in pixels = toolbar height
   int buffnum;      //asociated buffer ID

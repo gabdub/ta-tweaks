@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.21 (Nov 27 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.21 (Nov 28 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -333,6 +333,7 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
 static void free_item_node( struct toolbar_item * p )
 {
   int i;
+  struct toolbar_group * g= p->group;
   if( ttb.cpick.ppicker == p ){
     ttb.cpick.ppicker= NULL;
   }
@@ -348,9 +349,25 @@ static void free_item_node( struct toolbar_item * p )
   if( ttb.cpick.pchosenB == p ){
     ttb.cpick.pchosenB= NULL;
   }
-  //if( ttb.minimap.pminimap == p ){
-    //ttb.minimap.pminimap= NULL;
-  //}
+  if( (ttb.philight == p)||(ttb.phipress == p)||(ttb.pdrag == p) ){
+    ttb.philight= NULL;
+    ttb.phipress= NULL;
+    ttb.pdrag=    NULL;
+  }
+  if( g != NULL ){
+    //remove item from group list
+    if( g->list == p ){
+      g->list= p->next;
+    }
+    if( g->list_last == p ){
+      g->list_last= g->list;
+      if( g->list_last != NULL ){
+        while( g->list_last->next != NULL ){
+          g->list_last= g->list_last->next;
+        }
+      }
+    }
+  }
   if(p->name != NULL){
     free((void*)p->name);
   }
@@ -467,7 +484,6 @@ void free_tatoolbar( void )
   ttb.cpick.pchosenG= NULL;
   ttb.cpick.pchosenB= NULL;
 
-  //ttb.minimap.pminimap= NULL;
   free_minimap_lines();
 }
 
@@ -2730,7 +2746,6 @@ void init_tatoolbar_vars( void )
   ttb.cpick.pchosenB= NULL;
 
   //init MINI MAP vars
-  //ttb.minimap.pminimap= NULL;
   ttb.minimap.lines= NULL;
   ttb.minimap.height= -1;
   ttb.minimap.buffnum= -1;
