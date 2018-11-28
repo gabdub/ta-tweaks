@@ -272,7 +272,10 @@ actions.list = {
       buffer.view_ws = buffer.view_ws == 0 and buffer.WS_VISIBLEALWAYS or 0
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
-  ["select_lexer"]=         {_L['Select _Lexer...'], textadept.file_types.select_lexer},
+  ["select_lexer"]=         {_L['Select _Lexer...'], function()
+      textadept.file_types.select_lexer()
+      if toolbar then toolbar.update_lexerdefaults() end --update config panel
+    end},
   ["refresh_syntax"]=       {_L['_Refresh Syntax Highlighting'], function() buffer:colourise(0, -1) end},
 
 --BUFFER + INDENTATION

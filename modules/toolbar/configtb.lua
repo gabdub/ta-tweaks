@@ -621,7 +621,7 @@ local function get_lexer_ind_width(lexer)
 end
 
 def_lexer_shown=""
-local function update_lexerdefaults(force)
+function toolbar.update_lexerdefaults(force)
   local lx= get_lexer()
   if lx and (force or (def_lexer_shown ~= lx)) then
     def_lexer_shown= lx
@@ -636,13 +636,13 @@ local function set_lexer_cfg()
   local indent=string.format('%s%d', buffer.use_tabs and 't' or 's', buffer.tab_width)
   toolbar.cfgpnl_lexer_indent[lexer]=indent
   toolbar.config_change=true
-  update_lexerdefaults(true)
+  toolbar.update_lexerdefaults(true)
 end
 
 function toolbar.set_buffer_cfg()
   toolbar.set_radio_val("bfindent", (buffer._cfg_bfindent ~= nil and buffer._cfg_bfindent or 1))
   toolbar.set_radio_val("bfusetab", (buffer._cfg_bfusetab ~= nil and buffer._cfg_bfusetab or 1))
-  update_lexerdefaults()
+  toolbar.update_lexerdefaults()
   local em=1
   if buffer._cfg_bfeol ~= nil then  em= buffer._cfg_bfeol
   elseif buffer.eol_mode == buffer.EOL_LF then em=2 end
