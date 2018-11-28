@@ -3,7 +3,7 @@
 if toolbar then
   toolbar.listtb_hide_p= false
 
-  local titgrp, itemsgrp
+  local titgrp, itemsgrp, firsttag
   local function list_clear()
     --remove all items
     toolbar.tag_list= {}
@@ -12,6 +12,7 @@ if toolbar then
     toolbar.listtb_y= 1
     toolbar.listright= toolbar.listwidth
     toolbar.sel_left_bar(titgrp,true) --empty title group
+    firsttag= nil
   end
 
   local function set_list_width()
@@ -41,13 +42,14 @@ if toolbar then
 
     list_clear()
     if actions then
-      toolbar.idviewlisttb= actions.add("toggle_viewlisttb", 'Show LIST Tool_Bar', toolbar.list_toolbar_onoff, "sf10", "t_struct", function()
+      toolbar.idviewlisttb= actions.add("toggle_viewctaglist", 'Show _Ctag List', toolbar.list_toolbar_onoff, "sf10", "t_struct", function()
         return (toolbar.list_tb and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_View'])
       if med then
         local m=med[#med]
-        m[#m+1]= "toggle_viewlisttb"
+        m[#m+1]= "toggle_viewctaglist"
       end
+      actions.add("filter_ctaglist", 'Filter Ctag _List', toolbar.list_find_sym, "cf10", "edit-find")
     end
     toolbar.list_tb= false --hide for now...
     toolbar.show(false, toolbar.listwidth)
@@ -59,6 +61,12 @@ if toolbar then
     toolbar.listright= toolbar.listright - toolbar.cfg.butsize
     toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
     toolbar.cmd(name, funct, tooltip or "", name, true)
+  end
+
+  local function list_addaction(action)
+    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
+    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
+    toolbar.addaction(action)
   end
 
   local function list_addinfo(text,bold)
@@ -94,16 +102,18 @@ if toolbar then
 
   local function filter_ctags()
     --show the tags that pass the filter
+    firsttag= nil
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.listtb_y= 3
     if #toolbar.tag_list == 0 then
       list_addinfo('No CTAGS found in this file')
     else
+      local filter= Util.escape_filter(toolbar.tag_list_find)
       local y= 3
       local n=0
       for i=1,#toolbar.tag_list do
         local name=  toolbar.tag_list[i][2]
-        if toolbar.tag_list_find == '' or name:match(toolbar.tag_list_find) then
+        if filter == '' or name:match(filter) then
           local gt= toolbar.tag_list[i][1]
           local bicon= toolbar.tag_list[i][3]
           toolbar.gotopos( 3, y)
@@ -112,6 +122,7 @@ if toolbar then
           toolbar.addtext(gt, name, "")
           toolbar.cmds_n[gt]= gototag
           y= y + toolbar.cfg.butsize
+          if not firsttag then firsttag= gt end
           n= n+1
         end
       end
@@ -155,7 +166,7 @@ if toolbar then
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
     list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
-    list_addbutton("edit-find", "Find symbol [F11]", toolbar.list_find_sym)
+    list_addaction("filter_ctaglist")
     list_addinfo(fname, true)
     for i = 1, #tag_files do
       local dir = tag_files[i]:match('^.+[/\\]')
@@ -174,12 +185,16 @@ if toolbar then
   end
 
   function toolbar.list_find_sym()
+    if not toolbar.list_tb then toolbar.list_toolbar_onoff() end
     local orgfind = toolbar.tag_list_find
     local word = ''
     r,word= ui.dialogs.inputbox{title = 'Tag search', width = 400, text = toolbar.tag_list_find}
     toolbar.tag_list_find= ''
-    if r == 1 then toolbar.tag_list_find= Util.escape_match(Util.str_trim(word)) end
-    if orgfind ~= toolbar.tag_list_find then filter_ctags() end --filter changed: update
+    if r == 1 then toolbar.tag_list_find= word end
+    if orgfind ~= toolbar.tag_list_find then --filter changed: update
+      filter_ctags()
+      if firsttag and toolbar.tag_list_find ~= '' then gototag(firsttag) end
+    end
   end
 
   function toolbar.list_toolbar_update()
@@ -236,8 +251,8 @@ if toolbar then
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
     if actions then
-      actions.updateaction("toggle_viewlisttb")
-      toolbar.selected("toggle_viewlisttb", false, toolbar.list_tb)
+      actions.updateaction("toggle_viewctaglist")
+      toolbar.selected("toggle_viewctaglist", false, toolbar.list_tb)
     end
   end
 

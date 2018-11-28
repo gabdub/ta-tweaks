@@ -48,7 +48,7 @@ if toolbar then
   --create list toolbar
   if toolbar.createlisttb then
     toolbar.createlisttb()
-    toolbar.addaction("toggle_viewlisttb")
+    toolbar.addaction("toggle_viewctaglist")
   end
 
   if Proj then

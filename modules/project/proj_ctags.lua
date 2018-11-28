@@ -126,9 +126,6 @@ function Proj.goto_tag(ask)
     return
   end
 
-  --if ctags list is open, find symbol in this file
-  if toolbar.list_tb then toolbar.list_find_sym() return end
-
   local word = ''
   local s, e = buffer.selection_start, buffer.selection_end
   if s == e or ask then

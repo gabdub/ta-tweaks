@@ -88,6 +88,12 @@ function Util.escape_match(x)
             :gsub('%*', '%%*'):gsub('%+', '%%+'):gsub('%-', '%%-'):gsub('%?', '%%?') )
 end
 
+function Util.escape_filter(x)
+  --trim spaces at the end/begin and replace inner spaces with wildards (.-)
+  local f= Util.escape_match(Util.str_trim(x))
+  return( f:gsub(' ','.-') )
+end
+
 function Util.sort_buffer(b)
   if not b then b= buffer end
   local ls= {}
