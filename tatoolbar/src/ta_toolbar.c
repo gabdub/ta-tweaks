@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.21 (Nov 28 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.22 (Nov 29 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -2701,7 +2701,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
 void paint_vscrollbar(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
 {
   struct toolbar_img * img;
-  int imgborders;
+  int imgborders, h;
   int vis= ht;
   int tot= g->bary2 - g->bary1;
   int yb= y0;
@@ -2710,7 +2710,11 @@ void paint_vscrollbar(struct toolbar_group *g, void * gcontext, struct area * pd
   //draw the scrollbar background
   draw_fill_mp_img(gcontext, get_group_img(g,TTBI_TB_VERTSCR_BACK), x0, y0, wt, ht );
   //draw the bar
-  img= get_group_img(g,TTBI_TB_VERTSCR_NORM);
+  h= TTBI_TB_VERTSCR_NORM;
+  if( (ttb.philight != NULL) && ((ttb.philight->flags & TTBF_SCROLL_BAR) != 0) ){
+    h= TTBI_TB_VERTSCR_HILIGHT;
+  }
+  img= get_group_img(g,h);
   if( img != NULL ){
     imgborders= img->height_t + img->height_b;
     if( (vis < tot) && (tot > 1) && (vis > imgborders) ){

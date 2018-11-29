@@ -1378,6 +1378,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           }
         }
       }else{
+        if( ttb.pdrag != NULL ){
+          set_hilight_off();  //cancel drag highlight
+        }
         redraw_item(p);      //redraw button under mouse (if any)
         if( ttb.ntbhilight == T->num ){
           redraw_item(ttb.philight); //redraw highlighted button (if any in this toolbar)

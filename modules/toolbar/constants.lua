@@ -64,6 +64,7 @@ toolbar.TTBI_TB = {
   VERT_SCROLL   = 66,
     VERTSCR_BACK  = 66,   --vertical scrollbar background
     VERTSCR_NORM  = 67,   --bar
+    VERTSCR_HILIGHT=69,
   N             = 72
 }
 
