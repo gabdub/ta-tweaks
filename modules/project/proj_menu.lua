@@ -158,26 +158,26 @@ if actions then
     {"close","close_others","dont_close","closeall",SEPARATOR,
      "save","saveas",SEPARATOR,
      "showin_rightpanel",SEPARATOR,
-     "reload"}
+     "reload","copyfilename"}
   }
 
   --right-click context menus
   local proj_context_menu = {
     { --#1 project in SELECTION mode
       {"open_projsel","open_projectdir",SEPARATOR,
-         "toggle_editproj","toggle_viewproj",SEPARATOR,
+         "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
          "adddirfiles_proj",SEPARATOR,
          "show_documentation", "search_project","search_sel_dir","search_sel_file"}
     },
     { --#2 project in EDIT mode
       {"undo","redo",SEPARATOR,
-       "cut","copy","paste","delete_char",SEPARATOR,
+       "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
        "selectall",SEPARATOR,
        "_end_editproj"}
     },
     { --#3 regular file
       {"undo","redo",SEPARATOR,
-       "cut","copy","paste","delete_char",SEPARATOR,
+       "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
        "selectall"
       },
       {

@@ -96,6 +96,7 @@ actions.list = {
   ["redo"]=                 {_L['_Redo'], buffer.redo},
   ["cut"]=                  {_L['Cu_t'], buffer.cut},
   ["copy"]=                 {_L['_Copy'], buffer.copy},
+  ["copyfilename"]=         {_L['_Copy']..' filename', function () buffer:copy_text( buffer.filename or "") end},
   ["paste"]=                {_L['_Paste'], buffer.paste},
   ["duplicate_line"]=       {_L['Duplicate _Line'], buffer.line_duplicate},
   ["delete_char"]=          {_L['_Delete'], buffer.clear},
@@ -402,7 +403,7 @@ actions.menubar = {
   {
     title = _L['_Edit'],
     {"undo","redo",SEPARATOR,
-     "cut","copy","paste","duplicate_line","delete_char","delete_word","delete_line","selectall",SEPARATOR,
+     "cut","copy","paste","duplicate_line","delete_char","delete_word","delete_line","selectall","copyfilename",SEPARATOR,
      "match_brace","complete_word","highlight_word","toggle_comment","transpose_chars",
      "join_lines","filterthrough"},
     {
@@ -492,7 +493,7 @@ end
 ---
 actions.context_menu = {
   {"undo","redo",SEPARATOR,
-   "cut","copy","paste","delete_char",SEPARATOR,
+   "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
    "selectall"}
 }
 
@@ -502,7 +503,7 @@ actions.context_menu = {
 actions.tab_context_menu = {
   {"close",SEPARATOR,
    "save","saveas",SEPARATOR,
-   "reload"}
+   "reload","copyfilename"}
 }
 
 function actions.getmenu_fromtitle(tit)
