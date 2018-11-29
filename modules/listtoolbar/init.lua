@@ -11,6 +11,7 @@ if toolbar then
     toolbar.tag_list_find= ""
     toolbar.listtb_y= 1
     toolbar.listright= toolbar.listwidth
+    toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.sel_left_bar(titgrp,true) --empty title group
     firsttag= nil
   end
