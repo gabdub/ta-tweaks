@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.22 (Nov 29 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.23 (Dec 5 2018)"
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -1792,8 +1792,8 @@ void set_tabtextG(struct toolbar_group *G, int ntab, const char * text, const ch
       p->postw= 0;
       p->bary2= 0;
     }
-    p->imgx=  p->prew;	//text start
-    p->imgy=  G->tabtexty;
+    p->txtx=  p->prew;	//text start
+    p->txty=  G->tabtexty;
     p->textwidth= 0;
     set_tabwidth(p);
     //group size changed, update toolbar
@@ -1990,6 +1990,7 @@ void ttb_change_button_textT(struct toolbar_data *T, const char *name, const cha
         p->barx1 += dif;
         p->barx2 += dif;
         p->imgx += dif;
+        p->txtx += dif;
         p= p->next;
       }
       //group size changed, update toolbar
@@ -2555,7 +2556,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
   if( G->closeintabs ){
     draw_img(gcontext, get_group_img(G,hc), x3, y, 0 );
   }
-  draw_txt(gcontext, t->text, x+t->imgx, y+t->imgy, y, x3-x-t->imgx, ht, color, G->tabfontsz, 0 );
+  draw_txt(gcontext, t->text, x+t->txtx+t->offx, y+t->txty+t->offy, y, x3-x-t->txtx-t->offx, ht, color, G->tabfontsz, 0 );
 }
 
 void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
@@ -2632,8 +2633,6 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
     y0 -= g->yvscroll;  //vertical scroll support
     g->flags |= TTBF_GRP_LASTIT_SH;
     for( p= g->list; (p != NULL); p= p->next ){
-      x= x0 + p->imgx;
-      y= y0 + p->imgy;
       if( (y0+p->bary1) >= g->toolbar->barheight ){
         g->flags &= ~TTBF_GRP_LASTIT_SH;    //item outside of view
         break;
@@ -2667,6 +2666,8 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
         }
         if( (p->flags & TTBF_TEXT) == 0 ){
           //graphic button
+          x= x0 + p->imgx + p->offx;
+          y= y0 + p->imgy + p->offy;
           h= TTBI_NORMAL;
           if( (p->flags & TTBF_GRAYED) != 0){
             struct toolbar_img * di= get_item_img(p,TTBI_DISABLED,p->imgbase);
@@ -2681,12 +2682,11 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
           draw_img(gcontext, get_item_img(p,h,p->imgbase), x, y, grayed );
         }else{
           //text button
+          x= x0 + p->txtx + p->offx;
+          y= y0 + p->txty + p->offy;
           color= &(g->txttextcolN);
           if( (p->flags & TTBF_GRAYED) != 0){
             color= &(g->txttextcolG);
-          }
-          if( (p->flags & TTBF_TEXT_LEFT) != 0){
-            x= x0 + p->barx1 + p->prew; //text is left aligned
           }
           xa= x0 + p->barx2 - p->postw;
           draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa-x+1, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD) );
@@ -2843,7 +2843,7 @@ void ttb_addbutton( const char *name, const char *tooltip, int base )
   }
 }
 
-void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold)
+void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold, int xoff, int yoff)
 {
   struct toolbar_item * p;
   int flags= 0;
@@ -2860,12 +2860,16 @@ void ttb_addtext( const char * name, const char * img, const char *tooltip, cons
       flags |= TTBF_TEXT_BOLD; //use bold
     }
     p= add_itemG( g, name, img, tooltip, text, chwidth, flags );
+    if( p != NULL ){
+      p->offx= xoff;
+      p->offy= yoff;
+    }
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw
   }
 }
 
-void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags )
+void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags, int xoff, int yoff )
 {
   struct toolbar_item * p;
   struct toolbar_group * g= current_buttongrp();
@@ -2874,6 +2878,8 @@ void ttb_addlabel( const char * name, const char * img, const char *tooltip, con
     p= add_itemG( g, name, img, tooltip, text, chwidth, flags );
     if( p != NULL ){
       p->flags &= ~TTBF_SELECTABLE; //remove the selectable flag (it's not a button)
+      p->offx= xoff;
+      p->offy= yoff;
     }
     //group size changed, update toolbar
     update_group_sizeG(g, 1); //redraw

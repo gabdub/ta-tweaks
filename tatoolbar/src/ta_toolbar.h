@@ -215,7 +215,10 @@ struct toolbar_item
   int barx1, bary1;   //item positions are relatives to the parent
   int barx2, bary2;
 
-  int imgx, imgy;
+  int offx, offy;     //position image/text inside the bar
+  int imgx, imgy;     //image position relative to (barx1, bary1)+(offx, offy)
+  int txtx, txty;     //text  position relative to (barx1, bary1)+(offx, offy)
+
   int textwidth;      //text width in pixels
   int changewidth;    //0=use text width, >0=use this value in pixels, <0= % of toolbar.width
   int minwidth;       //min tab width
@@ -495,8 +498,8 @@ int  get_group_imgW( struct toolbar_group *G, int nimg );
 int  get_group_imgH( struct toolbar_group *G, int nimg );
 void select_toolbar_n( int num, int ngrp, int emptygroup );
 void ttb_addbutton( const char *name, const char *tooltip, int base );
-void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold);
-void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags );
+void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold, int xoff, int yoff);
+void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags, int xoff, int yoff );
 void ttb_enable( const char * name, int isenabled, int onlythistb );
 void ttb_setselected( const char * name, int selected, int pressed, int onlythistb );
 void ttb_ensurevisible( const char * name, int onlythistb );

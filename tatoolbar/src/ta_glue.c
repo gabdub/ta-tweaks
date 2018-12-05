@@ -144,15 +144,16 @@ static int ltoolbar_addbutton(lua_State *L)
   return 0;
 }
 
-/** `toolbar.addtext(name,text,tooltiptext,width,dropbutton,leftalign,bold)` Lua function. */
+/** `toolbar.addtext(name,text,tooltiptext,width,dropbutton,leftalign,bold,xoff,yoff)` Lua function. */
 static int ltoolbar_addtext(lua_State *L)
 {
   ttb_addtext( luaL_checkstring(L, 1), NULL, luaL_checkstring(L, 3), luaL_checkstring(L, 2),
-    lua_tointeger(L, 4), lua_toboolean(L,5), lua_toboolean(L,6), lua_toboolean(L,7));
+    lua_tointeger(L, 4), lua_toboolean(L,5), lua_toboolean(L,6), lua_toboolean(L,7),
+    lua_tointeger(L, 8), lua_tointeger(L, 9));
   return 0;
 }
 
-/** `toolbar.addlabel(text,tooltiptext,width,leftalign,bold,name)` Lua function. */
+/** `toolbar.addlabel(text,tooltiptext,width,leftalign,bold,name,xoff,yoff)` Lua function. */
 static int ltoolbar_addlabel(lua_State *L)
 {
   int flags= 0;
@@ -162,7 +163,8 @@ static int ltoolbar_addlabel(lua_State *L)
   if( lua_toboolean(L,5) ){
     flags |= TTBF_TEXT_BOLD; //use bold
   }
-  ttb_addlabel( lua_tostring(L,6), NULL, luaL_checkstring(L, 2), luaL_checkstring(L, 1), lua_tointeger(L, 3), flags );
+  ttb_addlabel( lua_tostring(L,6), NULL, luaL_checkstring(L, 2), luaL_checkstring(L, 1),
+                lua_tointeger(L, 3), flags, lua_tointeger(L, 4), lua_tointeger(L, 5) );
   return 0;
 }
 
@@ -1128,12 +1130,14 @@ int set_text_bt_width(struct toolbar_item * p )
       p->postw= 4;
     }
 
-    p->imgx= p->barx1 + p->prew;
-    p->imgy= p->bary1 + G->txttexty;
-    p->barx2= p->imgx + p->textwidth + p->postw;
+    p->txtx= p->barx1 + p->prew;  //left align
+    p->txty= p->bary1 + G->txttexty;
+    p->barx2= p->txtx + p->textwidth + p->postw;
     if( p->barx2 < (p->barx1+p->minwidth)){
-      //expand button (center text)
-      p->imgx += (p->barx1 + p->minwidth - p->barx2)/2;
+      //expand button
+      if( (p->flags & TTBF_TEXT_LEFT) == 0){  //center text
+        p->txtx += (p->barx1 + p->minwidth - p->barx2)/2;
+      }
       p->barx2= p->barx1+p->minwidth;
     }
     if( (p->maxwidth > 0) && (p->barx2 > (p->barx1+p->maxwidth)) ){

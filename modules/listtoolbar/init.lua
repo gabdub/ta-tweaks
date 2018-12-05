@@ -119,9 +119,9 @@ if toolbar then
           local gt= toolbar.tag_list[i][1]
           local bicon= toolbar.tag_list[i][3]
           toolbar.gotopos( 3, y)
-          toolbar.cmd(gt, gototag, "", bicon, true)
-          toolbar.gotopos( toolbar.cfg.barsize, y)
-          toolbar.addtext(gt, name, "")
+          toolbar.addtext(gt, name, "", toolbar.listwidth-13, false, true, false, toolbar.cfg.barsize, 0)
+          toolbar.gotopos( 3, y)
+          toolbar.cmd("ico-"..gt, gototag, "", bicon, true)
           toolbar.cmds_n[gt]= gototag
           y= y + toolbar.cfg.butsize
           if not firsttag then firsttag= gt end
