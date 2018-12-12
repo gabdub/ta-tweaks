@@ -34,6 +34,8 @@ if toolbar then
   --require('htmltoolbar')
   require('listtoolbar')
   --toolbar.listwidth= 250
+  require('listtoolbar.ctaglist')
+  require('listtoolbar.projlist')
 
   --set the configured theme
   toolbar.set_theme_from_config()
@@ -48,7 +50,7 @@ if toolbar then
   --create list toolbar
   if toolbar.createlisttb then
     toolbar.createlisttb()
-    toolbar.addaction("toggle_viewctaglist")
+    toolbar.addaction("toggle_viewlist")
   end
 
   if Proj then

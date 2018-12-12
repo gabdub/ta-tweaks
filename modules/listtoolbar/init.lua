@@ -116,7 +116,7 @@ if toolbar then
     --toolbar.cmd("window-close", toolbar.list_toolbar_onoff, "Close list [Shift+F10]", "window-close", true)
 
     if actions then
-      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "sf10", "document-properties", function()
+      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "sf10", "view-list-compact-symbolic", function()
         return (toolbar.list_tb and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_View'])
       if med then
