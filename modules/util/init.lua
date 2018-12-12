@@ -42,10 +42,20 @@ function Util.goto_line(p_buffer,line)
   p_buffer:goto_line(line)
 end
 
+
 -- Returns the Path, Filename, and Extension of a filename as 3 strings
 function Util.splitfilename(strfilename)
   if not strfilename then return {'','',''} end
   return string.match(strfilename, "(.-)([^\\/]-%.?([^%.\\/]*))$")
+end
+
+-- Returns the Filename (+Extension) of a filename as a string
+function Util.getfilename(strfilename, addext)
+  local p,f,e= Util.splitfilename(strfilename)
+  if not p then return '' end
+  if addext or (#e == 0) or (f==e) then return f end
+  --remove extension
+  return f:sub(1,-(#e+2))
 end
 
 --remove blanks and CR/LF

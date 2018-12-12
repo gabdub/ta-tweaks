@@ -5,6 +5,7 @@ if toolbar then
 
   local function list_clear()
     --remove all items
+    toolbar.listtb_y= 1
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.sel_left_bar(titgrp,true) --empty title group
   end

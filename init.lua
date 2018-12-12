@@ -34,8 +34,9 @@ if toolbar then
   --require('htmltoolbar')
   require('listtoolbar')
   --toolbar.listwidth= 250
-  require('listtoolbar.ctaglist')
+  require('listtoolbar.recentprojlist')
   require('listtoolbar.projlist')
+  require('listtoolbar.ctaglist')
 
   --set the configured theme
   toolbar.set_theme_from_config()

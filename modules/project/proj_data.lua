@@ -151,6 +151,8 @@ function Proj.add_recentproject(prjfile)
   end
   --save new list on exit
   Proj.prjlist_change =  true
+  --update recent project list
+  if toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
 end
 
 -- TA-EVENT INITIALIZED
