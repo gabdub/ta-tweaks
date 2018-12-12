@@ -616,8 +616,8 @@ function Proj.run_command(cmd)
           Proj.last_run_tmpfile= nil
         end
         --ctags? update list toolbar
-        if toolbar.list_toolbar_update then
-          if Proj.last_run_command:match('ctags') then toolbar.list_toolbar_update() end
+        if toolbar.ctaglist_update then
+          if Proj.last_run_command:match('ctags') then toolbar.ctaglist_update() end
         end
       end)
     ui.statusbar_text= 'RUNNING: '..Proj.last_run_command

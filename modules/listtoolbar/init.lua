@@ -1,20 +1,27 @@
 -- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
-  toolbar.listtb_hide_p= false
+  local events, events_connect = events, events.connect
+  local selectgrp, currlist, currlistidx
 
-  local titgrp, itemsgrp, firsttag
-  local function list_clear()
-    --remove all items
-    toolbar.tag_list= {}
-    toolbar.tag_listedfile= ""
-    toolbar.tag_list_find= ""
-    toolbar.listtb_y= 1
-    toolbar.listright= toolbar.listwidth
-    toolbar.sel_left_bar(itemsgrp,true) --empty items group
-    toolbar.sel_left_bar(titgrp,true) --empty title group
-    firsttag= nil
+  toolbar.listtb_hide_p= false
+  toolbar.listselections= {}
+
+  local function listtb_switch()
+    --{name, tooltip, icon, createfun, notify, show}
+    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](true) end
   end
+
+  local function listtb_update()
+    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](false) end
+  end
+
+  events_connect(events.BUFFER_AFTER_SWITCH,  listtb_switch)
+  events_connect(events.VIEW_AFTER_SWITCH,    listtb_switch)
+  events_connect(events.BUFFER_NEW,           listtb_update)
+  events_connect(events.FILE_OPENED,          listtb_update)
+  events_connect(events.FILE_CHANGED,         listtb_update)
+  events_connect(events.FILE_AFTER_SAVE,      listtb_update)
 
   local function set_list_width()
     if not toolbar.listwidth then toolbar.listwidth=250 end
@@ -22,7 +29,58 @@ if toolbar then
     if toolbar.listwidth < 100 then toolbar.listwidth=100 end
   end
 
+  function toolbar.list_addbutton(name, tooltip, funct)
+    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
+    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
+    toolbar.cmd(name, funct, tooltip or "", name, true)
+  end
+
+  function toolbar.list_addaction(action)
+    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
+    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
+    toolbar.addaction(action)
+  end
+
+  function toolbar.list_addinfo(text,bold)
+    --add a text to the list
+    toolbar.gotopos( 3, toolbar.listtb_y)
+    toolbar.addlabel(text, "", toolbar.listright, true, bold)
+    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
+    toolbar.listright= toolbar.listwidth
+  end
+
+  function toolbar.select_list(listname, donthide)
+    if listname == currlist then
+      --click on the active list= hide toolbar
+      if not donthide then toolbar.list_toolbar_onoff() end
+    else
+      --change the active list
+      toolbar.selected(currlist, false, false)
+      if currlistidx > 0 then toolbar.listselections[currlistidx][6](false) end --hide list items
+      for i=1,#toolbar.listselections do
+        if toolbar.listselections[i][1] == listname then
+          currlist= listname
+          currlistidx= i
+          break
+        end
+      end
+      toolbar.selected(currlist, false, true)
+      if currlistidx > 0 then toolbar.listselections[currlistidx][6](true) end --show list items
+      listtb_update()
+    end
+  end
+
+  function toolbar.islistshown(name)
+    return (toolbar.list_tb) and (currlist==name)
+  end
+
+  function toolbar.registerlisttb(name, tooltip, icon, createfun, notify, showlist)
+    toolbar.listselections[#toolbar.listselections+1]= {name, tooltip, icon, createfun, notify, showlist}
+  end
+
   function toolbar.createlisttb()
+    currlist=""
+    currlistidx=0
     toolbar.sel_left_bar()
     set_list_width()
     --create a new empty toolbar
@@ -31,197 +89,45 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
+    toolbar.themed_icon(toolbar.globalicon, "ttb-button-active", toolbar.TTBI_TB.BUT_SELECTED)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-back", toolbar.TTBI_TB.VERTSCR_BACK)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
-    --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.FIRST, 0, toolbar.cfg.barsize)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-    --items group: fixed width=300 / height=use buttons + vertical scroll
-    itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0) --show v-scroll when needed
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
 
-    list_clear()
+    --list select group: fixed width=300 / align top + fixed height
+    selectgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.FIRST, 0, toolbar.cfg.barsize)
+
+    local x= 3
+    if #toolbar.listselections > 0 then
+      for i=1,#toolbar.listselections do
+        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
+        ls[4]() --create list
+
+        toolbar.sel_left_bar(selectgrp)
+        toolbar.gotopos(x, 1)
+        toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
+        x= x + toolbar.cfg.butsize
+      end
+      currlistidx=1
+      currlist= toolbar.listselections[currlistidx][1] --activate the first one
+      toolbar.selected(currlist, false, true)
+    end
+    --toolbar.gotopos(x, 1)
+    --toolbar.cmd("window-close", toolbar.list_toolbar_onoff, "Close list [Shift+F10]", "window-close", true)
+
     if actions then
-      toolbar.idviewlisttb= actions.add("toggle_viewctaglist", 'Show _Ctag List', toolbar.list_toolbar_onoff, "sf10", "t_struct", function()
+      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "sf10", "document-properties", function()
         return (toolbar.list_tb and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_View'])
       if med then
         local m=med[#med]
-        m[#m+1]= "toggle_viewctaglist"
+        m[#m+1]= "toggle_viewlist"
       end
-      actions.add("filter_ctaglist", 'Filter Ctag _List', toolbar.list_find_sym, "cf10", "edit-find")
     end
     toolbar.list_tb= false --hide for now...
     toolbar.show(false, toolbar.listwidth)
 
     toolbar.sel_top_bar()
-  end
-
-  local function list_addbutton(name, tooltip, funct)
-    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
-    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
-    toolbar.cmd(name, funct, tooltip or "", name, true)
-  end
-
-  local function list_addaction(action)
-    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
-    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
-    toolbar.addaction(action)
-  end
-
-  local function list_addinfo(text,bold)
-    --add a text to the list
-    toolbar.gotopos( 3, toolbar.listtb_y)
-    toolbar.addlabel(text, "", toolbar.listright, true, bold)
-    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
-    toolbar.listright= toolbar.listwidth
-  end
-
-  local function gototag(cmd)
-    Proj.getout_projview()
-    local linenum= tonumber(string.match(cmd,".-#(.*)"))
-    Util.goto_line(buffer, linenum-1)
-    buffer:vertical_centre_caret()
-  end
-
-  local function list_addtag(name, line, ext_fields)
-    --add an item to the list
-    local bicon= "t_var"
-    local extra
-    if ext_fields:find('.-\t.+') then ext_fields,extra=ext_fields:match('(.-)\t(.+)') end
-    if extra and extra:find('.-\t.+') then extra=extra:match('(.-)\t.+') end
-    if ext_fields == "f" then name= name.." ( )" bicon="t_func"
-    elseif ext_fields == "d" then bicon="t_def"
-    elseif ext_fields == "t" then bicon="t_type"
-    elseif ext_fields == "s" then name= "struct "..name bicon="t_struct"
-    elseif ext_fields == "m" and extra then name= extra.."."..name bicon="t_struct" end
-
-    local gt= "gotag"..#toolbar.tag_list.."#"..line
-    toolbar.tag_list[#toolbar.tag_list+1]= {gt, name, bicon}
-  end
-
-  local function filter_ctags()
-    --show the tags that pass the filter
-    firsttag= nil
-    toolbar.sel_left_bar(itemsgrp,true) --empty items group
-    toolbar.listtb_y= 3
-    if #toolbar.tag_list == 0 then
-      list_addinfo('No CTAGS found in this file')
-    else
-      local filter= Util.escape_filter(toolbar.tag_list_find)
-      local y= 3
-      local n=0
-      for i=1,#toolbar.tag_list do
-        local name=  toolbar.tag_list[i][2]
-        if filter == '' or name:match(filter) then
-          local gt= toolbar.tag_list[i][1]
-          local bicon= toolbar.tag_list[i][3]
-          toolbar.gotopos( 3, y)
-          toolbar.addtext(gt, name, "", toolbar.listwidth-13, false, true, false, toolbar.cfg.barsize, 0)
-          toolbar.gotopos( 3, y)
-          toolbar.cmd("ico-"..gt, gototag, "", bicon, true)
-          toolbar.cmds_n[gt]= gototag
-          y= y + toolbar.cfg.butsize
-          if not firsttag then firsttag= gt end
-          n= n+1
-        end
-      end
-      toolbar.listtb_y= y
-      if n == 0 then list_addinfo('No CTAGS match the filter') end
-    end
-  end
-
-  local function load_ctags()
-    --ignore project views
-    if Proj and (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
-    list_clear()
-    list_addbutton("window-close", "Close list [Shift+F10]", toolbar.list_toolbar_onoff)
-    local bname= buffer.filename
-    if bname == nil then
-      list_addinfo('No filename')
-      return
-    end
-    if Proj == nil then
-      list_addinfo('The project module is not installed')
-      return
-    end
-    local p_buffer = Proj.get_projectbuffer(true)
-    if p_buffer == nil then
-      list_addinfo('No open project')
-      return
-    end
-    local tag_files = {}
-    if p_buffer.proj_files ~= nil then
-      for row= 1, #p_buffer.proj_files do
-        local ftype= p_buffer.proj_filestype[row]
-        if ftype == Proj.PRJF_CTAG then
-          tag_files[ #tag_files+1 ]= p_buffer.proj_files[row]
-        end
-      end
-    end
-    if #tag_files < 1 then
-      list_addinfo('No CTAGS files found in project')
-      return
-    end
-    toolbar.tag_listedfile= bname
-    local fname= bname:match('[^/\\]+$') -- filename only
-    list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
-    list_addaction("filter_ctaglist")
-    list_addinfo(fname, true)
-    for i = 1, #tag_files do
-      local dir = tag_files[i]:match('^.+[/\\]')
-      local f = io.open(tag_files[i])
-      for line in f:lines() do
-        local tag, file, linenum, ext_fields = line:match('^([_.%w]-)\t(.-)\t(.-);"\t?(.*)$')
-        if tag and (file == bname) then --only show current file
-          if not file:find('^%a?:?[/\\]') then file = dir..file end
-          if linenum:find('^/') then linenum = linenum:match('^/^(.+)$/$') end
-          if linenum then list_addtag(tag, linenum, ext_fields) end
-        end
-      end
-      f:close()
-    end
-    filter_ctags()
-  end
-
-  function toolbar.list_find_sym()
-    if not toolbar.list_tb then toolbar.list_toolbar_onoff() end
-    local orgfind = toolbar.tag_list_find
-    local word = ''
-    r,word= ui.dialogs.inputbox{title = 'Tag search', width = 400, text = toolbar.tag_list_find}
-    toolbar.tag_list_find= ''
-    if r == 1 then toolbar.tag_list_find= word end
-    if orgfind ~= toolbar.tag_list_find then --filter changed: update
-      filter_ctags()
-      if firsttag and toolbar.tag_list_find ~= '' then gototag(firsttag) end
-    end
-  end
-
-  function toolbar.list_toolbar_update()
-    if toolbar.list_tb then load_ctags() end
-  end
-
-  function toolbar.list_toolbar_reload()
-    if toolbar.list_tb then
-      local cmd
-      --locate project RUN command that updates TAGS (ctags)
-      if Proj then
-        local p_buffer = Proj.get_projectbuffer(false)
-        if p_buffer and p_buffer.proj_filestype then
-          for r=1, #p_buffer.proj_filestype do
-            if p_buffer.proj_filestype[r] == Proj.PRJF_RUN then
-              if p_buffer.proj_files[r]:match('ctags') then
-                cmd= p_buffer.proj_files[r]
-                break
-              end
-            end
-          end
-        end
-      end
-      if cmd then Proj.run_command(cmd) else load_ctags() end
-    end
   end
 
   function toolbar.list_toolbar_onoff()
@@ -231,6 +137,7 @@ if toolbar then
     else
       toolbar.list_tb= true
     end
+
     if Proj then
       Proj.getout_projview()
       local washidebylist= toolbar.listtb_hide_p
@@ -247,24 +154,16 @@ if toolbar then
     end
     set_list_width()
     toolbar.sel_left_bar()
-    toolbar.list_toolbar_update()
+    listtb_update()
+
     toolbar.show(toolbar.list_tb, toolbar.listwidth)
     --check menuitem
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
     if actions then
-      actions.updateaction("toggle_viewctaglist")
-      toolbar.selected("toggle_viewctaglist", false, toolbar.list_tb)
+      actions.updateaction("toggle_viewlist")
+      toolbar.selected("toggle_viewlist", false, toolbar.list_tb)
     end
   end
 
-  local function list_update() --update only when the file change
-    if toolbar.list_tb and (toolbar.tag_listedfile ~= buffer.filename) then load_ctags() end
-  end
-  events.connect(events.BUFFER_AFTER_SWITCH,  list_update)
-  events.connect(events.VIEW_AFTER_SWITCH,    list_update)
-  events.connect(events.BUFFER_NEW,           toolbar.list_toolbar_update)
-  events.connect(events.FILE_OPENED,          toolbar.list_toolbar_update)
-  events.connect(events.FILE_CHANGED,         toolbar.list_toolbar_update)
-  events.connect(events.FILE_AFTER_SAVE,      toolbar.list_toolbar_update)
 end
