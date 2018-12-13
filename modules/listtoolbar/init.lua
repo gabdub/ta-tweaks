@@ -8,11 +8,12 @@ if toolbar then
   toolbar.listselections= {}
 
   local function listtb_switch()
-    --{name, tooltip, icon, createfun, notify, show}
+    --{name, tooltip, icon, createfun, **notify**, show}
     if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](true) end
   end
 
   local function listtb_update()
+    --{name, tooltip, icon, createfun, **notify**, show}
     if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](false) end
   end
 
@@ -96,21 +97,24 @@ if toolbar then
 
     --list select group: fixed width=300 / align top + fixed height
     selectgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.FIRST, 0, toolbar.cfg.barsize)
-
+    toolbar.sel_left_bar(selectgrp)
     local x= 3
     if #toolbar.listselections > 0 then
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
-        ls[4]() --create list
-
-        toolbar.sel_left_bar(selectgrp)
         toolbar.gotopos(x, 1)
         toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
         x= x + toolbar.cfg.butsize
       end
+      for i=1,#toolbar.listselections do
+        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
+        ls[4]() --create list
+      end
       currlistidx=1
       currlist= toolbar.listselections[currlistidx][1] --activate the first one
       toolbar.selected(currlist, false, true)
+      toolbar.listselections[currlistidx][6](true) --show list items
+      listtb_update()
     end
     --toolbar.gotopos(x, 1)
     --toolbar.cmd("window-close", toolbar.list_toolbar_onoff, "Close list [Shift+F10]", "window-close", true)
