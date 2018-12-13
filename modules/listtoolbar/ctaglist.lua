@@ -56,8 +56,8 @@ if toolbar then
     --show the tags that pass the filter
     firsttag= nil
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
+    toolbar.listtb_y= 3
     if #toolbar.tag_list == 0 then
-      toolbar.listtb_y= 3
       toolbar.list_addinfo('No CTAGS found in this file')
     else
       local filter= Util.escape_filter(toolbar.tag_list_find)
