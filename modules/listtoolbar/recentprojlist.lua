@@ -4,8 +4,10 @@ if toolbar then
   local titgrp, itemsgrp, loaded
 
   local function open_proj(cmd)
+    toolbar.list_toolbar_onoff()
     local linenum= tonumber(string.match(cmd,".-#(.*)"))
-    Proj.open_project(Proj.recent_projects[linenum]) 
+    Proj.open_project(Proj.recent_projects[linenum])
+    loaded= false
   end
 
   local function list_clear()

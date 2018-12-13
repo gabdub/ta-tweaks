@@ -62,7 +62,7 @@ local Proj = Proj
 local Util = Util
 
 Proj.PROJECTS_FILE = _USERHOME..'/projects'
-Proj.MAX_RECENT_PROJ = 10
+Proj.MAX_RECENT_PROJ = 30
 Proj.prjlist_change = false
 
 --recent Projects list

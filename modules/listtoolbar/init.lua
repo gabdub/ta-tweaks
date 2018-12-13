@@ -165,5 +165,4 @@ if toolbar then
       toolbar.selected("toggle_viewlist", false, toolbar.list_tb)
     end
   end
-
 end
