@@ -5,10 +5,23 @@ local events, events_connect = events, events.connect
 --buttons callback functions
 toolbar.cmds={}     --functions without the name of the clicked button as an argument
 toolbar.cmds_n={}   --functions with the name of the clicked button as an argument
+toolbar.cmds_d={}   --functions with the name of the double clicked button as an argument
+toolbar.cmds_r={}   --functions with the name of the right clicked button as an argument
 
 --config panel values
 toolbar.cfgpnl_chkval={}    --checks/radios value
 toolbar.cfgpnl_chknotify={} --checks/radios callbacks
+
+local function rm_namenum(buttonname)
+  --"name#num" --> "name"
+  local bname,lnum= string.match(buttonname,"(.-)#(.*)")
+  if bname then return bname end
+  return buttonname
+end
+
+function toolbar.getnum_cmd(cmd)
+  if cmd then return tonumber(string.match(cmd,".-#(.*)")) end
+end
 
 --define a graphical toolbar button
 function toolbar.cmd(name,func,tooltip,icon,passname,base)
@@ -135,9 +148,30 @@ events_connect("toolbar_clicked", function(buttonname,ntoolbar)
     else
       toolbar.cmds[buttonname]()
     end
-  else
-    ui.statusbar_text= buttonname.." clicked"
+--  else ui.statusbar_text= buttonname.." clicked"
   end
+end)
+
+function toolbar.cmd_dclick(name,func)
+  --connect to double click
+  toolbar.cmds_d[ rm_namenum(name) ]= func
+end
+
+events_connect("toolbar_2clicked", function(buttonname,ntoolbar)
+  local bfunc= rm_namenum(buttonname) --"name#num" --> "name"
+  --pass the complete name of the button ("name#num")
+  if toolbar.cmds_d[bfunc] ~= nil then return toolbar.cmds_d[bfunc](buttonname) end
+end)
+
+function toolbar.cmd_rclick(name,func)
+  --open a context menu over this item
+  toolbar.cmds_r[ rm_namenum(name) ]= func
+end
+
+events_connect("toolbar_Rclicked", function(buttonname,ntoolbar)
+  local bfunc= rm_namenum(buttonname) --"name#num" --> "name"
+  --pass the complete name of the button ("name#num")
+  if toolbar.cmds_r[bfunc] ~= nil then return toolbar.cmds_r[bfunc](buttonname) end
 end)
 
 --checks/radios

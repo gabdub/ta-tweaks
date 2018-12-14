@@ -56,6 +56,7 @@ require('project.proj_menu')
 --- TA-EVENTS ---
 events_connect(events.INITIALIZED,          Proj.EVinitialize)
 events_connect(events.QUIT,                 Proj.EVquit, 1)
+events_connect(events.RESET_BEFORE,         Proj.EVquit, 1)
 
 events_connect(events.BUFFER_BEFORE_SWITCH, Proj.show_lost_focus)
 events_connect(events.VIEW_BEFORE_SWITCH,   Proj.show_lost_focus)

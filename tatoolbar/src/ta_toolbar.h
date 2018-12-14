@@ -415,6 +415,8 @@ int  get_text_height( const char * text, int fontsz );
 void clear_tooltip_textT( struct toolbar_data *T );
 void fire_tab_clicked_event( struct toolbar_item * p );
 void fire_tb_clicked_event( struct toolbar_item * p );
+int  fire_tb_Rclicked_event( struct toolbar_item * p );
+void fire_tb_2clicked_event( struct toolbar_item * p );
 void set_hilight_tooltipT( struct toolbar_data *T );
 void set_toolbar_size(struct toolbar_data *T);
 void show_toolbar(struct toolbar_data *T, int show, int newsize);

@@ -31,7 +31,7 @@ if toolbar then
 
   local function gototag(cmd)
     Proj.getout_projview()
-    local linenum= tonumber(string.match(cmd,".-#(.*)"))
+    local linenum= toolbar.getnum_cmd(cmd)
     Util.goto_line(buffer, linenum-1)
     buffer:vertical_centre_caret()
   end

@@ -1320,6 +1320,21 @@ void fire_tb_clicked_event( struct toolbar_item * p )
   }
 }
 
+int fire_tb_Rclicked_event( struct toolbar_item * p )
+{
+  if( (p != NULL) && (p->name != NULL) ){
+    return lL_event(lua, "toolbar_Rclicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+  }
+  return 0;
+}
+
+void fire_tb_2clicked_event( struct toolbar_item * p )
+{
+  if( (p != NULL) && (p->name != NULL) ){
+    lL_event(lua, "toolbar_2clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+  }
+}
+
 static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 {
   struct toolbar_item * p;
@@ -1370,12 +1385,16 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 
         }else if( (p->flags & TTBF_TAB) == 0 ){
           if( event->button == 1 ){
-            fire_tb_clicked_event(p);
+            fire_tb_clicked_event(p);         //button left click
+          }else if(event->button == 3){
+            if( fire_tb_Rclicked_event(p) ){  //button right click
+              lL_showcontextmenu(lua, event, "context_menu"); //open context menu
+            }
           }
         }else{
           if(event->button == 1){
-            fire_tab_clicked_event(p);
-          }else if(event->button == 3){
+            fire_tab_clicked_event(p);  //tab left click
+          }else if(event->button == 3){ //tab right click
             if( lL_event(lua, "toolbar_tabRclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1) ){
               lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
             }
@@ -1398,7 +1417,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       if(event->button == 1){
         p= item_fromXYT(T, event->x, event->y);
         if( p != NULL ){
-          if( (p->flags & TTBF_TAB) != 0 ){
+          if( (p->flags & TTBF_TAB) == 0 ){
+            fire_tb_2clicked_event(p);  //button left double-click
+          }else{                        //tab left double-click
             lL_event(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
           }
         }
