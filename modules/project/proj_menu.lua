@@ -81,8 +81,8 @@ if actions then
   actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces, nil, "dialog-ok")
   actions.add("remove_tabs",         'Convert all tabs into spaces', Proj.remove_tabs)
 
-  actions.add("new_project",         _L['_New'],              Proj.new_project)
-  actions.add("open_project",        _L['_Open'],             Proj.open_project)
+  actions.add("new_project",         _L['_New'],              Proj.new_project, nil, "list-add", nil, "New Project")
+  actions.add("open_project",        _L['_Open'],             Proj.open_project, nil, "document-open", nil, "Open Project")
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
   actions.add("close_project",       _L['_Close'],            Proj.close_project)
   actions.add("search_project",      'Project _Search',       Proj.search_in_files, "aF")

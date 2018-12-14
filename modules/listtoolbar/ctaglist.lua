@@ -8,7 +8,7 @@ if toolbar then
     toolbar.tag_list= {}
     toolbar.tag_listedfile= ""
     toolbar.tag_list_find= ""
-    toolbar.listright= toolbar.listwidth
+    toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.sel_left_bar(titgrp,true) --empty title group
     firsttag= nil
@@ -58,7 +58,7 @@ if toolbar then
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.listtb_y= 3
     if #toolbar.tag_list == 0 then
-      toolbar.list_addinfo('No CTAGS found in this file')
+      toolbar.list_addinfo('No CTAG entry found in this file')
     else
       local filter= Util.escape_filter(toolbar.tag_list_find)
       local y= 3
@@ -78,7 +78,7 @@ if toolbar then
           n= n+1
         end
       end
-      if n == 0 then toolbar.list_addinfo('No CTAGS match the filter') end
+      if n == 0 then toolbar.list_addinfo('No CTAG entry match the filter') end
     end
   end
 
@@ -112,7 +112,7 @@ if toolbar then
       end
     end
     if #tag_files < 1 then
-      toolbar.list_addinfo('No CTAGS files found in project')
+      toolbar.list_addinfo('No CTAG file found in the project')
       return
     end
     toolbar.tag_listedfile= bname

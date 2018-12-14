@@ -11,14 +11,19 @@ if toolbar then
 
   local function list_clear()
     --remove all items
-    toolbar.sel_left_bar(titgrp,true) --empty title group
-    toolbar.listtb_y= 1
-    toolbar.list_addinfo('Recent Projects', true)
+    toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
+    toolbar.sel_left_bar(titgrp,true) --empty title group
   end
 
   local function load_recentproj()
     list_clear()
+    toolbar.listtb_y= 1
+    toolbar.list_addaction("open_project")
+    toolbar.list_addaction("new_project")
+    toolbar.list_addinfo('Recent Projects', true)
+
+    toolbar.sel_left_bar(itemsgrp)
     if (not Proj) or (#Proj.recent_projects < 1) then
       toolbar.listtb_y= 3
       toolbar.list_addinfo('No recent projects found')
