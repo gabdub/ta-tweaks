@@ -1,3 +1,5 @@
 ABOUT THE ICONS:
 ================
-Icons taken from MateFaenza and MateFaenzaDark project.
+Some icons taken from MateFaenza and MateFaenzaDark project.
+
+https://github.com/mate-desktop/mate-icon-theme-faenza
