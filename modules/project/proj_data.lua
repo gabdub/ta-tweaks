@@ -52,8 +52,10 @@
 --              true = this is the one
 --
 --  proj_files[]     = array with the filename in each row (1...) or ''
+--  proj_filestype[] = array with the type of each row: Proj.PRJF_...
 --  proj_fold_row[]  = array with the row numbers to fold on open
 --  proj_grp_path[]  = array with the path of each group or nil
+--  proj_vcontrol[]  = array with the SVN/GIT version control rows
 --
 --  Proj.update_ui   = number of ui updates in progress (ignore some events if > 0)
 --  Proj.cmenu_num   = number of the current context menu
@@ -248,6 +250,7 @@ function Proj.parse_projectbuffer(p_buffer)
   p_buffer.proj_fold_row=  {}
   p_buffer.proj_grp_path=  {}
   p_buffer.proj_vcontrol=  {}
+  p_buffer.proj_rowinfo=   {}   --{text, indent}
 
   --get project file path (default)
   local projname= p_buffer.filename
@@ -268,13 +271,13 @@ function Proj.parse_projectbuffer(p_buffer)
     local line= p_buffer:get_line(r-1)
 
     --try option 1)
-    local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
-    if n == nil then
+    local ind, rown, fn, opt = string.match(line,'^(%s*)(.-)%s*::(.*)::(.-)%s*$')
+    if ind == nil then
       --try option 2)
-      fn= string.match(line,'^%s*(.-)%s*$')
+      ind, fn= string.match(line,'^(%s*)(.-)%s*$')
+      rown= fn
+      if not ind then ind=0 end
     end
-    --ui._print('Parser', 'n='..((n==nil) and 'nil' or n)..' f='..((f==nil) and 'nil' or f)..' opt='..((opt==nil) and 'nil' or opt) )
-
     local ftype = Proj.PRJF_EMPTY
     if fn ~= nil and fn ~= '' then
       local p,f,e= Util.splitfilename(fn)
@@ -329,6 +332,7 @@ function Proj.parse_projectbuffer(p_buffer)
     --set the filename/type asigned to each row
     p_buffer.proj_files[r]= fname
     p_buffer.proj_filestype[r]= ftype
+    p_buffer.proj_rowinfo[r]= {rown, #ind}
   end
   ui.statusbar_text= 'Project: '.. projname
 end

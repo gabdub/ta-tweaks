@@ -1,7 +1,7 @@
 -- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
-  local titgrp, itemsgrp, itselected
+  local titgrp, itemsgrp, itselected, currproj, projmod
 
   local function clear_selected()
     if itselected then
@@ -16,13 +16,13 @@ if toolbar then
       clear_selected()
       itselected= cmd
       toolbar.selected(cmd,false,true)
-      toolbar.ensurevisible(cmd,true)
+      toolbar.ensurevisible(cmd)
     end
     return linenum
   end
 
   local function sel_file_num(linenum)
-    local p_buffer = Proj.get_projectbuffer(true)
+    local p_buffer = Proj.get_projectbuffer(false)
     if p_buffer == nil or p_buffer.proj_files == nil then return end
     if not linenum then linenum=1 end
     if linenum > #p_buffer.proj_files then linenum=#p_buffer.proj_files end
@@ -37,16 +37,16 @@ if toolbar then
   end
 
   local function gofile_dclick(cmd) --double click
-    local p_buffer = Proj.get_projectbuffer(true)
+    local p_buffer = Proj.get_projectbuffer(false)
     if p_buffer == nil or p_buffer.proj_files == nil then return end
     local linenum= sel_file(cmd)
     if linenum then
       local cmd=p_buffer.proj_files[linenum]
       local ft= p_buffer.proj_filestype[linenum]
-      if ft == Proj.PRJF_RUN then
-        Proj.run_command(cmd)
-      else
+      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
         Proj.go_file(cmd)
+      elseif ft == Proj.PRJF_RUN then
+        Proj.run_command(cmd)
       end
     end
   end
@@ -58,7 +58,27 @@ if toolbar then
     toolbar.sel_left_bar(titgrp,true) --empty title group
   end
 
+  local function currproj_change()
+    local p_buffer = Proj.get_projectbuffer(false)
+    if p_buffer == nil or p_buffer.proj_files == nil then
+      if currproj then
+        currproj= nil
+        projmod= nil
+        return true --closed: changed
+      end
+      return false
+    end
+    if p_buffer.filename == currproj then --same file, check modification time
+      if p_buffer.mod_time == projmod then return false end --SAME
+    end
+    currproj= p_buffer.filename
+    projmod= p_buffer.mod_time
+    return true --new or modified
+  end
+
   local function load_proj()
+    if not currproj_change() then return end
+
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.listtb_y= 1
@@ -68,12 +88,15 @@ if toolbar then
       toolbar.list_addinfo('Project module not installed', true)
       return
     end
-    local p_buffer = Proj.get_projectbuffer(true)
+    local p_buffer = Proj.get_projectbuffer(false)
     if p_buffer == nil or p_buffer.proj_files == nil then
       toolbar.list_addinfo('No project found', true)
       return
     end
-    toolbar.list_addinfo('Project', true)
+    local from= 1
+    local fname= p_buffer.proj_rowinfo[from][1]
+    if fname == "" then fname= 'Project' else from=2 end
+    toolbar.list_addinfo(fname, true)
 
     toolbar.sel_left_bar(itemsgrp)
     if #p_buffer.proj_files < 1 then
@@ -81,27 +104,45 @@ if toolbar then
       toolbar.list_addinfo('The project is empty')
     else
       local y= 3
-      for i=1, #p_buffer.proj_files do
-        local fname= Util.getfilename(p_buffer.proj_files[i],true)
+      for i=from, #p_buffer.proj_files do
+        local fname= p_buffer.proj_rowinfo[i][1]
         if fname ~= "" then
-          local name= "gofile#"..i
-          toolbar.gotopos( 3, y)
-          local isopen= false   --TODO: bold opened files
-          toolbar.addtext(name, fname, p_buffer.proj_files[i], toolbar.listwidth-13, false, true, isopen, toolbar.cfg.barsize, 0)
-          toolbar.gotopos( 3, y)
-          local bicon= "document-export"
+          local ind= (p_buffer.proj_rowinfo[i][2] or 0) * 12 --indentation
+          local bicon= nil
           local ft= p_buffer.proj_filestype[i]
-          if ft == Proj.PRJF_CTAG then
+          if ft == Proj.PRJF_FILE then
+            bicon= "document-export"
+          elseif ft == Proj.PRJF_CTAG then
             bicon= "t_type"
           elseif ft == Proj.PRJF_RUN then
             bicon= "lpi-bug"
           end
-          toolbar.cmd("ico-"..name, sel_file, "", bicon, true)
+          local name= "gofile#"..i
+          toolbar.gotopos( 3, y)
+          local bold= false   --TODO: bold opened files
+          local xtxt= ind
+          if bicon then xtxt= toolbar.cfg.barsize+ind else bold=true end
+          toolbar.addtext(name, fname, p_buffer.proj_files[i], toolbar.listwidth-13, false, true, bold, xtxt, 0)
+          toolbar.gotopos( 3+ind, y)
+          if bicon then toolbar.cmd("ico-"..name, sel_file, "", bicon, true) end
           toolbar.cmds_n[name]= sel_file
           y= y + toolbar.cfg.butsize
         end
       end
       sel_file_num(linenum)
+    end
+  end
+
+  local function track_file() --select the current buffer in the list
+    if buffer._project_select == nil and buffer._type ~= Proj.PRJT_SEARCH then
+      --normal file: restore current line default settings
+      local file= buffer.filename
+      if file ~= nil then
+        local p_buffer = Proj.get_projectbuffer(false)
+        if p_buffer == nil or p_buffer.proj_files == nil then return end
+        local row= Proj.get_file_row(p_buffer, file)
+        if row then sel_file_num(row) end
+      end
     end
   end
 
@@ -122,6 +163,7 @@ if toolbar then
 
   local function proj_notify(switching)
     if not switching then load_proj() end
+    track_file()
   end
 
   local function proj_showlist(show)
@@ -134,4 +176,3 @@ if toolbar then
 
   toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create, proj_notify, proj_showlist)
 end
-
