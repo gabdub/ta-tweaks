@@ -25,6 +25,12 @@ if toolbar then
     return linenum
   end
 
+  local function sel_proj_num(linenum)
+    if not linenum then linenum=1 end
+    if linenum > #Proj.recent_projects then linenum=#Proj.recent_projects end
+    if linenum > 0 then sel_proj("goproj#"..linenum) end
+  end
+
   local function goproj_rclick(cmd) --right click
     if sel_proj(cmd) then
       ui.context_menu= create_uimenu_fromactions(recentproj_context_menu)
@@ -35,6 +41,7 @@ if toolbar then
   local function goproj_dclick(cmd) --double click
     local linenum= sel_proj(cmd)
     if linenum then
+      clear_selected() --this project will move to the first place after openning it
       toolbar.list_toolbar_onoff() --hide toolbar to see the project
       Proj.open_project(Proj.recent_projects[linenum])
     end
@@ -49,11 +56,12 @@ if toolbar then
   local function act_del_recentproj()
     local linenum= sel_proj(itselected)
     if linenum then
-      table.remove(Proj.recent_projects,linenum)
-      Proj.prjlist_change = true
-      toolbar.recentprojlist_update()
-      if linenum > #Proj.recent_projects then linenum=#Proj.recent_projects end
-      if linenum > 0 then sel_proj("goproj#"..linenum) end
+      if Util.confirm("Remove recent project","Do you want to remove the selected project from the list?") then
+        table.remove(Proj.recent_projects,linenum)
+        sel_proj_num(linenum)
+        Proj.prjlist_change = true
+        toolbar.recentprojlist_update()
+      end
     end
   end
 
@@ -67,6 +75,7 @@ if toolbar then
   end
 
   local function load_recentproj()
+    local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.listtb_y= 1
     toolbar.list_addaction("open_project")
@@ -84,13 +93,14 @@ if toolbar then
         if fname ~= "" then
           local name= "goproj#"..i
           toolbar.gotopos( 3, y)
-          toolbar.addtext(name, fname, "", toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
+          toolbar.addtext(name, fname, Proj.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
           toolbar.gotopos( 3, y)
           toolbar.cmd("ico-"..name, sel_proj, "", "document-properties", true)
           toolbar.cmds_n[name]= sel_proj
           y= y + toolbar.cfg.butsize
         end
       end
+      sel_proj_num(linenum)
     end
   end
 
