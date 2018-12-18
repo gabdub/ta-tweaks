@@ -169,4 +169,51 @@ if toolbar then
       toolbar.selected("toggle_viewlist", false, toolbar.list_tb)
     end
   end
+
+  toolbar.icon_ext= {
+    ["txt"]=  "text-plain",
+    ["md"]=   "text-richtext",
+    ["c"]=    "text-x-c",
+    ["cpp"]=  "text-x-c++",
+    ["h"]=    "text-x-chdr",
+    ["hpp"]=  "text-x-c++hdr",
+    ["lua"]=  "text-x-lua",
+    ["py"]=   "text-x-python",
+    ["java"]= "text-x-java",
+    ["ctag"]= "text-x-ctag",
+    ["asm"]=  "text-x-source",
+    ["mas"]=  "text-x-source",
+    ["inc"]=  "text-x-source",
+    ["lst"]=  "x-office-document",
+    ["map"]=  "application-msword",
+    ["sym"]=  "application-msword",
+    ["s19"]=  "multipart-encrypted",
+    ["html"]= "text-html",
+    ["htm"]=  "text-html",
+    ["xml"]=  "text-xml",
+    ["css"]=  "text-css",
+    ["js"]=   "text-x-javascript",
+    ["php"]=  "application-x-php",
+    ["conf"]= "text-x-copying",
+    ["pdf"]=  "application-pdf",
+    ["sh"]=   "text-x-script",
+    ["bash"]= "text-x-script",
+    ["glade"]="text-x-generic-template",
+    ["exe"]=  "application-x-executable",
+    ["bat"]=  "text-x-script",
+    ["rc"]=   "text-x-generic-template",
+  }
+
+  toolbar.icon_ext_path= _USERHOME.."/toolbar/icons/mime/"
+
+  function toolbar.icon_fname(fname)
+    local p,f,e= Util.splitfilename(string.lower(fname))
+    if p then
+      local icon= toolbar.icon_ext[e]
+      if icon then return toolbar.icon_ext_path..icon..".png" end
+      if f == "makefile" then return toolbar.icon_ext_path.."text-x-makefile.png" end
+      if f == "readme" then return toolbar.icon_ext_path.."text-x-readme.png" end
+    end
+    return toolbar.icon_ext_path.."text-plain.png"
+  end
 end

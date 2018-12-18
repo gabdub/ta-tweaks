@@ -111,7 +111,7 @@ if toolbar then
           local bicon= nil
           local ft= p_buffer.proj_filestype[i]
           if ft == Proj.PRJF_FILE then
-            bicon= "document-export"
+            bicon= toolbar.icon_fname(p_buffer.proj_files[i])
           elseif ft == Proj.PRJF_CTAG then
             bicon= "t_type"
           elseif ft == Proj.PRJF_RUN then
