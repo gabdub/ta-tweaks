@@ -73,7 +73,7 @@ if toolbar then
           toolbar.gotopos( 3, y)
           toolbar.cmd("ico-"..gt, gototag, "", bicon, true)
           toolbar.cmds_n[gt]= gototag
-          y= y + toolbar.cfg.butsize
+          y= y + toolbar.cfg.butsize-2
           if not firsttag then firsttag= gt end
           n= n+1
         end
@@ -117,7 +117,7 @@ if toolbar then
     end
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
-    toolbar.list_addbutton("view-refresh", "Reload list", toolbar.list_toolbar_reload)
+    toolbar.list_addbutton("view-refresh", "Update Ctag List", toolbar.list_toolbar_reload)
     toolbar.list_addaction("filter_ctaglist")
     toolbar.list_addinfo(fname, true)
     for i = 1, #tag_files do

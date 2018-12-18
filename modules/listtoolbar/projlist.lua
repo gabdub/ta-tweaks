@@ -126,7 +126,7 @@ if toolbar then
           toolbar.gotopos( 3+ind, y)
           if bicon then toolbar.cmd("ico-"..name, sel_file, "", bicon, true) end
           toolbar.cmds_n[name]= sel_file
-          y= y + toolbar.cfg.butsize
+          y= y + toolbar.cfg.butsize-2
         end
       end
       sel_file_num(linenum)
