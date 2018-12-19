@@ -173,6 +173,9 @@
 //
 struct toolbar_img
 {
+  struct toolbar_img * next;  //linked list
+  unsigned long hash;         //hash(fname)
+
   char * fname;   //filename format: fffff[__[L##][R##][T##][B##]].png
                   //or __[W##] => L=R=(image_width-W)/2
                   //or __[H##] => T=B=(image_height-H)/2
@@ -187,7 +190,6 @@ struct toolbar_img
   int  height_b;  //bottom fixed part  (__...B##)
                   //expand height= height - height_t - height_b
 
-//  int back_color; //0x00RRGGBB back color / BKCOLOR_... (-1=not set)
 };
 
 struct color3doubles
@@ -224,7 +226,7 @@ struct toolbar_item
   int minwidth;       //min tab width
   int maxwidth;       //max tab width
   int prew, postw;    //pre and post width (used in tabs and buttons)
-  struct toolbar_img img[ TTBI_N_IT_IMGS ];
+  struct toolbar_img * img[ TTBI_N_IT_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
   int imgbase;        //0, TTBI_TB_SEP_BASE, TTBI_TB_BUTTON_BASE, TTBI_TB_DDBUT_BASE, TTBI_TB_CHECK_BASE, ...
 };
@@ -300,7 +302,7 @@ struct toolbar_group
   int tabmaxwidth;       //max tab width
 
   //group images (use toolbar images if NULL)
-  struct toolbar_img img[ TTBI_N_TB_IMGS ];
+  struct toolbar_img * img[ TTBI_N_TB_IMGS ];
   int back_color;       //-1:not set, 0x00RRGGBB
   int yvscroll;         //vertical scrollbar offset
   int show_vscroll_w;   //vertical scrollbar width (0=not shown)
@@ -333,7 +335,7 @@ struct toolbar_data
   int _layout_chg;
 
   //toolbar images
-  struct toolbar_img img[ TTBI_N_TB_IMGS ];
+  struct toolbar_img * img[ TTBI_N_TB_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
 };
 
@@ -374,7 +376,9 @@ struct minimap_data
 
 struct all_toolbars_data
 {
-  struct toolbar_data tbdata[NTOOLBARS]; //horizonal & vertical toolbars
+  struct toolbar_data tbdata[NTOOLBARS];  //horizonal & vertical toolbars
+
+  struct toolbar_img * img_list;          //linked list of images
 
   struct toolbar_item * philight;
   struct toolbar_item * phipress;
@@ -384,7 +388,7 @@ struct all_toolbars_data
 
   int currentntb;     //current toolbar num
 
-  char * img_base;
+  char * img_base;    //global image base path
 
   struct color_picker_data cpick; //only one global color picker
   struct minimap_data minimap;    //only one global MINI MAP
@@ -408,7 +412,7 @@ void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int 
 void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
 void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill );
 void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h );
-int  set_pti_img( struct toolbar_img *pti, const char *imgname );
+int  set_img_size( struct toolbar_img *pti );
 int  set_text_bt_width(struct toolbar_item * p );
 int  get_text_width( const char * text, int fontsz );
 int  get_text_height( const char * text, int fontsz );

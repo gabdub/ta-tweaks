@@ -2489,6 +2489,11 @@ static TermKeyResult textadept_waitkey(TermKey *tk, TermKeyKey *key) {
  * @param argv The array of command line params.
  */
 int main(int argc, char **argv) {
+#ifdef USE_TA_TOOLBAR
+  //init tatoolbar globals
+  init_tatoolbar_vars();
+#endif
+
 #if GTK
   gtk_init(&argc, &argv);
 #elif CURSES

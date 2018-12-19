@@ -6,7 +6,9 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.24 (Dec 14 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.25 (Dec 19 2018)"
+
+static void free_img_list( void );
 
 /* ============================================================================= */
 /*                                DATA                                           */
@@ -377,12 +379,10 @@ static void free_item_node( struct toolbar_item * p )
   if(p->tooltip != NULL){
     free((void*)p->tooltip);
   }
-  //free item images
-  for(i= 0; (i < TTBI_N_IT_IMGS); i++){
-    if( p->img[i].fname != NULL ){
-      free((void*)p->img[i].fname);
-    }
-  }
+//disconnect item images
+//  for(i= 0; (i < TTBI_N_IT_IMGS); i++){
+//    p->img[i]= NULL;
+//  }
   free((void*)p);
 }
 
@@ -400,12 +400,10 @@ static void free_group_node( struct toolbar_group * g )
 {
   int i;
   free_item_list( g->list );
-  //free group images
-  for(i= 0; (i < TTBI_N_TB_IMGS); i++){
-    if( g->img[i].fname != NULL ){
-      free((void*)g->img[i].fname);
-    }
-  }
+//disconnect group images
+//  for(i= 0; (i < TTBI_N_TB_IMGS); i++){
+//    g->img[i]= NULL;
+//  }
   free((void*)g);
 }
 
@@ -438,14 +436,9 @@ static void free_toolbar_num( int num )
       ttb.pdrag= NULL;
       ttb.ntbhilight= -1;
     }
-    //free toolbar images
+    //disconnect toolbar images
     for(i= 0; (i < TTBI_N_TB_IMGS); i++){
-      if( T->img[i].fname != NULL ){
-        free((void*)T->img[i].fname);
-        T->img[i].fname= NULL;
-      }
-      T->img[i].width= 0;
-      T->img[i].height= 0;
+      T->img[i]= NULL;
     }
   }
 }
@@ -468,7 +461,9 @@ void free_tatoolbar( void )
   for( nt= 0; nt < NTOOLBARS; nt++ ){
     free_toolbar_num(nt);
   }
-  //free global image base
+  //free image list
+  free_img_list();
+  //free global image base path
   if( ttb.img_base != NULL ){
     free((void *)ttb.img_base);
     ttb.img_base= NULL;
@@ -755,14 +750,87 @@ void start_drag( int x, int y )
 /* ============================================================================= */
 /*                                IMG LIST                                       */
 /* ============================================================================= */
+static void free_img_list( void )
+{
+  struct toolbar_img *p;
+  while( ttb.img_list != NULL ){
+    p= ttb.img_list;
+    ttb.img_list= ttb.img_list->next;
+    if( p->fname != NULL ){
+      free((void *)p->fname);
+    }
+    free((void *)p);
+  }
+}
+
+static int set_ppti_img( struct toolbar_img **ppti, const char *imgname )
+{ //set a new item/group/toolbar image
+  //return 1 if redraw is needed
+  char *simg, c, *s;
+  struct toolbar_img *pti;
+  unsigned long hash;
+  int ok= 0;
+
+  pti= *ppti;
+  if( pti != NULL ){
+    if( (imgname != NULL) && (strcmp( pti->fname, imgname ) == 0) ){
+      return 0; //same filename, no redraw is needed
+    }
+  }else if( imgname == NULL ){
+    return 0; //no image, no redraw is needed
+  }
+  pti= NULL;
+  simg= NULL;
+  if( imgname != NULL ){
+    //check if already used
+    hash = 5381;
+    for( s= (char *)imgname; (*s != 0); s++ ){
+      hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    }
+    pti= ttb.img_list;
+    while( pti != NULL ){
+      if( (pti->hash == hash) && (strcmp( pti->fname, imgname ) == 0) ){
+        break; //reuse this image
+      }
+      pti= pti->next;
+    }
+    if( pti == NULL ){  //not found, add a new one
+      //alloc image node memo
+      pti= (struct toolbar_img *) malloc(sizeof(struct toolbar_img));
+      if( pti != NULL ){
+        memset( pti, 0, sizeof(struct toolbar_img));
+        //alloc image filename memo
+        simg= alloc_img_str(imgname); //get img fname
+        if( simg != NULL ){
+          pti->fname= simg;
+          pti->hash= hash;
+          ok= set_img_size( pti );
+        }
+      }
+      if( ok ){ //ok: add the image to the list
+        pti->next= ttb.img_list;
+        ttb.img_list= pti;
+      }else{    //error: don't use it
+        if( simg != NULL ){
+          free( (void *) simg); //free filename
+          //simg= NULL;
+        }
+        if( pti != NULL ){
+          free( (void *) pti);  //free node
+          pti= NULL;
+        }
+      }
+    }
+  }
+  *ppti= pti; //set new image or NULL
+  return 1;   //redraw
+}
+
 static int set_toolbar_img( struct toolbar_data *T, int nimg, const char *imgname )
 { //set a toolbar image
   //return 1 if a toolbar redraw is needed
-  struct toolbar_img *pti;
-  struct toolbar_group * g;
   if( (T != NULL) && (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
-    pti= &(T->img[nimg]);
-    return set_pti_img(pti, imgname );
+    return set_ppti_img( &(T->img[nimg]), imgname );
   }
   return 0; //no redraw needed
 }
@@ -770,10 +838,8 @@ static int set_toolbar_img( struct toolbar_data *T, int nimg, const char *imgnam
 static int set_group_img( struct toolbar_group *G, int nimg, const char *imgname )
 { //set a group image
   //return 1 if a group redraw is needed
-  struct toolbar_img *pti;
   if( (G != NULL) && (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
-    pti= &(G->img[nimg]);
-    return set_pti_img(pti, imgname );
+    return set_ppti_img( &(G->img[nimg]), imgname );
   }
   return 0; //no redraw needed
 }
@@ -782,7 +848,7 @@ int set_item_img( struct toolbar_item *p, int nimg, const char *imgname )
 { //set an item image
   //return 1 if redraw is needed
   if( (p != NULL) && (nimg >= 0) && (nimg < TTBI_N_IT_IMGS) ){
-    return set_pti_img( &(p->img[nimg]), imgname );
+    return set_ppti_img( &(p->img[nimg]), imgname );
   }
   return 0; //no redraw needed
 }
@@ -790,7 +856,7 @@ int set_item_img( struct toolbar_item *p, int nimg, const char *imgname )
 static struct toolbar_img * get_toolbar_img( struct toolbar_data *T, int nimg )
 {
   if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
-    return &(T->img[nimg]); //use toolbar image
+    return T->img[nimg]; //use toolbar image
   }
   return NULL;
 }
@@ -798,10 +864,10 @@ static struct toolbar_img * get_toolbar_img( struct toolbar_data *T, int nimg )
 struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg )
 {
   if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
-    if(G->img[nimg].width > 0){
-      return &(G->img[nimg]);         //use group image
+    if(G->img[nimg] != NULL){
+      return G->img[nimg];         //use group image
     }
-    return &(G->toolbar->img[nimg]);  //use toolbar image
+    return G->toolbar->img[nimg];  //use toolbar image
   }
   return NULL;
 }
@@ -809,8 +875,8 @@ struct toolbar_img * get_group_img( struct toolbar_group *G, int nimg )
 static struct toolbar_img * get_item_img( struct toolbar_item *p, int nimg, int base )
 {
   if( (nimg >= 0) && (nimg < TTBI_N_IT_IMGS) ){
-    struct toolbar_img *pti= &(p->img[nimg]); //use item image
-    if( (pti->width == 0) && (base >= 0) ){    //no item image: use group/toolbar
+    struct toolbar_img *pti= p->img[nimg]; //use item image
+    if( (pti == NULL) && (base >= 0) ){    //no item image: use group/toolbar
       pti= get_group_img(p->group, nimg + base);
     }
     return pti;
@@ -820,22 +886,18 @@ static struct toolbar_img * get_item_img( struct toolbar_item *p, int nimg, int 
 
 int get_group_imgW( struct toolbar_group *G, int nimg )
 {
-  if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
-    if(G->img[nimg].width > 0){
-      return G->img[nimg].width; //use group image
-    }
-    return G->toolbar->img[nimg].width; //use toolbar image
+  struct toolbar_img *p= get_group_img(G, nimg);
+  if( p != NULL ){
+    return p->width;
   }
   return 0;
 }
 
 int get_group_imgH( struct toolbar_group *G, int nimg )
 {
-  if( (nimg >= 0) && (nimg < TTBI_N_TB_IMGS) ){
-    if(G->img[nimg].width > 0){
-      return G->img[nimg].height; //use group image
-    }
-    return G->toolbar->img[nimg].height; //use toolbar image
+  struct toolbar_img *p= get_group_img(G, nimg);
+  if( p != NULL ){
+    return p->height;
   }
   return 0;
 }
@@ -2506,7 +2568,7 @@ void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * p
         //paint back color if set
         draw_fill_color(gcontext, g->back_color, x0, y0, wt, ht );
         //draw background image (if any)
-        if(g->img[TTBI_TB_BACKGROUND].width > 0){
+        if(g->img[TTBI_TB_BACKGROUND] != NULL){
           draw_fill_mp_img(gcontext, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
         }
       }
@@ -2738,28 +2800,32 @@ void paint_vscrollbar(struct toolbar_group *g, void * gcontext, struct area * pd
 /* ============================================================================= */
 void init_tatoolbar_vars( void )
 {
+  //clear all globals
+  memset( &ttb, 0, sizeof(ttb));
   //init color picker vars
   ttb.cpick.HSV_val= 1.0; //V value of color picker (only one for now...)
-  ttb.cpick.HSV_x= 0;
-  ttb.cpick.HSV_y= 0;
+//  ttb.cpick.HSV_x= 0;
+//  ttb.cpick.HSV_y= 0;
   ttb.cpick.HSV_rgb= 0x00FF0000; //RED
-  ttb.cpick.ppicker= NULL;
-  ttb.cpick.pchosen= NULL;
-  ttb.cpick.pchosenR= NULL;
-  ttb.cpick.pchosenG= NULL;
-  ttb.cpick.pchosenB= NULL;
+//  ttb.cpick.ppicker= NULL;
+//  ttb.cpick.pchosen= NULL;
+//  ttb.cpick.pchosenR= NULL;
+//  ttb.cpick.pchosenG= NULL;
+//  ttb.cpick.pchosenB= NULL;
+//  ttb.img_list= NULL;
+//  ttb.img_base= NULL;
 
   //init MINI MAP vars
-  ttb.minimap.lines= NULL;
+//  ttb.minimap.lines= NULL;
   ttb.minimap.height= -1;
   ttb.minimap.buffnum= -1;
-  ttb.minimap.linecount= 0;
+//  ttb.minimap.linecount= 0;
   ttb.minimap.yszbox= 4; //default size
   ttb.minimap.lineinc= 1 << 4;
   ttb.minimap.boxesheight= 1;
-  ttb.minimap.linesscreen= 0;
-  ttb.minimap.firstvisible= 0;
-  ttb.minimap.scrcolor= 0;
+//  ttb.minimap.linesscreen= 0;
+//  ttb.minimap.firstvisible= 0;
+//  ttb.minimap.scrcolor= 0;
 }
 
 struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )

@@ -551,9 +551,9 @@ void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, in
 
 void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int grayed )
 {
-  cairo_t *ctx= (cairo_t *) gcontext;
-  cairo_pattern_t *radpat;
-  if( pti->fname != NULL ){
+  if( pti != NULL ){
+    cairo_t *ctx= (cairo_t *) gcontext;
+    cairo_pattern_t *radpat;
     cairo_surface_t *img= cairo_image_surface_create_from_png(pti->fname);
     if( img != NULL ){
       cairo_save(ctx);
@@ -580,7 +580,7 @@ void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int graye
 //Fill a rectangle with a normal IMAGE
 void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h )
 {
-  if( pti->fname != NULL ){
+  if( pti != NULL ){
     cairo_surface_t *img= cairo_image_surface_create_from_png(pti->fname);
     if( img != NULL ){
       cairo_t *ctx= (cairo_t *) gcontext;
@@ -607,6 +607,10 @@ void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, i
   int wl, wr, ww;
   int row, col;
 
+  if( pti == NULL ){
+    return;
+  }
+
   if( ((pti->width == w)||((pti->width_l+pti->width_r) == 0)) && ((pti->height == h)||((pti->height_t+pti->height_b) == 0))  ){
     //special case: if no change in size is needed or the image doesn't have borders (in both dimmensions):
     // the rectangle can be filled in a "normal" way, it's quicker
@@ -615,7 +619,7 @@ void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, i
   }
 
   cairo_t *ctx= (cairo_t *) gcontext;
-  if( (pti->fname != NULL) && (w > 0) && (h > 0) ){
+  if( (w > 0) && (h > 0) ){
     cairo_surface_t *img= cairo_image_surface_create_from_png(pti->fname);
     if( img != NULL ){
       //--calc source--
@@ -1039,45 +1043,21 @@ static void set_mp_borders( struct toolbar_img *pti )
   }
 }
 
-int set_pti_img( struct toolbar_img *pti, const char *imgname )
-{ //set a new item/group/toolbar image
-  //return 1 if redraw is needed
-  char *simg;
-
-  if( pti->fname != NULL ){
-    if( (imgname != NULL) && (strcmp( pti->fname, imgname ) == 0) ){
-      return 0; //same img, no redraw is needed
+int set_img_size( struct toolbar_img *pti )
+{
+  int ok= 0;
+  cairo_surface_t *cis= cairo_image_surface_create_from_png(pti->fname);
+  if( cis != NULL ){
+    pti->width=  cairo_image_surface_get_width(cis);
+    pti->height= cairo_image_surface_get_height(cis);
+    if( (pti->width > 0) && (pti->height > 0)){
+      //get borders size of multi-part images from filename
+      set_mp_borders( pti );
+      ok= 1; //image OK
     }
-    //free previous img
-    free((void *)pti->fname);
-    pti->fname= NULL;
-    pti->width= 0;
-    pti->width_l= 0;
-    pti->width_r= 0;
-    pti->height= 0;
-    pti->height_t= 0;
-    pti->height_b= 0;
+    cairo_surface_destroy(cis);
   }
-  if( imgname != NULL ){
-    simg= alloc_img_str(imgname); //get img fname
-    if( simg != NULL ){
-      cairo_surface_t *cis= cairo_image_surface_create_from_png(simg);
-      if( cis != NULL ){
-        pti->width=  cairo_image_surface_get_width(cis);
-        pti->height= cairo_image_surface_get_height(cis);
-        if( (pti->width > 0) && (pti->height > 0)){
-          pti->fname= simg;
-          //get borders size of multi-part images from filename
-          set_mp_borders( pti );
-          cairo_surface_destroy(cis);
-          return 1; //image OK
-        }
-        cairo_surface_destroy(cis);
-      }
-      free( (void *) simg);
-    }
-  }
-  return 1; //image not found or invalid: redraw (just in case...)
+  return ok;
 }
 
 static GtkWidget * get_draw_widget( struct toolbar_data * T )
@@ -1699,9 +1679,6 @@ void register_toolbar(lua_State *L)
   update_ui= 1;  //update buffer UI: on by default
   saved_title[0]= 0;
   saved_statusbar[0]= 0;
-  //init tatoolbar vars like color picker
-  init_tatoolbar_vars();
-
   //register "toolbar" functions
   lua_newtable(L);
   //toolbars
