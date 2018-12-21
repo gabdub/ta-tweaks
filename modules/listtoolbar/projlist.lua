@@ -1,7 +1,7 @@
 -- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
-  local titgrp, itemsgrp, itselected, currproj, projmod
+  local titgrp, itemsgrp, itselected, currproj, projmod, first_row
 
   local function clear_selected()
     if itselected then
@@ -24,7 +24,7 @@ if toolbar then
   local function sel_file_num(linenum)
     local p_buffer = Proj.get_projectbuffer(false)
     if p_buffer == nil or p_buffer.proj_files == nil then return end
-    if not linenum then linenum=1 end
+    if not linenum then linenum=first_row end
     if linenum > #p_buffer.proj_files then linenum=#p_buffer.proj_files end
     if linenum > 0 then sel_file("gofile#"..linenum) end
   end
@@ -56,6 +56,7 @@ if toolbar then
     toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.sel_left_bar(titgrp,true) --empty title group
+    first_row= 1
   end
 
   local function currproj_change()
@@ -70,6 +71,8 @@ if toolbar then
     end
     if p_buffer.filename == currproj then --same file, check modification time
       if p_buffer.mod_time == projmod then return false end --SAME
+    else
+      clear_selected()
     end
     currproj= p_buffer.filename
     projmod= p_buffer.mod_time
@@ -93,9 +96,9 @@ if toolbar then
       toolbar.list_addinfo('No project found', true)
       return
     end
-    local from= 1
-    local fname= p_buffer.proj_rowinfo[from][1]
-    if fname == "" then fname= 'Project' else from=2 end
+    first_row= 1
+    local fname= p_buffer.proj_rowinfo[first_row][1]
+    if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
 
     toolbar.sel_left_bar(itemsgrp)
@@ -104,10 +107,12 @@ if toolbar then
       toolbar.list_addinfo('The project is empty')
     else
       local y= 3
-      for i=from, #p_buffer.proj_files do
+      for i=first_row, #p_buffer.proj_files do
         local fname= p_buffer.proj_rowinfo[i][1]
         if fname ~= "" then
+          local expb= (p_buffer.proj_rowinfo[i][3] > 0) --indent-len
           local ind= (p_buffer.proj_rowinfo[i][2] or 0) * 12 --indentation
+          if expb then ind= ind + 10 end
           local bicon= nil
           local ft= p_buffer.proj_filestype[i]
           if ft == Proj.PRJF_FILE then
@@ -125,6 +130,10 @@ if toolbar then
           toolbar.addtext(name, fname, p_buffer.proj_files[i], toolbar.listwidth-13, false, true, bold, xtxt, 0)
           toolbar.gotopos( 3+ind, y)
           if bicon then toolbar.cmd("ico-"..name, sel_file, "", bicon, true) end
+          if expb then
+            toolbar.gotopos( ind-7, y)
+            toolbar.cmd("exp-"..name, sel_file, "", "list-colapse2", true)
+          end
           toolbar.cmds_n[name]= sel_file
           y= y + toolbar.cfg.butsize-2
         end
