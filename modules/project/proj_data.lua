@@ -56,6 +56,7 @@
 --  proj_fold_row[]  = array with the row numbers to fold on open
 --  proj_grp_path[]  = array with the path of each group or nil
 --  proj_vcontrol[]  = array with the SVN/GIT version control rows
+--  proj_rowinfo[]   = array {row-text, indent, indent-len}
 --
 --  Proj.update_ui   = number of ui updates in progress (ignore some events if > 0)
 --  Proj.cmenu_num   = number of the current context menu
@@ -250,7 +251,7 @@ function Proj.parse_projectbuffer(p_buffer)
   p_buffer.proj_fold_row=  {}
   p_buffer.proj_grp_path=  {}
   p_buffer.proj_vcontrol=  {}
-  p_buffer.proj_rowinfo=   {}   --{text, indent}
+  p_buffer.proj_rowinfo=   {}   --{row-text, indent, indent-len}
 
   --get project file path (default)
   local projname= p_buffer.filename
@@ -332,7 +333,21 @@ function Proj.parse_projectbuffer(p_buffer)
     --set the filename/type asigned to each row
     p_buffer.proj_files[r]= fname
     p_buffer.proj_filestype[r]= ftype
-    p_buffer.proj_rowinfo[r]= {rown, #ind}
+    p_buffer.proj_rowinfo[r]= {rown, #ind, 0} --{row-name, indent, indent-len}
+  end
+  --set indent blocks len
+  if #p_buffer.proj_rowinfo > 1 then
+    for r= 2, #p_buffer.proj_rowinfo do
+      local ic= p_buffer.proj_rowinfo[r-1][2]
+      if ic < p_buffer.proj_rowinfo[r][2] then  --indent start at r-1
+        local ilen= 1
+        for re= r+1, #p_buffer.proj_rowinfo do
+          if ic >= p_buffer.proj_rowinfo[re][2] then break end
+          ilen= ilen+1
+        end
+        p_buffer.proj_rowinfo[r-1][3]= ilen
+      end
+    end
   end
   ui.statusbar_text= 'Project: '.. projname
 end
