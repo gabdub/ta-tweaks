@@ -95,7 +95,9 @@ if toolbar then
           toolbar.gotopos( 3, y)
           toolbar.addtext(name, fname, Proj.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
           toolbar.gotopos( 3, y)
-          toolbar.cmd("ico-"..name, sel_proj, "", "document-properties", true)
+          local icbut= "ico-"..name
+          toolbar.cmd(icbut, sel_proj, "", "document-properties", true)
+          toolbar.enable(icbut,false,false) --non-selectable image
           toolbar.cmds_n[name]= sel_proj
           y= y + toolbar.cfg.butsize
         end

@@ -11,6 +11,8 @@ if toolbar then
   end
 
   local function sel_file(cmd) --click= select
+    local rmexp= string.match(cmd,"exp%-(.*)")
+    if rmexp then cmd=rmexp end
     local linenum= toolbar.getnum_cmd(cmd)
     if linenum then
       clear_selected()
@@ -79,6 +81,24 @@ if toolbar then
     return true --new or modified
   end
 
+  local function set_expand_icon(cmd,icon)
+    toolbar.setthemeicon(cmd, icon, toolbar.TTBI_TB.IT_NORMAL)
+    toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HILIGHT)
+    toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HIPRESSED)
+  end
+
+  function expand_list(cmd)
+    sel_file(cmd)
+    set_expand_icon(cmd,"list-colapse2")
+    toolbar.cmds_n[cmd]= colapse_list
+  end
+
+  function colapse_list(cmd)
+    sel_file(cmd)
+    set_expand_icon(cmd,"list-expand2")
+    toolbar.cmds_n[cmd]= expand_list
+  end
+
   local function load_proj()
     if not currproj_change() then return end
 
@@ -129,10 +149,16 @@ if toolbar then
           if bicon then xtxt= toolbar.cfg.barsize+ind else bold=true end
           toolbar.addtext(name, fname, p_buffer.proj_files[i], toolbar.listwidth-13, false, true, bold, xtxt, 0)
           toolbar.gotopos( 3+ind, y)
-          if bicon then toolbar.cmd("ico-"..name, sel_file, "", bicon, true) end
+          if bicon then
+            local icbut= "ico-"..name
+            toolbar.cmd(icbut, sel_file, "", bicon, true)
+            toolbar.enable(icbut,false,false) --non-selectable image
+          end
           if expb then
             toolbar.gotopos( ind-7, y)
-            toolbar.cmd("exp-"..name, sel_file, "", "list-colapse2", true)
+            local exbut= "exp-"..name
+            toolbar.cmd(exbut, colapse_list, "", "list-colapse2", true)
+            set_expand_icon(exbut,"list-colapse2")
           end
           toolbar.cmds_n[name]= sel_file
           y= y + toolbar.cfg.butsize-2

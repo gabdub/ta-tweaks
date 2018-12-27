@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.25 (Dec 19 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.26 (Dec 27 2018)"
 
 static void free_img_list( void );
 
@@ -629,7 +629,7 @@ int item_yoff;
 struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
 {
   struct toolbar_group * G;
-  struct toolbar_item * p;
+  struct toolbar_item *p, *q;
   int nx, nhide, xc1, xc2, yc1, yc2, x, y;
   char *s;
 
@@ -726,12 +726,25 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
       return NULL; //no tab found
     }
   }
-  //is a regular button bar
+  //it's a regular button bar
   y += G->yvscroll;  //vertical scroll support
   for( p= G->list; (p != NULL); p= p->next ){
     //ignore non selectable or hidden things (like separators)
     if( ((p->flags & (TTBF_SELECTABLE|TTBF_HIDDEN)) == TTBF_SELECTABLE) &&
         (x >= p->barx1) && (x <= p->barx2) && (y >= p->bary1) && (y <= p->bary2) ){
+      //check inside buttons
+      for( q= p->next; q != NULL; q= q->next ){
+        //"q" must be completely inside "p"
+        if( (q->barx1 >= p->barx1) && (q->barx2 <= p->barx2) && (q->bary1 >= p->bary1) && (q->bary2 <= p->bary2) ){
+          if( ((q->flags & (TTBF_SELECTABLE|TTBF_HIDDEN)) == TTBF_SELECTABLE) &&
+              (x >= q->barx1) && (x <= q->barx2) && (y >= q->bary1) && (y <= q->bary2) ){
+            p= q; //use this item
+            break;
+          }
+        }else{
+          break;  //no more controls inside "p"
+        }
+      }
       item_xoff= x - p->barx1;
       item_yoff= y - p->bary1;
       return p; //BUTTON
@@ -2080,16 +2093,21 @@ void ttb_set_text_fontcolG(struct toolbar_group *G, int fntsz, int fntyoff, int 
   }
 }
 
-void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isenabled )
+void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isselectable, int isgrayed )
 {
   int flg;
   struct toolbar_item * p= item_from_nameT(T, name);
   if( p != NULL){
     flg= p->flags;
-    if( isenabled ){
-      p->flags= (flg & ~TTBF_GRAYED) | TTBF_SELECTABLE;
+    if( isselectable ){
+      p->flags |= TTBF_SELECTABLE;
     }else{
-      p->flags= (flg & ~TTBF_SELECTABLE) | TTBF_GRAYED;
+      p->flags &= ~TTBF_SELECTABLE;
+    }
+    if( isgrayed ){
+      p->flags |= TTBF_GRAYED;
+    }else{
+      p->flags &= ~TTBF_GRAYED;
     }
     if( flg != p->flags ){
       redraw_item(p);
@@ -2952,16 +2970,16 @@ void ttb_addlabel( const char * name, const char * img, const char *tooltip, con
   }
 }
 
-void ttb_enable( const char * name, int isenabled, int onlythistb )
+void ttb_enable( const char * name, int isselectable, int isgrayed, int onlythistb )
 {
   int i;
   if( onlythistb ){
     //enable button in this toolbar only
-    ttb_enable_buttonT(current_toolbar(), name, isenabled );
+    ttb_enable_buttonT(current_toolbar(), name, isselectable, isgrayed );
   }else{
     //enable button in every toolbar
     for( i= 0; i < NTOOLBARS; i++){
-      ttb_enable_buttonT(toolbar_from_num(i), name, isenabled );
+      ttb_enable_buttonT(toolbar_from_num(i), name, isselectable, isgrayed );
     }
   }
 }

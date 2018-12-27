@@ -442,7 +442,7 @@ void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclo
 void ttb_show_groupG( struct toolbar_group *G, int show );
 struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags);
 void update_group_sizeG( struct toolbar_group *G, int redraw );
-void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isenabled );
+void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isselectable, int isgrayed );
 void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, int press );
 void ttb_ensurevisibleT(struct toolbar_data *T, const char * name );
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide);
@@ -506,7 +506,7 @@ void select_toolbar_n( int num, int ngrp, int emptygroup );
 void ttb_addbutton( const char *name, const char *tooltip, int base );
 void ttb_addtext( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int dropbutton, int leftalign, int bold, int xoff, int yoff);
 void ttb_addlabel( const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags, int xoff, int yoff );
-void ttb_enable( const char * name, int isenabled, int onlythistb );
+void ttb_enable( const char * name, int isselectable, int isgrayed, int onlythistb );
 void ttb_setselected( const char * name, int selected, int pressed, int onlythistb );
 void ttb_ensurevisible( const char * name, int onlythistb );
 int  ttb_get_flags( const char * name  );

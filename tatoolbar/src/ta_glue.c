@@ -204,10 +204,19 @@ static int ltoolbar_gotopos(lua_State *L)
   return 0;
 }
 
-/** `toolbar.enable(name,isenabled,[onlyinthistoolbar])` Lua function. */
+/** `toolbar.enable(name,isenabled,[isgrayed],[onlyinthistoolbar])` Lua function. */
 static int ltoolbar_enable(lua_State *L)
 {
-  ttb_enable( luaL_checkstring(L, 1), lua_toboolean(L,2), lua_toboolean(L,3) );
+  int isgrayed= 1;
+  int isselectable= lua_toboolean(L,2);
+  if( lua_isnone(L, 3) ){
+    if(isselectable){
+      isgrayed= 0;
+    }
+  }else{
+    isgrayed= lua_toboolean(L,3);
+  }
+  ttb_enable( luaL_checkstring(L, 1), isselectable, isgrayed, lua_toboolean(L,4) );
   return 0;
 }
 

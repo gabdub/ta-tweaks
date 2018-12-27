@@ -71,7 +71,9 @@ if toolbar then
           toolbar.gotopos( 3, y)
           toolbar.addtext(gt, name, "", toolbar.listwidth-13, false, true, false, toolbar.cfg.barsize, 0)
           toolbar.gotopos( 3, y)
-          toolbar.cmd("ico-"..gt, gototag, "", bicon, true)
+          local icbut= "ico-"..gt
+          toolbar.cmd(icbut, gototag, "", bicon, true)
+          toolbar.enable(icbut,false,false) --non-selectable image
           toolbar.cmds_n[gt]= gototag
           y= y + toolbar.cfg.butsize-2
           if not firsttag then firsttag= gt end
