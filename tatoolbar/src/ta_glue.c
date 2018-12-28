@@ -112,7 +112,7 @@ static int ltoolbar_addgroup(lua_State *L)
     if( h > 0 ){
       g->bary2= g->bary1 + h;
     }
-    group_vscroll_onoff(g);
+    group_vscroll_onoff(g ,0);
     num= g->num;
   }
   lua_pushinteger(L, num);  //toolbar num
@@ -235,6 +235,13 @@ static int ltoolbar_ensurevisible(lua_State *L)
   return 0;
 }
 
+/** `toolbar.collapse(name,collapse,[hide height],[onlyinthistoolbar])` Lua function. */
+/** collapse/expand a block of items under this */
+static int ltoolbar_collapse(lua_State *L)
+{
+  ttb_collapse( luaL_checkstring(L, 1), lua_toboolean(L, 2), lua_tointeger(L, 3), lua_toboolean(L,4) );
+  return 0;
+}
 
 /** `toolbar.seticon(name,icon,[nicon],[onlyinthistoolbar])` Lua function. */
 /** name= button name or "TOOLBAR" or "GROUP" */
@@ -512,13 +519,17 @@ void redraw_item( struct toolbar_item * p )
     g= p->group;
     if( ((g->toolbar->flags & TTBF_TB_VISIBLE) != 0) && ((g->flags & TTBF_GRP_HIDDEN) == 0) ){
       //the group is visible
-      if( (p->flags & (TTBF_TAB|TTBF_XBUTTON|TTBF_HIDDEN)) == 0 ){
+      if( (p->flags & (TTBF_TAB|TTBF_XBUTTON)) == 0 ){
         //redraw the area of one regular button
-        if( update_ui ){
-          gtk_widget_queue_draw_area(g->toolbar->draw, g->barx1 + p->barx1, g->bary1 + p->bary1 - g->yvscroll,
-              p->barx2 - p->barx1 +1, p->bary2 - p->bary1 +1 );
-        }else{
-          g->toolbar->flags |= TTBF_TB_REDRAW;
+        int yoff= item_hiddenH_offset(p); //height of the hidden items above this one or -1 if this item is hidden
+        if( yoff >= 0 ){  //the item is visible
+          if( update_ui ){
+            gtk_widget_queue_draw_area(g->toolbar->draw,
+              g->barx1 + p->barx1,      g->bary1 + p->bary1 - g->yvscroll - yoff,
+              p->barx2 - p->barx1 +1,   p->bary2 - p->bary1 +1 );
+          }else{
+            g->toolbar->flags |= TTBF_TB_REDRAW;
+          }
         }
         return;
       }
@@ -1708,6 +1719,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "enable",       ltoolbar_enable);       //enable/disable a button
   l_setcfunction(L, -1, "selected",     ltoolbar_selected);     //un/select/press a button
   l_setcfunction(L, -1, "ensurevisible",ltoolbar_ensurevisible);//ensure a button in a scrollable group is visible
+  l_setcfunction(L, -1, "collapse",     ltoolbar_collapse);     //collapse/expand a block of items under this
   l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);      //change a button, GROUP or TOOLBAR icon
   l_setcfunction(L, -1, "setbackcolor", ltoolbar_setbackcolor); //change a button, GROUP or TOOLBAR back color
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);   //change a button tooltip

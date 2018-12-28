@@ -91,12 +91,14 @@ if toolbar then
     sel_file(cmd)
     set_expand_icon(cmd,"list-colapse2")
     toolbar.cmds_n[cmd]= colapse_list
+    toolbar.collapse(cmd, false)
   end
 
   function colapse_list(cmd)
     sel_file(cmd)
     set_expand_icon(cmd,"list-expand2")
     toolbar.cmds_n[cmd]= expand_list
+    toolbar.collapse(cmd, true)
   end
 
   local function load_proj()
@@ -127,12 +129,13 @@ if toolbar then
       toolbar.list_addinfo('The project is empty')
     else
       local y= 3
+      local rowh= toolbar.cfg.butsize-2
       for i=first_row, #p_buffer.proj_files do
         local fname= p_buffer.proj_rowinfo[i][1]
         if fname ~= "" then
-          local expb= (p_buffer.proj_rowinfo[i][3] > 0) --indent-len
+          local idlen= p_buffer.proj_rowinfo[i][3] --indent-len
           local ind= (p_buffer.proj_rowinfo[i][2] or 0) * 12 --indentation
-          if expb then ind= ind + 10 end
+          if idlen > 0 then ind= ind + 10 end
           local bicon= nil
           local ft= p_buffer.proj_filestype[i]
           if ft == Proj.PRJF_FILE then
@@ -154,14 +157,15 @@ if toolbar then
             toolbar.cmd(icbut, sel_file, "", bicon, true)
             toolbar.enable(icbut,false,false) --non-selectable image
           end
-          if expb then
+          if idlen > 0 then
             toolbar.gotopos( ind-7, y)
             local exbut= "exp-"..name
             toolbar.cmd(exbut, colapse_list, "", "list-colapse2", true)
             set_expand_icon(exbut,"list-colapse2")
+            toolbar.collapse(exbut, false, rowh*idlen, true)
           end
           toolbar.cmds_n[name]= sel_file
-          y= y + toolbar.cfg.butsize-2
+          y= y + rowh
         end
       end
       sel_file_num(linenum)

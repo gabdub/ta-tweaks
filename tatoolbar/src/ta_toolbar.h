@@ -35,6 +35,7 @@
 #define TTBF_DROP_BUTTON    0x00000400  //draw a drop down button at the end of a text button
 #define TTBF_IS_SEPARATOR   0x00000800  //it's a separator
 #define TTBF_SHOW_BORDER    0x00001000  //draw a border (used in text buttons)
+#define TTBF_HIDE_BLOCK     0x00002000  //hide a block of items under this item (tree/list expand-collapse)
 //iternal use item flags
 #define TTBF_CLOSETAB_BUT   0x01000000  //highlighted xbutton is a close tab button (internal use)
 #define TTBF_SCROLL_BUT     0x02000000  //highlighted xbutton is a scroll button (internal use)
@@ -156,6 +157,8 @@
 #define BKCOLOR_MINIMAP_DRAW  (-7)  //MINI MAP (back draw)
 #define BKCOLOR_MINIMAP_CLICK (-8)  //MINI MAP (click)
 
+#define VSCROLL_STEP    100  //vertical scroll whell step
+
 // multi-part IMAGE
 //
 //  L=left     W=expand         R=right
@@ -229,6 +232,7 @@ struct toolbar_item
   struct toolbar_img * img[ TTBI_N_IT_IMGS ];
   int back_color;     //-1:not set, 0x00RRGGBB
   int imgbase;        //0, TTBI_TB_SEP_BASE, TTBI_TB_BUTTON_BASE, TTBI_TB_DDBUT_BASE, TTBI_TB_CHECK_BASE, ...
+  int hideblockH;     //height of the block under this item to hide when TTBF_HIDE_BLOCK flag is set
 };
 
 struct toolbar_group
@@ -304,8 +308,9 @@ struct toolbar_group
   //group images (use toolbar images if NULL)
   struct toolbar_img * img[ TTBI_N_TB_IMGS ];
   int back_color;       //-1:not set, 0x00RRGGBB
-  int yvscroll;         //vertical scrollbar offset
+  int yvscroll;         //vertical scrollbar offset (+/- VSCROLL_STEP)
   int show_vscroll_w;   //vertical scrollbar width (0=not shown)
+  int hideblocks;       //height of all the hidden block in the group
 };
 
 struct toolbar_data
@@ -434,7 +439,7 @@ char * chg_alloc_str( char *sold, const char *snew );
 void free_tatoolbar( void );
 
 void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const char *imgpath);
-void group_vscroll_onoff( struct toolbar_group * g );
+void group_vscroll_onoff( struct toolbar_group * g, int forceredraw );
 void toolbar_vscroll_onoff( struct toolbar_data *T );
 void ensure_item_isvisible(struct toolbar_item * p);
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden);
@@ -445,6 +450,7 @@ void update_group_sizeG( struct toolbar_group *G, int redraw );
 void ttb_enable_buttonT(struct toolbar_data *T, const char * name, int isselectable, int isgrayed );
 void ttb_select_buttonT(struct toolbar_data *T, const char * name, int select, int press );
 void ttb_ensurevisibleT(struct toolbar_data *T, const char * name );
+void ttb_collapseT(struct toolbar_data *T, const char * name, int collapse, int hideheight );
 void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide);
 void ttb_change_button_imgT(struct toolbar_data *T, const char *name, int nimg, const char *img );
 void set_color_pick_rgb( int color );
@@ -495,7 +501,8 @@ extern int item_xoff;
 extern int item_yoff;
 struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt);
 void start_drag( int x, int y );
-
+int item_hiddenH_offset( struct toolbar_item * p );
+int group_hiddenH( struct toolbar_group *g );
 
 int  set_item_img( struct toolbar_item *p, int nimg, const char *imgname );
 void setrgbcolor(int rgb, struct color3doubles *pc);
@@ -509,6 +516,7 @@ void ttb_addlabel( const char * name, const char * img, const char *tooltip, con
 void ttb_enable( const char * name, int isselectable, int isgrayed, int onlythistb );
 void ttb_setselected( const char * name, int selected, int pressed, int onlythistb );
 void ttb_ensurevisible( const char * name, int onlythistb );
+void ttb_collapse( const char * name, int collapse, int hideheight, int onlythistb );
 int  ttb_get_flags( const char * name  );
 void ttb_seticon( const char * name, const char *img, int nicon, int onlythistb );
 void ttb_setbackcolor( const char * name, int color, int keepback, int onlythistb );

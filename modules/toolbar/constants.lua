@@ -94,6 +94,7 @@ toolbar.TTBF ={
   DROP_BUTTON   = 0x00000400,   --draw a drop down button at the end of a text button
   IS_SEPARATOR  = 0x00000800,   --it's a separator
   SHOW_BORDER   = 0x00001000,   --draw a border (used in text buttons)
+  HIDE_BLOCK    = 0x00002000,   --hide a block of items under this item (tree/list expand-collapse)
 --group flags
   GRP_SELECTABLE= 0x00000001,   --accepts click
   GRP_HIDDEN    = 0x00000002,   --it's hidden
