@@ -2,6 +2,7 @@
 
 if toolbar then
   local titgrp, itemsgrp, itselected, currproj, projmod, first_row
+  local collarow= {}
 
   local function clear_selected()
     if itselected then
@@ -43,12 +44,17 @@ if toolbar then
     if p_buffer == nil or p_buffer.proj_files == nil then return end
     local linenum= sel_file(cmd)
     if linenum then
-      local cmd=p_buffer.proj_files[linenum]
+      local fn=p_buffer.proj_files[linenum]
       local ft= p_buffer.proj_filestype[linenum]
       if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
-        Proj.go_file(cmd)
+        Proj.go_file(fn)
       elseif ft == Proj.PRJF_RUN then
-        Proj.run_command(cmd)
+        Proj.run_command(fn)
+      else
+        local name= "exp-"..cmd
+        ui.statusbar_text= name
+        local r= collarow[name]
+        if r ~= nil then if r then expand_list(name) else collapse_list(name) end end
       end
     end
   end
@@ -59,6 +65,7 @@ if toolbar then
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.sel_left_bar(titgrp,true) --empty title group
     first_row= 1
+    collarow= {}
   end
 
   local function currproj_change()
@@ -90,15 +97,17 @@ if toolbar then
   function expand_list(cmd)
     sel_file(cmd)
     set_expand_icon(cmd,"list-colapse2")
-    toolbar.cmds_n[cmd]= colapse_list
+    toolbar.cmds_n[cmd]= collapse_list
     toolbar.collapse(cmd, false)
+    collarow[cmd]= false
   end
 
-  function colapse_list(cmd)
+  function collapse_list(cmd)
     sel_file(cmd)
     set_expand_icon(cmd,"list-expand2")
     toolbar.cmds_n[cmd]= expand_list
     toolbar.collapse(cmd, true)
+    collarow[cmd]= true
   end
 
   local function load_proj()
@@ -160,15 +169,20 @@ if toolbar then
           if idlen > 0 then
             toolbar.gotopos( ind-7, y)
             local exbut= "exp-"..name
-            toolbar.cmd(exbut, colapse_list, "", "list-colapse2", true)
+            toolbar.cmd(exbut, collapse_list, "", "list-colapse2", true)
             set_expand_icon(exbut,"list-colapse2")
             toolbar.collapse(exbut, false, rowh*idlen, true)
+            collarow[exbut]= false
           end
           toolbar.cmds_n[name]= sel_file
           y= y + rowh
         end
       end
       sel_file_num(linenum)
+      --set project's default collapse items
+      for i= #p_buffer.proj_fold_row, 1, -1 do
+        collapse_list("exp-gofile#"..p_buffer.proj_fold_row[i] )
+      end
     end
   end
 

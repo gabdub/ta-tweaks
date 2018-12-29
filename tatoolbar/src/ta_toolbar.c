@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.27 (Dec 27 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.28 (Dec 29 2018)"
 
 static void free_img_list( void );
 
@@ -301,6 +301,9 @@ struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const
       G->list= p; //first one
     }
     G->list_last= p;
+    if( G->hideblocks != 0 ){   //update hidden heights
+      G->hideblocks= group_hiddenH(G);
+    }
   }
   return p;
 }
@@ -634,7 +637,7 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
 {
   struct toolbar_group * G;
   struct toolbar_item *p, *q;
-  int nx, nhide, xc1, xc2, yc1, yc2, x, y, hideH, hideendY;
+  int nx, nhide, xc1, xc2, yc1, yc2, x, y, y0;
   char *s;
 
   item_xoff= 0;
@@ -731,17 +734,12 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
     }
   }
   //it's a regular button bar
-  y += G->yvscroll;  //vertical scroll support
-  hideH= 0;
-  hideendY= 0;
+  y0= y + G->yvscroll;  //vertical scroll support
   for( p= G->list; (p != NULL); p= p->next ){
-    if( hideH != 0 ){
-      if( p->bary2 <= hideendY ){
-        continue; //skip items inside hidden blocks
-      }
-      y += hideH;
-      hideH= 0;
+    if( p->hideprev == -1 ){
+      continue; //skip items inside hidden blocks
     }
+    y= y0 + p->hideprev;
     //ignore non-selectable or hidden things (like separators)
     if( ((p->flags & (TTBF_SELECTABLE|TTBF_HIDDEN)) == TTBF_SELECTABLE) &&
         (x >= p->barx1) && (x <= p->barx2) && (y >= p->bary1) && (y <= p->bary2) ){
@@ -762,10 +760,6 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
       item_yoff= y - p->bary1;
       return p; //BUTTON
     }
-    if( (p->flags & TTBF_HIDE_BLOCK) != 0 ){  //hide a block of items under this one
-      hideH= p->hideblockH;
-      hideendY= p->bary2 + hideH;
-    }
   }
   return NULL;
 }
@@ -777,69 +771,44 @@ void start_drag( int x, int y )
   ttb.drag_y= item_yoff - y;
 }
 
-//return the height of the hidden items above this one or -1 if this item is hidden
+//return the height of the hidden items above this one or -1 if the item is inside a hidden block
 int item_hiddenH_offset( struct toolbar_item * p )
 {
-  struct toolbar_group *g;
-  struct toolbar_item * t;
-  int hideH= 0;
-  int hideendY= 0;
-  int hideHoff= 0;
   if( p != NULL ){
-    g= p->group;
+    struct toolbar_group *g= p->group;
     if( ((g->toolbar->flags & TTBF_TB_VISIBLE) == 0) || ((g->flags & TTBF_GRP_HIDDEN) != 0) ){
-      return -1; //the group is hidden
+      return -1; //the toolbar or the group is hidden
     }
     if( (p->flags & TTBF_HIDDEN) != 0 ){
       return -1;  //the item is hidden
     }
-    for( t= g->list; (t != p); t= t->next ){
-      if(t == NULL){
-        return -1;  //the item is not in the group (?)
-      }
-      if( hideH != 0 ){
-        if( t->bary2 <= hideendY ){
-          continue; //skip items inside hidden blocks
-        }
-        hideHoff += hideH;
-        hideH= 0;
-      }
-      if( (t->flags & TTBF_HIDE_BLOCK) != 0 ){  //hide a block of items under this one
-        hideH= t->hideblockH;
-        hideendY= t->bary2 + hideH;
-      }
-    }
-    if( hideH != 0 ){
-      if( p->bary2 <= hideendY ){
-        return -1;  //the item is inside a hidden block
-      }
-    }
+    return( p->hideprev );  //height of all the hidden blocks before this item or -1 if the item is inside a hidden block
   }
-  return( hideHoff );
+  return -1;  //item??
 }
 
 //return the height of all the hidden items in the group
+//update all items previous hidden heights
 int group_hiddenH( struct toolbar_group *g )
 {
-  struct toolbar_item * t;
+  struct toolbar_item * p;
   int hideH= 0;
   int hideendY= 0;
   int hideHoff= 0;
   if( g != NULL ){
-    if( ((g->toolbar->flags & TTBF_TB_VISIBLE) == 0) || ((g->flags & TTBF_GRP_HIDDEN) != 0) ){
-      return 0; //the group is hidden
-    }
-    for( t= g->list; (t != NULL); t= t->next ){
+    for(p= g->list; (p != NULL); p= p->next ){
       if( hideH != 0 ){
-        if( t->bary2 <= hideendY ){
+        if( p->bary2 <= hideendY ){
+          p->hideprev= -1;  //the item is inside a hidden block
           continue; //skip items inside hidden blocks
         }
         hideHoff += hideH;
         hideH= 0;
       }
-      if( (t->flags & TTBF_HIDE_BLOCK) != 0 ){  //hide a block of items under this one
-        hideH= t->hideblockH;
-        hideendY= t->bary2 + hideH;
+      p->hideprev= hideHoff;  //height of all the hidden blocks before this item
+      if( (p->flags & TTBF_HIDE_BLOCK) != 0 ){  //hide a block of items under this one
+        hideH= p->hideblockH;
+        hideendY= p->bary2 + hideH;
       }
     }
   }
@@ -2240,7 +2209,7 @@ void ttb_collapseT(struct toolbar_data *T, const char * name, int collapse, int 
     int flg= p->flags;
     if( hideheight > 0 ){
       if( p->hideblockH != hideheight ){
-        p->hideblockH= hideheight;  //set new hide height
+        p->hideblockH= hideheight;  //set a new hidden height
         hchg= 1;
       }
     }
@@ -2249,10 +2218,10 @@ void ttb_collapseT(struct toolbar_data *T, const char * name, int collapse, int 
     }else{
       p->flags &= ~TTBF_HIDE_BLOCK;
     }
-    if( (hchg) || (flg != p->flags) ){  //something change?
+    if( (hchg) || (flg != p->flags) ){  //something changed?
       //calc the total hidden height and adjust the scrollbar
       g->hideblocks= group_hiddenH(g);
-      group_vscroll_onoff(g, 1);  //force redraw group
+      group_vscroll_onoff(g, 1);  //force a group redraw
     }
   }
 }
@@ -2757,7 +2726,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
 void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
 {
   struct toolbar_item *p, *phi, *t, *ta;
-  int h, grayed, x, y, xa, nhide, x1, wt2, ht2, hideH, hideendY;
+  int h, grayed, x, y, xa, nhide, x1, wt2, ht2, yy;
   struct color3doubles *color;
 
   phi= NULL;
@@ -2825,18 +2794,13 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
 
   }else{
     //buttons
-    y0 -= g->yvscroll;  //vertical scroll support
-    hideH= 0;
-    hideendY= 0;
+    yy= y0 - g->yvscroll;  //vertical scroll support
     g->flags |= TTBF_GRP_LASTIT_SH;
     for( p= g->list; (p != NULL); p= p->next ){
-      if( hideH != 0 ){
-        if( p->bary2 <= hideendY ){
-          continue; //skip items inside hidden blocks
-        }
-        y0 -= hideH;
-        hideH= 0;
+      if( p->hideprev == -1 ){
+        continue; //skip items inside hidden blocks
       }
+      y0= yy - p->hideprev;
       if( (y0+p->bary1) >= g->toolbar->barheight ){
         g->flags &= ~TTBF_GRP_LASTIT_SH;    //item outside of view
         break;
@@ -2897,10 +2861,6 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
           //debug: show text buttons
           //draw_box(gcontext, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1, 0x000080, 0);
         }
-      }
-      if( (p->flags & TTBF_HIDE_BLOCK) != 0 ){  //hide a block of items under this one
-        hideH= p->hideblockH;
-        hideendY= p->bary2 + hideH;
       }
     }
   }

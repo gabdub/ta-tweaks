@@ -233,6 +233,7 @@ struct toolbar_item
   int back_color;     //-1:not set, 0x00RRGGBB
   int imgbase;        //0, TTBI_TB_SEP_BASE, TTBI_TB_BUTTON_BASE, TTBI_TB_DDBUT_BASE, TTBI_TB_CHECK_BASE, ...
   int hideblockH;     //height of the block under this item to hide when TTBF_HIDE_BLOCK flag is set
+  int hideprev;       //height of all the hidden blocks before this item or -1 if the item is inside a hidden block
 };
 
 struct toolbar_group
