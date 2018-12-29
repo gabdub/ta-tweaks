@@ -793,7 +793,10 @@ int item_hiddenH_offset( struct toolbar_item * p )
     if( (p->flags & TTBF_HIDDEN) != 0 ){
       return -1;  //the item is hidden
     }
-    for( t= g->list; (t != p) && (t != NULL); t= t->next ){
+    for( t= g->list; (t != p); t= t->next ){
+      if(t == NULL){
+        return -1;  //the item is not in the group (?)
+      }
       if( hideH != 0 ){
         if( t->bary2 <= hideendY ){
           continue; //skip items inside hidden blocks
@@ -806,10 +809,10 @@ int item_hiddenH_offset( struct toolbar_item * p )
         hideendY= t->bary2 + hideH;
       }
     }
-  }
-  if( hideH != 0 ){
-    if( p->bary2 <= hideendY ){
-      return -1;  //the item is inside a hidden block
+    if( hideH != 0 ){
+      if( p->bary2 <= hideendY ){
+        return -1;  //the item is inside a hidden block
+      }
     }
   }
   return( hideHoff );
@@ -2908,7 +2911,7 @@ void paint_vscrollbar(struct toolbar_group *g, void * gcontext, struct area * pd
   struct toolbar_img * img;
   int imgborders, h;
   int vis= ht;
-  int tot= g->bary2 - g->bary1;
+  int tot= g->bary2 - g->bary1 - g->hideblocks;
   int yb= y0;
   int hb= ht;
 
@@ -3298,7 +3301,7 @@ void vscroll_clickG( struct toolbar_group *g )
   struct toolbar_img * img;
   int imgborders;
   int vis= g->toolbar->barheight - g->bary1;
-  int tot= g->bary2 - g->bary1;
+  int tot= g->bary2 - g->bary1 - g->hideblocks;
   int yorg= g->yvscroll;
   g->yvscroll= 0;
   img= get_group_img(g,TTBI_TB_VERTSCR_NORM);
