@@ -177,11 +177,11 @@ if toolbar then
           y= y + rowh
         end
       end
-      sel_file_num(linenum)
       --set project's default collapse items
       for i= #p_buffer.proj_fold_row, 1, -1 do
         collapse_list("exp-gofile#"..p_buffer.proj_fold_row[i] )
       end
+      sel_file_num(linenum)
     end
   end
 
