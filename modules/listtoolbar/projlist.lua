@@ -52,7 +52,6 @@ if toolbar then
         Proj.run_command(fn)
       else
         local name= "exp-"..cmd
-        ui.statusbar_text= name
         local r= collarow[name]
         if r ~= nil then if r then expand_list(name) else collapse_list(name) end end
       end
