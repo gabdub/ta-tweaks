@@ -106,6 +106,12 @@ if toolbar then
         toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
         x= x + toolbar.cfg.butsize
       end
+      toolbar.gotopos(toolbar.listwidth - 16, 0)
+      toolbar.cmd("resizelist", nil, "Resize panel", "transparent")
+      toolbar.setthemeicon("resizelist", "resize-tr", toolbar.TTBI_TB.BACKGROUND, true)
+      toolbar.setthemeicon("resizelist", "resize-tr-hilight", toolbar.TTBI_TB.IT_HILIGHT, true)
+      toolbar.setthemeicon("resizelist", "resize-tr-hilight", toolbar.TTBI_TB.IT_HIPRESSED, true)
+
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
         ls[4]() --create list
