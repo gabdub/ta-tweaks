@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.28 (Dec 29 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.29 (Jan 3 2018)"
 
 static void free_img_list( void );
 
@@ -1165,6 +1165,21 @@ static struct toolbar_group * find_colendG( struct toolbar_group * g)
   return e;
 }
 
+static void move_rightanchored_itG( struct toolbar_group *g )
+{
+  struct toolbar_item *p;
+  if( g != NULL ){
+    int w= g->barx2 - g->barx1; //group width
+    for( p= g->list; (p != NULL); p= p->next ){
+      if( p->anchor_right > 0 ){
+        int itw= p->barx2 - p->barx1;   //keep item width
+        p->barx1= w - p->anchor_right;  //right align
+        p->barx2= p->barx1 + itw;
+      }
+    }
+  }
+}
+
 void update_layoutT( struct toolbar_data *T)
 {
   struct toolbar_group *g, *gs, *ge;
@@ -1318,10 +1333,14 @@ void update_layoutT( struct toolbar_data *T)
       }
     }
   }
-  //adjust tabs inside tabgroups
+  //adjust tabs inside tabgroups and right anchored items
   for( g= T->group; (g != NULL); g= g->next ){
-    if( (g->flags & (TTBF_GRP_TABBAR|TTBF_GRP_HIDDEN)) == TTBF_GRP_TABBAR ){
-      update_tabs_sizeG(g); //split free space in tabs that expand
+    if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
+      if( (g->flags & TTBF_GRP_TABBAR) != 0 ){
+        update_tabs_sizeG(g); //split free space in tabs that expand
+      }else if( (g->flags & TTBF_GRP_HAS_RANCH) != 0 ){ //check right anchored items
+        move_rightanchored_itG(g);
+      }
     }
   }
   //adjust scrollbars
@@ -1331,26 +1350,33 @@ void update_layoutT( struct toolbar_data *T)
 void update_group_sizeG( struct toolbar_group *G, int redraw )
 { //group size changed, update toolbar
   struct toolbar_item * p;
-  int w, h;
+  int w, h, rw;
 
   if( (G->flags & (TTBF_GRP_ITEM_W|TTBF_GRP_ITEM_H)) != 0 ){
     //this group set its size using items position
     w= 0;
     h= 0;
+    rw= 0;
     if( (G->flags & TTBF_GRP_HIDDEN) == 0 ){
       for( p= G->list; (p != NULL); p= p->next ){
         if( (p->flags & TTBF_HIDDEN) == 0 ){
-          if( w < p->barx2 ){
-            w= p->barx2;    //item's max X
+          if( p->anchor_right > 0 ){ //right anchored item
+            if( rw < p->anchor_right ){
+              rw= p->anchor_right;    //item's max anchor_right
+            }
+          }else{  //left anchored item
+            if( w < p->barx2 ){
+              w= p->barx2;    //item's max X
+            }
           }
-          if( h < p->bary2 ){
+          if( h < p->bary2 ){ //TO DO: ignore hidden blocks
             h= p->bary2;    //item's max Y
           }
         }
       }
     }
     if( (G->flags & TTBF_GRP_ITEM_W) != 0 ){
-      G->barx2= G->barx1 + w; //use items width
+      G->barx2= G->barx1 + w + rw; //use items width (left + right)
     }
     if( (G->flags & TTBF_GRP_ITEM_H) != 0 ){
       G->bary2= G->bary1 + h; //use items height
@@ -3179,6 +3205,16 @@ void ttb_settooltip( const char * name, const char *tooltip, int onlythistb )
     for( i= 0; i < NTOOLBARS; i++){
       ttb_change_button_tooltipT(toolbar_from_num(i), name, tooltip );
     }
+  }
+}
+
+void ttb_set_anchor( const char * name, int xright )
+{ //set the distance from item.xleft to toolbar.xright / 0 = left aligned
+  struct toolbar_item * p= item_from_nameT(current_toolbar(), name);
+  if( p != NULL ){
+    p->anchor_right= xright;
+    p->group->flags |= TTBF_GRP_HAS_RANCH; //the group has 1 or more right anchored items
+    update_layoutT(p->group->toolbar); //adjust item position and redraw
   }
 }
 

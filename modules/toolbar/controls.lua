@@ -268,3 +268,13 @@ function toolbar.get_radio_val(name,maxnum)
   end
   return 0
 end
+
+function toolbar.top_right_resize_handle(rzname, wmin)  --add a resize handle
+  toolbar.gotopos(0, 0)
+  toolbar.addbutton(rzname,"Resize panel")
+  toolbar.anchor(rzname, 25) --anchor to the right
+  toolbar.setthemeicon(rzname, "transparent",       toolbar.TTBI_TB.IT_NORMAL)
+  toolbar.setthemeicon(rzname, "resize-tr",         toolbar.TTBI_TB.BACKGROUND)
+  toolbar.setthemeicon(rzname, "resize-tr-hilight", toolbar.TTBI_TB.IT_HILIGHT)
+  toolbar.setthemeicon(rzname, "resize-tr-hilight", toolbar.TTBI_TB.IT_HIPRESSED)
+end

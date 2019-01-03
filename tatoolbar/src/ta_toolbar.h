@@ -62,6 +62,7 @@
 #define TTBF_GRP_TRY_PACK   0x01000000  //after item delete try to scroll left (internal use)
 #define TTBF_GRP_LASTIT_SH  0x02000000  //is the last item of the group shown (internal use)
 #define TTBF_GRP_VSCR_INH   0x04000000  //inhibit vertical scroll while popup is open
+#define TTBF_GRP_HAS_RANCH  0x08000000  //the group has 1 or more right anchored items
 //toolbar flags
 #define TTBF_TB_VERTICAL    0x00000001  //it's vertical
 #define TTBF_TB_VISIBLE     0x00000002  //it's visible
@@ -234,6 +235,7 @@ struct toolbar_item
   int imgbase;        //0, TTBI_TB_SEP_BASE, TTBI_TB_BUTTON_BASE, TTBI_TB_DDBUT_BASE, TTBI_TB_CHECK_BASE, ...
   int hideblockH;     //height of the block under this item to hide when TTBF_HIDE_BLOCK flag is set
   int hideprev;       //height of all the hidden blocks before this item or -1 if the item is inside a hidden block
+  int anchor_right;   //set the distance from item.xleft to toolbar.xright / 0 = left aligned
 };
 
 struct toolbar_group
@@ -524,6 +526,7 @@ void ttb_setbackcolor( const char * name, int color, int keepback, int onlythist
 void ttb_settooltip( const char * name, const char *tooltip, int onlythistb );
 void ttb_settext( const char * name, const char * text, const char *tooltip, int onlythistb );
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
+void ttb_set_anchor( const char * name, int xright );
 
 void toolbar_set_win_title( const char *title );
 

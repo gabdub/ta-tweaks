@@ -287,6 +287,15 @@ static int ltoolbar_textfont(lua_State *L)
   return 0;
 }
 
+/** `toolbar.anchor(name,xright)` Lua function.
+  xright= distance from item.xleft to toolbar.xright / 0 = left aligned
+*/
+static int ltoolbar_anchor(lua_State *L)
+{
+  ttb_set_anchor( luaL_checkstring(L, 1), lua_tointeger(L, 2) );
+  return 0;
+}
+
 //----- TABS -----
 /** `toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)` Lua function. */
 static int ltoolbar_tabfontcolor(lua_State *L)
@@ -1725,6 +1734,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);   //change a button tooltip
   l_setcfunction(L, -1, "settext",      ltoolbar_settext);      //change a button text
   l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
+  l_setcfunction(L, -1, "anchor",       ltoolbar_anchor);       //anchor a buttons x position to the right
   //tabs
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
   l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab num
