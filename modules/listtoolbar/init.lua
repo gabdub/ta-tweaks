@@ -27,7 +27,7 @@ if toolbar then
   local function set_list_width()
     if not toolbar.listwidth then toolbar.listwidth=250 end
     if Proj and Proj.select_width then toolbar.listwidth= Proj.select_width end  --try to use the same width as the project
-    if toolbar.listwidth < 100 then toolbar.listwidth=100 end
+    if toolbar.listwidth < 150 then toolbar.listwidth=150 end
   end
 
   function toolbar.list_addbutton(name, tooltip, funct)
@@ -107,7 +107,7 @@ if toolbar then
         x= x + toolbar.cfg.butsize
       end
 
-      toolbar.top_right_resize_handle("resizelist", 100) --add a resize handle
+      toolbar.top_right_resize_handle("resizelist", 150) --add a resize handle
 
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}

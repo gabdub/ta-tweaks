@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.29 (Jan 3 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.30 (Jan 3 2018)"
 
 static void free_img_list( void );
 
@@ -1732,7 +1732,7 @@ void mouse_leave_toolbar( struct toolbar_data *T )
 
 void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
 {
-  int nx, xhi, ok;
+  int nx, xhi, ok, w;
   struct toolbar_item * p, *prev;
   struct toolbar_group *G;
 
@@ -1815,6 +1815,16 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
       }
     }else if( (p->flags & TTBF_SCROLL_BAR) != 0 ){
       vscroll_clickG(p->group); //update scrollbar click (drag)
+    }else if( (ttb.phipress->flags & TTBF_IS_HRESIZE) != 0 ){
+      w= T->drag_off + item_xoff; //resize toolbar horizontally
+      if( w < T->min_width ){
+        w= T->min_width;
+      }
+      if( T->barwidth != w ){ //toolbar size changed, adjust groups layout
+        T->barwidth= w;
+        set_toolbar_size(T);
+        update_layoutT(T);
+      }
     }
   }
 }
@@ -3215,6 +3225,19 @@ void ttb_set_anchor( const char * name, int xright )
     p->anchor_right= xright;
     p->group->flags |= TTBF_GRP_HAS_RANCH; //the group has 1 or more right anchored items
     update_layoutT(p->group->toolbar); //adjust item position and redraw
+  }
+}
+
+void ttb_set_resize( const char * name, int h_resize, int min_width )
+{ //the button resize the toolbar
+  struct toolbar_item * p= item_from_nameT(current_toolbar(), name);
+  if( p != NULL ){
+    if( h_resize ){
+      p->flags |= TTBF_IS_HRESIZE;
+    }else{
+      p->flags &= ~TTBF_IS_HRESIZE;
+    }
+    p->group->toolbar->min_width= min_width;  //minimun toolbar width or 0
   }
 }
 

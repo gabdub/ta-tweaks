@@ -296,6 +296,14 @@ static int ltoolbar_anchor(lua_State *L)
   return 0;
 }
 
+/** `toolbar.setresize(name,h_resize,min-width)` Lua function.
+*/
+static int ltoolbar_setresize(lua_State *L)
+{ //the button resize the toolbar
+  ttb_set_resize( luaL_checkstring(L, 1), lua_toboolean(L, 2), lua_tointeger(L, 3) );
+  return 0;
+}
+
 //----- TABS -----
 /** `toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)` Lua function. */
 static int ltoolbar_tabfontcolor(lua_State *L)
@@ -1370,6 +1378,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
           vscroll_clickG(ttb.phipress->group); //scrollbar click
           start_drag(event->x, event->y);  //drag the scrollbar until the mouse button is released
+        }else if( (ttb.phipress->flags & TTBF_IS_HRESIZE) != 0 ){
+          start_drag(event->x, event->y);  //drag the resize button until the mouse button is released
+          T->drag_off= T->barwidth - item_xoff;
         }
         redraw_item(ttb.philight);
       }
@@ -1735,6 +1746,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "settext",      ltoolbar_settext);      //change a button text
   l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
   l_setcfunction(L, -1, "anchor",       ltoolbar_anchor);       //anchor a buttons x position to the right
+  l_setcfunction(L, -1, "setresize",    ltoolbar_setresize);    //the button resize the toolbar
   //tabs
   l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
   l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab num
