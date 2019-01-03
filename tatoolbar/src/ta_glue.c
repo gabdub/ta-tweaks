@@ -1381,6 +1381,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }else if( (ttb.phipress->flags & TTBF_IS_HRESIZE) != 0 ){
           start_drag(event->x, event->y);  //drag the resize button until the mouse button is released
           T->drag_off= T->barwidth - item_xoff;
+          clear_tooltip_textT(T);
         }
         redraw_item(ttb.philight);
       }

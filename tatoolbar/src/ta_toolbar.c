@@ -1823,7 +1823,7 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
       if( T->barwidth != w ){ //toolbar size changed, adjust groups layout
         T->barwidth= w;
         set_toolbar_size(T);
-        update_layoutT(T);
+        //update_layoutT(T); called from the resize event
       }
     }
   }
