@@ -4,6 +4,18 @@ if toolbar then
   local titgrp, itemsgrp, itselected, currproj, projmod, first_row
   local collarow= {}
 
+  --right-click context menu
+  local proj_context_menu = {
+    {--"open_projsel",
+     "open_projectdir",SEPARATOR,
+     "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
+     "adddirfiles_proj",SEPARATOR,
+     --"show_documentation",
+     "search_project"
+     --,"search_sel_dir","search_sel_file"
+    }
+  }
+
   local function clear_selected()
     if itselected then
       toolbar.selected(itselected,false,false)
@@ -34,8 +46,8 @@ if toolbar then
 
   local function gofile_rclick(cmd) --right click
     if sel_file(cmd) then
---      ui.context_menu= create_uimenu_fromactions(recentproj_context_menu)
---      return true --open context menu
+      ui.toolbar_context_menu= create_uimenu_fromactions(proj_context_menu)
+      return true --open context menu
     end
   end
 

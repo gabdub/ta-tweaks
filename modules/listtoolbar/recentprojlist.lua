@@ -33,7 +33,7 @@ if toolbar then
 
   local function goproj_rclick(cmd) --right click
     if sel_proj(cmd) then
-      ui.context_menu= create_uimenu_fromactions(recentproj_context_menu)
+      ui.toolbar_context_menu= create_uimenu_fromactions(recentproj_context_menu)
       return true --open context menu
     end
   end

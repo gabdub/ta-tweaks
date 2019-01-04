@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.30 (Jan 3 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.31 (Jan 4 2018)"
 
 static void free_img_list( void );
 

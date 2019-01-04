@@ -1409,7 +1409,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
             fire_tb_clicked_event(p);         //button left click
           }else if(event->button == 3){
             if( fire_tb_Rclicked_event(p) ){  //button right click
-              lL_showcontextmenu(lua, event, "context_menu"); //open context menu
+              lL_showcontextmenu(lua, event, "toolbar_context_menu"); //open context menu
             }
           }
         }else{
