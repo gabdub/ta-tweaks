@@ -127,6 +127,7 @@ if toolbar then
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.listtb_y= 1
+    toolbar.cmdright= 3
     --toolbar.list_addaction("open_project")
     --toolbar.list_addaction("new_project")
     if (not Proj) then
@@ -171,6 +172,7 @@ if toolbar then
           local xtxt= ind
           if bicon then xtxt= toolbar.cfg.barsize+ind else bold=true end
           toolbar.addtext(name, fname, p_buffer.proj_files[i], toolbar.listwidth-13, false, true, bold, xtxt, 0)
+          toolbar.anchor(name, 10, true)
           toolbar.gotopos( 3+ind, y)
           if bicon then
             local icbut= "ico-"..name

@@ -96,6 +96,7 @@ toolbar.TTBF ={
   SHOW_BORDER   = 0x00001000,   --draw a border (used in text buttons)
   HIDE_BLOCK    = 0x00002000,   --hide a block of items under this item (tree/list expand-collapse)
   IS_HRESIZE    = 0x00004000,   --the button resize the toolbar horizontally
+  ANCHOR_END    = 0x00008000,   --anchor the item's right (x2) instead of it's left (x1)
 --group flags
   GRP_SELECTABLE= 0x00000001,   --accepts click
   GRP_HIDDEN    = 0x00000002,   --it's hidden

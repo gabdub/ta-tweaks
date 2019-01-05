@@ -287,12 +287,12 @@ static int ltoolbar_textfont(lua_State *L)
   return 0;
 }
 
-/** `toolbar.anchor(name,xright)` Lua function.
+/** `toolbar.anchor(name,xright,anchor_end)` Lua function.
   xright= distance from item.xleft to toolbar.xright / 0 = left aligned
 */
 static int ltoolbar_anchor(lua_State *L)
 {
-  ttb_set_anchor( luaL_checkstring(L, 1), lua_tointeger(L, 2) );
+  ttb_set_anchor( luaL_checkstring(L, 1), lua_tointeger(L, 2), lua_toboolean(L,3) );
   return 0;
 }
 

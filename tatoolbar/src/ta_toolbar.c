@@ -1172,9 +1172,19 @@ static void move_rightanchored_itG( struct toolbar_group *g )
     int w= g->barx2 - g->barx1; //group width
     for( p= g->list; (p != NULL); p= p->next ){
       if( p->anchor_right > 0 ){
-        int itw= p->barx2 - p->barx1;   //keep item width
-        p->barx1= w - p->anchor_right;  //right align
-        p->barx2= p->barx1 + itw;
+        if( (p->flags & TTBF_ANCHOR_END) != 0 ){
+          //anchor the item's right (x2)
+          p->barx2= w - p->anchor_right;
+        }else{
+          //anchor the item's left (x1)
+          int imx= p->imgx - p->barx1;    //keep img/text left position
+          int txx= p->txtx - p->barx1;
+          int itw= p->barx2 - p->barx1;   //keep item width
+          p->barx1= w - p->anchor_right;  //right align
+          p->imgx= p->barx1 + imx;
+          p->txtx= p->barx1 + txx;
+          p->barx2= p->barx1 + itw;
+        }
       }
     }
   }
@@ -3218,11 +3228,16 @@ void ttb_settooltip( const char * name, const char *tooltip, int onlythistb )
   }
 }
 
-void ttb_set_anchor( const char * name, int xright )
+void ttb_set_anchor( const char * name, int xright, int anchor_end )
 { //set the distance from item.xleft to toolbar.xright / 0 = left aligned
   struct toolbar_item * p= item_from_nameT(current_toolbar(), name);
   if( p != NULL ){
     p->anchor_right= xright;
+    if( anchor_end ){
+      p->flags |= TTBF_ANCHOR_END;
+    }else{
+      p->flags &= ~TTBF_ANCHOR_END;
+    }
     p->group->flags |= TTBF_GRP_HAS_RANCH; //the group has 1 or more right anchored items
     update_layoutT(p->group->toolbar); //adjust item position and redraw
   }

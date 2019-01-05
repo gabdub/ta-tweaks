@@ -78,6 +78,7 @@ if toolbar then
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.listtb_y= 1
+    toolbar.cmdright= 3
     toolbar.list_addaction("open_project")
     toolbar.list_addaction("new_project")
     toolbar.list_addinfo('Recent Projects', true)
@@ -94,6 +95,7 @@ if toolbar then
           local name= "goproj#"..i
           toolbar.gotopos( 3, y)
           toolbar.addtext(name, fname, Proj.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
+          toolbar.anchor(name, 10, true)
           toolbar.gotopos( 3, y)
           local icbut= "ico-"..name
           toolbar.cmd(icbut, sel_proj, "", "document-properties", true)

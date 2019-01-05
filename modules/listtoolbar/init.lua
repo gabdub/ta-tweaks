@@ -3,9 +3,11 @@
 if toolbar then
   local events, events_connect = events, events.connect
   local selectgrp, currlist, currlistidx
+  local lbl_n= 0
 
   toolbar.listtb_hide_p= false
   toolbar.listselections= {}
+  toolbar.cmdright= 3
 
   local function listtb_switch()
     --{name, tooltip, icon, createfun, **notify**, show}
@@ -31,23 +33,28 @@ if toolbar then
   end
 
   function toolbar.list_addbutton(name, tooltip, funct)
-    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
-    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
+    toolbar.gotopos( 0, toolbar.listtb_y)
     toolbar.cmd(name, funct, tooltip or "", name, true)
+    toolbar.cmdright= toolbar.cmdright + toolbar.cfg.butsize
+    toolbar.anchor(name, toolbar.cmdright) --anchor to the right
   end
 
   function toolbar.list_addaction(action)
-    toolbar.listright= toolbar.listright - toolbar.cfg.butsize
-    toolbar.gotopos( toolbar.listright, toolbar.listtb_y)
+    toolbar.gotopos( 0, toolbar.listtb_y)
     toolbar.addaction(action)
+    toolbar.cmdright= toolbar.cmdright + toolbar.cfg.butsize
+    toolbar.anchor(action, toolbar.cmdright) --anchor to the right
   end
 
   function toolbar.list_addinfo(text,bold)
     --add a text to the list
     toolbar.gotopos( 3, toolbar.listtb_y)
-    toolbar.addlabel(text, "", toolbar.listright, true, bold)
+    lbl_n= lbl_n+1
+    local name= "_lbl_"..lbl_n
+    toolbar.addlabel(text, "", toolbar.listright, true, bold, name)
     toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
     toolbar.listright= toolbar.listwidth
+    toolbar.anchor(name, toolbar.cmdright, true)
   end
 
   function toolbar.select_list(listname, donthide)

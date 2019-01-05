@@ -37,6 +37,7 @@
 #define TTBF_SHOW_BORDER    0x00001000  //draw a border (used in text buttons)
 #define TTBF_HIDE_BLOCK     0x00002000  //hide a block of items under this item (tree/list expand-collapse)
 #define TTBF_IS_HRESIZE     0x00004000  //the button resize the toolbar horizontally
+#define TTBF_ANCHOR_END     0x00008000  //anchor the item's right (x2) instead of it's left (x1)
 //iternal use item flags
 #define TTBF_CLOSETAB_BUT   0x01000000  //highlighted xbutton is a close tab button (internal use)
 #define TTBF_SCROLL_BUT     0x02000000  //highlighted xbutton is a scroll button (internal use)
@@ -530,7 +531,7 @@ void ttb_setbackcolor( const char * name, int color, int keepback, int onlythist
 void ttb_settooltip( const char * name, const char *tooltip, int onlythistb );
 void ttb_settext( const char * name, const char * text, const char *tooltip, int onlythistb );
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
-void ttb_set_anchor( const char * name, int xright );
+void ttb_set_anchor( const char * name, int xright, int anchor_end );
 void ttb_set_resize( const char * name, int h_resize, int min_width );
 
 void toolbar_set_win_title( const char *title );

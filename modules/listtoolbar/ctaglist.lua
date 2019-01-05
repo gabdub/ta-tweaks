@@ -70,6 +70,7 @@ if toolbar then
           local bicon= toolbar.tag_list[i][3]
           toolbar.gotopos( 3, y)
           toolbar.addtext(gt, name, "", toolbar.listwidth-13, false, true, false, toolbar.cfg.barsize, 0)
+          toolbar.anchor(gt, 10, true)
           toolbar.gotopos( 3, y)
           local icbut= "ico-"..gt
           toolbar.cmd(icbut, gototag, "", bicon, true)
@@ -117,6 +118,7 @@ if toolbar then
       toolbar.list_addinfo('No CTAG file found in the project')
       return
     end
+    toolbar.cmdright= 3
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
     toolbar.list_addbutton("view-refresh", "Update Ctag List", toolbar.list_toolbar_reload)
