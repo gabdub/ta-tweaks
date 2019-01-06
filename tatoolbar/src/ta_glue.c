@@ -1854,13 +1854,6 @@ void toolbar_set_win_title( const char *title )
 }
 
 /* create a DRAWING-AREA for each toolbar */
-//ntoolbar=0: HORIZONTAL  (top)
-//ntoolbar=1: VERTICAL    (left)
-//ntoolbar=2: HORIZONTAL  (bottom status)
-//ntoolbar=3: VERTICAL    (right #2)
-//ntoolbar=4: VERTICAL    (right #1)
-//ntoolbar=6: VERTICAL    (botton results)
-//ntoolbar=7..: VERTICAL    (POPUPs)
 static void create_tatoolbar( GtkWidget *box, int ntoolbar )
 {
   struct toolbar_data *T;
