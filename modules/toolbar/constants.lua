@@ -8,10 +8,11 @@ toolbar.LEFT_TOOLBAR=     1
 toolbar.STAT_TOOLBAR=     2
 toolbar.RIGHT_TOOLBAR=    3
 toolbar.MINIMAP_TOOLBAR=  4
-toolbar.FIRST_POPUP=      5
-toolbar.COMBO_POPUP=      5
-toolbar.POPUP_TOOLBAR=    6
-toolbar.NTOOLBARS=        7
+toolbar.RESULTS_TOOLBAR=  5
+toolbar.FIRST_POPUP=      6
+toolbar.COMBO_POPUP=      6
+toolbar.POPUP_TOOLBAR=    7
+toolbar.NTOOLBARS=        10
 
 toolbar.TTBI_TB = {
   BACK_BASE     = 0,

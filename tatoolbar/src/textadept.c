@@ -1,4 +1,4 @@
-// Copyright 2007-2018 Mitchell mitchell.att.foicica.com. See LICENSE.
+// Copyright 2007-2019 Mitchell mitchell.att.foicica.com. See LICENSE.
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
@@ -2317,67 +2317,84 @@ static void new_window() {
 
   GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
-
+//------------------------------------------menubar
   menubar = gtk_menu_bar_new();
   gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
-
+//------------------------------------------tabbar
   tabbar = gtk_notebook_new();
   signal(tabbar, "switch-page", t_tabchange);
   signal(tabbar, "button-press-event", t_tabbuttonpress);
   gtk_notebook_set_scrollable(GTK_NOTEBOOK(tabbar), TRUE);
   gtk_box_pack_start(GTK_BOX(vbox), tabbar, FALSE, FALSE, 0);
   gtk_widget_set_can_focus(tabbar, FALSE);
-
+//------------------------------------------TB#0
 #ifdef USE_TA_TOOLBAR
-  create_tatoolbar(vbox,0);
+  create_tatoolbar(vbox, TOP_TOOLBAR);   //TOOLBAR: HORIZONTAL (top)
 #endif
-
+//------------------------------------------
   GtkWidget *paned = gtk_vpaned_new();
   gtk_box_pack_start(GTK_BOX(vbox), paned, TRUE, TRUE, 0);
-
-  GtkWidget *vboxp = gtk_vbox_new(FALSE, 0);
-  gtk_paned_add1(GTK_PANED(paned), vboxp);
-
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(vboxp), hbox, TRUE, TRUE, 0);
+    //==========================================paned( vboxp / command_entry )
+    GtkWidget *vboxp = gtk_vbox_new(FALSE, 0);
+    gtk_paned_add1(GTK_PANED(paned), vboxp);
+      //------------------------------------------vboxp( hbox / new_findbox )
+      GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+      gtk_box_pack_start(GTK_BOX(vboxp), hbox, TRUE, TRUE, 0);
 
 #ifdef USE_TA_TOOLBAR
-  create_tatoolbar(hbox,1); //VERTICAL    (left)
-  GtkWidget *hboxED = gtk_hbox_new(FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(hbox), hboxED, TRUE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(hboxED), new_view(0), TRUE, TRUE, 0);
-  create_tatoolbar(hbox,4); //VERTICAL    (right #1)
-  create_tatoolbar(hbox,3); //VERTICAL    (right #2)
+        //==========================================hbox( TB#1 / vboxIN / TB#3 )
+        create_tatoolbar(hbox, LEFT_TOOLBAR); //TOOLBAR: VERTICAL (left)
+
+        //==========================================vboxIN( hboxIN / TB#5 )
+        GtkWidget *vboxIN = gtk_vbox_new(FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(hbox), vboxIN, TRUE, TRUE, 0);
+          //------------------------------------------
+          GtkWidget *hboxIN = gtk_hbox_new(FALSE, 0);
+          gtk_box_pack_start(GTK_BOX(vboxIN), hboxIN, TRUE, TRUE, 0);
+            //==========================================hboxIN( hboxED / TB#4 )
+            GtkWidget *hboxED = gtk_hbox_new(FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(hboxIN), hboxED, TRUE, TRUE, 0);
+            //------------------------------------------hboxED(buffers)
+            gtk_box_pack_start(GTK_BOX(hboxED), new_view(0), TRUE, TRUE, 0);
+            //==========================================TB#4
+            create_tatoolbar(hboxIN, MINIMAP_TOOLBAR); //TOOLBAR: VERTICAL (right internal: minimap/scrollbar)
+
+          //------------------------------------------TB#5
+          create_tatoolbar(vboxIN, RESULTS_TOOLBAR); //TOOLBAR: VERTICAL (bottom internal: results)
+
+        //==========================================TB#3
+        create_tatoolbar(hbox, RIGHT_TOOLBAR);   //TOOLBAR: VERTICAL (right external: config panel)
 #else
-  gtk_box_pack_start(GTK_BOX(hbox), new_view(0), TRUE, TRUE, 0);
+        //==========================================hbox(buffers) (when TOOLBAR IS NOT USED)
+        gtk_box_pack_start(GTK_BOX(hbox), new_view(0), TRUE, TRUE, 0);
 #endif
-  gtk_box_pack_start(GTK_BOX(vboxp), new_findbox(), FALSE, FALSE, 5);
+      //------------------------------------------new_findbox
+      gtk_box_pack_start(GTK_BOX(vboxp), new_findbox(), FALSE, FALSE, 5);
 
-  command_entry = scintilla_new();
-  gtk_widget_set_size_request(command_entry, 1, 1);
-  signal(command_entry, "key-press-event", s_keypress);
-  signal(command_entry, "focus-out-event", wc_focusout);
-  gtk_paned_add2(GTK_PANED(paned), command_entry);
-  gtk_container_child_set(GTK_CONTAINER(paned), command_entry, "shrink", FALSE,
-                          NULL);
-
+    //==========================================buffer: command_entry
+    command_entry = scintilla_new();
+    gtk_widget_set_size_request(command_entry, 1, 1);
+    signal(command_entry, "key-press-event", s_keypress);
+    signal(command_entry, "focus-out-event", wc_focusout);
+    gtk_paned_add2(GTK_PANED(paned), command_entry);
+    gtk_container_child_set(GTK_CONTAINER(paned), command_entry, "shrink", FALSE, NULL);
+//------------------------------------------statusbar
   GtkWidget *hboxs = gtk_hbox_new(FALSE, 0);
 #ifdef USE_TA_TOOLBAR
   gtk_box_pack_start(GTK_BOX(vbox), hboxs, FALSE, FALSE, 0);
 #else
   gtk_box_pack_start(GTK_BOX(vbox), hboxs, FALSE, FALSE, 1);
 #endif
-
   statusbar[0] = gtk_label_new(NULL), statusbar[1] = gtk_label_new(NULL);
   gtk_box_pack_start(GTK_BOX(hboxs), statusbar[0], TRUE, TRUE, 5);
   gtk_misc_set_alignment(GTK_MISC(statusbar[0]), 0, 0);
   gtk_box_pack_start(GTK_BOX(hboxs), statusbar[1], TRUE, TRUE, 5);
   gtk_misc_set_alignment(GTK_MISC(statusbar[1]), 1, 0);
-
+//------------------------------------------toolbar #2
 #ifdef USE_TA_TOOLBAR
-  create_tatoolbar(vbox,2);
+  create_tatoolbar(vbox, STAT_TOOLBAR); //TOOLBAR: HORIZONTAL (bottom external: status bar)
 #endif
-
+//------------------------------------------
   gtk_widget_show_all(window);
   gtk_widget_hide(menubar), gtk_widget_hide(tabbar); // hide initially
   gtk_widget_hide(findbox), gtk_widget_hide(command_entry); // hide initially

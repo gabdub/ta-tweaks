@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+// Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 /*
     ta_toolbar.h
     ============
@@ -7,17 +7,17 @@
 #ifndef __TA_TOOLBAR__
 #define __TA_TOOLBAR__
 
-//ntoolbar=0: HORIZONTAL  (top)
-//ntoolbar=1: VERTICAL    (left)
-//ntoolbar=2: HORIZONTAL  (bottom)
-//ntoolbar=3: VERTICAL    (right #2)
-//ntoolbar=4: VERTICAL    (right #1)
-//ntoolbar=5: VERTICAL    (POPUP:combo-list)
-//ntoolbar=6: VERTICAL    (POPUP)
-#define STAT_TOOLBAR      2
-#define MINIMAP_TOOLBAR   4
-#define POPUP_FIRST       5
-#define NTOOLBARS         7
+//ntoolbar:
+#define TOP_TOOLBAR       0   //HORIZONTAL  (top)
+#define LEFT_TOOLBAR      1   //VERTICAL    (left)
+#define STAT_TOOLBAR      2   //HORIZONTAL  (bottom external: status bar)
+#define RIGHT_TOOLBAR     3   //VERTICAL    (right  external: config panel)
+#define MINIMAP_TOOLBAR   4   //VERTICAL    (right  internal: minimap/scrollbar)
+#define RESULTS_TOOLBAR   5   //HORIZONTAL  (bottom internal: results)
+
+#define POPUP_FIRST       6   //VERTICAL    (POPUPS)
+#define COMBO_POPUP       6   //VERTICAL    (POPUP:combo-list)
+#define NTOOLBARS         10
 
 // toolbar -> group -> items
 

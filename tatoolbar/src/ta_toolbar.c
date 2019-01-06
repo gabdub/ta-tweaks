@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+// Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 /* TA toolbar */
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.31 (Jan 4 2018)"
+#define TA_TOOLBAR_VERSION_STR "1.0.32 (Jan 6 2019)"
 
 static void free_img_list( void );
 
@@ -2989,8 +2989,8 @@ struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
         memset( T, 0, sizeof(struct toolbar_data));
     }
     T->num=  ntoolbar;
-    //0: HORIZONTAL  (top) - 2: HORIZONTAL  (bottom)
-    if( (ntoolbar != 0) && (ntoolbar != 2) ){
+    //HORIZONTAL TOOLBARS:  top - bottom status - bottom results
+    if( (ntoolbar != TOP_TOOLBAR) && (ntoolbar != STAT_TOOLBAR) && (ntoolbar != RESULTS_TOOLBAR) ){
       T->flags |= TTBF_TB_VERTICAL; //it's vertical
     }else{
       T->flags &= ~TTBF_TB_VERTICAL; //it's horizontal
