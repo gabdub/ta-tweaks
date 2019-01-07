@@ -1,7 +1,7 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
-  local titgrp, itemsgrp, itselected, currproj, projmod, first_row
+  local itemsgrp, itselected, currproj, projmod, first_row
   local collarow= {}
 
   --right-click context menu
@@ -74,8 +74,6 @@ if toolbar then
     --remove all items
     toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
-    toolbar.sel_left_bar(titgrp,true) --empty title group
-    first_row= 1
     collarow= {}
   end
 
@@ -122,12 +120,7 @@ if toolbar then
   end
 
   local function load_proj()
-    if not currproj_change() then return end
-
-    local linenum= toolbar.getnum_cmd(itselected)
-    list_clear()
-    toolbar.listtb_y= 1
-    toolbar.cmdright= 3
+    toolbar.list_init_title() --add a resize handle
     --toolbar.list_addaction("open_project")
     --toolbar.list_addaction("new_project")
     if (not Proj) then
@@ -139,10 +132,15 @@ if toolbar then
       toolbar.list_addinfo('No project found', true)
       return
     end
+
     first_row= 1
     local fname= p_buffer.proj_rowinfo[first_row][1]
     if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
+    if not currproj_change() then return end
+
+    local linenum= toolbar.getnum_cmd(itselected)
+    list_clear()
 
     toolbar.sel_left_bar(itemsgrp)
     if #p_buffer.proj_files < 1 then
@@ -213,10 +211,6 @@ if toolbar then
   end
 
   local function proj_create()
-    --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, true)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_left_bar(itemsgrp)
@@ -234,8 +228,6 @@ if toolbar then
 
   local function proj_showlist(show)
     --show/hide list items
-    toolbar.sel_left_bar(titgrp)
-    toolbar.showgroup(show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end

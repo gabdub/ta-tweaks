@@ -1,8 +1,8 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
   local events, events_connect = events, events.connect
-  local selectgrp, currlist, currlistidx
+  local titgrp, currlist, currlistidx
   local lbl_n= 0
 
   toolbar.listtb_hide_p= false
@@ -59,9 +59,10 @@ if toolbar then
 
   function toolbar.select_list(listname, donthide)
     if listname == currlist then
-      --click on the active list= hide toolbar
+      --click on the active list= show/hide toolbar
       if not donthide then toolbar.list_toolbar_onoff() end
     else
+      if not toolbar.list_tb then toolbar.list_toolbar_onoff() end  --show toolbar
       --change the active list
       toolbar.selected(currlist, false, false)
       if currlistidx > 0 then toolbar.listselections[currlistidx][6](false) end --hide list items
@@ -76,6 +77,22 @@ if toolbar then
       if currlistidx > 0 then toolbar.listselections[currlistidx][6](true) end --show list items
       listtb_update()
     end
+  end
+
+  function toolbar.next_list()
+    local n=currlistidx
+    if toolbar.list_tb then
+      if n < #toolbar.listselections then n=n+1 else n=1 end
+    end
+    toolbar.select_list(toolbar.listselections[n][1])
+  end
+
+  function toolbar.prev_list()
+    local n=currlistidx
+    if toolbar.list_tb then
+      if n > 1 then n=n-1 else n=#toolbar.listselections end
+    end
+    toolbar.select_list(toolbar.listselections[n][1])
   end
 
   function toolbar.islistshown(name)
@@ -102,46 +119,52 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
 
-    --list select group: fixed width=300 / align top + fixed height
-    selectgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.FIRST, 0, toolbar.cfg.barsize)
-    toolbar.sel_left_bar(selectgrp)
-    local x= 3
+    --title group: fixed width=300 / align top + fixed height
+    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
+
     if #toolbar.listselections > 0 then
-      for i=1,#toolbar.listselections do
-        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
-        toolbar.gotopos(x, 1)
-        toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
-        x= x + toolbar.cfg.butsize
-      end
-
-      toolbar.top_right_resize_handle("resizelist", 150) --add a resize handle
-
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
         ls[4]() --create list
       end
       currlistidx=1
       currlist= toolbar.listselections[currlistidx][1] --activate the first one
-      toolbar.selected(currlist, false, true)
       toolbar.listselections[currlistidx][6](true) --show list items
       listtb_update()
     end
-    --toolbar.gotopos(x, 1)
-    --toolbar.cmd("window-close", toolbar.list_toolbar_onoff, "Close list [Shift+F10]", "window-close", true)
 
     if actions then
-      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "sf10", "view-list-compact-symbolic", function()
+      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "cf6", "view-list-compact-symbolic", function()
         return (toolbar.list_tb and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_View'])
       if med then
         local m=med[#med]
         m[#m+1]= "toggle_viewlist"
       end
+      actions.add("next_list", 'Next list', toolbar.next_list, "f6")
+      actions.add("prev_list", 'Previous list', toolbar.prev_list, "sf6")
     end
     toolbar.list_tb= false --hide for now...
     toolbar.show(false, toolbar.listwidth)
 
     toolbar.sel_top_bar()
+    if #toolbar.listselections > 0 then
+      for i=1,#toolbar.listselections do
+        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
+        toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
+      end
+      toolbar.addspace()
+      toolbar.selected(currlist, false, toolbar.list_tb)
+    end
+  end
+
+  function toolbar.list_init_title()
+    toolbar.listtb_y= 1
+    toolbar.cmdright= 18
+    toolbar.sel_left_bar(titgrp,true) --empty title group
+    toolbar.top_right_resize_handle("resizeList", 150) --add a resize handle
   end
 
   function toolbar.list_toolbar_onoff()
@@ -178,6 +201,8 @@ if toolbar then
       actions.updateaction("toggle_viewlist")
       toolbar.selected("toggle_viewlist", false, toolbar.list_tb)
     end
+    --only show as selected when the list is visible
+    toolbar.selected(currlist, false, toolbar.list_tb)
   end
 
   toolbar.icon_ext= {

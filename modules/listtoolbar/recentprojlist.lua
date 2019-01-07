@@ -1,7 +1,7 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
-  local titgrp, itemsgrp, itselected
+  local itemsgrp, itselected
 
   --right-click context menu
   local recentproj_context_menu = {
@@ -71,14 +71,12 @@ if toolbar then
     --remove all items
     toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
-    toolbar.sel_left_bar(titgrp,true) --empty title group
   end
 
   local function load_recentproj()
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
-    toolbar.listtb_y= 1
-    toolbar.cmdright= 3
+    toolbar.list_init_title() --add a resize handle
     toolbar.list_addaction("open_project")
     toolbar.list_addaction("new_project")
     toolbar.list_addinfo('Recent Projects', true)
@@ -109,10 +107,6 @@ if toolbar then
   end
 
   local function recentproj_create()
-    --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, true)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_left_bar(itemsgrp)
@@ -129,8 +123,6 @@ if toolbar then
 
   local function recentproj_showlist(show)
     --show/hide list items
-    toolbar.sel_left_bar(titgrp)
-    toolbar.showgroup(show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end

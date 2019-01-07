@@ -1,7 +1,7 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
-  local titgrp, itemsgrp, firsttag
+  local itemsgrp, firsttag
 
   local function list_clear()
     --remove all items
@@ -10,15 +10,10 @@ if toolbar then
     toolbar.tag_list_find= ""
     toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
-    toolbar.sel_left_bar(titgrp,true) --empty title group
     firsttag= nil
   end
 
   local function ctags_create()
-    --title group: fixed width=300 / align top + fixed height
-    titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, true)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_left_bar(itemsgrp)
@@ -26,7 +21,7 @@ if toolbar then
 
     list_clear()
 
-    if actions then actions.add("filter_ctaglist", 'Filter Ctag _List', toolbar.list_find_sym, "cf10", "edit-find") end
+    if actions then actions.add("filter_ctaglist", 'Filter Ctag _List', toolbar.list_find_sym, "af6", "edit-find") end
   end
 
   local function gototag(cmd)
@@ -90,7 +85,7 @@ if toolbar then
     if Proj and (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
     list_clear()
     --title group
-    toolbar.listtb_y= 1
+    toolbar.list_init_title() --add a resize handle
     local bname= buffer.filename
     if bname == nil then
       toolbar.list_addinfo('No filename')
@@ -118,9 +113,9 @@ if toolbar then
       toolbar.list_addinfo('No CTAG file found in the project')
       return
     end
-    toolbar.cmdright= 3
     toolbar.tag_listedfile= bname
     local fname= bname:match('[^/\\]+$') -- filename only
+
     toolbar.list_addbutton("view-refresh", "Update Ctag List", toolbar.list_toolbar_reload)
     toolbar.list_addaction("filter_ctaglist")
     toolbar.list_addinfo(fname, true)
@@ -182,8 +177,6 @@ if toolbar then
 
   local function ctags_showlist(show)
     --show/hide list items
-    toolbar.sel_left_bar(titgrp)
-    toolbar.showgroup(show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end

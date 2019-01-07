@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
@@ -49,10 +49,7 @@ if toolbar then
 
   --add some buttons
   --create list toolbar
-  if toolbar.createlisttb then
-    toolbar.createlisttb()
-    toolbar.addaction("toggle_viewlist")
-  end
+  if toolbar.createlisttb then toolbar.createlisttb() end
 
   if Proj then
     toolbar.addaction("toggle_viewproj")
@@ -60,9 +57,9 @@ if toolbar then
     toolbar.addaction("prev_position")
     toolbar.addaction("next_position")
     toolbar.addspace()
-    toolbar.addaction("new")
   end
 
+  toolbar.addaction("new")
   toolbar.addaction("save")
   toolbar.addaction("saveas")
   toolbar.addspace()
@@ -86,9 +83,9 @@ if toolbar then
   --toolbars are ready to show
   toolbar.ready()
 
-  --toolbar.new(50, 24, 16, toolbar.RESULTS_TOOLBAR, toolbar.themepath)
-  --toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
-  --toolbar.show(true)
+  toolbar.new(27, 24, 16, toolbar.RESULTS_TOOLBAR, toolbar.themepath)
+  toolbar.themed_icon(toolbar.globalicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
+  toolbar.show(false)
 end
 
 --reload changed files without prompting
