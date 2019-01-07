@@ -42,8 +42,12 @@ if toolbar then
     local linenum= sel_proj(cmd)
     if linenum then
       clear_selected() --this project will move to the first place after openning it
-      toolbar.list_toolbar_onoff() --hide toolbar to see the project
+      local isvp= Proj.is_visible
+      --toolbar.list_toolbar_onoff() --hide toolbar to see the project view
       Proj.open_project(Proj.recent_projects[linenum])
+      toolbar.select_list("projlist", true) --show project list
+      Proj.is_visible= isvp
+      actions.updateaction("toggle_viewproj")
     end
   end
 
