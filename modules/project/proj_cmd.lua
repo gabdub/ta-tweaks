@@ -390,6 +390,7 @@ function Proj.new_project()
   buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
   --save project file
   io.save_file()
+  Proj.openproj_filename= filename
   --remember project file in recent list
   Proj.add_recentproject(filename)
 
@@ -438,7 +439,7 @@ function Proj.open_project(filename)
     Proj.goto_projview(Proj.PRJV_PROJECT)
     --open the project
     io.open_file(prjfile)
-
+    Proj.openproj_filename= prjfile
     --update ui
     Proj.stop_update_ui(true)
     Proj.goto_filesview(true) --change to files
@@ -485,6 +486,7 @@ function Proj.close_project(keepviews)
     end
     Util.goto_buffer(p_buffer)
     if io.close_buffer() then
+      Proj.openproj_filename= ""
       ui.statusbar_text= 'Project closed'
       Proj.update_projview()  --update project view button
       if not keepviews then

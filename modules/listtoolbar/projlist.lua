@@ -124,12 +124,13 @@ if toolbar then
     --toolbar.list_addaction("open_project")
     --toolbar.list_addaction("new_project")
     if (not Proj) then
-      toolbar.list_addinfo('Project module not installed', true)
+      toolbar.list_addinfo('The Project module is not installed', true)
       return
     end
     local p_buffer = Proj.get_projectbuffer(false)
     if p_buffer == nil or p_buffer.proj_files == nil then
-      toolbar.list_addinfo('No project found', true)
+      toolbar.list_addinfo('No open project', true)
+      list_clear()
       return
     end
 

@@ -32,8 +32,8 @@ textadept.editing.comment_string.asm = ';'
 if toolbar then
   require('toolbar')
   --require('htmltoolbar')
+
   require('listtoolbar')
-  --toolbar.listwidth= 250
   require('listtoolbar.recentprojlist')
   require('listtoolbar.projlist')
   require('listtoolbar.ctaglist')

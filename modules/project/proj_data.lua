@@ -67,6 +67,7 @@ local Util = Util
 Proj.PROJECTS_FILE = _USERHOME..'/projects'
 Proj.MAX_RECENT_PROJ = 30
 Proj.prjlist_change = false
+Proj.openproj_filename= ""  --open project filename
 
 --recent Projects list
 Proj.recent_projects= {}
@@ -186,6 +187,7 @@ function Proj.EVinitialize()
       --activate project in the proper view
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Util.goto_buffer(buff)
+      Proj.openproj_filename= buff.filename
       if Proj.is_visible == 2 then
         --2:shown in edit mode
         Proj.ifproj_seteditmode(buff)

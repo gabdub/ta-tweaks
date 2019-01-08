@@ -251,6 +251,24 @@ function Util.load_config_file(config, filename)
   end
 end
 
+function Util.save_config_file(config, filename)
+  local f = io.open(filename, 'wb')
+  if f then
+    local savedata = {}
+    for i=1, #config do
+      local ci= config[i]
+      local cvar= ci[1]
+      if ci[4] then --range?
+        for j= 1, ci[4] do
+          savedata[#savedata+1]= cvar.."#"..j..":"..tostring(config[cvar.."#"..j])
+        end
+      else savedata[#savedata+1]= cvar..":"..tostring(config[cvar]) end
+    end
+    f:write(table.concat(savedata, '\n'))
+    f:close()
+  end
+end
+
 --usage:
 --Util.cfg= {}
 --Util.add_config_field(Util.cfg,"myinteger",Util.cfg_int,27)

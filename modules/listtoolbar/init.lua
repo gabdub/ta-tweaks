@@ -4,6 +4,8 @@ if toolbar then
   local events, events_connect = events, events.connect
   local titgrp, currlist, currlistidx
   local lbl_n= 0
+  toolbar.list_config= {}
+  toolbar.list_config_fname= _USERHOME.."/list_toolbar.cfg"
 
   toolbar.listtb_hide_p= false
   toolbar.listselections= {}
@@ -106,6 +108,15 @@ if toolbar then
   function toolbar.createlisttb()
     currlist=""
     currlistidx=0
+
+    --toolbar config
+    toolbar.list_config= {}
+    Util.add_config_field(toolbar.list_config, "lst_width", Util.cfg_int, 250)
+    Util.add_config_field(toolbar.list_config, "lst_show",  Util.cfg_bool, true)
+    Util.add_config_field(toolbar.list_config, "open_proj", Util.cfg_str, "")
+    Util.load_config_file(toolbar.list_config, toolbar.list_config_fname)
+    toolbar.list_tb= toolbar.list_config.lst_show
+
     toolbar.sel_left_bar()
     set_list_width()
     --create a new empty toolbar
@@ -130,8 +141,8 @@ if toolbar then
         local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
         ls[4]() --create list
       end
-      currlistidx=1
-      currlist= toolbar.listselections[currlistidx][1] --activate the first one
+      currlistidx=1 --activate first list (Projects)
+      currlist= toolbar.listselections[currlistidx][1]
       toolbar.listselections[currlistidx][6](true) --show list items
       listtb_update()
     end
@@ -147,8 +158,8 @@ if toolbar then
       actions.add("next_list", 'Next list', toolbar.next_list, "f6")
       actions.add("prev_list", 'Previous list', toolbar.prev_list, "sf6")
     end
-    toolbar.list_tb= false --hide for now...
-    toolbar.show(false, toolbar.listwidth)
+
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)
 
     toolbar.sel_top_bar()
     if #toolbar.listselections > 0 then
@@ -160,6 +171,21 @@ if toolbar then
       toolbar.selected(currlist, false, toolbar.list_tb)
     end
   end
+
+  local function save_list_config()
+    toolbar.list_config.lst_show= toolbar.list_tb
+    toolbar.list_config.open_proj= Proj.openproj_filename
+    Util.save_config_file(toolbar.list_config, toolbar.list_config_fname)
+  end
+
+  -- Save config on QUIT / RESET
+  events.connect(events.QUIT, save_list_config,1)
+  events.connect(events.RESET_BEFORE, save_list_config,1)
+  events.connect(events.INITIALIZED, function()
+    if toolbar.list_config.open_proj ~= "" and #toolbar.listselections > 1 then
+      toolbar.select_list("projlist")
+    else listtb_update() end
+  end)
 
   function toolbar.list_init_title()
     toolbar.listtb_y= 1
