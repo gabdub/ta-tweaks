@@ -7,7 +7,7 @@ if toolbar then
 
   toolbar.listtb_hide_p= false
   toolbar.listselections= {}
-  toolbar.cmdright= 3
+  toolbar.cmdright= 18
 
   local function listtb_switch()
     --{name, tooltip, icon, createfun, **notify**, show}
@@ -53,7 +53,7 @@ if toolbar then
     local name= "_lbl_"..lbl_n
     toolbar.addlabel(text, "", toolbar.listright, true, bold, name)
     toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
-    toolbar.listright= toolbar.listwidth
+    toolbar.cmdright= 18
     toolbar.anchor(name, toolbar.cmdright, true)
   end
 
@@ -118,6 +118,7 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-back", toolbar.TTBI_TB.VERTSCR_BACK)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
+    toolbar.themed_icon(toolbar.globalicon, "cfg-separator-h", toolbar.TTBI_TB.HSEPARATOR)
 
     --title group: fixed width=300 / align top + fixed height
     titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)

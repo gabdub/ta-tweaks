@@ -83,7 +83,7 @@ if toolbar then
     toolbar.list_init_title() --add a resize handle
     toolbar.list_addaction("open_project")
     toolbar.list_addaction("new_project")
-    toolbar.list_addinfo('Recent Projects', true)
+    toolbar.list_addinfo('Projects', true)
 
     toolbar.sel_left_bar(itemsgrp)
     if (not Proj) or (#Proj.recent_projects < 1) then

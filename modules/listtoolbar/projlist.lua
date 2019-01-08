@@ -156,22 +156,28 @@ if toolbar then
           local ind= (p_buffer.proj_rowinfo[i][2] or 0) * 12 --indentation
           if idlen > 0 then ind= ind + 10 end
           local bicon= nil
+          local tip= p_buffer.proj_files[i]
           local ft= p_buffer.proj_filestype[i]
           if ft == Proj.PRJF_FILE then
             bicon= toolbar.icon_fname(p_buffer.proj_files[i])
           elseif ft == Proj.PRJF_CTAG then
             bicon= "t_type"
+            tip= "CTAG: "..tip
           elseif ft == Proj.PRJF_RUN then
             bicon= "lpi-bug"
+            tip= "RUN: "..tip
+          elseif ft == Proj.PRJF_VCS then
+            bicon= "package-install"
+            tip= Proj.get_vcs_info(i, p_buffer, "\n")
           end
           local name= "gofile#"..i
-          toolbar.gotopos( 3, y)
-          local bold= false   --TODO: bold opened files
+          toolbar.gotopos(3, y)
+          local bold= false
           local xtxt= ind
           if bicon then xtxt= toolbar.cfg.barsize+ind else bold=true end
-          toolbar.addtext(name, fname, p_buffer.proj_files[i], toolbar.listwidth-13, false, true, bold, xtxt, 0)
+          toolbar.addtext(name, fname, tip, toolbar.listwidth-13, false, true, bold, xtxt, 0)
           toolbar.anchor(name, 10, true)
-          toolbar.gotopos( 3+ind, y)
+          toolbar.gotopos(3+ind, y)
           if bicon then
             local icbut= "ico-"..name
             toolbar.cmd(icbut, sel_file, "", bicon, true)
@@ -187,6 +193,10 @@ if toolbar then
           end
           toolbar.cmds_n[name]= sel_file
           y= y + rowh
+        else
+          toolbar.gotopos(3, y)
+          toolbar.addspace()
+          y= y + rowh/2
         end
       end
       --set project's default collapse items

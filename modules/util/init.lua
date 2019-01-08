@@ -58,9 +58,14 @@ function Util.getfilename(strfilename, addext)
   return f:sub(1,-(#e+2))
 end
 
---remove blanks and CR/LF
+--remove blanks and CR/LF (begin and end)
 function Util.str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+--remove blanks and CR/LF (only end)
+function Util.str_trim_final(s)
+  return (s:gsub("^(.-)%s*$", "%1"))
 end
 
 --return only the first line of text

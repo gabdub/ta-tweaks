@@ -269,7 +269,7 @@ function Proj.parse_projectbuffer(p_buffer)
   --parse project file line by line
   for r = 1, p_buffer.line_count do
     local fname= ''
-    local line= p_buffer:get_line(r-1)
+    local line= Util.str_trim_final(p_buffer:get_line(r-1)) --remove final blanks/CR-LF
 
     --try option 1)
     local ind, rown, fn, opt = string.match(line,'^(%s*)(.-)%s*::(.*)::(.-)%s*$')
@@ -277,7 +277,7 @@ function Proj.parse_projectbuffer(p_buffer)
       --try option 2)
       ind, fn= string.match(line,'^(%s*)(.-)%s*$')
       rown= fn
-      if not ind then ind=0 end
+      if ind == nil then ind="" end
     end
     local ftype = Proj.PRJF_EMPTY
     if fn ~= nil and fn ~= '' then
@@ -327,7 +327,8 @@ function Proj.parse_projectbuffer(p_buffer)
       elseif o == 'S' or o == 'G' then
         --  'S': SVN repository base (1)
         --  'G': GIT repository base (2)
-        p_buffer.proj_vcontrol[ #p_buffer.proj_vcontrol+1 ]= { path, p, (o == 'S') and 1 or 2 }
+        ftype= Proj.PRJF_VCS
+        p_buffer.proj_vcontrol[ #p_buffer.proj_vcontrol+1 ]= { path, p, (o == 'S') and 1 or 2, r }
       end
     end
     --set the filename/type asigned to each row

@@ -182,6 +182,20 @@ function Proj.show_filevcinfo()
   end
 end
 
+function Proj.get_vcs_info(row, buf, sep)
+  local info= ""
+  if buf.proj_vcontrol then
+    for i=1, #buf.proj_vcontrol do  --{path, p, 1/2, row}
+      if buf.proj_vcontrol[i][4] == row then
+        if buf.proj_vcontrol[i][3] == 1 then info="SVN: " else info="GIT: " end
+        info= info..buf.proj_vcontrol[i][1]..(sep or " | ")..buf.proj_vcontrol[i][2]
+        break
+      end
+    end
+  end
+  return info
+end
+
 --ACTION: show_documentation
 -- show project current row properties
 function Proj.show_doc()
@@ -193,6 +207,7 @@ function Proj.show_doc()
       local info = buffer.proj_files[r]
       local ftype= buffer.proj_filestype[r]
       if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
+      elseif ftype == Proj.PRJF_VCS then info= Proj.get_vcs_info(r, buffer)
       elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
       if info == '' and buffer.proj_grp_path[r] ~= nil then
         info= buffer.proj_grp_path[r]

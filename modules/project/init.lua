@@ -33,6 +33,7 @@ Proj.PRJF_PATH  =       1   -- a path
 Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
 Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
 Proj.PRJF_RUN   =       4   -- a run command
+Proj.PRJF_VCS   =       5   -- version control entry
 
 --buffer types
 Proj.PRJB_NORMAL =      0   -- a regular file
