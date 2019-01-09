@@ -77,8 +77,7 @@ if toolbar then
     collarow= {}
   end
 
-  local function currproj_change()
-    local p_buffer = Proj.get_projectbuffer(false)
+  local function currproj_change(p_buffer)
     if p_buffer == nil or p_buffer.proj_files == nil then
       if currproj then
         currproj= nil
@@ -138,7 +137,7 @@ if toolbar then
     local fname= p_buffer.proj_rowinfo[first_row][1]
     if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
-    if not currproj_change() then return end
+    if not currproj_change(p_buffer) then return end
 
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()

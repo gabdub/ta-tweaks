@@ -436,6 +436,7 @@ end
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
 function Proj.set_selectionmode(buff,selmode)
+  if selmode and buffer.modify then io.save_file() end
   local editmode= not selmode
   --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
   buff._project_select= selmode
@@ -691,7 +692,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
         info..' not in the project', 'Do you want to add it/them?')
     end
     if confirm then
-      --prevent some events to fire for ever
+      --prevent some events to fire forever
       Proj.stop_update_ui(true)
 
       local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
