@@ -735,6 +735,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
           p_buffer.proj_files[row]= file
         end
       end
+      io.save_file()
       p_buffer.read_only= save_ro
       --update buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
       Proj.parse_projectbuffer(p_buffer)
