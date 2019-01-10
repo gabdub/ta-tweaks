@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 ----------------------------------------------------------------------
 -------- Project file format --------
 -- Valid project lines:
@@ -51,12 +51,17 @@
 --  _is_working_project = this is the working project (in case more than one is open)
 --              true = this is the one
 --
---  proj_files[]     = array with the filename in each row (1...) or ''
---  proj_filestype[] = array with the type of each row: Proj.PRJF_...
---  proj_fold_row[]  = array with the row numbers to fold on open
---  proj_grp_path[]  = array with the path of each group or nil
---  proj_vcontrol[]  = array with the SVN/GIT version control rows
---  proj_rowinfo[]   = array {row-text, indent, indent-len}
+--  proj_files[]        = array with the filename in each row (1...) or ''
+--  proj_filestype[]    = array with the type of each row: Proj.PRJF_...
+--  proj_fold_row[]     = array with the row numbers to fold on open
+--  proj_grp_path[]     = array with the path of each group or nil
+--  proj_vcontrol[]     = array with the SVN/GIT version control rows
+--  proj_rowinfo[]      = array {row-text, indent, indent-len}
+--
+--  Proj.data:
+--   filename           = open project filename or ""
+--   recent_projects[]  = recent Projects list (array[ Proj.MAX_RECENT_PROJ ])
+--   recent_prj_change  = recent Projects list modified (save on exit)
 --
 --  Proj.update_ui   = number of ui updates in progress (ignore some events if > 0)
 --  Proj.cmenu_num   = number of the current context menu
@@ -64,158 +69,71 @@
 local Proj = Proj
 local Util = Util
 
-Proj.PROJECTS_FILE = _USERHOME..'/projects'
+Proj.data= {}
+local data= Proj.data
+data.filename= ""  --open project filename or ""
+data.recent_projects= {} --recent Projects list
+data.recent_prj_change = false
+
+
+Proj.PROJ_CONFIG_FILE = _USERHOME..'/project_config'
 Proj.MAX_RECENT_PROJ = 30
-Proj.prjlist_change = false
-Proj.openproj_filename= ""  --open project filename
 
---recent Projects list
-Proj.recent_projects= {}
+function Proj.load_config()
+  data.config= {}
+  local cfg= data.config
+  --is_visible: 0=hidden  1=shown in selection mode  2=shown in edit mode
+  Util.add_config_field(cfg, "is_visible",   Util.cfg_int, 1)
+  Util.add_config_field(cfg, "edit_width",   Util.cfg_int, 600)
+  Util.add_config_field(cfg, "select_width", Util.cfg_int, 200)
+  Util.add_config_field(cfg, "recent",       Util.cfg_str, "", Proj.MAX_RECENT_PROJ)
 
-Proj.update_ui= 0
-function Proj.stop_update_ui(onoff)
-  if onoff then
-    --prevent some events to fire
-    Proj.update_ui= Proj.update_ui+1
-    if Proj.update_ui == 1 then
-      --stop updating global buffer info like windows title / status bar
-      if toolbar then toolbar.updatebuffinfo(false) end
-    end
-  else
-    --restore normal mode
-    Proj.update_ui= Proj.update_ui-1
-    if Proj.update_ui == 0 then
-      --update pending changes to global buffer info
-      if toolbar then toolbar.updatebuffinfo(true) end
-    end
+  Util.load_config_file(cfg, Proj.PROJ_CONFIG_FILE)
+  data.recent_prj_change= false
+
+  Proj.is_visible= cfg.is_visible
+  Proj.edit_width= cfg.edit_width
+  if Proj.edit_width < 50 then Proj.edit_width= 600 end
+  Proj.select_width= cfg.select_width
+  if Proj.select_width < 50 then Proj.select_width= 200 end
+
+  data.recent_projects={}
+  for i=1, Proj.MAX_RECENT_PROJ do
+    local rc= cfg["recent#"..i]
+    if rc and (rc ~= "") then data.recent_projects[#data.recent_projects+1]=rc end
   end
 end
 
---don't update the UI until Proj.EVinitialize is called
-Proj.stop_update_ui(true)
-
-local function load_recent_projects(filename)
-  local f = io.open(filename, 'rb')
-  if f then
-    for line in f:lines() do
-      if line:find('^recent:') then
-        local file = line:match('^recent: (.+)$')
-        local recent, exists = Proj.recent_projects, false
-        for i = 1, #recent do
-          if file == recent[i] then exists = true break end
-        end
-        if not exists then Proj.recent_projects[#Proj.recent_projects + 1] = file end
-
-      elseif line:find('^is_visible:') then
-        Proj.is_visible= tonumber(line:match('^is_visible: (.+)$'))
-
-      elseif line:find('^edit_width:') then
-        Proj.edit_width= tonumber(line:match('^edit_width: (.+)$'))
-        if Proj.edit_width < 50 then Proj.edit_width= 600 end
-
-      elseif line:find('^select_width:') then
-        Proj.select_width= tonumber(line:match('^select_width: (.+)$'))
-        if Proj.select_width < 50 then Proj.select_width= 200 end
-      end
+function Proj.save_config()
+  if data.recent_prj_change or Proj.data.config.is_visible ~= Proj.is_visible then
+    local cfg= data.config
+    cfg.is_visible= Proj.is_visible
+    cfg.edit_width= Proj.edit_width
+    cfg.select_width= Proj.select_width
+    for i=1, #data.recent_projects do cfg["recent#"..i]= data.recent_projects[i] end
+    if #data.recent_projects < Proj.MAX_RECENT_PROJ then
+      for i=#data.recent_projects+1, Proj.MAX_RECENT_PROJ do cfg["recent#"..i]= "" end
     end
-    f:close()
-  end
-  Proj.prjlist_change = false
-  Proj._read_is_visible= Proj.is_visible
-end
 
-local function save_recent_projects(filename)
-  if Proj.prjlist_change or Proj._read_is_visible ~= Proj.is_visible then
-    local f = io.open(filename, 'wb')
-    if f then
-      local savedata = {}
-      for i = 1, #Proj.recent_projects do
-        if i > Proj.MAX_RECENT_PROJ then break end
-        savedata[#savedata + 1] = ("recent: %s"):format(Proj.recent_projects[i])
-      end
-      savedata[#savedata + 1] = ("is_visible: %d"):format(Proj.is_visible)
-      savedata[#savedata + 1] = ("edit_width: %d"):format(Proj.edit_width)
-      savedata[#savedata + 1] = ("select_width: %d"):format(Proj.select_width)
-      f:write(table.concat(savedata, '\n'))
-      f:close()
-    end
-    Proj.prjlist_change = false
+    Util.save_config_file(cfg, Proj.PROJ_CONFIG_FILE)
+    data.recent_prj_change= false
   end
 end
 
 function Proj.add_recentproject(prjfile)
   -- Add file to recent project files list, eliminating duplicates.
-  for j, file in ipairs(Proj.recent_projects) do
-    if file == prjfile then table.remove(Proj.recent_projects, j) break end
+  for j, file in ipairs(data.recent_projects) do
+    if file == prjfile then table.remove(data.recent_projects, j) break end
   end
-  table.insert(Proj.recent_projects, 1, prjfile)
+  table.insert(data.recent_projects, 1, prjfile)
   --and remove file from recent "regular files" list
   for j, file in ipairs(io.recent_files) do
     if file == prjfile then table.remove(io.recent_files, j) break end
   end
   --save new list on exit
-  Proj.prjlist_change =  true
+  data.recent_prj_change= true
   --update recent project list
   if toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
-end
-
--- TA-EVENT INITIALIZED
-function Proj.EVinitialize()
-  --after session load ends, verify all the buffers (this prevents view creation conflicts)
-  Proj.stop_update_ui(false)
-
-  Proj.is_visible= 1  --0:hidden  1:shown in selection mode  2:shown in edit mode
-  Proj.edit_width= 600
-  Proj.select_width= 200
-  --load recent projects list / project preferences
-  load_recent_projects(Proj.PROJECTS_FILE)
-  --check if search results is open
-  for _, buff in ipairs(_BUFFERS) do
-    if buff._type == Proj.PRJT_SEARCH then
-      --activate search view
-      Proj.goto_searchview()
-      buff.read_only= true
-      break
-    end
-  end
-  --check if a project file is open
-  --TODO: mark rigth side files
-  for _, buff in ipairs(_BUFFERS) do
-    --check buffer type
-    local pt= Proj.get_buffertype(buff)
-    if pt == Proj.PRJB_PROJ_NEW or pt == Proj.PRJB_PROJ_SELECT then
-      --activate project in the proper view
-      Proj.goto_projview(Proj.PRJV_PROJECT)
-      Util.goto_buffer(buff)
-      Proj.openproj_filename= buff.filename
-      if Proj.is_visible == 2 then
-        --2:shown in edit mode
-        Proj.ifproj_seteditmode(buff)
-      else
-        --0:hidden  1:shown in selection mode
-        Proj.ifproj_setselectionmode(buff)
-        Proj.is_visible= Proj._read_is_visible  --keep 0 is hidden
-      end
-      --start in left/only files view
-      Proj.goto_filesview(true)
-      --check that at least there's one regular buffer
-      local rbuf = Proj.getFirstRegularBuf(1)
-      if rbuf == nil then
-        --no regular buffer found
-        Proj.go_file() --open a blank file
-      end
-      Proj.update_projview() --update toggle project view button
-      return
-    end
-  end
-  --no project file found
-  Proj.update_after_switch()
-  Proj.update_projview() --gray toggle project view button
-end
-
--- TA-EVENT QUIT: Saves recent projects list
-function Proj.EVquit()
-  save_recent_projects(Proj.PROJECTS_FILE)
 end
 
 --get the buffer type: Proj.PRJT_...

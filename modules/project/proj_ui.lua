@@ -1,9 +1,88 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 local events = events
 local Proj = Proj
+local data = Proj.data
 local Util = Util
 
 local last_print_buftype
+
+Proj.update_ui= 0
+function Proj.stop_update_ui(onoff)
+  if onoff then
+    --prevent some events to fire
+    Proj.update_ui= Proj.update_ui+1
+    if Proj.update_ui == 1 then
+      --stop updating global buffer info like windows title / status bar
+      if toolbar then toolbar.updatebuffinfo(false) end
+    end
+  else
+    --restore normal mode
+    Proj.update_ui= Proj.update_ui-1
+    if Proj.update_ui == 0 then
+      --update pending changes to global buffer info
+      if toolbar then toolbar.updatebuffinfo(true) end
+    end
+  end
+end
+
+--don't update the UI until Proj.EVinitialize is called
+Proj.stop_update_ui(true)
+
+-- TA-EVENT INITIALIZED
+function Proj.EVinitialize()
+  --after session load ends, verify all the buffers (this prevents view creation conflicts)
+  Proj.stop_update_ui(false)
+
+  --load recent projects list / project preferences
+  Proj.load_config()
+  --check if search results is open
+  for _, buff in ipairs(_BUFFERS) do
+    if buff._type == Proj.PRJT_SEARCH then
+      --activate search view
+      Proj.goto_searchview()
+      buff.read_only= true
+      break
+    end
+  end
+  --check if a project file is open
+  --TODO: mark rigth side files
+  for _, buff in ipairs(_BUFFERS) do
+    --check buffer type
+    local pt= Proj.get_buffertype(buff)
+    if pt == Proj.PRJB_PROJ_NEW or pt == Proj.PRJB_PROJ_SELECT then
+      --activate project in the proper view
+      Proj.goto_projview(Proj.PRJV_PROJECT)
+      Util.goto_buffer(buff)
+      data.filename= buff.filename
+      if Proj.is_visible == 2 then
+        --2:shown in edit mode
+        Proj.ifproj_seteditmode(buff)
+      else
+        --0:hidden  1:shown in selection mode
+        Proj.ifproj_setselectionmode(buff)
+        Proj.is_visible= Proj.data.config.is_visible  --keep 0 is hidden
+      end
+      --start in left/only files view
+      Proj.goto_filesview(true)
+      --check that at least there's one regular buffer
+      local rbuf = Proj.getFirstRegularBuf(1)
+      if rbuf == nil then
+        --no regular buffer found
+        Proj.go_file() --open a blank file
+      end
+      Proj.update_projview() --update toggle project view button
+      return
+    end
+  end
+  --no project file found
+  Proj.update_after_switch()
+  Proj.update_projview() --gray toggle project view button
+end
+
+-- TA-EVENT QUIT: Saves recent projects list
+function Proj.EVquit()
+  Proj.save_config()
+end
 
 --------hilight project's open files--------
 local indic_open = _SCINTILLA.next_indic_number()
@@ -329,7 +408,7 @@ function Proj.change_proj_ed_mode()
         if Proj.select_width ~= view.size then
           Proj.select_width= view.size  --save current width
           if Proj.select_width < 50 then Proj.select_width= 200 end
-          Proj.prjlist_change= true  --save it on exit
+          data.recent_prj_change= true  --save it on exit
         end
         Proj.is_visible= 2  --2:shown in edit mode
         view.size= Proj.edit_width
@@ -337,7 +416,7 @@ function Proj.change_proj_ed_mode()
         if Proj.edit_width ~= view.size then
           Proj.edit_width= view.size  --save current width
           if Proj.edit_width < 50 then Proj.edit_width= 600 end
-          Proj.prjlist_change= true  --save it on exit
+          data.recent_prj_change= true  --save it on exit
         end
         Proj.is_visible= 1  --1:shown in selection mode
         view.size= Proj.select_width
@@ -387,7 +466,7 @@ function Proj.show_hide_projview()
         if Proj.select_width ~= view.size then
           Proj.select_width= view.size  --save current width
           if Proj.select_width < 50 then Proj.select_width= 200 end
-          Proj.prjlist_change= true  --save it on exit
+          data.recent_prj_change= true  --save it on exit
         end
         view.size= 0
       else
@@ -635,3 +714,23 @@ local function proj_print(buffer_type, ...)
   Proj.end_search_add(buffer_type)
 end
 function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end
+
+-- replace Open uri(s) code (core/ui.lua)
+function Proj.drop_uri(utf8_uris)
+  ui.goto_view(view) -- work around any view focus synchronization issues
+  Proj.goto_filesview() --don't drop files in project views
+  for utf8_uri in utf8_uris:gmatch('[^\r\n]+') do
+    if utf8_uri:find('^file://') then
+      local uri = utf8_uri:iconv(_CHARSET, 'UTF-8')
+      uri = uri:match('^file://([^\r\n]+)'):gsub('%%(%x%x)', function(hex)
+        return string.char(tonumber(hex, 16))
+      end)
+      -- In WIN32, ignore a leading '/', but not '//' (network path).
+      if WIN32 and not uri:match('^//') then uri = uri:sub(2, -1) end
+      local mode = lfs.attributes(uri, 'mode')
+      if mode and mode ~= 'directory' then io.open_file(uri) end
+    end
+  end
+  Proj.update_after_switch()
+  return false
+end

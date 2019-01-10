@@ -174,7 +174,7 @@ if toolbar then
 
   local function save_list_config()
     toolbar.list_config.lst_show= toolbar.list_tb
-    toolbar.list_config.open_proj= Proj.openproj_filename
+    toolbar.list_config.open_proj= Proj.data.filename
     Util.save_config_file(toolbar.list_config, toolbar.list_config_fname)
   end
 

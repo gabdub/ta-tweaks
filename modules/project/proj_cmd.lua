@@ -1,8 +1,9 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 ---- PROJECT ACTIONS ----
 local Proj = Proj
 local Util = Util
 local _L = _L
+local data = Proj.data
 
 --ACTION: new
 function Proj.new_file()
@@ -390,7 +391,7 @@ function Proj.new_project()
   buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
   --save project file
   io.save_file()
-  Proj.openproj_filename= filename
+  data.filename= filename
   --remember project file in recent list
   Proj.add_recentproject(filename)
 
@@ -439,7 +440,7 @@ function Proj.open_project(filename)
     Proj.goto_projview(Proj.PRJV_PROJECT)
     --open the project
     io.open_file(prjfile)
-    Proj.openproj_filename= prjfile
+    data.filename= prjfile
     --update ui
     Proj.stop_update_ui(true)
     Proj.goto_filesview(true) --change to files
@@ -463,7 +464,7 @@ end
 --open a project from the recent list
 function Proj.open_recent_project()
   local utf8_filenames = {}
-  for _, filename in ipairs(Proj.recent_projects) do
+  for _, filename in ipairs(data.recent_projects) do
     utf8_filenames[#utf8_filenames + 1] = filename:iconv('UTF-8', _CHARSET)
   end
   local button, i = ui.dialogs.filteredlist{
@@ -472,7 +473,7 @@ function Proj.open_recent_project()
     items = utf8_filenames,
     width = CURSES and ui.size[1] - 2 or nil
   }
-  if button == 1 and i then Proj.open_project(Proj.recent_projects[i]) end
+  if button == 1 and i then Proj.open_project(data.recent_projects[i]) end
 end
 
 --ACTION: close_project
@@ -486,7 +487,7 @@ function Proj.close_project(keepviews)
     end
     Util.goto_buffer(p_buffer)
     if io.close_buffer() then
-      Proj.openproj_filename= ""
+      data.filename= ""
       ui.statusbar_text= 'Project closed'
       Proj.update_projview()  --update project view button
       if not keepviews then

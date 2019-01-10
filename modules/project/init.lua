@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 ------- PROJECT -------
 Proj = {}
 
@@ -75,35 +75,7 @@ events_connect(events.KEYPRESS,             Proj.EVkeypress)
 events_connect(events.UPDATE_UI,            Proj.EVupdate_ui)
 events_connect(events.MODIFIED,             Proj.EVmodified)
 
--- replace Open uri(s) code (core/ui.lua)
-events_connect(events.URI_DROPPED, function(utf8_uris)
-  ui.goto_view(view) -- work around any view focus synchronization issues
-  Proj.goto_filesview() --don't drop files in project views
-  for utf8_uri in utf8_uris:gmatch('[^\r\n]+') do
-    if utf8_uri:find('^file://') then
-      local uri = utf8_uri:iconv(_CHARSET, 'UTF-8')
-      uri = uri:match('^file://([^\r\n]+)'):gsub('%%(%x%x)', function(hex)
-        return string.char(tonumber(hex, 16))
-      end)
-      -- In WIN32, ignore a leading '/', but not '//' (network path).
-      if WIN32 and not uri:match('^//') then uri = uri:sub(2, -1) end
-      local mode = lfs.attributes(uri, 'mode')
-      if mode and mode ~= 'directory' then io.open_file(uri) end
-    end
-  end
-  Proj.update_after_switch()
-  return false
-end,1)
+events_connect(events.TAB_CLICKED,          Proj.EVtabclicked, 1)
 
-------------------- tab-clicked event ---------------
---- when a tab is clicked, change the view if needed
---- (Textadept version >= 9)
----
----  * For Textadept version 8:
----    * add the following line to the function "t_tabchange()" in "textadept.c" @1828
----      lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
----    * recompile textadept
----    * add "'tab_clicked'," to "ta_events = {}" in "events.lua" (to register the new event) @369
-if Util.TA_MAYOR_VER >= 9 then
-  events_connect(events.TAB_CLICKED,        Proj.EVtabclicked, 1)
-end
+-- replace Open uri(s) code (core/ui.lua)
+events_connect(events.URI_DROPPED,          Proj.drop_uri,1)

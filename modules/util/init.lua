@@ -219,19 +219,19 @@ function Util.parse_config_line(config, line)
           --integer,integer
           local a,b = fval:match('^(.-),(.+)$')
           config[fname]= {tonumber(a),tonumber(b)}
-        elseif format == Util.cfg_int2 then
+        elseif format == Util.cfg_int3 then
           --integer,integer,integer
           local a,b,c = fval:match('^(.-),(.-),(.+)$')
           config[fname]= {tonumber(a),tonumber(b),tonumber(c)}
-        elseif format == Util.cfg_int2 then
+        elseif format == Util.cfg_int4 then
           --integer,integer,integer,integer
           local a,b,c,d = fval:match('^(.-),(.-),(.-),(.+)$')
           config[fname]= {tonumber(a),tonumber(b),tonumber(c),tonumber(d)}
-        elseif format == Util.cfg_int2 then
+        elseif format == Util.cfg_int5 then
           --integer,integer,integer,integer,integer
           local a,b,c,d,e = fval:match('^(.-),(.-),(.-),(.-),(.+)$')
           config[fname]= {tonumber(a),tonumber(b),tonumber(c),tonumber(d),tonumber(e)}
-        elseif format == Util.cfg_int2 then
+        elseif format == Util.cfg_int6 then
           --integer,integer,integer,integer,integer,integer
           local a,b,c,d,e,f = fval:match('^(.-),(.-),(.-),(.-),(.-),(.+)$')
           config[fname]= {tonumber(a),tonumber(b),tonumber(c),tonumber(d),tonumber(e),tonumber(f)}
@@ -258,11 +258,18 @@ function Util.save_config_file(config, filename)
     for i=1, #config do
       local ci= config[i]
       local cvar= ci[1]
+      local rval
       if ci[4] then --range?
         for j= 1, ci[4] do
-          savedata[#savedata+1]= cvar.."#"..j..":"..tostring(config[cvar.."#"..j])
+          --range: only save if it's not the default value
+          rval= tostring(config[cvar.."#"..j])
+          if rval ~= ci[3] then savedata[#savedata+1]= cvar.."#"..j..":"..rval end
         end
-      else savedata[#savedata+1]= cvar..":"..tostring(config[cvar]) end
+      else
+        if type(config[cvar]) == "table" then rval= table.concat(config[cvar], ',')
+        else rval= tostring(config[cvar]) end
+        savedata[#savedata+1]= cvar..":"..rval
+      end
     end
     f:write(table.concat(savedata, '\n'))
     f:close()

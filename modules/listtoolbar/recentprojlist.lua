@@ -27,7 +27,7 @@ if toolbar then
 
   local function sel_proj_num(linenum)
     if not linenum then linenum=1 end
-    if linenum > #Proj.recent_projects then linenum=#Proj.recent_projects end
+    if linenum > #Proj.data.recent_projects then linenum=#Proj.data.recent_projects end
     if linenum > 0 then sel_proj("goproj#"..linenum) end
   end
 
@@ -44,7 +44,7 @@ if toolbar then
       clear_selected() --this project will move to the first place after openning it
       local isvp= Proj.is_visible
       --toolbar.list_toolbar_onoff() --hide toolbar to see the project view
-      Proj.open_project(Proj.recent_projects[linenum])
+      Proj.open_project(Proj.data.recent_projects[linenum])
       toolbar.select_list("projlist", true) --show project list
       Proj.is_visible= isvp
       actions.updateaction("toggle_viewproj")
@@ -61,9 +61,9 @@ if toolbar then
     local linenum= sel_proj(itselected)
     if linenum then
       if Util.confirm("Remove recent project","Do you want to remove the selected project from the list?") then
-        table.remove(Proj.recent_projects,linenum)
+        table.remove(Proj.data.recent_projects,linenum)
         sel_proj_num(linenum)
-        Proj.prjlist_change = true
+        Proj.data.recent_prj_change= true
         toolbar.recentprojlist_update()
       end
     end
@@ -86,17 +86,17 @@ if toolbar then
     toolbar.list_addinfo('Projects', true)
 
     toolbar.sel_left_bar(itemsgrp)
-    if (not Proj) or (#Proj.recent_projects < 1) then
+    if (not Proj) or (#Proj.data.recent_projects < 1) then
       toolbar.listtb_y= 3
       toolbar.list_addinfo('No recent projects found')
     else
       local y= 3
-      for i=1, #Proj.recent_projects do
-        local fname= Util.getfilename(Proj.recent_projects[i])
+      for i=1, #Proj.data.recent_projects do
+        local fname= Util.getfilename(Proj.data.recent_projects[i])
         if fname ~= "" then
           local name= "goproj#"..i
           toolbar.gotopos( 3, y)
-          toolbar.addtext(name, fname, Proj.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
+          toolbar.addtext(name, fname, Proj.data.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
           toolbar.anchor(name, 10, true)
           toolbar.gotopos( 3, y)
           local icbut= "ico-"..name
