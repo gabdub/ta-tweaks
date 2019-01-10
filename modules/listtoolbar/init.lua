@@ -4,8 +4,6 @@ if toolbar then
   local events, events_connect = events, events.connect
   local titgrp, currlist, currlistidx
   local lbl_n= 0
-  toolbar.list_config= {}
-  toolbar.list_config_fname= _USERHOME.."/list_toolbar.cfg"
 
   toolbar.listtb_hide_p= false
   toolbar.listselections= {}
@@ -105,17 +103,36 @@ if toolbar then
     toolbar.listselections[#toolbar.listselections+1]= {name, tooltip, icon, createfun, notify, showlist}
   end
 
+  --the toolbar config is saved inside the project configuration file
+  local function beforeload_ltb(cfg)
+    --Util.add_config_field(cfg, "lst_width", Util.cfg_int, 250)
+    Util.add_config_field(cfg, "lst_show",  Util.cfg_bool, true)
+    Util.add_config_field(cfg, "open_proj", Util.cfg_str, "")
+  end
+
+  local function afterload_ltb(cfg)
+    --show list toolbar
+    toolbar.sel_left_bar()
+    toolbar.list_tb= cfg.lst_show
+    if cfg.open_proj ~= "" then toolbar.select_list("projlist",true) end --start in project list
+    toolbar.selected(currlist, false, true)
+    toolbar.listselections[currlistidx][6](true) --show list
+    listtb_update()
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)
+  end
+
+  local function beforesave_ltb(cfg)
+    local changed= false
+    if cfg.lst_show ~= toolbar.list_tb then cfg.lst_show=toolbar.list_tb changed=true end
+    if cfg.open_proj ~= Proj.data.filename then cfg.open_proj=Proj.data.filename changed=true end
+    return changed
+  end
+
+  Proj.add_config_hook(beforeload_ltb, afterload_ltb, beforesave_ltb)
+
   function toolbar.createlisttb()
     currlist=""
     currlistidx=0
-
-    --toolbar config
-    toolbar.list_config= {}
-    Util.add_config_field(toolbar.list_config, "lst_width", Util.cfg_int, 250)
-    Util.add_config_field(toolbar.list_config, "lst_show",  Util.cfg_bool, true)
-    Util.add_config_field(toolbar.list_config, "open_proj", Util.cfg_str, "")
-    Util.load_config_file(toolbar.list_config, toolbar.list_config_fname)
-    toolbar.list_tb= toolbar.list_config.lst_show
 
     toolbar.sel_left_bar()
     set_list_width()
@@ -143,8 +160,6 @@ if toolbar then
       end
       currlistidx=1 --activate first list (Projects)
       currlist= toolbar.listselections[currlistidx][1]
-      toolbar.listselections[currlistidx][6](true) --show list items
-      listtb_update()
     end
 
     if actions then
@@ -159,7 +174,7 @@ if toolbar then
       actions.add("prev_list", 'Previous list', toolbar.prev_list, "sf6")
     end
 
-    toolbar.show(toolbar.list_tb, toolbar.listwidth)
+    toolbar.show(false, toolbar.listwidth)  --hide for now..
 
     toolbar.sel_top_bar()
     if #toolbar.listselections > 0 then
@@ -168,24 +183,8 @@ if toolbar then
         toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
       end
       toolbar.addspace()
-      toolbar.selected(currlist, false, toolbar.list_tb)
     end
   end
-
-  local function save_list_config()
-    toolbar.list_config.lst_show= toolbar.list_tb
-    toolbar.list_config.open_proj= Proj.data.filename
-    Util.save_config_file(toolbar.list_config, toolbar.list_config_fname)
-  end
-
-  -- Save config on QUIT / RESET
-  events.connect(events.QUIT, save_list_config,1)
-  events.connect(events.RESET_BEFORE, save_list_config,1)
-  events.connect(events.INITIALIZED, function()
-    if toolbar.list_config.open_proj ~= "" and #toolbar.listselections > 1 then
-      toolbar.select_list("projlist")
-    else listtb_update() end
-  end)
 
   function toolbar.list_init_title()
     toolbar.listtb_y= 1

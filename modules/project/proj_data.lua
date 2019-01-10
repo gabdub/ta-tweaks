@@ -59,6 +59,7 @@
 --   proj_grp_path[]    = array with the path of each group or nil
 --   proj_vcontrol[]    = array with the SVN/GIT version control rows
 --   proj_rowinfo[]     = array {row-text, indent, indent-len}
+--   config_hooks[]     = objects/toolbars that use the project configuration {beforeload, afterload, beforesave}
 -----------------------------------------------------------------------
 --  Proj.data:          RECENT PROJECTS
 --   recent_projects[]  = recent Projects list (array[ Proj.MAX_RECENT_PROJ ])
@@ -82,6 +83,7 @@ data.filename= ""  --open project filename or ""
 data.recent_projects= {} --recent Projects list
 data.recent_prj_change = false
 data.config= {}
+data.config_hooks= {}
 
 function Proj.clear_proj_arrays()
   data.proj_files= {}
@@ -93,6 +95,10 @@ function Proj.clear_proj_arrays()
 end
 Proj.clear_proj_arrays()
 
+function Proj.add_config_hook(beforeload, afterload, beforesave)
+  data.config_hooks[#data.config_hooks+1]= {beforeload, afterload, beforesave}
+end
+
 function Proj.load_config()
   data.config= {}
   local cfg= data.config
@@ -100,7 +106,9 @@ function Proj.load_config()
   Util.add_config_field(cfg, "edit_width",   Util.cfg_int, 600)
   Util.add_config_field(cfg, "select_width", Util.cfg_int, 200)
   Util.add_config_field(cfg, "recent",       Util.cfg_str, "", Proj.MAX_RECENT_PROJ)
-
+  if #data.config_hooks > 0 then
+    for i=1, #data.config_hooks do data.config_hooks[i][1](cfg) end  --add hooked fields to config
+  end
   Util.load_config_file(cfg, Proj.PROJ_CONFIG_FILE)
   data.recent_prj_change= false
 
@@ -117,9 +125,21 @@ function Proj.load_config()
   end
 end
 
+function Proj.notify_projload_ends()
+  if #data.config_hooks > 0 then
+    for i=1, #data.config_hooks do data.config_hooks[i][2](data.config) end  --notify hooks afterload
+  end
+end
+
 function Proj.save_config()
-  if data.recent_prj_change or Proj.data.config.is_visible ~= Proj.is_visible then
-    local cfg= data.config
+  local cfg= data.config
+  local changed= data.recent_prj_change
+  if #data.config_hooks > 0 then
+    for i=1, #data.config_hooks do
+      if data.config_hooks[i][3](cfg) then changed=true end  --get hooked fields value
+    end
+  end
+  if changed or Proj.data.config.is_visible ~= Proj.is_visible then
     cfg.is_visible= Proj.is_visible
     cfg.edit_width= Proj.edit_width
     cfg.select_width= Proj.select_width

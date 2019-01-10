@@ -73,12 +73,14 @@ function Proj.EVinitialize()
         Proj.go_file() --open a blank file
       end
       Proj.update_projview() --update toggle project view button
+      Proj.notify_projload_ends()
       return
     end
   end
   --no project file found
   Proj.update_after_switch()
   Proj.update_projview() --gray toggle project view button
+  Proj.notify_projload_ends()
 end
 
 -- TA-EVENT QUIT: Saves recent projects list
