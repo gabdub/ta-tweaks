@@ -484,6 +484,7 @@ function Proj.close_project(keepviews)
     Util.goto_buffer(p_buffer)
     if io.close_buffer() then
       data.filename= ""
+      Proj.clear_proj_arrays()
       ui.statusbar_text= 'Project closed'
       Proj.update_projview()  --update project view button
       if not keepviews then

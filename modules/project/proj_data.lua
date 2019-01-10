@@ -83,7 +83,7 @@ data.recent_projects= {} --recent Projects list
 data.recent_prj_change = false
 data.config= {}
 
-local function clear_proj_arrays()
+function Proj.clear_proj_arrays()
   data.proj_files= {}
   data.proj_filestype= {}   --Proj.PRJF_...
   data.proj_fold_row=  {}
@@ -91,7 +91,7 @@ local function clear_proj_arrays()
   data.proj_vcontrol=  {}
   data.proj_rowinfo=   {}   --{row-text, indent, indent-len}
 end
-clear_proj_arrays()
+Proj.clear_proj_arrays()
 
 function Proj.load_config()
   data.config= {}
@@ -153,7 +153,7 @@ end
 function Proj.parse_projectbuffer(p_buffer)
   ui.statusbar_text= 'Parsing project file...'
 
-  clear_proj_arrays()
+  Proj.clear_proj_arrays()
 
   --get project file path (default)
   local projname= p_buffer.filename

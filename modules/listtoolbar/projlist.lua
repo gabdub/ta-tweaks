@@ -130,6 +130,11 @@ if toolbar then
       list_clear()
       return
     end
+    if #data.proj_files < 1 then
+      toolbar.list_addinfo('The project is empty', true)
+      list_clear()
+      return
+    end
 
     first_row= 1
     local fname= data.proj_rowinfo[first_row][1]
@@ -141,10 +146,7 @@ if toolbar then
     list_clear()
 
     toolbar.sel_left_bar(itemsgrp)
-    if #data.proj_files < 1 then
-      toolbar.listtb_y= 3
-      toolbar.list_addinfo('The project is empty')
-    elseif first_row <= #data.proj_files then
+    if first_row <= #data.proj_files then
       local y= 3
       local rowh= toolbar.cfg.butsize-2
       for i=first_row, #data.proj_files do
