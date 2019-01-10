@@ -119,29 +119,27 @@ function Proj.snapopen()
     ui.statusbar_text= 'No project found'
     return
   end
-  if p_buffer.proj_files ~= nil then
-    --if the current view is a project view, goto files view
-    Proj.getout_projview()
-    local utf8_list = {}
-    for row= 1, #p_buffer.proj_files do
-      local file= p_buffer.proj_files[row]
-      local ftype= p_buffer.proj_filestype[row]
-      if file and file ~= '' and (ftype == Proj.PRJF_FILE or ftype == Proj.PRJF_CTAG) then
-        file = file:gsub('^%.[/\\]', ''):iconv('UTF-8', _CHARSET)
-        utf8_list[#utf8_list + 1] = file
-      end
+  --if the current view is a project view, goto files view
+  Proj.getout_projview()
+  local utf8_list = {}
+  for row= 1, #data.proj_files do
+    local file= data.proj_files[row]
+    local ftype= data.proj_filestype[row]
+    if file and file ~= '' and (ftype == Proj.PRJF_FILE or ftype == Proj.PRJF_CTAG) then
+      file = file:gsub('^%.[/\\]', ''):iconv('UTF-8', _CHARSET)
+      utf8_list[#utf8_list + 1] = file
     end
-    local options = {
-      title = _L['Open'], columns = _L['File'], items = utf8_list,
-      button1 = _L['_OK'], button2 = _L['_Cancel'], select_multiple = true,
-      string_output = true, width = CURSES and ui.size[1] - 2 or nil
-    }
-    local button, files = ui.dialogs.filteredlist(options)
-    if button ~= _L['_OK'] or not files then return end
-    for i = 1, #files do files[i] = files[i]:iconv(_CHARSET, 'UTF-8') end
-    io.open_file(files)
-    Proj.update_after_switch()
   end
+  local options = {
+    title = _L['Open'], columns = _L['File'], items = utf8_list,
+    button1 = _L['_OK'], button2 = _L['_Cancel'], select_multiple = true,
+    string_output = true, width = CURSES and ui.size[1] - 2 or nil
+  }
+  local button, files = ui.dialogs.filteredlist(options)
+  if button ~= _L['_OK'] or not files then return end
+  for i = 1, #files do files[i] = files[i]:iconv(_CHARSET, 'UTF-8') end
+  io.open_file(files)
+  Proj.update_after_switch()
 end
 
 local function get_filevcinfo(fname)
@@ -185,11 +183,11 @@ end
 
 function Proj.get_vcs_info(row, buf, sep)
   local info= ""
-  if buf.proj_vcontrol then
-    for i=1, #buf.proj_vcontrol do  --{path, p, 1/2, row}
-      if buf.proj_vcontrol[i][4] == row then
-        if buf.proj_vcontrol[i][3] == 1 then info="SVN: " else info="GIT: " end
-        info= info..buf.proj_vcontrol[i][1]..(sep or " | ")..buf.proj_vcontrol[i][2]
+  if data.proj_vcontrol then
+    for i=1, #data.proj_vcontrol do  --{path, p, 1/2, row}
+      if data.proj_vcontrol[i][4] == row then
+        if data.proj_vcontrol[i][3] == 1 then info="SVN: " else info="GIT: " end
+        info= info..data.proj_vcontrol[i][1]..(sep or " | ")..data.proj_vcontrol[i][2]
         break
       end
     end
@@ -203,21 +201,19 @@ function Proj.show_doc()
   --call_tip_show
   if buffer._project_select ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
-    if buffer.proj_files ~= nil then
-      local r= buffer.line_from_position(buffer.current_pos)+1
-      local info = buffer.proj_files[r]
-      local ftype= buffer.proj_filestype[r]
-      if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
-      elseif ftype == Proj.PRJF_VCS then info= Proj.get_vcs_info(r, buffer)
-      elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
-      if info == '' and buffer.proj_grp_path[r] ~= nil then
-        info= buffer.proj_grp_path[r]
-      elseif ftype == Proj.PRJF_FILE then
-        info= get_filevcinfo(info)
-      end
-      if info ~= '' then
-        buffer:call_tip_show(buffer.current_pos, info )
-      end
+    local r= buffer.line_from_position(buffer.current_pos)+1
+    local info = data.proj_files[r]
+    local ftype= data.proj_filestype[r]
+    if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
+    elseif ftype == Proj.PRJF_VCS then info= Proj.get_vcs_info(r, buffer)
+    elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
+    if info == '' and data.proj_grp_path[r] ~= nil then
+      info= data.proj_grp_path[r]
+    elseif ftype == Proj.PRJF_FILE then
+      info= get_filevcinfo(info)
+    end
+    if info ~= '' then
+      buffer:call_tip_show(buffer.current_pos, info )
     end
   else
     --call default show doc function
@@ -586,9 +582,7 @@ end
 --when more than one line is selected, ask for confirmation
 function Proj.open_sel_file()
   --check we have a file list
-  if buffer.proj_files == nil then
-    return
-  end
+  if #data.proj_files == 0 then return end
 
   --read selected line range
   local r1= buffer.line_from_position(buffer.selection_start)+1
@@ -600,24 +594,24 @@ function Proj.open_sel_file()
   local flist= {}
   local rlist= {}
   for r= r1, r2 do
-    if buffer.proj_files[r] ~= "" then
-      local ft= buffer.proj_filestype[r]
+    if data.proj_files[r] ~= "" then
+      local ft= data.proj_filestype[r]
       if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
-        flist[ #flist+1 ]= buffer.proj_files[r]
+        flist[ #flist+1 ]= data.proj_files[r]
       elseif ft == Proj.PRJF_RUN then
-        rlist[ #rlist+1 ]= buffer.proj_files[r]
+        rlist[ #rlist+1 ]= data.proj_files[r]
       end
     end
   end
   if #flist == 0 and #rlist == 0 then
     --no files/run in range, use current line; action=fold
     r1= buffer.line_from_position(buffer.current_pos)+1
-    if buffer.proj_files[r] ~= "" then
-      local ft= buffer.proj_filestype[r]
+    if data.proj_files[r] ~= "" then
+      local ft= data.proj_filestype[r]
       if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
-        flist[ #flist+1 ]= buffer.proj_files[r]
+        flist[ #flist+1 ]= data.proj_files[r]
       elseif ft == Proj.PRJF_RUN then
-        rlist[ #rlist+1 ]= buffer.proj_files[r]
+        rlist[ #rlist+1 ]= data.proj_files[r]
       end
     end
   end
@@ -684,7 +678,7 @@ function Proj.add_this_file()
     file= buffer.filename
     if file then
       --if the file is already in the project, ask for confirmation
-      local confirm = (Proj.get_file_row(p_buffer, file) == nil) or Util.confirm( 'Add confirmation',
+      local confirm = (Proj.get_file_row(file) == nil) or Util.confirm( 'Add confirmation',
         'The file ' .. file .. ' is already in the project', 'Do you want to add it again?')
       if confirm then
         --prevent some events to fire for ever
@@ -703,8 +697,8 @@ function Proj.add_this_file()
         --TODO: reduce the path is possible using project root
         p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
         --add the new line to the proj. file list
-        row= #p_buffer.proj_files+1
-        p_buffer.proj_files[row]= file
+        row= #data.proj_files+1
+        data.proj_files[row]= file
         p_buffer.read_only= save_ro
         --move the selection bar
         p_buffer:ensure_visible_enforce_policy(row- 1)
@@ -749,8 +743,8 @@ function Proj.add_dir_files(dir)
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
     local defdir
-    if #p_buffer.proj_files > 0 then
-      defdir= p_buffer.proj_grp_path[1]
+    if #data.proj_files > 0 then
+      defdir= data.proj_grp_path[1]
     end
     dir = dir or ui.dialogs.fileselect{
       title = 'Add all files from a Directory', select_only_directories = true,

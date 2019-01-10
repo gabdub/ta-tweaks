@@ -1,6 +1,7 @@
 -- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 local Proj = Proj
 local Util = Util
+local data = Proj.data
 
 --=============================================================================--
 --CTAG file format (Windows example):
@@ -113,11 +114,11 @@ function Proj.goto_tag(ask)
   end
 
   local tag_files = {}
-  if p_buffer.proj_files ~= nil then
-    for row= 1, #p_buffer.proj_files do
-      local ftype= p_buffer.proj_filestype[row]
+  if data.proj_files ~= nil then
+    for row= 1, #data.proj_files do
+      local ftype= data.proj_filestype[row]
       if ftype == Proj.PRJF_CTAG then
-        tag_files[ #tag_files+1 ]= p_buffer.proj_files[row]
+        tag_files[ #tag_files+1 ]= data.proj_files[row]
       end
     end
   end

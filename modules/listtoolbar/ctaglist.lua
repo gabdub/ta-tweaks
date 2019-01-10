@@ -2,6 +2,9 @@
 
 if toolbar then
   local itemsgrp, firsttag
+  local Proj = Proj
+  local Util = Util
+  local data= Proj.data
 
   local function list_clear()
     --remove all items
@@ -88,24 +91,23 @@ if toolbar then
     toolbar.list_init_title() --add a resize handle
     local bname= buffer.filename
     if bname == nil then
-      toolbar.list_addinfo('No filename')
+      toolbar.list_addinfo('No filename',true)
       return
     end
     if Proj == nil then
       toolbar.list_addinfo('The project module is not installed')
       return
     end
-    local p_buffer = Proj.get_projectbuffer(true)
-    if p_buffer == nil then
-      toolbar.list_addinfo('No open project')
+    if data.filename == "" then
+      toolbar.list_addinfo('No open project',true)
       return
     end
     local tag_files = {}
-    if p_buffer.proj_files ~= nil then
-      for row= 1, #p_buffer.proj_files do
-        local ftype= p_buffer.proj_filestype[row]
+    if #data.proj_files > 0 then
+      for row= 1, #data.proj_files do
+        local ftype= data.proj_filestype[row]
         if ftype == Proj.PRJF_CTAG then
-          tag_files[ #tag_files+1 ]= p_buffer.proj_files[row]
+          tag_files[ #tag_files+1 ]= data.proj_files[row]
         end
       end
     end
@@ -154,12 +156,11 @@ if toolbar then
       local cmd
       --locate project RUN command that updates TAGS (ctags)
       if Proj then
-        local p_buffer = Proj.get_projectbuffer(false)
-        if p_buffer and p_buffer.proj_filestype then
-          for r=1, #p_buffer.proj_filestype do
-            if p_buffer.proj_filestype[r] == Proj.PRJF_RUN then
-              if p_buffer.proj_files[r]:match('ctags') then
-                cmd= p_buffer.proj_files[r]
+        if #data.proj_filestype > 0 then
+          for r=1, #data.proj_filestype do
+            if data.proj_filestype[r] == Proj.PRJF_RUN then
+              if data.proj_files[r]:match('ctags') then
+                cmd= data.proj_files[r]
                 break
               end
             end

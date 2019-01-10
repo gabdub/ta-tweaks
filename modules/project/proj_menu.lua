@@ -196,6 +196,8 @@ if actions then
 
   --init desired project context menu
   local ctxmenus= {}
+  --Proj.cmenu_num= number of the current context menu
+
   --CURSES or the menu is already set, don't change the context menu
   local function proj_context_menu_init(num)
     if CURSES or Proj.cmenu_num == num then return end

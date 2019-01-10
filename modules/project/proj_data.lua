@@ -50,39 +50,52 @@
 --
 --  _is_working_project = this is the working project (in case more than one is open)
 --              true = this is the one
---
---  proj_files[]        = array with the filename in each row (1...) or ''
---  proj_filestype[]    = array with the type of each row: Proj.PRJF_...
---  proj_fold_row[]     = array with the row numbers to fold on open
---  proj_grp_path[]     = array with the path of each group or nil
---  proj_vcontrol[]     = array with the SVN/GIT version control rows
---  proj_rowinfo[]      = array {row-text, indent, indent-len}
---
---  Proj.data:
+-----------------------------------------------------------------------
+--  Proj.data:          PROJECT DATA
 --   filename           = open project filename or ""
+--   proj_files[]       = array with the filename in each row (1...) or ''
+--   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
+--   proj_fold_row[]    = array with the row numbers to fold on open
+--   proj_grp_path[]    = array with the path of each group or nil
+--   proj_vcontrol[]    = array with the SVN/GIT version control rows
+--   proj_rowinfo[]     = array {row-text, indent, indent-len}
+-----------------------------------------------------------------------
+--  Proj.data:          RECENT PROJECTS
 --   recent_projects[]  = recent Projects list (array[ Proj.MAX_RECENT_PROJ ])
---   recent_prj_change  = recent Projects list modified (save on exit)
---
---  Proj.update_ui   = number of ui updates in progress (ignore some events if > 0)
---  Proj.cmenu_num   = number of the current context menu
+--   recent_prj_change  = the recent Projects list has been modified
+-----------------------------------------------------------------------
+--  Proj.data.config:   PROJECT CONFIGURATION
+--   is_visible         = 0=hidden  1=shown in selection mode  2=shown in edit mode
+--   edit_width         = view width in edit mode
+--   select_width       = view width in selection mode
+--   recent#1..30       = recent projects (#1= the more recent)
 -----------------------------------------------------------------------
 local Proj = Proj
 local Util = Util
+
+Proj.PROJ_CONFIG_FILE = _USERHOME..'/project_config'
+Proj.MAX_RECENT_PROJ = 30
 
 Proj.data= {}
 local data= Proj.data
 data.filename= ""  --open project filename or ""
 data.recent_projects= {} --recent Projects list
 data.recent_prj_change = false
+data.config= {}
 
-
-Proj.PROJ_CONFIG_FILE = _USERHOME..'/project_config'
-Proj.MAX_RECENT_PROJ = 30
+local function clear_proj_arrays()
+  data.proj_files= {}
+  data.proj_filestype= {}   --Proj.PRJF_...
+  data.proj_fold_row=  {}
+  data.proj_grp_path=  {}
+  data.proj_vcontrol=  {}
+  data.proj_rowinfo=   {}   --{row-text, indent, indent-len}
+end
+clear_proj_arrays()
 
 function Proj.load_config()
   data.config= {}
   local cfg= data.config
-  --is_visible: 0=hidden  1=shown in selection mode  2=shown in edit mode
   Util.add_config_field(cfg, "is_visible",   Util.cfg_int, 1)
   Util.add_config_field(cfg, "edit_width",   Util.cfg_int, 600)
   Util.add_config_field(cfg, "select_width", Util.cfg_int, 200)
@@ -136,42 +149,11 @@ function Proj.add_recentproject(prjfile)
   if toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
 end
 
---get the buffer type: Proj.PRJT_...
-function Proj.get_buffertype(p_buffer)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-
-  if p_buffer._project_select ~= nil then  --marked as a project file?
-    if p_buffer._is_working_project then
-      if p_buffer._project_select then
-        return Proj.PRJB_PROJ_SELECT  --is a project in "selection mode"
-      end
-      return Proj.PRJB_PROJ_EDIT      --is a project in "edit mode"
-    end
-    return Proj.PRJB_PROJ_IDLE        --is a project (but not the working one)
-  end
-  if p_buffer._type == Proj.PRJT_SEARCH then
-    return Proj.PRJB_FSEARCH          --is a search results buffer
-  end
-  --check if the current file is a valid project
-  --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= p_buffer:get_line(0)
-  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
-  if n ~= nil then
-    return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
-  end
-  return Proj.PRJB_NORMAL             --is a regular file
-end
-
---parse buffer and fill filenames array "buffer.proj_files[]"
+--parse buffer and fill filenames Proj.data arrays
 function Proj.parse_projectbuffer(p_buffer)
   ui.statusbar_text= 'Parsing project file...'
 
-  p_buffer.proj_files= {}
-  p_buffer.proj_filestype= {}   --Proj.PRJF_...
-  p_buffer.proj_fold_row=  {}
-  p_buffer.proj_grp_path=  {}
-  p_buffer.proj_vcontrol=  {}
-  p_buffer.proj_rowinfo=   {}   --{row-text, indent, indent-len}
+  clear_proj_arrays()
 
   --get project file path (default)
   local projname= p_buffer.filename
@@ -213,7 +195,7 @@ function Proj.parse_projectbuffer(p_buffer)
           abspath = p
           path = abspath
         end
-        p_buffer.proj_grp_path[r]= path
+        data.proj_grp_path[r]= path
         ftype = Proj.PRJF_PATH
 
       elseif f ~= '' then
@@ -237,7 +219,7 @@ function Proj.parse_projectbuffer(p_buffer)
       local o, p= string.match(opt, '(.)(.*)')
       if o == '-' then
         --  '-': fold this group on project load
-        p_buffer.proj_fold_row[ #p_buffer.proj_fold_row+1 ]= r
+        data.proj_fold_row[ #data.proj_fold_row+1 ]= r
       elseif o == 'C' then
         --  'C': CTAGS file
         if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_CTAG else ftype=Proj.PRJF_EMPTY end
@@ -248,25 +230,25 @@ function Proj.parse_projectbuffer(p_buffer)
         --  'S': SVN repository base (1)
         --  'G': GIT repository base (2)
         ftype= Proj.PRJF_VCS
-        p_buffer.proj_vcontrol[ #p_buffer.proj_vcontrol+1 ]= { path, p, (o == 'S') and 1 or 2, r }
+        data.proj_vcontrol[ #data.proj_vcontrol+1 ]= { path, p, (o == 'S') and 1 or 2, r }
       end
     end
     --set the filename/type asigned to each row
-    p_buffer.proj_files[r]= fname
-    p_buffer.proj_filestype[r]= ftype
-    p_buffer.proj_rowinfo[r]= {rown, #ind, 0} --{row-name, indent, indent-len}
+    data.proj_files[r]= fname
+    data.proj_filestype[r]= ftype
+    data.proj_rowinfo[r]= {rown, #ind, 0} --{row-name, indent, indent-len}
   end
   --set indent blocks len
-  if #p_buffer.proj_rowinfo > 1 then
-    for r= 2, #p_buffer.proj_rowinfo do
-      local ic= p_buffer.proj_rowinfo[r-1][2]
-      if ic < p_buffer.proj_rowinfo[r][2] then  --indent start at r-1
+  if #data.proj_rowinfo > 1 then
+    for r= 2, #data.proj_rowinfo do
+      local ic= data.proj_rowinfo[r-1][2]
+      if ic < data.proj_rowinfo[r][2] then  --indent start at r-1
         local ilen= 1
-        for re= r+1, #p_buffer.proj_rowinfo do
-          if ic >= p_buffer.proj_rowinfo[re][2] then break end
+        for re= r+1, #data.proj_rowinfo do
+          if ic >= data.proj_rowinfo[re][2] then break end
           ilen= ilen+1
         end
-        p_buffer.proj_rowinfo[r-1][3]= ilen
+        data.proj_rowinfo[r-1][3]= ilen
       end
     end
   end
@@ -274,34 +256,14 @@ function Proj.parse_projectbuffer(p_buffer)
 end
 
 --return the file position (ROW: 1..) in the given buffer file list
-function Proj.get_file_row(p_buffer, file)
+function Proj.get_file_row(file)
   --check the given buffer has a list of files
-  if p_buffer and p_buffer.proj_files ~= nil and file then
-    for row= 1, #p_buffer.proj_files do
-      if file == p_buffer.proj_files[row] then
-        return row
-      end
+  if #data.proj_files > 0 and file then
+    for row=1, #data.proj_files do
+      if file == data.proj_files[row] then return row end
     end
   end
-  --not found
-  return nil
-end
-
---returns true if buffer is a regular file (not a project nor a search results)
-function Proj.isRegularBuf(pbuffer)
-  return (pbuffer._project_select == nil) and (pbuffer._type ~= Proj.PRJT_SEARCH)
-end
-
---find the first regular buffer
---panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
---TO DO: use MRU order
-function Proj.getFirstRegularBuf(panel)
-  for _, buf in ipairs(_BUFFERS) do
-    if Proj.isRegularBuf(buf) then
-      if (panel==0) or ((panel==1) and (not buf._right_side)) or ((panel==2) and (buf._right_side)) then return buf end
-    end
-  end
-  return nil
+  return nil --not found
 end
 
 ------------------PROJECT CONTROL-------------------
@@ -367,7 +329,7 @@ function Proj.set_selectionmode(buff,selmode)
   buff.v_scroll_bar= editmode
 
   if selmode then
-    --fill buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
+    --fill Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
     Proj.parse_projectbuffer(buff)
     --set lexer to highlight groups and hidden control info ":: ... ::"
     buff:set_lexer('myproj')
@@ -378,8 +340,8 @@ function Proj.set_selectionmode(buff,selmode)
     Proj.set_contextm_sel()
 
     --fold the requested folders
-    for i= #buff.proj_fold_row, 1, -1 do
-      buff.toggle_fold(buff.proj_fold_row[i])
+    for i= #data.proj_fold_row, 1, -1 do
+      buff.toggle_fold(data.proj_fold_row[i])
     end
     Proj.is_visible= 1  --1:shown in selection mode
     Proj.mark_open_files(buff)
@@ -517,17 +479,17 @@ function Proj.run_command(cmd)
     if s and e then
       --replace %{projfiles} is with a temporary file with the list of project files
       local p_buffer = Proj.get_projectbuffer(true)
-      if p_buffer == nil or p_buffer.proj_files == nil then
+      if p_buffer == nil then
         ui.statusbar_text= 'No project found'
         return
       end
 
       --get a list of project files
       local flist= {}
-      for row= 1, #p_buffer.proj_files do
-        local ftype= p_buffer.proj_filestype[row]
+      for row= 1, #data.proj_files do
+        local ftype= data.proj_filestype[row]
         if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
-          local file= p_buffer.proj_files[row]
+          local file= data.proj_files[row]
           if not ext or ext[file:match('[^%.]+$')] then
             --all files / listed extension
             flist[ #flist+1 ]= file
@@ -584,7 +546,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
     end
     for _,file in ipairs(flist) do
       --check if already in the project
-      local in_prj= (Proj.get_file_row(p_buffer, file) ~= nil)
+      local in_prj= (Proj.get_file_row(file) ~= nil)
       finprj[ #finprj+1]= in_prj
       if in_prj then n_inprj= n_inprj+1 end
     end
@@ -624,7 +586,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
       p_buffer.read_only= false
       row= nil
       local curpath
-      local defdir= p_buffer.proj_grp_path[1]
+      local defdir= data.proj_grp_path[1]
       for i,file in ipairs(flist) do
         if all or finprj[i] == false then
           path,fn,ext = Util.splitfilename(file)
@@ -649,13 +611,13 @@ function Proj.add_files(p_buffer, flist, groupfiles)
             p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
           end
           --add the new line to the proj. file list
-          row= #p_buffer.proj_files+1
-          p_buffer.proj_files[row]= file
+          row= #data.proj_files+1
+          data.proj_files[row]= file
         end
       end
       io.save_file()
       p_buffer.read_only= save_ro
-      --update buffer arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
+      --update Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
       Proj.parse_projectbuffer(p_buffer)
 
       if row then
@@ -680,14 +642,14 @@ function Proj.find_in_files(p_buffer, text, match_case, whole_word, escapetext, 
   local fromrow=1
   local filterpath
   if where == 1 then --only in selected directory
-    if p_buffer and p_buffer.proj_files ~= nil then
+    if p_buffer then
       local r= p_buffer.line_from_position(p_buffer.current_pos)+1
-      if r <= #p_buffer.proj_files then
-        local ftype= p_buffer.proj_filestype[r]
+      if r <= #data.proj_files then
+        local ftype= data.proj_filestype[r]
         if ftype == Proj.PRJF_PATH then
-          filterpath= p_buffer.proj_grp_path[r]
+          filterpath= data.proj_grp_path[r]
         elseif ftype == Proj.PRJF_FILE then
-          local file= p_buffer.proj_files[r]
+          local file= data.proj_files[r]
           if file and file ~= '' then
             local p,f,e= Util.splitfilename(file)
             filterpath= p
@@ -720,13 +682,13 @@ function Proj.find_in_files(p_buffer, text, match_case, whole_word, escapetext, 
   local nfound= 0
   local filesnf= 0
   --check the given buffer has a list of files
-  if p_buffer and p_buffer.proj_files ~= nil then
-    local torow= #p_buffer.proj_files
+  if p_buffer then
+    local torow= #data.proj_files
     if where == 2 and fromrow < torow then torow= fromrow end
     for row= fromrow, torow do
-      local ftype= p_buffer.proj_filestype[row]
+      local ftype= data.proj_filestype[row]
       if ftype == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
-        local file= p_buffer.proj_files[row]
+        local file= data.proj_files[row]
         if file and file ~= '' then
           if not Util.file_exists(file) then
             filesnf= filesnf+1 --file not found
@@ -845,18 +807,18 @@ end
 function Proj.get_versioncontrol_url(filename)
   filename=string.gsub(filename, '%\\', '/')
   local p_buffer= Proj.get_projectbuffer(true)
-  if p_buffer == nil or p_buffer.proj_files == nil then
+  if p_buffer == nil then
     ui.statusbar_text= 'No project found'
     return
   end
-  if p_buffer.proj_vcontrol == nil or #p_buffer.proj_vcontrol == 0 then
+  if data.proj_vcontrol == nil or #data.proj_vcontrol == 0 then
     ui.statusbar_text= 'No SVN/GIT repository set in project'
     return
   end
   local url= ""
   local nvc= 1
-  while nvc <= #p_buffer.proj_vcontrol do
-    local base= p_buffer.proj_vcontrol[nvc][1]
+  while nvc <= #data.proj_vcontrol do
+    local base= data.proj_vcontrol[nvc][1]
     if base and base ~= '' then
       base= string.gsub(base, '%\\', '/')
       --remove base dir
@@ -868,15 +830,15 @@ function Proj.get_versioncontrol_url(filename)
     end
     nvc=nvc+1
   end
-  if nvc > #p_buffer.proj_vcontrol then
+  if nvc > #data.proj_vcontrol then
     ui.statusbar_text= 'The file is outside project base directory'
     return
   end
-  local param= p_buffer.proj_vcontrol[nvc][2] --add prefix to url [,currentdir]
+  local param= data.proj_vcontrol[nvc][2] --add prefix to url [,currentdir]
   local pref, cwd= string.match(param, '(.-),(.*)')
   if not pref then pref= param end
   url= pref..url
-  local verctrl= p_buffer.proj_vcontrol[nvc][3]
+  local verctrl= data.proj_vcontrol[nvc][3]
   ui.statusbar_text= (verctrl == 1 and 'SVN: ' or 'GIT: ')..url
   return verctrl, cwd, url
 end

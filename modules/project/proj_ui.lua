@@ -6,7 +6,9 @@ local Util = Util
 
 local last_print_buftype
 
+--  Proj.update_ui= number of ui updates in progress (ignore some events if > 0)
 Proj.update_ui= 0
+
 function Proj.stop_update_ui(onoff)
   if onoff then
     --prevent some events to fire
@@ -84,6 +86,51 @@ function Proj.EVquit()
   Proj.save_config()
 end
 
+--------buffer functions----------
+--get the buffer type: Proj.PRJT_...
+function Proj.get_buffertype(p_buffer)
+  if not p_buffer then p_buffer = buffer end  --use current buffer?
+
+  if p_buffer._project_select ~= nil then  --marked as a project file?
+    if p_buffer._is_working_project then
+      if p_buffer._project_select then
+        return Proj.PRJB_PROJ_SELECT  --is a project in "selection mode"
+      end
+      return Proj.PRJB_PROJ_EDIT      --is a project in "edit mode"
+    end
+    return Proj.PRJB_PROJ_IDLE        --is a project (but not the working one)
+  end
+  if p_buffer._type == Proj.PRJT_SEARCH then
+    return Proj.PRJB_FSEARCH          --is a search results buffer
+  end
+  --check if the current file is a valid project
+  --The first file line MUST BE a valid "option 1)": ...##...##...
+  local line= p_buffer:get_line(0)
+  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
+  if n ~= nil then
+    return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
+  end
+  return Proj.PRJB_NORMAL             --is a regular file
+end
+
+--returns true if buffer is a regular file (not a project nor a search results)
+function Proj.isRegularBuf(pbuffer)
+  return (pbuffer._project_select == nil) and (pbuffer._type ~= Proj.PRJT_SEARCH)
+end
+
+--find the first regular buffer
+--panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
+--TO DO: use MRU order
+function Proj.getFirstRegularBuf(panel)
+  for _, buf in ipairs(_BUFFERS) do
+    if Proj.isRegularBuf(buf) then
+      if (panel==0) or ((panel==1) and (not buf._right_side)) or ((panel==2) and (buf._right_side)) then return buf end
+    end
+  end
+  return nil
+end
+
+
 --------hilight project's open files--------
 local indic_open = _SCINTILLA.next_indic_number()
 buffer.indic_fore[indic_open]= (tonumber(buffer.property['color.prj_open_mark']) or 0x404040)
@@ -108,7 +155,7 @@ function Proj.show_open_indicator(pbuf,buff)
   if buff._project_select == nil and buff._type == nil then
     local file= buff.filename
     if file then
-      local row= Proj.get_file_row(pbuf, file)
+      local row= Proj.get_file_row(file)
       if row then
         Proj.add_open_indicator(pbuf,row-1)
       end
@@ -246,7 +293,7 @@ function Proj.track_this_file()
     --get file path
     local file= buffer.filename
     if file ~= nil then
-      row= Proj.get_file_row(p_buffer, file)
+      row= Proj.get_file_row(file)
       if row ~= nil then
         --prevent some events to fire for ever
         Proj.stop_update_ui(true)

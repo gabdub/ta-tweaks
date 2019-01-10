@@ -3,6 +3,8 @@
 if toolbar then
   local itemsgrp, itselected, currproj, projmod, first_row
   local collarow= {}
+  local Proj = Proj
+  local data= Proj.data
 
   --right-click context menu
   local proj_context_menu = {
@@ -37,10 +39,8 @@ if toolbar then
   end
 
   local function sel_file_num(linenum)
-    local p_buffer = Proj.get_projectbuffer(false)
-    if p_buffer == nil or p_buffer.proj_files == nil then return end
     if not linenum then linenum=first_row end
-    if linenum > #p_buffer.proj_files then linenum=#p_buffer.proj_files end
+    if linenum > #data.proj_files then linenum=#data.proj_files end
     if linenum > 0 then sel_file("gofile#"..linenum) end
   end
 
@@ -52,12 +52,10 @@ if toolbar then
   end
 
   local function gofile_dclick(cmd) --double click
-    local p_buffer = Proj.get_projectbuffer(false)
-    if p_buffer == nil or p_buffer.proj_files == nil then return end
     local linenum= sel_file(cmd)
     if linenum then
-      local fn=p_buffer.proj_files[linenum]
-      local ft= p_buffer.proj_filestype[linenum]
+      local fn= data.proj_files[linenum]
+      local ft= data.proj_filestype[linenum]
       if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
         Proj.go_file(fn)
       elseif ft == Proj.PRJF_RUN then
@@ -78,7 +76,7 @@ if toolbar then
   end
 
   local function currproj_change(p_buffer)
-    if p_buffer == nil or p_buffer.proj_files == nil then
+    if p_buffer == nil then
       if currproj then
         currproj= nil
         projmod= nil
@@ -127,14 +125,14 @@ if toolbar then
       return
     end
     local p_buffer = Proj.get_projectbuffer(false)
-    if p_buffer == nil or p_buffer.proj_files == nil then
+    if p_buffer == nil then
       toolbar.list_addinfo('No open project', true)
       list_clear()
       return
     end
 
     first_row= 1
-    local fname= p_buffer.proj_rowinfo[first_row][1]
+    local fname= data.proj_rowinfo[first_row][1]
     if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
     if not currproj_change(p_buffer) then return end
@@ -143,23 +141,23 @@ if toolbar then
     list_clear()
 
     toolbar.sel_left_bar(itemsgrp)
-    if #p_buffer.proj_files < 1 then
+    if #data.proj_files < 1 then
       toolbar.listtb_y= 3
       toolbar.list_addinfo('The project is empty')
-    else
+    elseif first_row <= #data.proj_files then
       local y= 3
       local rowh= toolbar.cfg.butsize-2
-      for i=first_row, #p_buffer.proj_files do
-        local fname= p_buffer.proj_rowinfo[i][1]
+      for i=first_row, #data.proj_files do
+        local fname= data.proj_rowinfo[i][1]
         if fname ~= "" then
-          local idlen= p_buffer.proj_rowinfo[i][3] --indent-len
-          local ind= (p_buffer.proj_rowinfo[i][2] or 0) * 12 --indentation
+          local idlen= data.proj_rowinfo[i][3] --indent-len
+          local ind= (data.proj_rowinfo[i][2] or 0) * 12 --indentation
           if idlen > 0 then ind= ind + 10 end
           local bicon= nil
-          local tip= p_buffer.proj_files[i]
-          local ft= p_buffer.proj_filestype[i]
+          local tip= data.proj_files[i]
+          local ft= data.proj_filestype[i]
           if ft == Proj.PRJF_FILE then
-            bicon= toolbar.icon_fname(p_buffer.proj_files[i])
+            bicon= toolbar.icon_fname(data.proj_files[i])
           elseif ft == Proj.PRJF_CTAG then
             bicon= "t_type"
             tip= "CTAG: "..tip
@@ -200,8 +198,8 @@ if toolbar then
         end
       end
       --set project's default collapse items
-      for i= #p_buffer.proj_fold_row, 1, -1 do
-        collapse_list("exp-gofile#"..p_buffer.proj_fold_row[i] )
+      for i= #data.proj_fold_row, 1, -1 do
+        collapse_list("exp-gofile#"..data.proj_fold_row[i] )
       end
       sel_file_num(linenum)
     end
@@ -212,9 +210,7 @@ if toolbar then
       --normal file: restore current line default settings
       local file= buffer.filename
       if file ~= nil then
-        local p_buffer = Proj.get_projectbuffer(false)
-        if p_buffer == nil or p_buffer.proj_files == nil then return end
-        local row= Proj.get_file_row(p_buffer, file)
+        local row= Proj.get_file_row(file)
         if row then sel_file_num(row) end
       end
     end
