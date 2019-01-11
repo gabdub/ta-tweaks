@@ -295,7 +295,6 @@ end
 
 --return the file position (ROW: 1..) in the given buffer file list
 function Proj.get_file_row(file)
-  --check the given buffer has a list of files
   if #data.proj_files > 0 and file then
     for row=1, #data.proj_files do
       if file == data.proj_files[row] then return row end

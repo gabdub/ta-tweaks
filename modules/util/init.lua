@@ -20,20 +20,20 @@ end
 
 function Util.goto_view(numview)
   if _VIEWS[view] ~= numview then
-    if Util.TA_MAYOR_VER < 9 then
-      ui.goto_view(numview)
-    else
+--    if Util.TA_MAYOR_VER < 9 then
+--      ui.goto_view(numview)
+--    else
       ui.goto_view(_VIEWS[numview])
-    end
+--    end
   end
 end
 
 function Util.goto_buffer(buf)
-  if Util.TA_MAYOR_VER < 9 then
-    view:goto_buffer(_BUFFERS[buf])
-  else
+--  if Util.TA_MAYOR_VER < 9 then
+--    view:goto_buffer(_BUFFERS[buf])
+--  else
     view:goto_buffer(buf)
-  end
+--  end
 end
 
 --goto line= 0...

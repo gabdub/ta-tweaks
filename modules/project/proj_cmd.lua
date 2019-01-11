@@ -722,19 +722,19 @@ function Proj.add_dir_files(dir)
     local flist= {}
     local extlist= {}
     local ext
-    if Util.TA_MAYOR_VER < 9 then
-      lfs.dir_foreach(dir, function(file)
-        flist[ #flist+1 ]= file
-        ext= file:match('[^%.\\/]+$')
-        if ext then extlist[ext]= true end
-        end, lfs.FILTER, false)
-    else
+--    if Util.TA_MAYOR_VER < 9 then
+--      lfs.dir_foreach(dir, function(file)
+--        flist[ #flist+1 ]= file
+--        ext= file:match('[^%.\\/]+$')
+--        if ext then extlist[ext]= true end
+--        end, lfs.FILTER, false)
+--    else
       lfs.dir_foreach(dir, function(file)
         flist[ #flist+1 ]= file
         ext= file:match('[^%.\\/]+$')
         if ext then extlist[ext]= true end
         end, lfs.FILTER, nil, false)
-    end
+--    end
     if #flist > 0 then
       --choose extension to import
       local allext= ""
