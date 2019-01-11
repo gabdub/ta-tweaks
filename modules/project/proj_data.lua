@@ -125,7 +125,7 @@ function Proj.load_config()
   end
 end
 
-function Proj.notify_projload_ends()
+local function notify_projload_ends()
   if #data.config_hooks > 0 then
     for i=1, #data.config_hooks do data.config_hooks[i][2](data.config) end  --notify hooks afterload
   end
@@ -153,15 +153,15 @@ function Proj.save_config()
   end
 end
 
-function Proj.add_recentproject(prjfile)
-  -- Add file to recent project files list, eliminating duplicates.
+function Proj.add_recentproject()
+  -- Add Proj.data.filename to the recent project files list, eliminating duplicates
   for j, file in ipairs(data.recent_projects) do
-    if file == prjfile then table.remove(data.recent_projects, j) break end
+    if file == data.filename then table.remove(data.recent_projects, j) break end
   end
-  table.insert(data.recent_projects, 1, prjfile)
+  table.insert(data.recent_projects, 1, data.filename)
   --and remove file from recent "regular files" list
   for j, file in ipairs(io.recent_files) do
-    if file == prjfile then table.remove(io.recent_files, j) break end
+    if file == data.filename then table.remove(io.recent_files, j) break end
   end
   --save new list on exit
   data.recent_prj_change= true
@@ -169,29 +169,35 @@ function Proj.add_recentproject(prjfile)
   if toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
 end
 
---parse buffer and fill filenames Proj.data arrays
-function Proj.parse_projectbuffer(p_buffer)
+--parse Proj.data.filename and fill project arrays
+function Proj.parse_project_file()
+  Proj.clear_proj_arrays()
+  if data.filename == nil or data.filename == "" then
+    notify_projload_ends()
+    Util.info("ERROR", "Project filename unknown")
+    ui.statusbar_text= 'ERROR: Project filename unknown'
+    return
+  end
+  local fi, err= io.open(data.filename, 'rb')
+  if not fi then
+    notify_projload_ends()
+    Util.info("ERROR: Can't open the project file", err)
+    ui.statusbar_text= "ERROR: Can't open the project file"
+    return
+  end
   ui.statusbar_text= 'Parsing project file...'
 
-  Proj.clear_proj_arrays()
-
   --get project file path (default)
-  local projname= p_buffer.filename
-  local abspath
-  if projname ~= nil then
-    local p,f,e = Util.splitfilename(projname)
-    abspath= p
-  else
-    --new project, use current dir
-    projname= ''
-    abspath= lfs.currentdir()
-  end
-  local path = abspath
+  local p,f,e = Util.splitfilename(data.filename)
+  local abspath= p
+  local path= abspath
 
   --parse project file line by line
-  for r = 1, p_buffer.line_count do
+  local r= 0
+  for line in fi:lines() do
+    r= r+1
     local fname= ''
-    local line= Util.str_trim_final(p_buffer:get_line(r-1)) --remove final blanks/CR-LF
+    local line= Util.str_trim_final(line) --remove final blanks/CR-LF
 
     --try option 1)
     local ind, rown, fn, opt = string.match(line,'^(%s*)(.-)%s*::(.*)::(.-)%s*$')
@@ -272,7 +278,16 @@ function Proj.parse_projectbuffer(p_buffer)
       end
     end
   end
-  ui.statusbar_text= 'Project: '.. projname
+  fi:close()
+  ui.statusbar_text= 'Project: '.. data.filename
+  notify_projload_ends()
+end
+
+function Proj.closed_cleardata()
+  data.filename= ""
+  Proj.clear_proj_arrays()
+  ui.statusbar_text= 'Project closed'
+  notify_projload_ends()
 end
 
 --return the file position (ROW: 1..) in the given buffer file list
@@ -350,7 +365,7 @@ function Proj.set_selectionmode(buff,selmode)
 
   if selmode then
     --fill Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-    Proj.parse_projectbuffer(buff)
+    Proj.parse_project_file()
     --set lexer to highlight groups and hidden control info ":: ... ::"
     buff:set_lexer('myproj')
     --project in SELECTION mode--
@@ -638,7 +653,7 @@ function Proj.add_files(p_buffer, flist, groupfiles)
       io.save_file()
       p_buffer.read_only= save_ro
       --update Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-      Proj.parse_projectbuffer(p_buffer)
+      Proj.parse_project_file()
 
       if row then
         --move the selection bar

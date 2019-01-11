@@ -386,10 +386,10 @@ function Proj.new_project()
   buffer.filename = filename
   buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
   --save project file
-  io.save_file()
   data.filename= filename
+  io.save_file()
   --remember project file in recent list
-  Proj.add_recentproject(filename)
+  Proj.add_recentproject()
 
   -- project in SELECTION mode without focus--
   Proj.set_selectionmode(buffer,true)
@@ -434,9 +434,11 @@ function Proj.open_project(filename)
       proj_keep_file= buffer.filename
     end
     Proj.goto_projview(Proj.PRJV_PROJECT)
+    data.filename= prjfile
     --open the project
     io.open_file(prjfile)
-    data.filename= prjfile
+    --remember project file in recent list
+    Proj.add_recentproject()
     --update ui
     Proj.stop_update_ui(true)
     Proj.goto_filesview(true) --change to files
@@ -444,10 +446,6 @@ function Proj.open_project(filename)
     -- project in SELECTION mode without focus--
     local p_buffer = Proj.get_projectbuffer(true)
     Proj.show_lost_focus(p_buffer)
-    if p_buffer then
-      --remember project file in recent list
-      Proj.add_recentproject(prjfile)
-    end
 
     --project ui
     Proj.ifproj_setselectionmode()
@@ -483,9 +481,7 @@ function Proj.close_project(keepviews)
     end
     Util.goto_buffer(p_buffer)
     if io.close_buffer() then
-      data.filename= ""
-      Proj.clear_proj_arrays()
-      ui.statusbar_text= 'Project closed'
+      Proj.closed_cleardata()
       Proj.update_projview()  --update project view button
       if not keepviews then
         Proj.close_search_view()
