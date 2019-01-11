@@ -53,6 +53,7 @@
 -----------------------------------------------------------------------
 --  Proj.data:          PROJECT DATA
 --   filename           = open project filename or ""
+--   proj_parsed        = the project file was parsed
 --   proj_files[]       = array with the filename in each row (1...) or ''
 --   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
 --   proj_fold_row[]    = array with the row numbers to fold on open
@@ -80,6 +81,7 @@ Proj.MAX_RECENT_PROJ = 30
 Proj.data= {}
 local data= Proj.data
 data.filename= ""  --open project filename or ""
+data.proj_parsed= true
 data.recent_projects= {} --recent Projects list
 data.recent_prj_change = false
 data.config= {}
@@ -171,6 +173,7 @@ end
 
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
+  data.proj_parsed= true
   Proj.clear_proj_arrays()
   if data.filename == nil or data.filename == "" then
     notify_projload_ends()
@@ -351,7 +354,10 @@ end
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
 function Proj.set_selectionmode(buff,selmode)
-  if selmode and buffer.modify then io.save_file() end
+  if selmode and buffer.modify then
+    data.proj_parsed= false --prevent list update when saving the project until it's parsed
+    io.save_file()
+  end
   local editmode= not selmode
   --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
   buff._project_select= selmode
@@ -646,10 +652,10 @@ function Proj.add_files(p_buffer, flist, groupfiles)
             p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
           end
           --add the new line to the proj. file list
-          row= #data.proj_files+1
-          data.proj_files[row]= file
+          if not row then row= #data.proj_files+1 end
         end
       end
+      data.proj_parsed= false --prevent list update when saving the project until it's parsed
       io.save_file()
       p_buffer.read_only= save_ro
       --update Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"

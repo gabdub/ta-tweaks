@@ -135,6 +135,11 @@ if toolbar then
     if toolbar.islistshown("recentprojlist") then load_recentproj() end
   end
 
+  function toolbar.list_show_projects()
+    if not toolbar.list_tb then toolbar.list_toolbar_onoff() end
+    toolbar.select_list("recentprojlist",true) --activate this list
+  end
+
   toolbar.registerlisttb("recentprojlist", "Recent Projects", "go-home", recentproj_create, recentproj_notify, recentproj_showlist)
 end
 

@@ -76,6 +76,9 @@ if actions then
     end
     return "No project is open"  --disabled
   end
+  local function closeprj_status()
+    return (Proj.data.filename == "" and 8 or 0) --0=normal 8=disabled
+  end
 
   --add new PROJECT actions
   actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces, nil, "dialog-ok")
@@ -84,7 +87,7 @@ if actions then
   actions.add("new_project",         _L['_New'],              Proj.new_project, nil, "list-add", nil, "New Project")
   actions.add("open_project",        _L['_Open'],             Proj.open_project, nil, "document-open", nil, "Open Project")
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
-  actions.add("close_project",       _L['_Close'],            Proj.close_project)
+  actions.add("close_project",       _L['_Close'],            Proj.close_project, nil, "system-log-out", closeprj_status, "Close project")
   actions.add("search_project",      'Project _Search',       Proj.search_in_files, "aF")
   actions.add("search_sel_dir",      'Search in selected dir', Proj.search_in_sel_dir)
   actions.add("search_sel_file",     'Search in selected file', Proj.search_in_sel_file)

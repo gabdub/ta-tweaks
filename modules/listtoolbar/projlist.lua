@@ -75,8 +75,10 @@ if toolbar then
     collarow= {}
   end
 
-  local function currproj_change(p_buffer)
-    if p_buffer == nil then
+  local function currproj_change()
+    if not Proj.data.proj_parsed then return false end  --wait until the project is parsed
+    local prjfn= Proj.data.filename
+    if prjfn == "" then
       if currproj then
         currproj= nil
         projmod= nil
@@ -84,13 +86,14 @@ if toolbar then
       end
       return false
     end
-    if p_buffer.filename == currproj then --same file, check modification time
-      if p_buffer.mod_time == projmod then return false end --SAME
+    local modt= lfs.attributes(prjfn, 'modification')
+    if prjfn == currproj then --same file, check modification time
+      if modt == projmod then return false end --SAME
     else
       clear_selected()
     end
-    currproj= p_buffer.filename
-    projmod= p_buffer.mod_time
+    currproj= prjfn
+    projmod= modt
     return true --new or modified
   end
 
@@ -117,11 +120,11 @@ if toolbar then
   end
 
   local function load_proj()
+    changed= currproj_change()
     toolbar.list_init_title() --add a resize handle
-    --toolbar.list_addaction("open_project")
-    --toolbar.list_addaction("new_project")
+    toolbar.list_addaction("close_project")
     if (not Proj) then
-      toolbar.list_addinfo('The Project module is not installed', true)
+      toolbar.list_addinfo('The Project module is not installed')
       return
     end
     local p_buffer = Proj.get_projectbuffer(false)
@@ -140,7 +143,8 @@ if toolbar then
     local fname= data.proj_rowinfo[first_row][1]
     if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
-    if not currproj_change(p_buffer) then return end
+
+    if not changed then return end
 
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()

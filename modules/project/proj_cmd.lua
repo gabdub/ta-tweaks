@@ -387,6 +387,7 @@ function Proj.new_project()
   buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
   --save project file
   data.filename= filename
+  data.proj_parsed= false --prevent list update when saving the project until it's parsed
   io.save_file()
   --remember project file in recent list
   Proj.add_recentproject()
@@ -496,7 +497,8 @@ function Proj.close_project(keepviews)
   else
     ui.statusbar_text= 'No project found'
   end
-  --closed / not found
+  --closed / not found / show projects list if available
+  if toolbar.list_show_projects then toolbar.list_show_projects() end
   return true
 end
 
@@ -671,44 +673,11 @@ end
 function Proj.add_this_file()
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
-    --get file path
-    file= buffer.filename
-    if file then
-      --if the file is already in the project, ask for confirmation
-      local confirm = (Proj.get_file_row(file) == nil) or Util.confirm( 'Add confirmation',
-        'The file ' .. file .. ' is already in the project', 'Do you want to add it again?')
-      if confirm then
-        --prevent some events to fire for ever
-        Proj.stop_update_ui(true)
-
-        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-          --this file is in the project view
-        if _VIEWS[view] ~= projv then
-          Util.goto_view(projv)
-        end
-
-        --if the project is in readonly, change it
-        save_ro= p_buffer.read_only
-        p_buffer.read_only= false
-        path,fn,ext = Util.splitfilename(file)
-        --TODO: reduce the path is possible using project root
-        p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
-        --add the new line to the proj. file list
-        row= #data.proj_files+1
-        data.proj_files[row]= file
-        p_buffer.read_only= save_ro
-        --move the selection bar
-        p_buffer:ensure_visible_enforce_policy(row- 1)
-        p_buffer:goto_line(row-1)
-        -- project in SELECTION mode without focus--
-        Proj.show_lost_focus(p_buffer)
-        p_buffer.home()
-        --return to this file (it could be in a different view)
-        Proj.go_file(file)
-        ui.statusbar_text= 'File added to project: ' .. file .. ' in row ' .. row
-
-        Proj.stop_update_ui(false)
-      end
+    local file= buffer.filename
+    if file ~= nil and buffer._project_select == nil and buffer._type == nil then
+      local flist= {}
+      flist[1]= file
+      Proj.add_files(p_buffer, flist, false)
     end
   else
     ui.statusbar_text='Project not found'
@@ -721,7 +690,7 @@ function Proj.add_all_files()
   local p_buffer = Proj.get_projectbuffer(true)
   if p_buffer then
     --put all buffer.filename in a list (ignore the project and special buffers)
-    flist= {}
+    local flist= {}
     for _, b in ipairs(_BUFFERS) do
       local file= b.filename
       if file ~= nil and b._project_select == nil and b._type == nil then
