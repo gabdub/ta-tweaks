@@ -181,7 +181,7 @@ function Proj.show_filevcinfo()
   end
 end
 
-function Proj.get_vcs_info(row, buf, sep)
+function Proj.get_vcs_info(row, sep)
   local info= ""
   if data.proj_vcontrol then
     for i=1, #data.proj_vcontrol do  --{path, p, 1/2, row}
@@ -205,7 +205,7 @@ function Proj.show_doc()
     local info = data.proj_files[r]
     local ftype= data.proj_filestype[r]
     if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
-    elseif ftype == Proj.PRJF_VCS then info= Proj.get_vcs_info(r, buffer)
+    elseif ftype == Proj.PRJF_VCS then info= Proj.get_vcs_info(r)
     elseif ftype == Proj.PRJF_RUN then info= 'RUN: '..info end
     if info == '' and data.proj_grp_path[r] ~= nil then
       info= data.proj_grp_path[r]

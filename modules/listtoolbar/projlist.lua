@@ -127,8 +127,7 @@ if toolbar then
       toolbar.list_addinfo('The Project module is not installed')
       return
     end
-    local p_buffer = Proj.get_projectbuffer(false)
-    if p_buffer == nil then
+    if data.filename == "" then
       toolbar.list_addinfo('No open project', true)
       list_clear()
       return
@@ -172,7 +171,7 @@ if toolbar then
             tip= "RUN: "..tip
           elseif ft == Proj.PRJF_VCS then
             bicon= "package-install"
-            tip= Proj.get_vcs_info(i, p_buffer, "\n")
+            tip= Proj.get_vcs_info(i, "\n")
           end
           local name= "gofile#"..i
           toolbar.gotopos(3, y)
