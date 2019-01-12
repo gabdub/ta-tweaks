@@ -526,6 +526,7 @@ void ttb_setselected( const char * name, int selected, int pressed, int onlythis
 void ttb_ensurevisible( const char * name, int onlythistb );
 void ttb_collapse( const char * name, int collapse, int hideheight, int onlythistb );
 int  ttb_get_flags( const char * name  );
+int  ttb_get_size( int tbnum );
 void ttb_seticon( const char * name, const char *img, int nicon, int onlythistb );
 void ttb_setbackcolor( const char * name, int color, int keepback, int onlythistb );
 void ttb_settooltip( const char * name, const char *tooltip, int onlythistb );

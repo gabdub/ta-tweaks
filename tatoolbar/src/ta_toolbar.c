@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.32 (Jan 6 2019)"
+#define TA_TOOLBAR_VERSION_STR "1.0.33 (Jan 12 2019)"
 
 static void free_img_list( void );
 
@@ -3178,6 +3178,18 @@ int ttb_get_flags( const char * name  )
     if( p != NULL ){
       return p->flags;
     }
+  }
+  return 0;
+}
+
+int ttb_get_size( int tbnum )
+{
+  struct toolbar_data * T= toolbar_from_num(tbnum);
+  if( T != NULL ){
+    if( (T->flags & TTBF_TB_VERTICAL) != 0){
+      return T->barwidth;
+    }
+    return T->barheight;
   }
   return 0;
 }

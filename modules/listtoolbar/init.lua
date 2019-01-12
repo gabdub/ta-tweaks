@@ -186,11 +186,17 @@ if toolbar then
     end
   end
 
+  local function new_tb_size()
+    local w= toolbar.getsize(toolbar.LEFT_TOOLBAR)
+    toolbar.listwidth= w
+    if Proj.is_visible == 0 then Proj.select_width=w end
+  end
+
   function toolbar.list_init_title()
     toolbar.listtb_y= 1
     toolbar.cmdright= 18
     toolbar.sel_left_bar(titgrp,true) --empty title group
-    toolbar.top_right_resize_handle("resizeList", 150) --add a resize handle
+    toolbar.top_right_resize_handle("resizeList", 150, new_tb_size) --add a resize handle
   end
 
   function toolbar.list_toolbar_onoff()

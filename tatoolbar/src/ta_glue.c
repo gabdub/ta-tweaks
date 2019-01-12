@@ -425,6 +425,15 @@ static int ltoolbar_getflags(lua_State *L)
   return 1;
 }
 
+/** `toolbar.getsize(tbnum)` Lua function.
+return the toolbar height (horizontal tb) or width (vertical tb)
+*/
+static int ltoolbar_getsize(lua_State *L)
+{
+  lua_pushinteger(L,ttb_get_size(lua_tointeger(L, 1)));
+  return 1;
+}
+
 /* ============================================================================= */
 /*                      FUNCTIONS CALLED FROM TA-TOOLBAR                         */
 /*                             GTK / CAIRO                                       */
@@ -1423,6 +1432,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }
       }else{
         if( ttb.pdrag != NULL ){
+          if( event->button == 1 ){
+            fire_tb_clicked_event(ttb.pdrag);         //notify drag end
+          }
           set_hilight_off();  //cancel drag highlight
         }
         redraw_item(p);      //redraw button under mouse (if any)
@@ -1762,6 +1774,7 @@ void register_toolbar(lua_State *L)
   l_setcfunction(L, -1, "getpickcolor", ltoolbar_getpickcolor); //return integer (RGB) current selected color in picker
   l_setcfunction(L, -1, "getversion",   ltoolbar_getversion);   //return string ta-toolbar version
   l_setcfunction(L, -1, "getflags",     ltoolbar_getflags);     //return item/current group flags
+  l_setcfunction(L, -1, "getsize",      ltoolbar_getsize);      //return the toolbar height (horizontal tb) or width (vertical tb)
   //popup
   l_setcfunction(L, -1, "popup",        ltoolbar_popup);        //show a popup toolbar
   //menuitem
