@@ -357,7 +357,6 @@ if toolbar then
     toolbar.statbar= 0 --0:use default statusbar 1:create 2:already created
     toolbar.html_tb=false --html toolbar on/off
     toolbar.list_tb=false --list toolbar on/off
-    toolbar.listwidth= 250 --list toolbar default width
     --tabs
     toolbar.hideproject= true --don't show project files in tabs
     --config panel

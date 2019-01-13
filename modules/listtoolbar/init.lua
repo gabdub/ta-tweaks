@@ -8,6 +8,7 @@ if toolbar then
   toolbar.listtb_hide_p= false
   toolbar.listselections= {}
   toolbar.cmdright= 18
+  toolbar.listwidth=250
 
   local function listtb_switch()
     --{name, tooltip, icon, createfun, **notify**, show}
@@ -25,12 +26,6 @@ if toolbar then
   events_connect(events.FILE_OPENED,          listtb_update)
   events_connect(events.FILE_CHANGED,         listtb_update)
   events_connect(events.FILE_AFTER_SAVE,      listtb_update)
-
-  local function set_list_width()
-    if not toolbar.listwidth then toolbar.listwidth=250 end
-    if Proj and Proj.select_width then toolbar.listwidth= Proj.select_width end  --try to use the same width as the project
-    if toolbar.listwidth < 150 then toolbar.listwidth=150 end
-  end
 
   function toolbar.list_addbutton(name, tooltip, funct)
     toolbar.gotopos( 0, toolbar.listtb_y)
@@ -105,7 +100,7 @@ if toolbar then
 
   --the toolbar config is saved inside the project configuration file
   local function beforeload_ltb(cfg)
-    --Util.add_config_field(cfg, "lst_width", Util.cfg_int, 250)
+    Util.add_config_field(cfg, "lst_width", Util.cfg_int, 250)
     Util.add_config_field(cfg, "lst_show",  Util.cfg_bool, true)
     Util.add_config_field(cfg, "open_proj", Util.cfg_str, "")
   end
@@ -114,6 +109,7 @@ if toolbar then
     --show list toolbar
     toolbar.sel_left_bar()
     toolbar.list_tb= cfg.lst_show
+    toolbar.listwidth= cfg.lst_width
     if cfg.open_proj ~= "" then toolbar.select_list("projlist",true) end --start in project list
     toolbar.selected(currlist, false, true)
     toolbar.listselections[currlistidx][6](true) --show list
@@ -123,7 +119,8 @@ if toolbar then
 
   local function beforesave_ltb(cfg)
     local changed= false
-    if cfg.lst_show ~= toolbar.list_tb then cfg.lst_show=toolbar.list_tb changed=true end
+    if cfg.lst_show  ~= toolbar.list_tb    then cfg.lst_show=toolbar.list_tb     changed=true end
+    if cfg.lst_width ~= toolbar.listwidth then cfg.lst_width=toolbar.listwidth changed=true end
     if cfg.open_proj ~= Proj.data.filename then cfg.open_proj=Proj.data.filename changed=true end
     return changed
   end
@@ -135,7 +132,6 @@ if toolbar then
     currlistidx=0
 
     toolbar.sel_left_bar()
-    set_list_width()
     --create a new empty toolbar
     toolbar.new(toolbar.listwidth, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.LEFT_TOOLBAR, toolbar.themepath)
     --add/change some images
@@ -189,7 +185,8 @@ if toolbar then
   local function new_tb_size()
     local w= toolbar.getsize(toolbar.LEFT_TOOLBAR)
     toolbar.listwidth= w
-    if Proj.is_visible == 0 then Proj.select_width=w end
+    Proj.select_width= w
+    Proj.data.recent_prj_change= true  --save it on exit
   end
 
   function toolbar.list_init_title()
@@ -221,7 +218,6 @@ if toolbar then
         end
       end
     end
-    set_list_width()
     toolbar.sel_left_bar()
     listtb_update()
 
