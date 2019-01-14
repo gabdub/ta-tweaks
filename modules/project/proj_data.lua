@@ -97,8 +97,8 @@ function Proj.clear_proj_arrays()
 end
 Proj.clear_proj_arrays()
 
-function Proj.add_config_hook(beforeload, afterload, beforesave)
-  data.config_hooks[#data.config_hooks+1]= {beforeload, afterload, beforesave}
+function Proj.add_config_hook(beforeload, afterload, beforesave, projloaded)
+  data.config_hooks[#data.config_hooks+1]= {beforeload, afterload, beforesave, projloaded}
 end
 
 function Proj.load_config()
@@ -108,9 +108,7 @@ function Proj.load_config()
   Util.add_config_field(cfg, "edit_width",   Util.cfg_int, 600)
   Util.add_config_field(cfg, "select_width", Util.cfg_int, 200)
   Util.add_config_field(cfg, "recent",       Util.cfg_str, "", Proj.MAX_RECENT_PROJ)
-  if #data.config_hooks > 0 then
-    for i=1, #data.config_hooks do data.config_hooks[i][1](cfg) end  --add hooked fields to config
-  end
+  for i=1, #data.config_hooks do data.config_hooks[i][1](cfg) end  --add hooked fields to config
   Util.load_config_file(cfg, Proj.PROJ_CONFIG_FILE)
   data.recent_prj_change= false
 
@@ -125,21 +123,18 @@ function Proj.load_config()
     local rc= cfg["recent#"..i]
     if rc and (rc ~= "") then data.recent_projects[#data.recent_projects+1]=rc end
   end
+  for i=1, #data.config_hooks do data.config_hooks[i][2](data.config) end  --notify hooks afterload
 end
 
 local function notify_projload_ends()
-  if #data.config_hooks > 0 then
-    for i=1, #data.config_hooks do data.config_hooks[i][2](data.config) end  --notify hooks afterload
-  end
+  for i=1, #data.config_hooks do data.config_hooks[i][4](data.config) end  --notify hooks projloaded
 end
 
 function Proj.save_config()
   local cfg= data.config
   local changed= data.recent_prj_change
-  if #data.config_hooks > 0 then
-    for i=1, #data.config_hooks do
-      if data.config_hooks[i][3](cfg) then changed=true end  --get hooked fields value
-    end
+  for i=1, #data.config_hooks do
+    if data.config_hooks[i][3](cfg) then changed=true end  --get hooked fields value
   end
   if changed or Proj.data.config.is_visible ~= Proj.is_visible then
     cfg.is_visible= Proj.is_visible

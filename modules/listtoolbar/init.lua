@@ -52,15 +52,17 @@ if toolbar then
     toolbar.anchor(name, toolbar.cmdright, true)
   end
 
-  function toolbar.select_list(listname, donthide)
+  function toolbar.select_list(listname, dont_hide_show)
     if listname == currlist then
       --click on the active list= show/hide toolbar
-      if not donthide then toolbar.list_toolbar_onoff() end
+      if not dont_hide_show then toolbar.list_toolbar_onoff() end
     else
-      if not toolbar.list_tb then toolbar.list_toolbar_onoff() end  --show toolbar
+      if (not dont_hide_show) and (not toolbar.list_tb) then toolbar.list_toolbar_onoff() end  --show toolbar
       --change the active list
-      toolbar.selected(currlist, false, false)
-      if currlistidx > 0 then toolbar.listselections[currlistidx][6](false) end --hide list items
+      if currlistidx > 0 then
+        toolbar.selected(currlist, false, false)
+        toolbar.listselections[currlistidx][6](false) --hide list items
+      end
       for i=1,#toolbar.listselections do
         if toolbar.listselections[i][1] == listname then
           currlist= listname
@@ -68,9 +70,11 @@ if toolbar then
           break
         end
       end
-      toolbar.selected(currlist, false, true)
-      if currlistidx > 0 then toolbar.listselections[currlistidx][6](true) end --show list items
-      listtb_update()
+      if currlistidx > 0 then
+        toolbar.selected(currlist, false, toolbar.list_tb)
+        toolbar.listselections[currlistidx][6](true) --show list items
+        listtb_update()
+      end
     end
   end
 
@@ -110,22 +114,29 @@ if toolbar then
     toolbar.sel_left_bar()
     toolbar.list_tb= cfg.lst_show
     toolbar.listwidth= cfg.lst_width
-    if cfg.open_proj ~= "" then toolbar.select_list("projlist",true) end --start in project list
-    toolbar.selected(currlist, false, true)
-    toolbar.listselections[currlistidx][6](true) --show list
-    listtb_update()
+    --start in "recent projects list" or "project list" if the project is open
+    toolbar.select_list((cfg.open_proj ~= "") and "projlist" or "recentprojlist", true)
     toolbar.show(toolbar.list_tb, toolbar.listwidth)
   end
 
   local function beforesave_ltb(cfg)
     local changed= false
     if cfg.lst_show  ~= toolbar.list_tb    then cfg.lst_show=toolbar.list_tb     changed=true end
-    if cfg.lst_width ~= toolbar.listwidth then cfg.lst_width=toolbar.listwidth changed=true end
+    if cfg.lst_width ~= toolbar.listwidth  then cfg.lst_width=toolbar.listwidth  changed=true end
     if cfg.open_proj ~= Proj.data.filename then cfg.open_proj=Proj.data.filename changed=true end
     return changed
   end
 
-  Proj.add_config_hook(beforeload_ltb, afterload_ltb, beforesave_ltb)
+  local function projloaded_ltb(cfg)
+    --the project file parsing is complete
+    if currlistidx > 0 then
+      toolbar.selected(currlist, false, toolbar.list_tb)
+      toolbar.listselections[currlistidx][6](true) --show list
+      listtb_update()
+    end
+  end
+
+  Proj.add_config_hook(beforeload_ltb, afterload_ltb, beforesave_ltb, projloaded_ltb)
 
   function toolbar.createlisttb()
     currlist=""
@@ -149,13 +160,22 @@ if toolbar then
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
 
+    toolbar.show(false, toolbar.listwidth)  --hide until the project config is loaded
+
     if #toolbar.listselections > 0 then
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
         ls[4]() --create list
       end
-      currlistidx=1 --activate first list (Projects)
-      currlist= toolbar.listselections[currlistidx][1]
+    end
+
+    toolbar.sel_top_bar() --add buttons to select the lists in the top toolbar
+    if #toolbar.listselections > 0 then
+      for i=1,#toolbar.listselections do
+        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
+        toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
+      end
+      toolbar.addspace()
     end
 
     if actions then
@@ -166,27 +186,16 @@ if toolbar then
         local m=med[#med]
         m[#m+1]= "toggle_viewlist"
       end
-      actions.add("next_list", 'Next list', toolbar.next_list, "f6")
+      actions.add("next_list", 'Next list',     toolbar.next_list, "f6")
       actions.add("prev_list", 'Previous list', toolbar.prev_list, "sf6")
-    end
-
-    toolbar.show(false, toolbar.listwidth)  --hide for now..
-
-    toolbar.sel_top_bar()
-    if #toolbar.listselections > 0 then
-      for i=1,#toolbar.listselections do
-        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
-        toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
-      end
-      toolbar.addspace()
     end
   end
 
-  local function new_tb_size()
+  local function new_tb_size() --the toolbar was resized
     local w= toolbar.getsize(toolbar.LEFT_TOOLBAR)
     toolbar.listwidth= w
     Proj.select_width= w
-    Proj.data.recent_prj_change= true  --save it on exit
+    Proj.data.recent_prj_change= true --save it on exit
   end
 
   function toolbar.list_init_title()

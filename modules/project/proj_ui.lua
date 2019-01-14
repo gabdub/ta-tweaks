@@ -77,6 +77,7 @@ function Proj.EVinitialize()
     end
   end
   --no project file found
+  Proj.closed_cleardata() --clear Proj.data and notify end of config load
   Proj.update_after_switch()
   Proj.update_projview() --gray toggle project view button
 end
