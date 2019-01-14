@@ -33,6 +33,9 @@ if toolbar then
   function toolbar.sel_minimap(ngrp, emptygrp)
     toolbar.sel_toolbar_n(toolbar.MINIMAP_TOOLBAR)
   end
+  function toolbar.sel_results_bar(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.RESULTS_TOOLBAR, ngrp, emptygrp)
+  end
 
   function toolbar.setthemeicon(name,icon,num)
     --set button icon, get icon from theme's icons folder
@@ -154,7 +157,9 @@ if toolbar then
       toolbar.selecttab(ntab)
     elseif ntoolbar == toolbar.STAT_TOOLBAR then
       --status bar click
-      if ntab == 2 then --Line
+      if ntab == 1 then --info
+        if toolbar.results_onoff then toolbar.results_onoff() end --show/hide result toolbar
+      elseif ntab == 2 then --Line
         if goto_line_col then
           goto_line_col(false)
         else
@@ -357,6 +362,7 @@ if toolbar then
     toolbar.statbar= 0 --0:use default statusbar 1:create 2:already created
     toolbar.html_tb=false --html toolbar on/off
     toolbar.list_tb=false --list toolbar on/off
+    toolbar.results_tb=false --results toolbar on/off
     --tabs
     toolbar.hideproject= true --don't show project files in tabs
     --config panel

@@ -10,18 +10,13 @@ if toolbar then
   toolbar.cmdright= 18
   toolbar.listwidth=250
 
-  local function listtb_switch()
+  local function listtb_update(switching)
     --{name, tooltip, icon, createfun, **notify**, show}
-    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](true) end
+    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](switching or false) end
   end
 
-  local function listtb_update()
-    --{name, tooltip, icon, createfun, **notify**, show}
-    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](false) end
-  end
-
-  events_connect(events.BUFFER_AFTER_SWITCH,  listtb_switch)
-  events_connect(events.VIEW_AFTER_SWITCH,    listtb_switch)
+  events_connect(events.BUFFER_AFTER_SWITCH,  function() listtb_update(true) end)
+  events_connect(events.VIEW_AFTER_SWITCH,    function() listtb_update(true) end)
   events_connect(events.BUFFER_NEW,           listtb_update)
   events_connect(events.FILE_OPENED,          listtb_update)
   events_connect(events.FILE_CHANGED,         listtb_update)
@@ -134,6 +129,10 @@ if toolbar then
       toolbar.listselections[currlistidx][6](true) --show list
       listtb_update()
     end
+    if #toolbar.listselections == 0 then
+      toolbar.list_init_title()
+      toolbar.list_addinfo("No list module found",true)
+    end
   end
 
   Proj.add_config_hook(beforeload_ltb, afterload_ltb, beforesave_ltb, projloaded_ltb)
@@ -155,18 +154,16 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
     toolbar.themed_icon(toolbar.globalicon, "cfg-separator-h", toolbar.TTBI_TB.HSEPARATOR)
 
-    --title group: fixed width=300 / align top + fixed height
+    --title group: align top + fixed height
     titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
 
     toolbar.show(false, toolbar.listwidth)  --hide until the project config is loaded
 
-    if #toolbar.listselections > 0 then
-      for i=1,#toolbar.listselections do
-        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
-        ls[4]() --create list
-      end
+    for i=1,#toolbar.listselections do
+      local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
+      ls[4]() --create list
     end
 
     toolbar.sel_top_bar() --add buttons to select the lists in the top toolbar
@@ -206,7 +203,6 @@ if toolbar then
   end
 
   function toolbar.list_toolbar_onoff()
-    --if the current view is a project view, goto left/only files view. if not, keep the current view
     if toolbar.list_tb == true then
       toolbar.list_tb= false
     else

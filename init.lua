@@ -38,6 +38,8 @@ if toolbar then
   require('listtoolbar.projlist')
   require('listtoolbar.ctaglist')
 
+  require('results')
+
   --set the configured theme
   toolbar.set_theme_from_config()
 
@@ -47,10 +49,11 @@ if toolbar then
   --create the configured toolbars
   toolbar.create_from_config()
 
-  --add some buttons
-  --create list toolbar
-  if toolbar.createlisttb then toolbar.createlisttb() end
+  --create lists/results toolbars
+  if toolbar.createlisttb    then toolbar.createlisttb()    end
+  if toolbar.createresultstb then toolbar.createresultstb() end
 
+  --add some buttons
   if Proj then
     toolbar.addaction("toggle_viewproj")
     toolbar.addspace(4,true)

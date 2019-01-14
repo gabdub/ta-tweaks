@@ -658,6 +658,9 @@ function toolbar.set_buffer_cfg()
   end
   toolbar.set_check_val("tbshowguid", (buffer.indentation_guides == buffer.IV_LOOKBOTH))
   toolbar.set_check_val("tbvirtspc", (buffer.virtual_space_options == buffer.VS_USERACCESSIBLE))
+  if toolbar.results_onoff ~= nil then
+    toolbar.set_check_val("tbshowresults", toolbar.results_tb)
+  end
 end
 
 --only update when the config is open
@@ -772,6 +775,9 @@ function toolbar.setcfg_from_buff_checks()
   end
   if toolbar.list_toolbar_onoff ~= nil then
     toolbar.set_check_val("tbshowlist", toolbar.list_tb)
+  end
+  if toolbar.results_onoff ~= nil then
+    toolbar.set_check_val("tbshowresults", toolbar.results_tb)
   end
 end
 
@@ -901,6 +907,11 @@ local function add_toolbar_cfg_panel()
   end
 
   toolbar.config_saveon=false --end of config save options of this panel
+
+  if toolbar.results_onoff ~= nil then
+    add_config_label("RESULTS",true)
+    add_config_check("tbshowresults", "Show Results toolbar", "", false, toolbar.results_onoff)
+  end
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
