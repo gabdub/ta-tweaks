@@ -7,7 +7,7 @@ if toolbar then
 
   toolbar.resultsselect= {}
   toolbar.resultsright= 18
-  toolbar.resultsheight=150
+  toolbar.resultsheight=200
 
   local function results_update(switching)
     --{name, tooltip, icon, createfun, **notify**, show}
@@ -15,14 +15,16 @@ if toolbar then
   end
 
   function toolbar.results_addbutton(name, tooltip, funct)
-    toolbar.gotopos( 0, toolbar.listtb_y)
+    toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
+    toolbar.listtb_x= 3
     toolbar.cmd(name, funct, tooltip or "", name, true)
     toolbar.resultsright= toolbar.resultsright + toolbar.cfg.butsize
     toolbar.anchor(name, toolbar.resultsright) --anchor to the right
   end
 
   function toolbar.results_addaction(action)
-    toolbar.gotopos( 0, toolbar.listtb_y)
+    toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
+    toolbar.listtb_x= 3
     toolbar.addaction(action)
     toolbar.resultsright= toolbar.resultsright + toolbar.cfg.butsize
     toolbar.anchor(action, toolbar.resultsright) --anchor to the right
@@ -30,10 +32,11 @@ if toolbar then
 
   function toolbar.results_addinfo(text,bold)
     --add a text to the list
-    toolbar.gotopos( 3, toolbar.listtb_y)
+    toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
+    toolbar.listtb_x= 3
     lbl_n= lbl_n+1
     local name= "_lbl_"..lbl_n
-    toolbar.addlabel(text, "", toolbar.listright, true, bold, name)
+    toolbar.addlabel(text, "", 300, true, bold, name)
     toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
     toolbar.resultsright= 18
     toolbar.anchor(name, toolbar.resultsright, true)
@@ -91,7 +94,7 @@ if toolbar then
 
   --the toolbar config is saved inside the project configuration file
   local function beforeload_res(cfg)
-    Util.add_config_field(cfg, "results_height", Util.cfg_int, 150)
+    Util.add_config_field(cfg, "results_height", Util.cfg_int, 200)
     Util.add_config_field(cfg, "results_show",   Util.cfg_bool, true)
   end
 
@@ -185,9 +188,13 @@ if toolbar then
 
   function toolbar.results_init_title()
     toolbar.listtb_y= 1
+    toolbar.listtb_x= 3
     toolbar.resultsright= 18
     toolbar.sel_results_bar(titgrp,true) --empty title group
-    toolbar.top_right_resize_handle("resizeList", 150, new_tb_size) --add a resize handle
+    toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
+    toolbar.gotopos( 0, toolbar.listtb_y)
+    toolbar.cmd("results-close", toolbar.results_onoff, "Close", "window-close")
+    toolbar.listtb_x= 23
   end
 
   function toolbar.results_onoff()

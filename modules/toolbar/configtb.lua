@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 local Util = Util
 local toolbar = toolbar
 local events, events_connect = events, events.connect
@@ -154,7 +154,6 @@ local function add_config_tabgroup(name,title,ngrp)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
   end
   toolbar.cfgpnl_y= toolbar.cfgpnl_ymargin
-  --toolbar.themed_icon(toolbar.groupicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";===[ "..name.." ]==="
   end

@@ -85,10 +85,6 @@ if toolbar then
 
   --toolbars are ready to show
   toolbar.ready()
-
-  toolbar.new(27, 24, 16, toolbar.RESULTS_TOOLBAR, toolbar.themepath)
-  toolbar.themed_icon(toolbar.globalicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-  toolbar.show(false)
 end
 
 --reload changed files without prompting

@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 
 toolbar.globalicon= "TOOLBAR"
 toolbar.groupicon=  "GROUP"
@@ -96,7 +96,7 @@ toolbar.TTBF ={
   IS_SEPARATOR  = 0x00000800,   --it's a separator
   SHOW_BORDER   = 0x00001000,   --draw a border (used in text buttons)
   HIDE_BLOCK    = 0x00002000,   --hide a block of items under this item (tree/list expand-collapse)
-  IS_HRESIZE    = 0x00004000,   --the button resize the toolbar horizontally
+  IS_TRESIZE    = 0x00004000,   --the button resize the toolbar
   ANCHOR_END    = 0x00008000,   --anchor the item's right (x2) instead of it's left (x1)
 --group flags
   GRP_SELECTABLE= 0x00000001,   --accepts click
@@ -116,8 +116,9 @@ toolbar.TTBF ={
   GRP_VSCROLL   = 0x00004000,   --this group can be scrolled vertically when needed
   GRP_SHOWVSCR  = 0x00008000,   --this group shows a vertical scrollbar when needed
 --toolbar flags
-  TB_VERTICAL   = 0x00000001,   --it's vertical
+  TB_VERTICAL   = 0x00000001,   --vertical toolbar
   TB_VISIBLE    = 0x00000002,   --it's visible
+  TB_V_LAYOUT   = 0x00000004,   --put groups in a vertical layout
 }
 
 toolbar.GRPC ={

@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.33 (Jan 12 2019)"
+#define TA_TOOLBAR_VERSION_STR "1.0.34 (Jan 15 2019)"
 
 static void free_img_list( void );
 
@@ -96,7 +96,7 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
   if( T == NULL ){
     return NULL;
   }
-  if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
+  if( (T->flags & TTBF_TB_V_LAYOUT) != 0 ){
     flg |= TTBF_GRP_VERTICAL;  //it's a vertical group
   }else{
     flg &= ~TTBF_GRP_VERTICAL; //it's horizontal
@@ -104,8 +104,8 @@ static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
 
   g= T->group_last;
   //check for the auto created group
-  if( (g != NULL) && ((flg & TTBF_GRP_AUTO) ==0) && ((g->flags & TTBF_GRP_AUTO) != 0) ){
-    g->flags= flg;  //set the new flags
+  if( (g != NULL) && ((flg & TTBF_GRP_AUTO) == 0) && ((g->flags & TTBF_GRP_AUTO) != 0) ){
+    g->flags= flg;  //use the auto-generated group, just set the new flags (and clear AUTO flag)
     return g;
   }
   g= (struct toolbar_group *) malloc( sizeof(struct toolbar_group));
@@ -1204,7 +1204,7 @@ void update_layoutT( struct toolbar_data *T)
   th= T->barheight;
   tw= T->barwidth;
   n= 0;
-  if( (T->flags & TTBF_TB_VERTICAL) != 0 ){   //---vertical toolbar---
+  if( (T->flags & TTBF_TB_V_LAYOUT) != 0 ){   //---vertical layout---
     x= 0;
     gs= T->group;
     while( gs != NULL ){
@@ -1410,7 +1410,7 @@ void calc_popup_sizeT( struct toolbar_data *T)
 
   th= 0;
   tw= 0;
-  if( (T->flags & TTBF_TB_VERTICAL) != 0 ){   //---vertical toolbar---
+  if( (T->flags & TTBF_TB_V_LAYOUT) != 0 ){   //---vertical layout---
     gs= T->group;
     while( gs != NULL ){
       ge= find_colendG(gs); //process one COLUMN at a time
@@ -1825,15 +1825,27 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
       }
     }else if( (p->flags & TTBF_SCROLL_BAR) != 0 ){
       vscroll_clickG(p->group); //update scrollbar click (drag)
-    }else if( (ttb.phipress->flags & TTBF_IS_HRESIZE) != 0 ){
-      w= T->drag_off + item_xoff; //resize toolbar horizontally
-      if( w < T->min_width ){
-        w= T->min_width;
-      }
-      if( T->barwidth != w ){ //toolbar size changed, adjust groups layout
-        T->barwidth= w;
-        set_toolbar_size(T);
-        //update_layoutT(T); called from the resize event
+    }else if( (ttb.phipress->flags & TTBF_IS_TRESIZE) != 0 ){
+      if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
+        w= T->drag_off + item_xoff; //resize toolbar horizontally (X+)
+        if( w < T->min_size ){
+          w= T->min_size;
+        }
+        if( T->barwidth != w ){ //toolbar size changed, adjust groups layout
+          T->barwidth= w;
+          set_toolbar_size(T);
+          //update_layoutT(T); called from the resize event
+        }
+      }else{
+        w= T->drag_off - item_yoff; //resize toolbar vertically (Y-)
+        if( w < T->min_size ){
+          w= T->min_size;
+        }
+        if( T->barheight != w ){ //toolbar size changed, adjust groups layout
+          T->barheight= w;
+          set_toolbar_size(T);
+          //update_layoutT(T); called from the resize event
+        }
       }
     }
   }
@@ -2989,11 +3001,17 @@ struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
         memset( T, 0, sizeof(struct toolbar_data));
     }
     T->num=  ntoolbar;
-    //HORIZONTAL TOOLBARS:  top - bottom status - bottom results
+    //HORIZONTAL TOOLBARS: top - bottom status - bottom results
     if( (ntoolbar != TOP_TOOLBAR) && (ntoolbar != STAT_TOOLBAR) && (ntoolbar != RESULTS_TOOLBAR) ){
       T->flags |= TTBF_TB_VERTICAL; //it's vertical
     }else{
       T->flags &= ~TTBF_TB_VERTICAL; //it's horizontal
+    }
+    //HORIZONTAL LAYOUTS: top - bottom status
+    if( (ntoolbar != TOP_TOOLBAR) && (ntoolbar != STAT_TOOLBAR) ){
+      T->flags |= TTBF_TB_V_LAYOUT;   //vertical layout
+    }else{
+      T->flags &= ~TTBF_TB_V_LAYOUT;  //horizontal layout
     }
     T->draw= draw;
   }
@@ -3022,10 +3040,10 @@ void select_toolbar_n( int num, int ngrp, int emptygroup )
   ttb.currentntb= num;
   if( (ngrp >= 0) && (ngrp < ttb.tbdata[num].ngroups) ){
     //set the current group in that toolbar
-    G= group_from_numT( &(ttb.tbdata[num]), ngrp );
-    if( G != NULL ){
-      T= toolbar_from_num(num);
-      if( T != NULL ){
+    T= toolbar_from_num(num);
+    if( T != NULL ){
+      G= group_from_numT( T, ngrp );
+      if( G != NULL ){
         T->currentgroup= ngrp;
         T->curr_group= G;
         if( (G->flags & TTBF_GRP_TABBAR) != 0){
@@ -3255,16 +3273,16 @@ void ttb_set_anchor( const char * name, int xright, int anchor_end )
   }
 }
 
-void ttb_set_resize( const char * name, int h_resize, int min_width )
+void ttb_set_resize( const char * name, int t_resize, int min_size )
 { //the button resize the toolbar
   struct toolbar_item * p= item_from_nameT(current_toolbar(), name);
   if( p != NULL ){
-    if( h_resize ){
-      p->flags |= TTBF_IS_HRESIZE;
+    if( t_resize ){
+      p->flags |= TTBF_IS_TRESIZE;
     }else{
-      p->flags &= ~TTBF_IS_HRESIZE;
+      p->flags &= ~TTBF_IS_TRESIZE;
     }
-    p->group->toolbar->min_width= min_width;  //minimun toolbar width or 0
+    p->group->toolbar->min_size= min_size;  //minimun toolbar width or 0
   }
 }
 

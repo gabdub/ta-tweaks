@@ -36,7 +36,7 @@
 #define TTBF_IS_SEPARATOR   0x00000800  //it's a separator
 #define TTBF_SHOW_BORDER    0x00001000  //draw a border (used in text buttons)
 #define TTBF_HIDE_BLOCK     0x00002000  //hide a block of items under this item (tree/list expand-collapse)
-#define TTBF_IS_HRESIZE     0x00004000  //the button resize the toolbar horizontally
+#define TTBF_IS_TRESIZE     0x00004000  //the button resize the toolbar
 #define TTBF_ANCHOR_END     0x00008000  //anchor the item's right (x2) instead of it's left (x1)
 //iternal use item flags
 #define TTBF_CLOSETAB_BUT   0x01000000  //highlighted xbutton is a close tab button (internal use)
@@ -68,6 +68,7 @@
 //toolbar flags
 #define TTBF_TB_VERTICAL    0x00000001  //it's vertical
 #define TTBF_TB_VISIBLE     0x00000002  //it's visible
+#define TTBF_TB_V_LAYOUT    0x00000004  //put groups in a vertical layout
 //iternal use toolbar flags
 #define TTBF_TB_REDRAW      0x01000000  //hold updates for now.. redraw later (internal use)
 
@@ -337,7 +338,7 @@ struct toolbar_data
   int barheight;      //actual toolbar size
   int barwidth;
 
-  int min_width;      //minimun width when resizing or 0
+  int min_size;      //minimun size when resizing or 0
   int drag_off;
 
   //defaults
@@ -533,7 +534,7 @@ void ttb_settooltip( const char * name, const char *tooltip, int onlythistb );
 void ttb_settext( const char * name, const char * text, const char *tooltip, int onlythistb );
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
 void ttb_set_anchor( const char * name, int xright, int anchor_end );
-void ttb_set_resize( const char * name, int h_resize, int min_width );
+void ttb_set_resize( const char * name, int t_resize, int min_size );
 
 void toolbar_set_win_title( const char *title );
 

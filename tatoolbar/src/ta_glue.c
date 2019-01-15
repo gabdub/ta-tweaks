@@ -112,7 +112,7 @@ static int ltoolbar_addgroup(lua_State *L)
     if( h > 0 ){
       g->bary2= g->bary1 + h;
     }
-    group_vscroll_onoff(g ,0);
+    group_vscroll_onoff(g,0);
     num= g->num;
   }
   lua_pushinteger(L, num);  //toolbar num
@@ -296,7 +296,7 @@ static int ltoolbar_anchor(lua_State *L)
   return 0;
 }
 
-/** `toolbar.setresize(name,h_resize,min-width)` Lua function.
+/** `toolbar.setresize(name,t_resize,min-size)` Lua function.
 */
 static int ltoolbar_setresize(lua_State *L)
 { //the button resize the toolbar
@@ -1387,9 +1387,13 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
           vscroll_clickG(ttb.phipress->group); //scrollbar click
           start_drag(event->x, event->y);  //drag the scrollbar until the mouse button is released
-        }else if( (ttb.phipress->flags & TTBF_IS_HRESIZE) != 0 ){
+        }else if( (ttb.phipress->flags & TTBF_IS_TRESIZE) != 0 ){
           start_drag(event->x, event->y);  //drag the resize button until the mouse button is released
-          T->drag_off= T->barwidth - item_xoff;
+          if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
+            T->drag_off= T->barwidth  - item_xoff; //resize toolbar horizontally (X+)
+          }else{
+            T->drag_off= T->barheight + item_yoff; //resize toolbar vertically   (Y-)
+          }
           clear_tooltip_textT(T);
         }
         redraw_item(ttb.philight);
