@@ -1842,6 +1842,7 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
           w= T->min_size;
         }
         if( T->barheight != w ){ //toolbar size changed, adjust groups layout
+          T->drag_off= T->drag_off - T->barheight + w;  //offset correction
           T->barheight= w;
           set_toolbar_size(T);
           //update_layoutT(T); called from the resize event
