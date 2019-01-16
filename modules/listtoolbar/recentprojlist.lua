@@ -77,7 +77,9 @@ if toolbar then
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
   end
 
+
   local function load_recentproj()
+    local rowcol= toolbar.cfg.backcolor_erow
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.list_init_title() --add a resize handle
@@ -97,7 +99,8 @@ if toolbar then
           local name= "goproj#"..i
           toolbar.gotopos( 3, y)
           toolbar.addtext(name, fname, Proj.data.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
-          toolbar.anchor(name, 10, true)
+          toolbar.anchor(name, 3, true)
+          if i % 2 ==1 then toolbar.setbackcolor(name, rowcol,false,true) end
           toolbar.gotopos( 3, y)
           local icbut= "ico-"..name
           toolbar.cmd(icbut, sel_proj, "", "document-properties", true)

@@ -52,6 +52,7 @@ if toolbar then
 
   local function filter_ctags()
     --show the tags that pass the filter
+    local rowcol= toolbar.cfg.backcolor_erow
     firsttag= nil
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     toolbar.listtb_y= 3
@@ -68,13 +69,14 @@ if toolbar then
           local bicon= toolbar.tag_list[i][3]
           toolbar.gotopos( 3, y)
           toolbar.addtext(gt, name, "", toolbar.listwidth-13, false, true, false, toolbar.cfg.barsize, 0)
+          if i % 2 ==1 then toolbar.setbackcolor(gt, rowcol,false,true) end
           toolbar.anchor(gt, 10, true)
           toolbar.gotopos( 3, y)
           local icbut= "ico-"..gt
           toolbar.cmd(icbut, gototag, "", bicon, true)
           toolbar.enable(icbut,false,false) --non-selectable image
           toolbar.cmds_n[gt]= gototag
-          y= y + toolbar.cfg.butsize-2
+          y= y + toolbar.cfg.butsize
           if not firsttag then firsttag= gt end
           n= n+1
         end

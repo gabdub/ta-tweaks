@@ -120,6 +120,7 @@ if toolbar then
   end
 
   local function load_proj()
+    local rowcol= toolbar.cfg.backcolor_erow
     changed= currproj_change()
     toolbar.list_init_title() --add a resize handle
     toolbar.list_addaction("close_project")
@@ -151,7 +152,7 @@ if toolbar then
     toolbar.sel_left_bar(itemsgrp)
     if first_row <= #data.proj_files then
       local y= 3
-      local rowh= toolbar.cfg.butsize-2
+      local rowh= toolbar.cfg.butsize
       for i=first_row, #data.proj_files do
         local fname= data.proj_rowinfo[i][1]
         if fname ~= "" then
@@ -180,6 +181,7 @@ if toolbar then
           if bicon then xtxt= toolbar.cfg.barsize+ind else bold=true end
           toolbar.addtext(name, fname, tip, toolbar.listwidth-13, false, true, bold, xtxt, 0)
           toolbar.anchor(name, 10, true)
+          if i % 2 ==1 then toolbar.setbackcolor(name, rowcol,false,true) end
           toolbar.gotopos(3+ind, y)
           if bicon then
             local icbut= "ico-"..name
