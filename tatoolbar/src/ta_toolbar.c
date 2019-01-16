@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.34 (Jan 15 2019)"
+#define TA_TOOLBAR_VERSION_STR "1.0.35 (Jan 16 2019)"
 
 static void free_img_list( void );
 
@@ -153,7 +153,7 @@ void group_vscroll_onoff( struct toolbar_group * g, int forceredraw )
     }
     if( (vis+g->yvscroll) > tot ){ //dont' scroll beyond the end
       g->yvscroll= tot - vis;
-      if( g->yvscroll < 0 ){
+      if( g->yvscroll < VSCROLL_MIN ){
         g->yvscroll= 0;
       }
     }
@@ -187,13 +187,13 @@ void ensure_item_isvisible(struct toolbar_item * p)
         //ensure the bottom of the item is visible
         if( p->bary2 + g->bary1 - g->yvscroll - yoff > g->toolbar->barheight ){
           g->yvscroll= p->bary2 + g->bary1 - g->toolbar->barheight - yoff;
-          if( g->yvscroll < 0 ){
-            g->yvscroll= 0;
-          }
         }
         //ensure the top of the item is also visible
         if( p->bary1 - yoff < g->yvscroll ){
           g->yvscroll= p->bary1 - yoff;
+        }
+        if( g->yvscroll < VSCROLL_MIN ){
+          g->yvscroll= 0;
         }
         if( orgys != g->yvscroll ){
           redraw_group(g); //redraw the group when the scroll change
@@ -1927,7 +1927,7 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
           G->yvscroll += VSCROLL_STEP;
         }else if( (dir < 0) && (G->yvscroll > 0) ){
           G->yvscroll -= VSCROLL_STEP;
-          if( G->yvscroll < 0 ){
+          if( G->yvscroll < VSCROLL_MIN ){
             G->yvscroll= 0;
           }
         }
@@ -3385,9 +3385,9 @@ void vscroll_clickG( struct toolbar_group *g )
           g->yvscroll= (int) (off * (double) tot);
           if( g->yvscroll + vis > tot){
             g->yvscroll= tot - vis;
-            if( g->yvscroll < 0){
-              g->yvscroll= 0;
-            }
+          }
+          if( g->yvscroll < VSCROLL_MIN){
+            g->yvscroll= 0;
           }
         }
       }

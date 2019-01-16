@@ -161,7 +161,8 @@
 #define BKCOLOR_MINIMAP_DRAW  (-7)  //MINI MAP (back draw)
 #define BKCOLOR_MINIMAP_CLICK (-8)  //MINI MAP (click)
 
-#define VSCROLL_STEP    100  //vertical scroll whell step
+#define VSCROLL_STEP    100   //vertical scroll whell step
+#define VSCROLL_MIN     5     //less than this, scroll to top
 
 // multi-part IMAGE
 //

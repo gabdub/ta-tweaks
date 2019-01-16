@@ -1916,7 +1916,13 @@ void set_toolbar_size(struct toolbar_data *T)
 {
   GtkWidget * draw= get_draw_widget( T );
   if( draw != NULL ){
-      gtk_widget_set_size_request(draw, T->barwidth, T->barheight);
+    if( T->num >= POPUP_FIRST ){
+      gtk_widget_set_size_request(draw, T->barwidth, T->barheight); //POP-UP
+    }else if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
+      gtk_widget_set_size_request(draw, T->barwidth, -1);
+    }else{
+      gtk_widget_set_size_request(draw, -1, T->barheight);
+    }
   }
 }
 
