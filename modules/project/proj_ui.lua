@@ -481,7 +481,7 @@ end
 
 local function ena_toggle_projview()
   local ena= Proj.get_projectbuffer(true)
-  if toolbar then actions.updateaction("toggle_viewproj") end
+  Proj.update_projview() --update action: toggle_viewproj
   return ena
 end
 

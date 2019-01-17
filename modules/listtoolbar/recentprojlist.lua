@@ -47,7 +47,7 @@ if toolbar then
       Proj.open_project(Proj.data.recent_projects[linenum])
       toolbar.select_list("projlist") --show project list
       Proj.is_visible= isvp
-      actions.updateaction("toggle_viewproj")
+      Proj.update_projview() --update action: toggle_viewproj
     end
   end
 
