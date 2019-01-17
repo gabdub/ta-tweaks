@@ -280,3 +280,125 @@ function toolbar.top_right_resize_handle(rzname, wmin, func)  --add a resize han
   toolbar.setthemeicon(rzname, "resize-tr-hilight", toolbar.TTBI_TB.IT_HILIGHT)
   toolbar.setthemeicon(rzname, "resize-tr-hilight", toolbar.TTBI_TB.IT_HIPRESSED)
 end
+
+function toolbar.set_expand_icon(cmd,icon)
+  toolbar.setthemeicon(cmd, icon, toolbar.TTBI_TB.IT_NORMAL)
+  toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HILIGHT)
+  toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HIPRESSED)
+end
+
+---- LIST ---
+toolbar.listtb_y= 1
+toolbar.listtb_x= 3
+toolbar.list_cmdright= 18
+toolbar.listright= 250
+
+function toolbar.list_addbutton(name, tooltip, funct)
+  toolbar.gotopos( 0, toolbar.listtb_y)
+  toolbar.cmd(name, funct, tooltip or "", name, true)
+  toolbar.list_cmdright= toolbar.list_cmdright + toolbar.cfg.butsize
+  toolbar.anchor(name, toolbar.list_cmdright) --anchor to the right
+end
+
+function toolbar.list_addaction(action)
+  toolbar.gotopos( 0, toolbar.listtb_y)
+  toolbar.addaction(action)
+  toolbar.list_cmdright= toolbar.list_cmdright + toolbar.cfg.butsize
+  toolbar.anchor(action, toolbar.list_cmdright) --anchor to the right
+end
+
+local lbl_n= 0
+function toolbar.list_addinfo(text,bold)
+  --add a text to the list
+  toolbar.gotopos(toolbar.listtb_x, toolbar.listtb_y)
+  lbl_n= lbl_n+1
+  local name= "_lbl_"..lbl_n
+  toolbar.addlabel(text, "", toolbar.listright, true, bold, name)
+  toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
+  toolbar.list_cmdright= 18
+  toolbar.anchor(name, toolbar.list_cmdright, true)
+  toolbar.listtb_x= 3
+end
+
+function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen)
+  if not idlen then idlen=0 end
+  if idlen > 0 then indent= indent + 10 end --add a collapse icon
+  local xtxt= indent
+  if bicon then xtxt= indent + toolbar.cfg.barsize end
+  toolbar.gotopos(3, toolbar.listtb_y)
+  toolbar.addtext(name, text, tooltip, toolbar.listwidth-13, false, true, bold, xtxt, 0)
+  if evenrow then toolbar.setbackcolor(name, toolbar.cfg.backcolor_erow,false,true) end
+  toolbar.anchor(name, 10, true)
+  if bicon then
+    toolbar.gotopos(3 + indent, toolbar.listtb_y)
+    local icbut= "ico-"..name
+    toolbar.cmd(icbut, nil, "", bicon, true)
+    toolbar.enable(icbut,false,false) --non-selectable image
+  end
+  toolbar.cmds_n[name]= click_fun
+  if idlen > 0 then return true end --toolbar.list_add_collapse() must be called
+  toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
+end
+
+function toolbar.list_add_collapse(name, click_fun, indent, hide_nrows, colla_tab)
+  toolbar.gotopos( indent+3, toolbar.listtb_y)
+  local exbut= "exp-"..name
+  toolbar.cmd(exbut, click_fun, "", "list-colapse2", true)
+  toolbar.set_expand_icon(exbut,"list-colapse2")
+  toolbar.collapse(exbut, false, toolbar.cfg.butsize * hide_nrows, true)
+  colla_tab[exbut]= false
+  toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
+end
+
+function toolbar.list_add_separator()
+  toolbar.gotopos(3, toolbar.listtb_y)
+  toolbar.addspace()
+  toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize/2
+end
+
+toolbar.icon_ext= {
+  ["txt"]=  "text-plain",
+  ["md"]=   "text-richtext",
+  ["c"]=    "text-x-c",
+  ["cpp"]=  "text-x-c++",
+  ["h"]=    "text-x-chdr",
+  ["hpp"]=  "text-x-c++hdr",
+  ["lua"]=  "text-x-lua",
+  ["py"]=   "text-x-python",
+  ["java"]= "text-x-java",
+  ["ctag"]= "text-x-ctag",
+  ["asm"]=  "text-x-source",
+  ["mas"]=  "text-x-source",
+  ["inc"]=  "text-x-source",
+  ["lst"]=  "x-office-document",
+  ["map"]=  "application-msword",
+  ["sym"]=  "application-msword",
+  ["s19"]=  "multipart-encrypted",
+  ["html"]= "text-html",
+  ["htm"]=  "text-html",
+  ["xml"]=  "text-xml",
+  ["css"]=  "text-css",
+  ["js"]=   "text-x-javascript",
+  ["php"]=  "application-x-php",
+  ["conf"]= "text-x-copying",
+  ["pdf"]=  "application-pdf",
+  ["sh"]=   "text-x-script",
+  ["bash"]= "text-x-script",
+  ["glade"]="text-x-generic-template",
+  ["exe"]=  "application-x-executable",
+  ["bat"]=  "text-x-script",
+  ["rc"]=   "text-x-generic-template",
+}
+
+toolbar.icon_ext_path= _USERHOME.."/toolbar/icons/mime/"
+
+function toolbar.icon_fname(fname)
+  local p,f,e= Util.splitfilename(string.lower(fname))
+  if p then
+    local icon= toolbar.icon_ext[e]
+    if icon then return toolbar.icon_ext_path..icon..".png" end
+    if f == "makefile" then return toolbar.icon_ext_path.."text-x-makefile.png" end
+    if f == "readme" then return toolbar.icon_ext_path.."text-x-readme.png" end
+  end
+  return toolbar.icon_ext_path.."text-plain.png"
+end

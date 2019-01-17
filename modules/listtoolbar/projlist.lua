@@ -97,15 +97,9 @@ if toolbar then
     return true --new or modified
   end
 
-  local function set_expand_icon(cmd,icon)
-    toolbar.setthemeicon(cmd, icon, toolbar.TTBI_TB.IT_NORMAL)
-    toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HILIGHT)
-    toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HIPRESSED)
-  end
-
   function expand_list(cmd)
     sel_file(cmd)
-    set_expand_icon(cmd,"list-colapse2")
+    toolbar.set_expand_icon(cmd,"list-colapse2")
     toolbar.cmds_n[cmd]= collapse_list
     toolbar.collapse(cmd, false)
     collarow[cmd]= false
@@ -113,7 +107,7 @@ if toolbar then
 
   function collapse_list(cmd)
     sel_file(cmd)
-    set_expand_icon(cmd,"list-expand2")
+    toolbar.set_expand_icon(cmd,"list-expand2")
     toolbar.cmds_n[cmd]= expand_list
     toolbar.collapse(cmd, true)
     collarow[cmd]= true
@@ -150,15 +144,15 @@ if toolbar then
     list_clear()
 
     toolbar.sel_left_bar(itemsgrp)
+    toolbar.listtb_y= 3
     if first_row <= #data.proj_files then
-      local y= 3
-      local rowh= toolbar.cfg.butsize
-      for i=first_row, #data.proj_files do
+      for i= first_row, #data.proj_files do
         local fname= data.proj_rowinfo[i][1]
-        if fname ~= "" then
+        if fname == "" then
+          toolbar.list_add_separator()
+        else
           local idlen= data.proj_rowinfo[i][3] --indent-len
           local ind= (data.proj_rowinfo[i][2] or 0) * 12 --indentation
-          if idlen > 0 then ind= ind + 10 end
           local bicon= nil
           local tip= data.proj_files[i]
           local ft= data.proj_filestype[i]
@@ -175,33 +169,9 @@ if toolbar then
             tip= Proj.get_vcs_info(i, "\n")
           end
           local name= "gofile#"..i
-          toolbar.gotopos(3, y)
-          local bold= false
-          local xtxt= ind
-          if bicon then xtxt= toolbar.cfg.barsize+ind else bold=true end
-          toolbar.addtext(name, fname, tip, toolbar.listwidth-13, false, true, bold, xtxt, 0)
-          toolbar.anchor(name, 10, true)
-          if i % 2 ==1 then toolbar.setbackcolor(name, rowcol,false,true) end
-          toolbar.gotopos(3+ind, y)
-          if bicon then
-            local icbut= "ico-"..name
-            toolbar.cmd(icbut, sel_file, "", bicon, true)
-            toolbar.enable(icbut,false,false) --non-selectable image
+          if toolbar.list_add_txt_ico(name, fname, tip, (bicon==nil), sel_file, bicon, (i%2==1), ind, idlen) then
+            toolbar.list_add_collapse(name, collapse_list, ind, idlen, collarow)
           end
-          if idlen > 0 then
-            toolbar.gotopos( ind-7, y)
-            local exbut= "exp-"..name
-            toolbar.cmd(exbut, collapse_list, "", "list-colapse2", true)
-            set_expand_icon(exbut,"list-colapse2")
-            toolbar.collapse(exbut, false, rowh*idlen, true)
-            collarow[exbut]= false
-          end
-          toolbar.cmds_n[name]= sel_file
-          y= y + rowh
-        else
-          toolbar.gotopos(3, y)
-          toolbar.addspace()
-          y= y + rowh/2
         end
       end
       --set project's default collapse items

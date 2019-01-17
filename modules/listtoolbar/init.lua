@@ -3,12 +3,10 @@
 if toolbar then
   local events, events_connect = events, events.connect
   local titgrp, currlist, currlistidx
-  local lbl_n= 0
+  local listtb_hide_p= false --hide project
 
-  toolbar.listtb_hide_p= false
   toolbar.listselections= {}
-  toolbar.cmdright= 18
-  toolbar.listwidth=250
+  toolbar.listwidth= 250
 
   local function listtb_update(switching)
     --{name, tooltip, icon, createfun, **notify**, show}
@@ -21,31 +19,6 @@ if toolbar then
   events_connect(events.FILE_OPENED,          listtb_update)
   events_connect(events.FILE_CHANGED,         listtb_update)
   events_connect(events.FILE_AFTER_SAVE,      listtb_update)
-
-  function toolbar.list_addbutton(name, tooltip, funct)
-    toolbar.gotopos( 0, toolbar.listtb_y)
-    toolbar.cmd(name, funct, tooltip or "", name, true)
-    toolbar.cmdright= toolbar.cmdright + toolbar.cfg.butsize
-    toolbar.anchor(name, toolbar.cmdright) --anchor to the right
-  end
-
-  function toolbar.list_addaction(action)
-    toolbar.gotopos( 0, toolbar.listtb_y)
-    toolbar.addaction(action)
-    toolbar.cmdright= toolbar.cmdright + toolbar.cfg.butsize
-    toolbar.anchor(action, toolbar.cmdright) --anchor to the right
-  end
-
-  function toolbar.list_addinfo(text,bold)
-    --add a text to the list
-    toolbar.gotopos( 3, toolbar.listtb_y)
-    lbl_n= lbl_n+1
-    local name= "_lbl_"..lbl_n
-    toolbar.addlabel(text, "", toolbar.listright, true, bold, name)
-    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
-    toolbar.cmdright= 18
-    toolbar.anchor(name, toolbar.cmdright, true)
-  end
 
   function toolbar.select_list(listname, dont_hide_show)
     if listname == currlist then
@@ -197,7 +170,8 @@ if toolbar then
 
   function toolbar.list_init_title()
     toolbar.listtb_y= 1
-    toolbar.cmdright= 18
+    toolbar.listtb_x= 3
+    toolbar.list_cmdright= 18
     toolbar.sel_left_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeList", 150, new_tb_size) --add a resize handle
   end
@@ -211,12 +185,12 @@ if toolbar then
 
     if Proj then
       Proj.getout_projview()
-      local washidebylist= toolbar.listtb_hide_p
-      toolbar.listtb_hide_p= false
+      local washidebylist= listtb_hide_p
+      listtb_hide_p= false
       if toolbar.get_check_val("tblist_hideprj") then
         if Proj.isin_editmode() then Proj.show_hide_projview() end --end edit mode
         if (Proj.is_visible > 0) and toolbar.list_tb then
-          toolbar.listtb_hide_p= true
+          listtb_hide_p= true
           Proj.show_hide_projview()
         elseif washidebylist and (Proj.is_visible == 0) and (not toolbar.list_tb) then
           Proj.show_hide_projview()
@@ -236,52 +210,5 @@ if toolbar then
     end
     --only show as selected when the list is visible
     toolbar.selected(currlist, false, toolbar.list_tb)
-  end
-
-  toolbar.icon_ext= {
-    ["txt"]=  "text-plain",
-    ["md"]=   "text-richtext",
-    ["c"]=    "text-x-c",
-    ["cpp"]=  "text-x-c++",
-    ["h"]=    "text-x-chdr",
-    ["hpp"]=  "text-x-c++hdr",
-    ["lua"]=  "text-x-lua",
-    ["py"]=   "text-x-python",
-    ["java"]= "text-x-java",
-    ["ctag"]= "text-x-ctag",
-    ["asm"]=  "text-x-source",
-    ["mas"]=  "text-x-source",
-    ["inc"]=  "text-x-source",
-    ["lst"]=  "x-office-document",
-    ["map"]=  "application-msword",
-    ["sym"]=  "application-msword",
-    ["s19"]=  "multipart-encrypted",
-    ["html"]= "text-html",
-    ["htm"]=  "text-html",
-    ["xml"]=  "text-xml",
-    ["css"]=  "text-css",
-    ["js"]=   "text-x-javascript",
-    ["php"]=  "application-x-php",
-    ["conf"]= "text-x-copying",
-    ["pdf"]=  "application-pdf",
-    ["sh"]=   "text-x-script",
-    ["bash"]= "text-x-script",
-    ["glade"]="text-x-generic-template",
-    ["exe"]=  "application-x-executable",
-    ["bat"]=  "text-x-script",
-    ["rc"]=   "text-x-generic-template",
-  }
-
-  toolbar.icon_ext_path= _USERHOME.."/toolbar/icons/mime/"
-
-  function toolbar.icon_fname(fname)
-    local p,f,e= Util.splitfilename(string.lower(fname))
-    if p then
-      local icon= toolbar.icon_ext[e]
-      if icon then return toolbar.icon_ext_path..icon..".png" end
-      if f == "makefile" then return toolbar.icon_ext_path.."text-x-makefile.png" end
-      if f == "readme" then return toolbar.icon_ext_path.."text-x-readme.png" end
-    end
-    return toolbar.icon_ext_path.."text-plain.png"
   end
 end

@@ -34,20 +34,20 @@ if toolbar then
     buffer:vertical_centre_caret()
   end
 
-  local function list_addtag(name, line, ext_fields)
+  local function list_addtag(tagtext, line, ext_fields)
     --add an item to the list
     local bicon= "t_var"
     local extra
     if ext_fields:find('.-\t.+') then ext_fields,extra=ext_fields:match('(.-)\t(.+)') end
     if extra and extra:find('.-\t.+') then extra=extra:match('(.-)\t.+') end
-    if ext_fields == "f" then name= name.." ( )" bicon="t_func"
+    if ext_fields == "f" then tagtext= tagtext.." ( )" bicon="t_func"
     elseif ext_fields == "d" then bicon="t_def"
     elseif ext_fields == "t" then bicon="t_type"
-    elseif ext_fields == "s" then name= "struct "..name bicon="t_struct"
-    elseif ext_fields == "m" and extra then name= extra.."."..name bicon="t_struct" end
+    elseif ext_fields == "s" then tagtext= "struct "..tagtext bicon="t_struct"
+    elseif ext_fields == "m" and extra then tagtext= extra.."."..tagtext bicon="t_struct" end
 
-    local gt= "gotag"..#toolbar.tag_list.."#"..line
-    toolbar.tag_list[#toolbar.tag_list+1]= {gt, name, bicon}
+    local gotag= "gotag"..#toolbar.tag_list.."#"..line
+    toolbar.tag_list[#toolbar.tag_list+1]= {gotag, tagtext, bicon}
   end
 
   local function filter_ctags()
@@ -60,28 +60,18 @@ if toolbar then
       toolbar.list_addinfo('No CTAG entry found in this file')
     else
       local filter= Util.escape_filter(toolbar.tag_list_find)
-      local y= 3
       local n=0
-      for i=1,#toolbar.tag_list do
-        local name=  toolbar.tag_list[i][2]
-        if filter == '' or name:match(filter) then
-          local gt= toolbar.tag_list[i][1]
+      for i=1,#toolbar.tag_list do       --{gotag, tagtext, bicon}
+        local tagtext= toolbar.tag_list[i][2]
+        if filter == '' or tagtext:match(filter) then
+          local gotag= toolbar.tag_list[i][1]
           local bicon= toolbar.tag_list[i][3]
-          toolbar.gotopos( 3, y)
-          toolbar.addtext(gt, name, "", toolbar.listwidth-13, false, true, false, toolbar.cfg.barsize, 0)
-          if i % 2 ==1 then toolbar.setbackcolor(gt, rowcol,false,true) end
-          toolbar.anchor(gt, 10, true)
-          toolbar.gotopos( 3, y)
-          local icbut= "ico-"..gt
-          toolbar.cmd(icbut, gototag, "", bicon, true)
-          toolbar.enable(icbut,false,false) --non-selectable image
-          toolbar.cmds_n[gt]= gototag
-          y= y + toolbar.cfg.butsize
-          if not firsttag then firsttag= gt end
+          toolbar.list_add_txt_ico(gotag, tagtext, "", false, gototag, bicon, (i%2==1), 0)
+          if not firsttag then firsttag= gotag end
           n= n+1
         end
       end
-      if n == 0 then toolbar.list_addinfo('No CTAG entry match the filter') end
+      if n == 0 then toolbar.list_addinfo('No CTAG entry match the filter') else toolbar.list_add_separator() end
     end
   end
 

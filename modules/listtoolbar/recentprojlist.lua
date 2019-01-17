@@ -77,9 +77,7 @@ if toolbar then
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
   end
 
-
   local function load_recentproj()
-    local rowcol= toolbar.cfg.backcolor_erow
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.list_init_title() --add a resize handle
@@ -87,28 +85,19 @@ if toolbar then
     toolbar.list_addaction("new_project")
     toolbar.list_addinfo('Projects', true)
 
+    toolbar.listtb_y= 3
     toolbar.sel_left_bar(itemsgrp)
     if (not Proj) or (#Proj.data.recent_projects < 1) then
-      toolbar.listtb_y= 3
       toolbar.list_addinfo('No recent projects found')
     else
-      local y= 3
       for i=1, #Proj.data.recent_projects do
         local fname= Util.getfilename(Proj.data.recent_projects[i])
         if fname ~= "" then
           local name= "goproj#"..i
-          toolbar.gotopos( 3, y)
-          toolbar.addtext(name, fname, Proj.data.recent_projects[i], toolbar.listwidth-13, false, true, (i==1), toolbar.cfg.barsize, 0)
-          toolbar.anchor(name, 3, true)
-          if i % 2 ==1 then toolbar.setbackcolor(name, rowcol,false,true) end
-          toolbar.gotopos( 3, y)
-          local icbut= "ico-"..name
-          toolbar.cmd(icbut, sel_proj, "", "document-properties", true)
-          toolbar.enable(icbut,false,false) --non-selectable image
-          toolbar.cmds_n[name]= sel_proj
-          y= y + toolbar.cfg.butsize
+          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0)
         end
       end
+      toolbar.list_add_separator()
       sel_proj_num(linenum)
     end
   end

@@ -6,40 +6,11 @@ if toolbar then
   local lbl_n= 0
 
   toolbar.resultsselect= {}
-  toolbar.resultsright= 18
-  toolbar.resultsheight=200
+  toolbar.resultsheight= 200
 
   local function results_update(switching)
     --{name, tooltip, icon, createfun, **notify**, show}
     if toolbar.results_tb and curresultidx > 0 then toolbar.resultsselect[curresultidx][5](switching or false) end
-  end
-
-  function toolbar.results_addbutton(name, tooltip, funct)
-    toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
-    toolbar.listtb_x= 3
-    toolbar.cmd(name, funct, tooltip or "", name, true)
-    toolbar.resultsright= toolbar.resultsright + toolbar.cfg.butsize
-    toolbar.anchor(name, toolbar.resultsright) --anchor to the right
-  end
-
-  function toolbar.results_addaction(action)
-    toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
-    toolbar.listtb_x= 3
-    toolbar.addaction(action)
-    toolbar.resultsright= toolbar.resultsright + toolbar.cfg.butsize
-    toolbar.anchor(action, toolbar.resultsright) --anchor to the right
-  end
-
-  function toolbar.results_addinfo(text,bold)
-    --add a text to the list
-    toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
-    toolbar.listtb_x= 3
-    lbl_n= lbl_n+1
-    local name= "_lbl_"..lbl_n
-    toolbar.addlabel(text, "", 300, true, bold, name)
-    toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
-    toolbar.resultsright= 18
-    toolbar.anchor(name, toolbar.resultsright, true)
   end
 
   function toolbar.select_results(listname, dont_hide_show)
@@ -124,7 +95,7 @@ if toolbar then
     end
     if #toolbar.resultsselect == 0 then
       toolbar.results_init_title()
-      toolbar.results_addinfo("No results module found",true)
+      toolbar.list_addinfo("No results module found",true)
     end
   end
 
@@ -189,7 +160,7 @@ if toolbar then
   function toolbar.results_init_title()
     toolbar.listtb_y= 1
     toolbar.listtb_x= 3
-    toolbar.resultsright= 18
+    toolbar.list_cmdright= 18
     toolbar.sel_results_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
     toolbar.gotopos( 0, toolbar.listtb_y)
