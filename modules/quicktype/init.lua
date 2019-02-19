@@ -168,6 +168,16 @@ local function multiline_typer()
   end
 end
 
+-- Alt+) (Shift 0) = Select rect column
+local function sel_rec_col()
+  local pos= buffer.current_pos
+  buffer.rectangular_selection_anchor= pos
+  local col= buffer.column[pos]+1
+  ui.statusbar_text= "select column= "..col
+  pos= buffer:find_column(buffer.line_count-2, col-1)
+  buffer.rectangular_selection_caret= pos
+end
+
 local function get_lexer()
   local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
   return buffer:private_lexer_call(GETLEXERLANGUAGE):match('^[^/]+')
@@ -242,16 +252,17 @@ if actions then
   actions.add("prev_block_end", 'Goto previous block end',   function() find_end(false) end,   "c;")
   actions.add("next_block_end", 'Goto next block end',       function() find_end(true)  end,   "c:")
 
-  actions.add("type_cfun_comm",'Quicktype: C function comment',   qt_cfun_comm,   "a1")
-  actions.add("type_c_comm",   'Quicktype: C comment',            qt_c_comm,      "a2")
-  actions.add("type_c_define", 'Quicktype: C define',             qt_c_define,    "a3")
-  actions.add("type_c_todo",   'Quicktype: C TODO',               qt_c_todo,      "a4")
+  actions.add("type_cfun_comm", 'Quicktype: C function comment',  qt_cfun_comm,   "a1")
+  actions.add("type_c_comm",    'Quicktype: C comment',           qt_c_comm,      "a2")
+  actions.add("type_c_define",  'Quicktype: C define',            qt_c_define,    "a3")
+  actions.add("type_c_todo",    'Quicktype: C TODO',              qt_c_todo,      "a4")
   actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
   actions.add("hex_to_ascii",   'Quicktype: convert selected text from hex to ascii', convert_hex_2_ascii, "a6")
   actions.add("s19_checksum",   'Quicktype: generate S19 checksum', generate_s19_checksum, "a&")
   actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
   actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
-  actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer, "a8")
+  actions.add("sel_r_col_end",   'Select rect column to the end', sel_rec_col,    "a)")
+  actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer,"a8")
   actions.add("multiline_typer",'Multiline typer',                multiline_typer,"a9")
 else
   keys["c,"] = function() find_begin(false) end
@@ -268,6 +279,7 @@ else
   keys["a&"] = generate_s19_checksum
   keys.a7 = multiline_comment
   keys.a0 = qt_c_sep_line
+  keys["a)"] = sel_rec_col
   keys.a8 = sort_curr_buffer
   keys.a9 = multiline_typer
 end
