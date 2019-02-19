@@ -168,14 +168,23 @@ local function multiline_typer()
   end
 end
 
--- Alt+) (Shift 0) = Select rect column
-local function sel_rec_col()
-  local pos= buffer.current_pos
+-- Alt+) (Shift 0) = Select rectangular column down
+local function sel_rec_col_down()
+  local pos, e = buffer.selection_start, buffer.selection_end
+  if pos == e then
+    pos= buffer.current_pos
+    e= pos
+  end
+  local col= buffer.column[e]+1
   buffer.rectangular_selection_anchor= pos
-  local col= buffer.column[pos]+1
-  ui.statusbar_text= "select column= "..col
-  pos= buffer:find_column(buffer.line_count-2, col-1)
+  local erow= buffer:line_from_position(pos)
+  for r= erow, buffer.line_count-1 do
+    if buffer:line_length(r) < col then break end
+    erow= r
+  end
+  pos= buffer:find_column(erow, col-1)
   buffer.rectangular_selection_caret= pos
+  buffer.ensure_visible_enforce_policy(erow)
 end
 
 local function get_lexer()
@@ -261,7 +270,7 @@ if actions then
   actions.add("s19_checksum",   'Quicktype: generate S19 checksum', generate_s19_checksum, "a&")
   actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
   actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
-  actions.add("sel_r_col_end",   'Select rect column to the end', sel_rec_col,    "a)")
+  actions.add("sel_r_col_down", 'Select rectangular column down', sel_rec_col_down,"a)")
   actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer,"a8")
   actions.add("multiline_typer",'Multiline typer',                multiline_typer,"a9")
 else
