@@ -179,7 +179,7 @@ local function sel_rec_col_down()
   buffer.rectangular_selection_anchor= pos
   local erow= buffer:line_from_position(pos)
   for r= erow, buffer.line_count-1 do
-    if buffer:line_length(r) < col then break end
+    if buffer:line_length(r) <= col then break end
     erow= r
   end
   pos= buffer:find_column(erow, col-1)
