@@ -361,18 +361,30 @@ actions.list = {
   ["page_up"]=              {'Move cursor: page up',    buffer.page_up},
   ["page_down"]=            {'Move cursor: page down',  buffer.page_down},
 --SELECTION
-  ["sel_left"]=             {'Extend selection: left',  buffer.char_left_extend},
-  ["sel_right"]=            {'Extend selection: right', buffer.char_right_extend},
-  ["sel_up"]=               {'Extend selection: up',    buffer.line_up_extend},
-  ["sel_down"]=             {'Extend selection: down',  buffer.line_down_extend},
-  ["sel_home"]=             {'Extend selection: home',  buffer.vc_home_extend},
-  ["sel_end"]=              {'Extend selection: end',   buffer.line_end_extend},
-  ["sel_word_left"]=        {'Extend selection: word left',  buffer.word_left_extend},
-  ["sel_word_right"]=       {'Extend selection: word right', buffer.word_right_extend},
-  ["sel_doc_start"]=        {'Extend selection: document start', buffer.document_start_extend},
-  ["sel_doc_end"]=          {'Extend selection: document end', buffer.document_end_extend},
-  ["sel_page_up"]=          {'Extend selection: page up',    buffer.page_up_extend},
-  ["sel_page_down"]=        {'Extend selection: page down',  buffer.page_down_extend},
+  ["sel_left"]=             {'Extend selection: left',  function()
+    if buffer.selection_is_rectangle then buffer.char_left_rect_extend() else buffer.char_left_extend() end end},
+  ["sel_right"]=            {'Extend selection: right', function()
+    if buffer.selection_is_rectangle then buffer.char_right_rect_extend() else buffer.char_right_extend() end end},
+  ["sel_up"]=               {'Extend selection: up',    function()
+    if buffer.selection_is_rectangle then buffer.line_up_rect_extend() else buffer.line_up_extend() end end},
+  ["sel_down"]=             {'Extend selection: down',  function()
+    if buffer.selection_is_rectangle then buffer.line_down_rect_extend() else buffer.line_down_extend() end end},
+  ["sel_home"]=             {'Extend selection: home',  function()
+    if buffer.selection_is_rectangle then buffer.vc_home_rect_extend() else buffer.vc_home_extend() end end},
+  ["sel_end"]=              {'Extend selection: end',   function()
+    if buffer.selection_is_rectangle then buffer.line_end_rect_extend() else buffer.line_end_extend() end end},
+  ["sel_word_left"]=        {'Extend selection: word left',  function() --NO:buffer.word_left_RECT_extend()
+    if buffer.selection_is_rectangle then buffer.char_left_rect_extend() else buffer.word_left_extend() end end},
+  ["sel_word_right"]=       {'Extend selection: word right', function() --NO:buffer.word_right_RECT_extend()
+    if buffer.selection_is_rectangle then buffer.char_right_rect_extend() else buffer.word_right_extend() end end},
+  ["sel_doc_start"]=        {'Extend selection: document start', function() --NO:buffer.document_start_RECT_extend()
+    if buffer.selection_is_rectangle then buffer.page_up_rect_extend() else buffer.document_start_extend() end end},
+  ["sel_doc_end"]=          {'Extend selection: document end', function() --NO:buffer.document_end_RECT_extend()
+    if buffer.selection_is_rectangle then buffer.page_down_rect_extend() else buffer.document_end_extend() end end},
+  ["sel_page_up"]=          {'Extend selection: page up',    function()
+    if buffer.selection_is_rectangle then buffer.page_up_rect_extend() else buffer.page_up_extend() end end},
+  ["sel_page_down"]=        {'Extend selection: page down',  function()
+    if buffer.selection_is_rectangle then buffer.page_down_rect_extend() else buffer.page_down_extend() end end},
 --DELETE
   ["del_back"]=             {'Delete: back char',       buffer.delete_back},
   ["del"]=                  {'Delete: char',            buffer.clear},
