@@ -74,6 +74,25 @@ local function generate_s19_checksum()
   end
 end
 
+local function get_sel_linerange(all_lines)
+  local n1, n2
+  if all_lines then
+    n1= 0 --all lines
+    n2= buffer.line_count-1
+  else  --current line
+    n1= buffer:line_from_position(buffer.current_pos)
+    n2= n1
+  end
+  local s, e= buffer.selection_n_start[0], buffer.selection_n_end[0]
+  if (buffer.selections > 1) or (s ~= e) then
+    --if something is selected use the selected line range
+    n1= buffer:line_from_position(s)
+    n2= buffer:line_from_position(e)
+    if n2 > n1 and buffer.column[e] == 0 then n2=n2-1 end
+  end
+  return n1, n2
+end
+
 -- Alt+7 = prefix type comment - uncomment in column #1
 local function multiline_comment()
   local comment = textadept.editing.comment_string[buffer:get_lexer(true)] or ''
@@ -82,13 +101,8 @@ local function multiline_comment()
   if prefix == '/*' then
     prefix= '//'
   end
-  local n1= buffer:line_from_position(buffer.current_pos)
-  local n2= n1
-  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
-    --if something is selected use the selected line range
-    n1=buffer:line_from_position(buffer.selection_n_start[0])
-    n2=buffer:line_from_position(buffer.selection_n_end[0])
-  end
+  local n1, n2= get_sel_linerange(false) --current or selected lines
+
   local uncomm= true
   local iscomm= '^'..Util.escape_match(prefix)
   for i= n1, n2 do
@@ -128,18 +142,12 @@ end
 -- [BEFORE]....[AFTER]
 -- [EMPTY]
 local function multiline_typer()
-  local n1=1
-  local n2=buffer.line_count
-  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
-    --if something is selected use selected line range
-    n1=buffer:line_from_position(buffer.selection_n_start[0])+1
-    n2=buffer:line_from_position(buffer.selection_n_end[0])+1
-  end
+  local n1, n2= get_sel_linerange(true) --all or selected lines
 
   local button, inputs = ui.dialogs.inputbox{
     title = 'Quick-type',
     informative_text = {'Multiline Typer', 'Before begin:', 'After end:', 'Empty lines:', 'From line:', 'To line:'},
-    text = {"","","",n1,n2}
+    text = {"","","",n1+1,n2+1}
   }
   if button == 1 then
     n1=tonumber(inputs[4])-1
