@@ -511,7 +511,8 @@ function Proj.search_in_files(where)
       return
     end
     local find, case, word= Proj.ask_search_in_files(true)
-    if find then Proj.find_in_files(p_buffer, find, case, word, true, where) end
+    local currow= p_buffer.line_from_position(p_buffer.current_pos)+1
+    if find then Proj.find_in_files(currow, find, case, word, true, where) end
   else
     ui.statusbar_text= 'goto_nearest module not found'
   end

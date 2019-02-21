@@ -8,13 +8,13 @@ if toolbar then
 
   --right-click context menu
   local proj_context_menu = {
-    {"open_projfile",
+    {"open_projlistfile",
      "open_projectdir",SEPARATOR,
      "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
      "adddirfiles_proj",SEPARATOR,
      --"show_documentation",
-     "search_project"
-     --,"search_sel_dir","search_sel_file"
+     "search_project",
+     "search_projlist_dir","search_projlist_file"
     }
   }
 
@@ -73,7 +73,28 @@ if toolbar then
     gofile_dclick(itselected)
   end
 
-  actions.add("open_projfile", 'Open', act_open_prjselfile)
+  local function search_prjlist(where)
+    if Proj.ask_search_in_files then --goto_nearest module?
+      local linenum= sel_file(itselected)
+      if linenum then
+        local find, case, word= Proj.ask_search_in_files(true)
+        if find then Proj.find_in_files(linenum, find, case, word, true, where) end
+      end
+    else
+      ui.statusbar_text= 'goto_nearest module not found'
+    end
+  end
+    --ACTION: search in files from the selected folder
+  local function act_search_in_sel_dir()
+    search_prjlist(1)
+  end
+  --ACTION: search the selected file
+  local function act_search_in_sel_file()
+    search_prjlist(2)
+  end
+  actions.add("open_projlistfile",    'Open', act_open_prjselfile)
+  actions.add("search_projlist_dir",  'Search in selected dir',  act_search_in_sel_dir)
+  actions.add("search_projlist_file", 'Search in selected file', act_search_in_sel_file)
 
   local function list_clear()
     --remove all items
