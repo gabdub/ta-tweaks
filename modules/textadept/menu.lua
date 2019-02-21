@@ -654,8 +654,10 @@ local function gen_menu_table(menu)
   return gtkmenu
 end
 
-function create_uimenu_fromactions(actions)
-  return ui.menu(gen_menu_table(actions))
+function create_uimenu_fromactions(acts)
+  local m= ui.menu(gen_menu_table(acts))
+  actions.update_menuitems()
+  return m
 end
 
 local function load_app_menus()
