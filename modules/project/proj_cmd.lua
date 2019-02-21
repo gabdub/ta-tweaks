@@ -142,7 +142,7 @@ function Proj.snapopen()
   Proj.update_after_switch()
 end
 
-local function get_filevcinfo(fname)
+function Proj.get_filevcinfo(fname)
   --show filename
   local info= fname
   local fn=string.match(fname..'::','(.-):HEAD::')
@@ -174,7 +174,7 @@ function Proj.show_filevcinfo()
   --call_tip_show
   if buffer.filename ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
-    local info= get_filevcinfo(buffer.filename)
+    local info= Proj.get_filevcinfo(buffer.filename)
     if info ~= '' then
       buffer:call_tip_show(buffer.current_pos, info )
     end
@@ -210,7 +210,7 @@ function Proj.show_doc()
     if info == '' and data.proj_grp_path[r] ~= nil then
       info= data.proj_grp_path[r]
     elseif ftype == Proj.PRJF_FILE then
-      info= get_filevcinfo(info)
+      info= Proj.get_filevcinfo(info)
     end
     if info ~= '' then
       buffer:call_tip_show(buffer.current_pos, info )

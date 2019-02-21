@@ -8,7 +8,7 @@ if toolbar then
 
   --right-click context menu
   local proj_context_menu = {
-    {--"open_projsel",
+    {"open_projfile",
      "open_projectdir",SEPARATOR,
      "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
      "adddirfiles_proj",SEPARATOR,
@@ -67,6 +67,13 @@ if toolbar then
       end
     end
   end
+
+  --ACTION: open selected file
+  local function act_open_prjselfile()
+    gofile_dclick(itselected)
+  end
+
+  actions.add("open_projfile", 'Open', act_open_prjselfile)
 
   local function list_clear()
     --remove all items
