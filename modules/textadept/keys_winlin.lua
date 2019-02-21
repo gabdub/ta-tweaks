@@ -200,6 +200,15 @@ local default_accelerators= {
   "sel_doc_end",            "csend",        "csend",
   "sel_page_up",            "spgup",        "spgup",
   "sel_page_down",          "spgdn",        "spgdn",
+--RECTANGULAR SELECTION
+  "rsel_left",              "asleft",       "asleft",
+  "rsel_right",             "asright",      "asright",
+  "rsel_up",                "asup",         "asup",
+  "rsel_down",              "asdown",       "asdown",
+  "rsel_home",              "ashome",       "ashome",
+  "rsel_end",               "asend",        "asend",
+  "rsel_page_up",           "aspgup",       "aspgup",
+  "rsel_page_down",         "aspgdn",       "aspgdn",
 --DELETE
   "del_back",               "\b",           "\b",
   "del",                    "del",          "del",
