@@ -1,4 +1,4 @@
-# Copyright 2007-2018 Mitchell mitchell.att.foicica.com. See LICENSE.
+# Copyright 2007-2019 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 CC = gcc
 CFLAGS = -Os
@@ -101,6 +101,7 @@ else
 endif
 version = $(shell grep -m 1 _RELEASE ../core/init.lua | cut -d ' ' -f4- | \
                   tr ' ' '_' | tr -d '"')
+WGET = wget -O $@
 
 # Scintilla.
 
@@ -369,7 +370,7 @@ else
   gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
 endif
 
-scintilla_zip = 542782a4df7d.zip
+scintilla_zip = 8b888bf05fe3.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.0.tar.gz
 lfs_zip = v_1_6_3.zip
@@ -377,13 +378,13 @@ gtdialog_zip = 6435a42450c7.zip
 cdk_tgz = cdk-5.0-20150928.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
 win32gtk_zip = win32gtk-2.24.32.zip
-win32curses_zip = win32curses.zip
-pdcurses_zip = pdcurs34.zip
+win32curses_zip = win32curses36.zip
+pdcurses_zip = pdcurs36.zip
 gtkosx_tgz = gtkosx-2.24.31.tar.gz
 bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
 
-$(scintilla_zip): ; wget http://foicica.com/hg/scintilla/archive/$@ -O $@
+$(scintilla_zip): ; $(WGET) http://foicica.com/hg/scintilla/archive/$@
 scintilla: scintilla.patch | $(scintilla_zip)
 	if [ -d $@/.hg ]; then \
 		hg --cwd $@ update -C LongTerm3; \
@@ -393,9 +394,9 @@ scintilla: scintilla.patch | $(scintilla_zip)
 	fi
 	for patch in $^; do echo Applying $$patch; patch -d $@ -N -p1 < $$patch; done
 ../lexers: | scintilla ; ln -s src/$|/lexlua $@
-$(lua_tgz): ; wget http://www.lua.org/ftp/$@
-$(lpeg_tgz): ; wget http://www.inf.puc-rio.br/~roberto/lpeg/$@
-$(lfs_zip): ; wget http://github.com/keplerproject/luafilesystem/archive/$@
+$(lua_tgz): ; $(WGET) http://www.lua.org/ftp/$@
+$(lpeg_tgz): ; $(WGET) http://www.inf.puc-rio.br/~roberto/lpeg/$@
+$(lfs_zip): ; $(WGET) http://github.com/keplerproject/luafilesystem/archive/$@
 lua: lua.patch | $(lua_tgz)
 	if [ -d $@ ]; then rm -rf $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
@@ -406,37 +407,37 @@ lua/src/lib/lpeg: | $(lpeg_tgz)
 lua/src/lib/lfs: | $(lfs_zip)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir -p $@ && unzip -d $@ $| && mv $@/*/src/*.c $@/*/src/*.h $(dir $@)
-$(gtdialog_zip): ; wget $(gtdialog_url) -O $@
+$(gtdialog_zip): ; $(WGET) $(gtdialog_url)
 gtdialog: | $(gtdialog_zip) ; mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
-$(cdk_tgz): ; wget http://invisible-mirror.net/archives/cdk/$@
+$(cdk_tgz): ; $(WGET) http://invisible-mirror.net/archives/cdk/$@
 cdk: cdk.patch | $(cdk_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	mv $@/include/*.h $@
 	patch -d $@ -N -p1 < $<
-$(termkey_tgz): ; wget http://www.leonerd.org.uk/code/libtermkey/$@
+$(termkey_tgz): ; $(WGET) http://www.leonerd.org.uk/code/libtermkey/$@
 termkey: termkey.patch | $(termkey_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@ && chmod +w $@/termkey.h
 	patch -d $@ -N -p1 < $<
-$(win32gtk_zip): ; wget http://foicica.com/textadept/download/$@
+$(win32gtk_zip): ; $(WGET) http://foicica.com/textadept/download/$@
 win32gtk: | $(win32gtk_zip) ; unzip $|
-$(win32curses_zip): ; wget http://foicica.com/textadept/download/$@
-$(pdcurses_zip): ; wget http://prdownloads.sourceforge.net/pdcurses/$@
+$(win32curses_zip): ; $(WGET) http://foicica.com/textadept/download/$@
+$(pdcurses_zip): ; $(WGET) http://prdownloads.sourceforge.net/pdcurses/$@
 win32curses: | $(win32curses_zip) $(pdcurses_zip)
 	unzip $(win32curses_zip)
 	mkdir $@/src && unzip -d $@/src $(pdcurses_zip)
-	cp $@/lib/pdckbd.c $@/src/win32
-	cd $@/src/win32 && $(MAKE) -f gccwin32.mak CC="$(CROSS)$(CC) $(CFLAGS)" \
-		LIBEXE=$(CROSS)ar LINK="$(CROSS)$(CC) $(CFLAGS)" WIDE=Y UTF8=Y
-	cp $@/src/win32/pdcurses.a $@/lib/
-$(gtkosx_tgz): ; wget http://foicica.com/textadept/download/$@
+	cp $@/lib/pdckbd.c $@/src/wincon
+	cd $@/src/wincon && $(MAKE) CC="$(CROSS)$(CC) $(CFLAGS)" LIBEXE=$(CROSS)ar \
+		LINK="$(CROSS)$(CC) $(CFLAGS)" WIDE=Y UTF8=Y libs
+	cp $@/src/wincon/pdcurses.a $@/lib/
+$(gtkosx_tgz): ; $(WGET) http://foicica.com/textadept/download/$@
 gtkosx: | $(gtkosx_tgz) ; mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
-$(bombay_zip): ; wget http://foicica.com/hg/bombay/archive/tip.zip -O $@
+$(bombay_zip): ; $(WGET) http://foicica.com/hg/bombay/archive/tip.zip
 ../doc/bombay: | $(bombay_zip)
 	mkdir $(notdir $@) && unzip -d $(notdir $@) $| && \
 		mv $(notdir $@)/*/* $(dir $@)
-$(cloc): ; wget http://prdownloads.sourceforge.net/cloc/$@ -O $@
+$(cloc): ; $(WGET) http://prdownloads.sourceforge.net/cloc/$@
 sign-deps: | $(scintilla_tgz) $(lua_tgz) $(lpeg_tgz) $(lfs_zip) \
              $(gtdialog_zip) $(cdk_tgz) $(termkey_tgz) $(win32gtk_zip) \
              $(win32curses_zip) $(pdcurses_zip) $(gtkosx_tgz)
