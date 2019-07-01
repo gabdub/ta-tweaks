@@ -1,8 +1,8 @@
 // Copyright 2007-2019 Mitchell mitchell.att.foicica.com. See LICENSE.
-// USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+// USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 104  //update to textadept 10.4
+#define TA_VERSION 105  //update to textadept 10.5
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -2296,7 +2296,7 @@ static void new_window() {
 
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_name(window, "textadept");
-  gtk_window_set_default_size(GTK_WINDOW(window), 500, 400);
+  gtk_window_set_default_size(GTK_WINDOW(window), 1000, 600);
   signal(window, "delete-event", w_exit);
   signal(window, "focus-in-event", w_focus);
   signal(window, "focus-out-event", wc_focusout);
