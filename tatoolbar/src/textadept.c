@@ -2,7 +2,7 @@
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 105  //update to textadept 10.5
+#define TA_VERSION 106  //update to textadept 10.6
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -212,7 +212,7 @@ static int quit;
 #endif
 static int initing, closing;
 static int show_tabs = TRUE, tab_sync;
-enum {SVOID, SINT, SLEN, SPOS, SCOLOR, SBOOL, SKEYMOD, SSTRING, SSTRINGRET};
+enum {SVOID, SINT, SLEN, SCOLOR, SBOOL, SKEYMOD, SSTRING, SSTRINGRET};
 
 // Forward declarations.
 static void new_buffer(sptr_t);
@@ -1129,6 +1129,7 @@ static int lbuffer_delete(lua_State *L) {
 
 /** `_G.buffer_new()` Lua function. */
 static int lbuffer_new(lua_State *L) {
+  if (initing) luaL_error(L, "cannot create buffers during initialization");
   new_buffer(0);
   lua_getfield(L, LUA_REGISTRYINDEX, "ta_buffers");
   return (lua_rawgeti(L, -1, lua_rawlen(L, -1)), 1);
@@ -2365,15 +2366,15 @@ static void new_window() {
         gtk_box_pack_start(GTK_BOX(hbox), new_view(0), TRUE, TRUE, 0);
 #endif
       //------------------------------------------new_findbox
-      gtk_box_pack_start(GTK_BOX(vboxp), new_findbox(), FALSE, FALSE, 5);
+  gtk_box_pack_start(GTK_BOX(vboxp), new_findbox(), FALSE, FALSE, 5);
 
     //==========================================buffer: command_entry
-    command_entry = scintilla_new();
-    gtk_widget_set_size_request(command_entry, 1, 1);
-    signal(command_entry, "key-press-event", s_keypress);
-    signal(command_entry, "focus-out-event", wc_focusout);
-    gtk_paned_add2(GTK_PANED(paned), command_entry);
-    gtk_container_child_set(GTK_CONTAINER(paned), command_entry, "shrink", FALSE, NULL);
+  command_entry = scintilla_new();
+  gtk_widget_set_size_request(command_entry, 1, 1);
+  signal(command_entry, "key-press-event", s_keypress);
+  signal(command_entry, "focus-out-event", wc_focusout);
+  gtk_paned_add2(GTK_PANED(paned), command_entry);
+  gtk_container_child_set(GTK_CONTAINER(paned), command_entry, "shrink", FALSE, NULL);
 //------------------------------------------statusbar
   GtkWidget *hboxs = gtk_hbox_new(FALSE, 0);
 #ifdef USE_TA_TOOLBAR
