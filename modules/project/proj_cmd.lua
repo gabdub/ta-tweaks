@@ -498,7 +498,7 @@ function Proj.close_project(keepviews)
     ui.statusbar_text= 'No project found'
   end
   --closed / not found / show projects list if available
-  if toolbar.list_show_projects then toolbar.list_show_projects() end
+  if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
   return true
 end
 

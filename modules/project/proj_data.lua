@@ -163,7 +163,7 @@ function Proj.add_recentproject()
   --save new list on exit
   data.recent_prj_change= true
   --update recent project list
-  if toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
+  if toolbar and toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
 end
 
 --parse Proj.data.filename and fill project arrays
