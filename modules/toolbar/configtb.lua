@@ -393,7 +393,7 @@ local function load_colors_from_theme(dontask)
         end
       end
       f:close()
-      toolbar.save_colors_reset() --apply now
+      if not dontask then toolbar.save_colors_reset() end --apply now
     end
   end
 end
