@@ -3,6 +3,7 @@
 if toolbar then
   local itemsgrp, itselected, currproj, projmod, first_row
   local collarow= {}
+  local openfs= {}
   local Proj = Proj
   local data= Proj.data
 
@@ -197,7 +198,7 @@ if toolbar then
             tip= Proj.get_vcs_info(i, "\n")
           end
           local name= "gofile#"..i
-          if toolbar.list_add_txt_ico(name, fname, tip, (bicon==nil), sel_file, bicon, (i%2==1), ind, idlen) then
+          if toolbar.list_add_txt_ico(name, fname, tip, (bicon==nil), sel_file, bicon, (i%2==1), ind, idlen, 2) then
             toolbar.list_add_collapse(name, collapse_list, ind, idlen, collarow)
           end
         end
@@ -221,6 +222,29 @@ if toolbar then
     end
   end
 
+  function mark_open_files()
+    for k,v in pairs(openfs) do openfs[k]= false end
+    for _, b in ipairs(_BUFFERS) do
+      if b._project_select == nil and b._type == nil then
+        local file= b.filename
+        if file then
+          local row= Proj.get_file_row(file)
+          if row then
+            local name= "open-gofile#"..row
+            if openfs[name] == nil then toolbar.setthemeicon(name,"open-back") end
+            openfs[name]= true
+          end
+        end
+      end
+    end
+    for k,v in pairs(openfs) do
+      if not v then
+        toolbar.setthemeicon(k,"closed-back")
+        openfs[k]= nil
+      end
+    end
+  end
+
   local function proj_create()
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
@@ -235,6 +259,7 @@ if toolbar then
   local function proj_notify(switching)
     if not switching then load_proj() end
     track_file()
+    mark_open_files()
   end
 
   local function proj_showlist(show)

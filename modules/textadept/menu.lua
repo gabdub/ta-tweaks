@@ -266,7 +266,10 @@ actions.list = {
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
   ["toggle_view_wrap"]=     {_L['Toggle _Wrap Mode'], function() --check
+      local first_visible_line = buffer.first_visible_line
+      local display_line = buffer:visible_from_doc_line(first_visible_line)
       buffer.wrap_mode = buffer.wrap_mode == 0 and buffer.WRAP_WHITESPACE or 0
+      buffer:line_scroll(0, first_visible_line - display_line)
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
   ["toggle_view_ws"]=       {_L['Toggle View White_space'], function() --check

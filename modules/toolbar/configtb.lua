@@ -760,8 +760,9 @@ local function buf_viewws_change()
   actions.updateaction("toggle_view_ws")
 end
 local function buf_wrapmode_change()
-  buffer.wrap_mode = toolbar.get_check_val("tbwrap") and buffer.WRAP_WHITESPACE or 0
-  actions.updateaction("toggle_view_wrap")
+  if buffer.wrap_mode ~= (toolbar.get_check_val("tbwrap") and buffer.WRAP_WHITESPACE or 0) then
+    actions.run("toggle_view_wrap")
+  end
 end
 
 function toolbar.setcfg_from_view_checks()

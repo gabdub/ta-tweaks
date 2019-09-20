@@ -94,7 +94,7 @@ if toolbar then
         local fname= Util.getfilename(Proj.data.recent_projects[i])
         if fname ~= "" then
           local name= "goproj#"..i
-          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0)
+          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0, 0, 0)
         end
       end
       toolbar.list_add_separator()

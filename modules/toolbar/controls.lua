@@ -320,7 +320,7 @@ function toolbar.list_addinfo(text,bold)
   toolbar.listtb_x= 3
 end
 
-function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen)
+function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen, open_hi)
   if not idlen then idlen=0 end
   if idlen > 0 then indent= indent + 10 end --add a collapse icon
   local xtxt= indent
@@ -330,6 +330,12 @@ function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, e
   if evenrow then toolbar.setbackcolor(name, toolbar.cfg.backcolor_erow,false,true) end
   toolbar.anchor(name, 10, true)
   if bicon then
+    if open_hi > 0 then  --open/closed file highlight
+      toolbar.gotopos(2 + indent, toolbar.listtb_y-1)
+      local iobut= "open-"..name
+      toolbar.cmd(iobut, nil, "", (open_hi == 1) and "open-back" or "closed-back", true)
+      toolbar.enable(iobut,false,false) --non-selectable image
+    end
     toolbar.gotopos(3 + indent, toolbar.listtb_y)
     local icbut= "ico-"..name
     toolbar.cmd(icbut, nil, "", bicon, true)

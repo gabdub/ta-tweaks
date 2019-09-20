@@ -66,7 +66,7 @@ if toolbar then
         if filter == '' or tagtext:match(filter) then
           local gotag= toolbar.tag_list[i][1]
           local bicon= toolbar.tag_list[i][3]
-          toolbar.list_add_txt_ico(gotag, tagtext, "", false, gototag, bicon, (i%2==1), 0)
+          toolbar.list_add_txt_ico(gotag, tagtext, "", false, gototag, bicon, (i%2==1), 0, 0, 0)
           if not firsttag then firsttag= gotag end
           n= n+1
         end
