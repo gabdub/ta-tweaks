@@ -94,11 +94,17 @@ if toolbar then
         local fname= Util.getfilename(Proj.data.recent_projects[i])
         if fname ~= "" then
           local name= "goproj#"..i
-          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0, 0, 0)
+          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0, 0, (i==1) and 2 or 0)
         end
       end
       toolbar.list_add_separator()
       sel_proj_num(linenum)
+    end
+  end
+
+  local function mark_open_proj()
+    if Proj.data.proj_parsed then --wait until the project is parsed
+      toolbar.setthemeicon("open-goproj#1", (Proj.data.filename == "") and "closed-back" or "open-back")
     end
   end
 
@@ -115,6 +121,7 @@ if toolbar then
 
   local function recentproj_notify(switching)
     if not switching then load_recentproj() end
+    mark_open_proj()
   end
 
   local function recentproj_showlist(show)

@@ -222,7 +222,7 @@ if toolbar then
     end
   end
 
-  function mark_open_files()
+  local function mark_open_files()
     for k,v in pairs(openfs) do openfs[k]= false end
     for _, b in ipairs(_BUFFERS) do
       if b._project_select == nil and b._type == nil then
