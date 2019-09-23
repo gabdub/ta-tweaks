@@ -331,7 +331,7 @@ function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, e
   toolbar.anchor(name, 10, true)
   if bicon then
     if open_hi > 0 then  --open/closed file highlight
-      toolbar.gotopos(2 + indent, toolbar.listtb_y-1)
+      toolbar.gotopos(3 + indent, toolbar.listtb_y)
       local iobut= "open-"..name
       toolbar.cmd(iobut, nil, "", (open_hi == 1) and "open-back" or "closed-back", true)
       toolbar.enable(iobut,false,false) --non-selectable image
