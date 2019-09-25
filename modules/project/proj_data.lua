@@ -513,8 +513,7 @@ function Proj.run_command(cmd)
     end
     if s and e then
       --replace %{projfiles} is with a temporary file with the list of project files
-      local p_buffer = Proj.get_projectbuffer(true)
-      if p_buffer == nil then
+      if data.filename == "" then
         ui.statusbar_text= 'No project found'
         return
       end
@@ -536,7 +535,7 @@ function Proj.run_command(cmd)
         return
       end
       --write the project files list in a temp file
-      tmpfile = p_buffer.filename..'_tmp'
+      tmpfile = data.filename..'_tmp'
       local f = io.open(tmpfile, 'wb')
       if f then
         f:write(table.concat(flist, '\n'))
@@ -834,9 +833,7 @@ end
 
 --get "version control number, path, url" for filename
 function Proj.get_versioncontrol_url(filename)
-  filename=string.gsub(filename, '%\\', '/')
-  local p_buffer= Proj.get_projectbuffer(true)
-  if p_buffer == nil then
+  if data.filename == "" then
     ui.statusbar_text= 'No project found'
     return
   end
@@ -844,6 +841,7 @@ function Proj.get_versioncontrol_url(filename)
     ui.statusbar_text= 'No SVN/GIT repository set in project'
     return
   end
+  filename=string.gsub(filename, '%\\', '/')
   local url= ""
   local nvc= 1
   while nvc <= #data.proj_vcontrol do
