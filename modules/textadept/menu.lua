@@ -64,6 +64,7 @@ actions.status= {
 
   ["set_enc_utf8"]=  function() return(buffer.encoding == 'UTF-8'      and 19 or 20) end, --first-radio
   ["set_enc_ascii"]= function() return(buffer.encoding == 'ASCII'      and 3 or 4) end,
+  ["set_enc_1252"]=  function() return(buffer.encoding == 'CP1252'     and 3 or 4) end,
   ["set_enc_8859"]=  function() return(buffer.encoding == 'ISO-8859-1' and 3 or 4) end,
   ["set_enc_utf16"]= function() return(buffer.encoding == 'UTF-16LE'   and 3 or 4) end,
 }
@@ -303,7 +304,8 @@ actions.list = {
 --BUFFER + ENCODING
   ["set_enc_utf8"]=         {_L['_UTF-8 Encoding'], function() set_encoding('UTF-8') end},            --radio group
   ["set_enc_ascii"]=        {_L['_ASCII Encoding'], function() set_encoding('ASCII') end},            --radio
-  ["set_enc_8859"]=         {_L['_ISO-8859-1 Encoding'], function() set_encoding('ISO-8859-1') end},  --radio
+  ["set_enc_8859"]=         {'_ISO-8859-1 Encoding',function() set_encoding('ISO-8859-1') end},  --radio
+  ["set_enc_1252"]=         {_L['_CP-1252 Encoding'], function() set_encoding('CP1252') end},  --radio
   ["set_enc_utf16"]=        {_L['UTF-1_6 Encoding'], function() set_encoding('UTF-16LE') end},        --radio
 
 --VIEW
@@ -473,7 +475,7 @@ actions.menubar = {
     },
     {
       title = _L['E_ncoding'],
-      {"set_enc_utf8","set_enc_ascii","set_enc_8859","set_enc_utf16"}
+      {"set_enc_utf8","set_enc_ascii","set_enc_1252","set_enc_8859","set_enc_utf16"}
     },
     {SEPARATOR,"toggle_view_oel","toggle_view_wrap","toggle_view_ws",SEPARATOR,
      "select_lexer","refresh_syntax"}

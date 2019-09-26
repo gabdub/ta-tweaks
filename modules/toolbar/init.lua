@@ -139,7 +139,7 @@ if toolbar then
   end
 
   local function change_encoding()
-    local options= {'UTF-8','ASCII','ISO-8859-1','UTF-16LE'}
+    local options= {'UTF-8','ASCII','CP1252','ISO-8859-1','UTF-16LE'}
     local button, i = ui.dialogs.filteredlist{
       title = "Select buffer enconding",
       columns = _L['Name'],
@@ -147,6 +147,13 @@ if toolbar then
     if button == 1 and i then
       buffer:set_encoding(options[i])
       events.emit(events.UPDATE_UI) -- for updating statusbar
+      if actions then
+        actions.updateaction("set_enc_utf8")
+        actions.updateaction("set_enc_ascii")
+        actions.updateaction("set_enc_1252")
+        actions.updateaction("set_enc_8859")
+        actions.updateaction("set_enc_utf16")
+      end
     end
   end
 
