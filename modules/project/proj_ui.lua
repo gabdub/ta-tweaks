@@ -1209,16 +1209,23 @@ end
 -------- overwrite default ui._print function -----
 -- Helper function for printing messages to buffers.
 local function proj_print(buffer_type, ...)
-  --print allways in search-view
-  Proj.beg_search_add()
-  --show buffer_type when changed
-  if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
-  buffer:goto_pos(buffer.length)
-  local args, n = {...}, select('#', ...)
-  for i = 1, n do args[i] = tostring(args[i]) end
-  buffer:append_text(table.concat(args, '\t'))
-  buffer:append_text('\n')
-  Proj.end_search_add(buffer_type)
+  if USE_RESULTS_PANEL then
+    --show in the results panel
+    local args, n = {...}, select('#', ...)
+    for i = 1, n do args[i] = tostring(args[i]) end
+    toolbar.print_result(table.concat(args, '  '))
+  else
+    --add to the search-view buffer
+    Proj.beg_search_add()
+    --show buffer_type when changed
+    if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
+    buffer:goto_pos(buffer.length)
+    local args, n = {...}, select('#', ...)
+    for i = 1, n do args[i] = tostring(args[i]) end
+    buffer:append_text(table.concat(args, '\t'))
+    buffer:append_text('\n')
+    Proj.end_search_add(buffer_type)
+  end
 end
 function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end
 
