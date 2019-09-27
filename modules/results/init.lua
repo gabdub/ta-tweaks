@@ -8,8 +8,8 @@ if toolbar then
   toolbar.resultsselect= {}
   toolbar.resultsheight= 200
 
-  function toolbar.registerresultstb(name, tooltip, icon, createfun, notify, showlist, buftype)
-    toolbar.resultsselect[#toolbar.resultsselect+1]= {name, tooltip, icon, createfun, notify, showlist, buftype}
+  function toolbar.registerresultstb(name, tooltip, icon, createfun, notify, showlist, resaction)
+    toolbar.resultsselect[#toolbar.resultsselect+1]= {name, tooltip, icon, createfun, notify, showlist, resaction}
   end
 
   local function results_update(switching)
@@ -65,6 +65,10 @@ if toolbar then
     return (toolbar.results_tb) and (curresult==name)
   end
 
+  function toolbar.showresults(name)
+    if not toolbar.isresultsshown(name) then toolbar.select_results(name) end
+  end
+
   --the toolbar config is saved inside the project configuration file
   local function beforeload_res(cfg)
     Util.add_config_field(cfg, "results_height", Util.cfg_int, 200)
@@ -88,12 +92,18 @@ if toolbar then
     return changed
   end
 
+  local function results_act(name)  --pass the pressed button name
+    if curresultidx > 0 then toolbar.resultsselect[curresultidx][7](name) end
+  end
+
   function toolbar.results_init_title(closebt)
     toolbar.listtb_y= 1
     toolbar.listtb_x= 3
-    toolbar.list_cmdright= 18
+    toolbar.list_cmdright= 24
     toolbar.sel_results_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
+    toolbar.list_addbutton("edit-clear", "Clear all", results_act)
+    toolbar.list_addbutton("edit-copy", "Copy all", results_act)
     if closebt then
       toolbar.gotopos( 0, toolbar.listtb_y)
       toolbar.cmd("results-close", toolbar.results_onoff, "Close", "window-close")

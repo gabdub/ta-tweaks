@@ -171,7 +171,7 @@ if toolbar then
   function toolbar.list_init_title()
     toolbar.listtb_y= 1
     toolbar.listtb_x= 3
-    toolbar.list_cmdright= 18
+    toolbar.list_cmdright= 24
     toolbar.sel_left_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeList", 150, new_tb_size) --add a resize handle
   end
