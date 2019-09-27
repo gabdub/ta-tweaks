@@ -318,6 +318,7 @@ function toolbar.list_addinfo(text,bold)
   toolbar.list_cmdright= 18
   toolbar.anchor(name, toolbar.list_cmdright, true)
   toolbar.listtb_x= 3
+  return name
 end
 
 function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen, open_hi)

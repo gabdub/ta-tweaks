@@ -1,4 +1,7 @@
 -- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+
+USE_RESULTS_PANEL= true --true:show results in a toolbar panel; false= use a buffer
+
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
 
@@ -38,7 +41,11 @@ if toolbar then
   require('listtoolbar.projlist')
   require('listtoolbar.ctaglist')
 
-  require('results')
+  if USE_RESULTS_PANEL then
+    require('results')
+    require('results.searchresults')
+    require('results.printresults')
+  end
 
   --set the configured theme
   toolbar.set_theme_from_config()

@@ -3,10 +3,14 @@
 if toolbar then
   local events, events_connect = events, events.connect
   local titgrp, curresult, curresultidx
-  local lbl_n= 0
+  local lblResult
 
   toolbar.resultsselect= {}
   toolbar.resultsheight= 200
+
+  function toolbar.registerresultstb(name, tooltip, icon, createfun, notify, showlist, buftype)
+    toolbar.resultsselect[#toolbar.resultsselect+1]= {name, tooltip, icon, createfun, notify, showlist, buftype}
+  end
 
   local function results_update(switching)
     --{name, tooltip, icon, createfun, **notify**, show}
@@ -18,6 +22,7 @@ if toolbar then
       --click on the active list= show/hide toolbar
       if not dont_hide_show then toolbar.results_onoff() end
     else
+    --if listname ~= curresult then
       if (not dont_hide_show) and (not toolbar.results_tb) then toolbar.results_onoff() end  --show toolbar
       --change the active list
       if curresultidx > 0 then
@@ -34,6 +39,7 @@ if toolbar then
       if curresultidx > 0 then
         toolbar.selected(curresult, false, toolbar.results_tb)
         toolbar.resultsselect[curresultidx][6](true) --show list items
+        if lblResult then toolbar.settext(lblResult, toolbar.resultsselect[curresultidx][2]) end
         results_update()
       end
     end
@@ -59,10 +65,6 @@ if toolbar then
     return (toolbar.results_tb) and (curresult==name)
   end
 
-  function toolbar.registerresultstb(name, tooltip, icon, createfun, notify, showlist)
-    toolbar.resultsselect[#toolbar.resultsselect+1]= {name, tooltip, icon, createfun, notify, showlist}
-  end
-
   --the toolbar config is saved inside the project configuration file
   local function beforeload_res(cfg)
     Util.add_config_field(cfg, "results_height", Util.cfg_int, 200)
@@ -72,10 +74,10 @@ if toolbar then
   local function afterload_res(cfg)
     --show list toolbar
     toolbar.sel_results_bar()
-    toolbar.results_tb= cfg.results_show
-    toolbar.resultsheight= cfg.results_height
     --select first result option
     if #toolbar.resultsselect > 0 then toolbar.select_results(toolbar.resultsselect[1][1]) end
+    toolbar.results_tb= cfg.results_show
+    toolbar.resultsheight= cfg.results_height
     toolbar.show(toolbar.results_tb, toolbar.resultsheight)
   end
 
@@ -86,6 +88,19 @@ if toolbar then
     return changed
   end
 
+  function toolbar.results_init_title(closebt)
+    toolbar.listtb_y= 1
+    toolbar.listtb_x= 3
+    toolbar.list_cmdright= 18
+    toolbar.sel_results_bar(titgrp,true) --empty title group
+    toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
+    if closebt then
+      toolbar.gotopos( 0, toolbar.listtb_y)
+      toolbar.cmd("results-close", toolbar.results_onoff, "Close", "window-close")
+      toolbar.listtb_x= 23
+    end
+  end
+
   local function projloaded_res(cfg)
     --the project file parsing is complete
     if curresultidx > 0 then
@@ -94,7 +109,7 @@ if toolbar then
       results_update()
     end
     if #toolbar.resultsselect == 0 then
-      toolbar.results_init_title()
+      toolbar.results_init_title(true)
       toolbar.list_addinfo("No results module found",true)
     end
   end
@@ -104,6 +119,7 @@ if toolbar then
   function toolbar.createresultstb()
     curresult=""
     curresultidx=0
+    lblResult=nil
 
     toolbar.sel_results_bar()
     --create a new empty toolbar
@@ -130,42 +146,36 @@ if toolbar then
       ls[4]() --create list
     end
 
+    --add buttons to select the lists
+    if #toolbar.resultsselect > 0 then
+      toolbar.results_init_title(false) --hide close button
+
+      for i=1,#toolbar.resultsselect do
+        local ls= toolbar.resultsselect[i] --{name, tooltip, icon, createfun, notify, show}
+        toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
+        toolbar.listtb_x=toolbar.listtb_x+toolbar.cfg.butsize
+        toolbar.cmd(ls[1], toolbar.select_results, ls[2], ls[3], true)
+      end
+      toolbar.listtb_x=toolbar.listtb_x+toolbar.cfg.butsize/2
+      lblResult= toolbar.list_addinfo("Results",true)
+    end
     toolbar.sel_top_bar() --restore current bar
---    toolbar.sel_top_bar() --add buttons to select the lists in the top toolbar
---    if #toolbar.resultsselect > 0 then
---      for i=1,#toolbar.resultsselect do
---        local ls= toolbar.resultsselect[i] --{name, tooltip, icon, createfun, notify, show}
---        toolbar.cmd(ls[1], toolbar.select_results, ls[2], ls[3], true)
---      end
---      toolbar.addspace()
---    end
 
     if actions then
-      toolbar.idviewresultstb= actions.add("toggle_viewresults", 'Show _Results toolbar', toolbar.results_onoff, nil, "view-list-compact-symbolic", function()
+      toolbar.idviewresultstb= actions.add("toggle_viewresults", 'Show _Results toolbar', toolbar.results_onoff, "cf10", "view-list-compact-symbolic", function()
         return (toolbar.results_tb and 1 or 2) end) --check
       local med= actions.getmenu_fromtitle(_L['_View'])
       if med then
         local m=med[#med]
         m[#m+1]= "toggle_viewresults"
       end
-      actions.add("next_results_list", 'Next results list',     toolbar.next_results_list)
-      actions.add("prev_results_list", 'Previous results list', toolbar.prev_results_list)
+      actions.add("next_results_list", 'Next results list',     toolbar.next_results_list, "sf10")
+      actions.add("prev_results_list", 'Previous results list', toolbar.prev_results_list, "csf10")
     end
   end
 
   local function new_tb_size() --the toolbar was resized
     toolbar.resultsheight= toolbar.getsize(toolbar.RESULTS_TOOLBAR)
-  end
-
-  function toolbar.results_init_title()
-    toolbar.listtb_y= 1
-    toolbar.listtb_x= 3
-    toolbar.list_cmdright= 18
-    toolbar.sel_results_bar(titgrp,true) --empty title group
-    toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
-    toolbar.gotopos( 0, toolbar.listtb_y)
-    toolbar.cmd("results-close", toolbar.results_onoff, "Close", "window-close")
-    toolbar.listtb_x= 23
   end
 
   function toolbar.results_onoff()
