@@ -76,6 +76,7 @@ if toolbar then
   end
 
   local function afterload_res(cfg)
+    toolbar.resultsheight= cfg.results_height
     --show list toolbar
     toolbar.sel_results_bar()
     --select first result option
@@ -94,6 +95,10 @@ if toolbar then
 
   local function results_act(name)  --pass the pressed button name
     if curresultidx > 0 then toolbar.resultsselect[curresultidx][7](name) end
+  end
+
+  local function new_tb_size() --the toolbar was resized
+    toolbar.resultsheight= toolbar.getsize(toolbar.RESULTS_TOOLBAR)
   end
 
   function toolbar.results_init_title(closebt)
@@ -182,10 +187,6 @@ if toolbar then
       actions.add("next_results_list", 'Next results list',     toolbar.next_results_list, "sf10")
       actions.add("prev_results_list", 'Previous results list', toolbar.prev_results_list, "csf10")
     end
-  end
-
-  local function new_tb_size() --the toolbar was resized
-    toolbar.resultsheight= toolbar.getsize(toolbar.RESULTS_TOOLBAR)
   end
 
   function toolbar.results_onoff()

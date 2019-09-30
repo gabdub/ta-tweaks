@@ -528,6 +528,7 @@ end
 
 --ACTION: clear_search
 function Proj.clear_search()
+  if USE_RESULTS_PANEL then toolbar.results_clear() toolbar.print_clear() end
   Proj.clear_search_results()
 end
 

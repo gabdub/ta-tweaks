@@ -401,6 +401,7 @@ if toolbar then
     tbconfig_color( "textcolor_normal", 0x101010)
     tbconfig_color( "textcolor_grayed", 0x808080)
     tbconfig_color( "backcolor_erow",   -1) --even rows background color (-1:don't change it)
+    tbconfig_color( "backcolor_hi",     -1) --highlight row color (-1:don't change it)
     --tabs
     tbconfig_int(   "tabxmargin",       5)
     tbconfig_int(   "tabxsep",          -1)

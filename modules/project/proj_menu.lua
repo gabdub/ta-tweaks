@@ -110,7 +110,7 @@ if actions then
   actions.add("open_selfile",        '_Open the selected/companion file',Proj.open_selfile,"ao" )
   actions.add("first_buffer",        'First buffer',          Proj.first_buffer, "apgup")
   actions.add("last_buffer",         'Last buffer',           Proj.last_buffer,  "apgdn")
-  actions.add("clear_search",        'Clear search results',  Proj.clear_search)
+  actions.add("clear_search",        'Clear search results',  Proj.clear_search, "af10")
 
   --add actions defined in "proj_ctags"
   actions.add("goto_tag",            'Goto _Tag',             Proj.goto_tag,          "f11" )

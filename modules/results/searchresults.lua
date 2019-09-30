@@ -21,7 +21,7 @@ if toolbar then
     toolbar.showgroup(show)
   end
 
-  local function list_clear()
+  function toolbar.results_clear()
     --remove all items
     toolbar.sel_results_bar(itemsgrp,true) --empty items group
     nitems= 0
@@ -31,7 +31,7 @@ if toolbar then
 
   --"edit-clear" / "edit-copy"
   local function search_act(name)
-    if name == "edit-clear" then list_clear() end
+    if name == "edit-clear" then toolbar.results_clear() end
     if name == "edit-copy"  then buffer:copy_text(fullprint) end
   end
 

@@ -32,6 +32,8 @@ textadept.file_types.extensions.INC = 'mas'
 textadept.editing.comment_string.ansi_c = '//'
 textadept.editing.comment_string.asm = ';'
 
+keys.KEYSYMS[0xFF8D] = '\n' --keypad Enter = normal Enter
+
 if toolbar then
   require('toolbar')
   --require('htmltoolbar')
@@ -43,8 +45,8 @@ if toolbar then
 
   if USE_RESULTS_PANEL then
     require('results')
-    require('results.searchresults')
     require('results.printresults')
+    require('results.searchresults')
   end
 
   --set the configured theme
