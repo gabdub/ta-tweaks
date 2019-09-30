@@ -140,7 +140,7 @@ if toolbar then
     --create a new empty toolbar
     toolbar.new(toolbar.resultsheight, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.RESULTS_TOOLBAR, toolbar.themepath)
     --add/change some images
-    toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
+    toolbar.themed_icon(toolbar.globalicon, "res-back", toolbar.TTBI_TB.BACKGROUND)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
     toolbar.themed_icon(toolbar.globalicon, "ttb-button-active", toolbar.TTBI_TB.BUT_SELECTED)
