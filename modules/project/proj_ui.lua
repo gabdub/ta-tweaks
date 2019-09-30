@@ -455,16 +455,20 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
     fromrow= currow
   end
 
-  Proj.stop_update_ui(true)
-  --activate/create search view
-  Proj.beg_search_add()
+  if USE_RESULTS_PANEL then
+    toolbar.search_result_start(text)
+    if filterpath then toolbar.search_result_filter(filterpath) end
+  else
+    Proj.stop_update_ui(true)
+    --activate/create search view
+    Proj.beg_search_add()
+    buffer:append_text('['..text..']\n')
+    if filterpath then buffer:append_text(' search dir '..filterpath..'::::\n') end
+    buffer:goto_pos(buffer.length)
+    buffer.indicator_current = ui.find.INDIC_FIND
+  end
 
-  buffer:append_text('['..text..']\n')
   if escapetext then text= Util.escape_match(text) end
-  if filterpath then buffer:append_text(' search dir '..filterpath..'::::\n') end
-
-  buffer:goto_pos(buffer.length)
-  buffer.indicator_current = ui.find.INDIC_FIND
   if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end
 
   local nfiles= 0
@@ -480,7 +484,11 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
       if file and file ~= '' then
         if not Util.file_exists(file) then
           filesnf= filesnf+1 --file not found
-          buffer:append_text(('(%s NOT FOUND)::::\n'):format(file))
+          if USE_RESULTS_PANEL then
+            toolbar.search_result_error(file..' NOT FOUND')
+          else
+            buffer:append_text(('(%s NOT FOUND)::::\n'):format(file))
+          end
         else
           file = file:iconv('UTF-8', _CHARSET)
           local p,f,e= Util.splitfilename(file)
@@ -496,15 +504,22 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
               if s and e then
                 if prt_fname then
                   prt_fname= false
-                  buffer:append_text((' %s::%s::\n'):format(f, file))
                   nfiles = nfiles + 1
-                  if nfiles == 1 then buffer:goto_pos(buffer.length) end
+                  if USE_RESULTS_PANEL then
+                    toolbar.search_result_file(f,file)
+                  else
+                    buffer:append_text((' %s::%s::\n'):format(f, file))
+                    if nfiles == 1 then buffer:goto_pos(buffer.length) end
+                  end
                 end
-                local snum= ('%4d'):format(line_num)
-                buffer:append_text(('  @%s:%s\n'):format(snum, line))
-
-                local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
-                buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+                if USE_RESULTS_PANEL then
+                  toolbar.search_result_found(file,line_num,line)
+                else
+                  local snum= ('%4d'):format(line_num)
+                  buffer:append_text(('  @%s:%s\n'):format(snum, line))
+                  local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+                  buffer:indicator_fill_range(pos + s - 1, e - s + 1)
+                end
                 nfound = nfound + 1
               end
               line_num = line_num + 1
@@ -515,18 +530,28 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
     end
   end
 
-  if nfound == 0 then buffer:append_text(' '.._L['No results found']..'\n') end
-  buffer:append_text('\n')
+  if nfound == 0 then
+    if USE_RESULTS_PANEL then
+      toolbar.search_result_error(' '.._L['No results found'])
+    else
+      buffer:append_text(' '.._L['No results found']..'\n')
+    end
+  end
+  if USE_RESULTS_PANEL then
+    toolbar.search_result_end()
+  else
+    buffer:append_text('\n')
+    Proj.end_search_add()
+    --set search context menu
+    Proj.set_contextm_search()
+    Proj.stop_update_ui(false)
+  end
 
   local result= ''..nfound..' matches in '..nfiles..' of '..totfiles..' files'
   if filesnf > 0 then
     result= result .. ' / '..filesnf..' files NOT FOUND'
   end
   ui.statusbar_text= result
-  Proj.end_search_add()
-  --set search context menu
-  Proj.set_contextm_search()
-  Proj.stop_update_ui(false)
 end
 
 local function try_open(fn)

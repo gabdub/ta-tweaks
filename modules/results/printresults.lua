@@ -5,7 +5,7 @@ if toolbar then
   local selitem=0
   local nitems= 0
   local yout= 1
-  local fullprint= {}
+  local fullprint= {} --copy all
 
   local function print_create()
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
@@ -44,6 +44,7 @@ if toolbar then
 
   local function select_printrow(n)
     --restore previously selected row
+    toolbar.sel_results_bar(itemsgrp)
     if selitem > 0 then toolbar.setbackcolor(get_rowname(selitem), (selitem%2==1) and toolbar.cfg.backcolor_erow or -1,false,true) end
     selitem= n --highlight new
     toolbar.setbackcolor(get_rowname(n), toolbar.cfg.backcolor_hi,false,true)
@@ -67,7 +68,6 @@ if toolbar then
     local oneline= Util.str_one_line(txt)
     if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
     toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0)
-    toolbar.cmd_dclick("prt-item",print_dclick)
     yout= yout + toolbar.cfg.butsize
     toolbar.showresults("printresults")
     toolbar.ensurevisible(name)
@@ -75,4 +75,5 @@ if toolbar then
   end
 
   toolbar.registerresultstb("printresults", "Console output", "system-lock-screen", print_create, print_notify, print_showlist, print_act)
+  toolbar.cmd_dclick("prt-item",print_dclick)
 end

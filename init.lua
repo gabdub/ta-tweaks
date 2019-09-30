@@ -1,6 +1,7 @@
 -- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
-
-USE_RESULTS_PANEL= true --true:show results in a toolbar panel; false= use a buffer
+if toolbar then
+  USE_RESULTS_PANEL= true --true:show results in a toolbar panel; false= use a buffer
+end
 
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
