@@ -74,6 +74,17 @@ if toolbar then
     select_printrow(nitems)
   end
 
+  -------- overwrite default ui._print function -----
+  -- Helper function for printing messages to buffers.
+  local function proj_print(buffer_type, ...)
+    --show in the results panel
+    local args, n = {...}, select('#', ...)
+    for i = 1, n do args[i] = tostring(args[i]) end
+    toolbar.print_result(table.concat(args, '  '))
+  end
+  function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end
+  -------------------------------------------------------
+
   toolbar.registerresultstb("printresults", "Console output", "system-lock-screen", print_create, print_notify, print_showlist, print_act)
   toolbar.cmd_dclick("prt-item",print_dclick)
 end

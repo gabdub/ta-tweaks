@@ -73,39 +73,10 @@ if toolbar then
     if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
     local tt= (toolt ~= nil) and toolt or txt
     full_search[#full_search+1]= tt
-    toolbar.list_add_txt_ico(name, oneline, tt, bold, search_click, icon, false, 0, 0, 0)
+    toolbar.list_add_txt_ico(name, oneline, tt, bold, search_click, icon, (nitems%2==1), 0, 0, 0)
     yout= yout + toolbar.cfg.butsize
     toolbar.showresults("searchresults")
     return name
-  end
-
-  function toolbar.search_result_start(s_txt)
-    local name= toolbar.search_result("["..s_txt.."]", nil, true)
-    toolbar.ensurevisible(name)
-    select_searchrow(nitems)
-  end
-  function toolbar.search_result_filter(s_filter)
-    toolbar.search_result(' search dir '..s_filter, nil, false, nil)
-  end
-  function toolbar.search_result_error(s_err)
-    toolbar.search_result(s_err, nil, true, "package-broken")
-  end
-  function toolbar.search_result_file(s_f,fname)
-    toolbar.search_result(s_f, fname, true, toolbar.icon_fname(fname))
-    if #file_search == 0 or file_search[#file_search] ~= fname then file_search[#file_search+1]= fname end
-    pos_search[nitems]= {#file_search, 0} --open file
-  end
-  function toolbar.search_result_found(fname,nlin,txt)
-    toolbar.search_result("  @"..('%4d'):format(nlin)..": "..Util.str_trim(txt), nil, false, nil)
-    if fname and (#file_search == 0 or file_search[#file_search] ~= fname) then file_search[#file_search+1]= fname end
-    if nlin > 0 then pos_search[nitems]= {#file_search, nlin} end
-  end
-  function toolbar.search_result_end()
-    toolbar.sel_results_bar(itemsgrp)
-    toolbar.listtb_y= yout
-    toolbar.list_add_separator()
-    yout= toolbar.listtb_y
-    ensurevisible()
   end
 
   local function search_dclick(name) --double click= goto file
@@ -115,9 +86,53 @@ if toolbar then
       Proj.go_file(file_search[pos[1]], pos[2]) --goto file / linenum
     else
       local s= full_search[nr] --copy the searched text
-      buffer:copy_text(s:sub(2,#s-1)) --remove "[]"
+      if s and #s > 0 then
+        if s:sub(1,1) == '[' then
+          buffer:copy_text(s:sub(2,#s-1)) --remove "[]"
+        else
+          buffer:copy_text(s)
+        end
+      end
     end
   end
+
+  --------------- SEARCH RESULTS INTERFACE --------------
+  function plugs.search_result_start(s_txt, s_filter)
+    --a new "search in files" begin
+    local name= toolbar.search_result("["..s_txt.."]", nil, true)
+    toolbar.ensurevisible(name)
+    select_searchrow(nitems)
+    if s_filter then toolbar.search_result(' search dir '..s_filter, nil, false, nil) end
+  end
+
+  function plugs.search_result_info(s_txt, iserror)
+    --report info/error
+    toolbar.search_result(s_txt, nil, true, (iserror) and "package-broken" or "package-installed-outdated")
+  end
+
+  function plugs.search_result_in_file(shortname, fname, nfiles)
+    --set the file currently searched
+    toolbar.search_result(shortname, fname, true, toolbar.icon_fname(fname))
+    if #file_search == 0 or file_search[#file_search] ~= fname then file_search[#file_search+1]= fname end
+    pos_search[nitems]= {#file_search, 0} --open file
+  end
+
+  function plugs.search_result_found(fname, nlin, txt, s_start, s_end)
+    --set the location of the found
+    toolbar.search_result("  @"..('%4d'):format(nlin)..": "..Util.str_trim(txt), nil, false, nil)
+    if fname and (#file_search == 0 or file_search[#file_search] ~= fname) then file_search[#file_search+1]= fname end
+    if nlin > 0 then pos_search[nitems]= {#file_search, nlin} end
+  end
+
+  function plugs.search_result_end()
+    --mark the end of the search
+    toolbar.sel_results_bar(itemsgrp)
+    toolbar.listtb_y= yout
+    toolbar.list_add_separator()
+    yout= toolbar.listtb_y
+    ensurevisible()
+  end
+  -------------------------------------------------------
 
   toolbar.registerresultstb("searchresults", "Search results", "system-search", search_create, search_notify, search_showlist, search_act)
   toolbar.cmd_dclick("sch-item",search_dclick)

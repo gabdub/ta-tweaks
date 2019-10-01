@@ -455,18 +455,12 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
     fromrow= currow
   end
 
-  if USE_RESULTS_PANEL then
-    toolbar.search_result_start(text)
-    if filterpath then toolbar.search_result_filter(filterpath) end
-  else
-    Proj.stop_update_ui(true)
-    --activate/create search view
-    Proj.beg_search_add()
-    buffer:append_text('['..text..']\n')
-    if filterpath then buffer:append_text(' search dir '..filterpath..'::::\n') end
-    buffer:goto_pos(buffer.length)
-    buffer.indicator_current = ui.find.INDIC_FIND
+  if not plugs.search_result_start then
+    ui.statusbar_text= "No search results module found"
+    return
   end
+  --a new "search in files" begin
+  plugs.search_result_start(text, filterpath)
 
   if escapetext then text= Util.escape_match(text) end
   if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end
@@ -484,11 +478,7 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
       if file and file ~= '' then
         if not Util.file_exists(file) then
           filesnf= filesnf+1 --file not found
-          if USE_RESULTS_PANEL then
-            toolbar.search_result_error(file..' NOT FOUND')
-          else
-            buffer:append_text(('(%s NOT FOUND)::::\n'):format(file))
-          end
+          plugs.search_result_info(file..' NOT FOUND', true)
         else
           file = file:iconv('UTF-8', _CHARSET)
           local p,f,e= Util.splitfilename(file)
@@ -505,21 +495,9 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
                 if prt_fname then
                   prt_fname= false
                   nfiles = nfiles + 1
-                  if USE_RESULTS_PANEL then
-                    toolbar.search_result_file(f,file)
-                  else
-                    buffer:append_text((' %s::%s::\n'):format(f, file))
-                    if nfiles == 1 then buffer:goto_pos(buffer.length) end
-                  end
+                  plugs.search_result_in_file(f, file, nfiles)
                 end
-                if USE_RESULTS_PANEL then
-                  toolbar.search_result_found(file,line_num,line)
-                else
-                  local snum= ('%4d'):format(line_num)
-                  buffer:append_text(('  @%s:%s\n'):format(snum, line))
-                  local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
-                  buffer:indicator_fill_range(pos + s - 1, e - s + 1)
-                end
+                plugs.search_result_found(file, line_num, line, s, e)
                 nfound = nfound + 1
               end
               line_num = line_num + 1
@@ -531,21 +509,9 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
   end
 
   if nfound == 0 then
-    if USE_RESULTS_PANEL then
-      toolbar.search_result_error(' '.._L['No results found'])
-    else
-      buffer:append_text(' '.._L['No results found']..'\n')
-    end
+    plugs.search_result_info(_L['No results found'], false)
   end
-  if USE_RESULTS_PANEL then
-    toolbar.search_result_end()
-  else
-    buffer:append_text('\n')
-    Proj.end_search_add()
-    --set search context menu
-    Proj.set_contextm_search()
-    Proj.stop_update_ui(false)
-  end
+  plugs.search_result_end()
 
   local result= ''..nfound..' matches in '..nfiles..' of '..totfiles..' files'
   if filesnf > 0 then
@@ -1230,29 +1196,6 @@ function Proj.check_panels()
   if #_VIEWS >= actv then Util.goto_view(actv) end
   Proj.stop_update_ui(false)
 end
-
--------- overwrite default ui._print function -----
--- Helper function for printing messages to buffers.
-local function proj_print(buffer_type, ...)
-  if USE_RESULTS_PANEL then
-    --show in the results panel
-    local args, n = {...}, select('#', ...)
-    for i = 1, n do args[i] = tostring(args[i]) end
-    toolbar.print_result(table.concat(args, '  '))
-  else
-    --add to the search-view buffer
-    Proj.beg_search_add()
-    --show buffer_type when changed
-    if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
-    buffer:goto_pos(buffer.length)
-    local args, n = {...}, select('#', ...)
-    for i = 1, n do args[i] = tostring(args[i]) end
-    buffer:append_text(table.concat(args, '\t'))
-    buffer:append_text('\n')
-    Proj.end_search_add(buffer_type)
-  end
-end
-function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end
 
 -- replace Open uri(s) code (core/ui.lua)
 function Proj.drop_uri(utf8_uris)

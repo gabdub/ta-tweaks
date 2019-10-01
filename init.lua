@@ -2,6 +2,7 @@
 if toolbar then
   USE_RESULTS_PANEL= true --true:show results in a toolbar panel; false= use a buffer
 end
+plugs= {} --add here functions from interfaces (e.g. search results)
 
 -- Control+F4 = RESET textadept
 keys.cf4 = reset

@@ -210,4 +210,12 @@ if toolbar then
     --only show as selected when the list is visible
     toolbar.selected(curresult, false, toolbar.results_tb)
   end
+
+  --------------- RESULTS INTERFACE --------------
+  function plugs.clear_results()
+    toolbar.results_clear()
+    toolbar.print_clear()
+  end
+  -------------------------------------------------------
+
 end
