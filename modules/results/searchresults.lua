@@ -47,8 +47,10 @@ if toolbar then
 
   --"edit-clear" / "edit-copy"
   local function search_act(name)
-    if name == "edit-clear" then toolbar.results_clear() end
-    if name == "edit-copy"  then buffer:copy_text(table.concat(full_search,'\n')) end
+    if name == "edit-clear" then toolbar.results_clear()
+    elseif name == "edit-select-all" then buffer:copy_text(table.concat(full_search,'\n'))
+    elseif name == "edit-copy" then if selitem > 0 then buffer:copy_text(full_search[selitem]) end
+    end
   end
 
   local function select_searchrow(n)
@@ -85,24 +87,19 @@ if toolbar then
     if pos then
       Proj.go_file(file_search[pos[1]], pos[2]) --goto file / linenum
     else
-      local s= full_search[nr] --copy the searched text
-      if s and #s > 0 then
-        if s:sub(1,1) == '[' then
-          buffer:copy_text(s:sub(2,#s-1)) --remove "[]"
-        else
-          buffer:copy_text(s)
-        end
-      end
+      buffer:copy_text(full_search[nr]) --copy the tooltip
     end
   end
 
+  local curr_file= ""
   --------------- SEARCH RESULTS INTERFACE --------------
   function plugs.search_result_start(s_txt, s_filter)
     --a new "search in files" begin
-    local name= toolbar.search_result("["..s_txt.."]", nil, true)
+    local name= toolbar.search_result("["..s_txt.."]", s_txt, true)
     toolbar.ensurevisible(name)
     select_searchrow(nitems)
     if s_filter then toolbar.search_result(' search dir '..s_filter, nil, false, nil) end
+    curr_file= ""
   end
 
   function plugs.search_result_info(s_txt, iserror)
@@ -115,11 +112,13 @@ if toolbar then
     toolbar.search_result(shortname, fname, true, toolbar.icon_fname(fname))
     if #file_search == 0 or file_search[#file_search] ~= fname then file_search[#file_search+1]= fname end
     pos_search[nitems]= {#file_search, 0} --open file
+    curr_file= shortname
   end
 
   function plugs.search_result_found(fname, nlin, txt, s_start, s_end)
     --set the location of the found
-    toolbar.search_result("  @"..('%4d'):format(nlin)..": "..Util.str_trim(txt), nil, false, nil)
+    local spos= ' @'..('%4d'):format(nlin)..": "..Util.str_trim(txt)
+    toolbar.search_result(' '..spos, curr_file..spos, false, nil)
     if fname and (#file_search == 0 or file_search[#file_search] ~= fname) then file_search[#file_search+1]= fname end
     if nlin > 0 then pos_search[nitems]= {#file_search, nlin} end
   end

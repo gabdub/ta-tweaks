@@ -38,8 +38,10 @@ if toolbar then
 
   --"edit-clear" / "edit-copy"
   local function print_act(name)
-    if name == "edit-clear" then toolbar.print_clear() end
-    if name == "edit-copy"  then buffer:copy_text(table.concat(fullprint,'\n')) end
+    if name == "edit-clear" then toolbar.print_clear()
+    elseif name == "edit-select-all" then buffer:copy_text(table.concat(fullprint,'\n'))
+    elseif name == "edit-copy" then if selitem > 0 then buffer:copy_text(fullprint[selitem]) end
+    end
   end
 
   local function select_printrow(n)

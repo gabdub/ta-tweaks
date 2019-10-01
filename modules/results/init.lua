@@ -108,7 +108,8 @@ if toolbar then
     toolbar.sel_results_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
     toolbar.list_addbutton("edit-clear", "Clear all", results_act)
-    toolbar.list_addbutton("edit-copy", "Copy all", results_act)
+    toolbar.list_addbutton("edit-select-all", "Copy all", results_act)
+    toolbar.list_addbutton("edit-copy", "Copy", results_act)
     if closebt then
       toolbar.gotopos( 0, toolbar.listtb_y)
       toolbar.cmd("results-close", toolbar.results_onoff, "Close", "window-close")
