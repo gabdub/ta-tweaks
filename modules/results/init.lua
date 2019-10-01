@@ -17,13 +17,9 @@ if toolbar then
     if toolbar.results_tb and curresultidx > 0 then toolbar.resultsselect[curresultidx][5](switching or false) end
   end
 
-  function toolbar.select_results(listname, dont_hide_show)
-    if listname == curresult then
-      --click on the active list= show/hide toolbar
-      if not dont_hide_show then toolbar.results_onoff() end
-    else
-    --if listname ~= curresult then
-      if (not dont_hide_show) and (not toolbar.results_tb) then toolbar.results_onoff() end  --show toolbar
+  local function select_results(listname)
+    if (not toolbar.results_tb) then toolbar.results_onoff() end  --show toolbar
+    if listname ~= curresult then
       --change the active list
       if curresultidx > 0 then
         toolbar.selected(curresult, false, false)
@@ -50,7 +46,7 @@ if toolbar then
     if toolbar.results_tb then
       if n < #toolbar.resultsselect then n=n+1 else n=1 end
     end
-    toolbar.select_results(toolbar.resultsselect[n][1])
+    select_results(toolbar.resultsselect[n][1])
   end
 
   function toolbar.prev_results_list()
@@ -58,7 +54,7 @@ if toolbar then
     if toolbar.results_tb then
       if n > 1 then n=n-1 else n=#toolbar.resultsselect end
     end
-    toolbar.select_results(toolbar.resultsselect[n][1])
+    select_results(toolbar.resultsselect[n][1])
   end
 
   function toolbar.isresultsshown(name)
@@ -66,7 +62,7 @@ if toolbar then
   end
 
   function toolbar.showresults(name)
-    if not toolbar.isresultsshown(name) then toolbar.select_results(name) end
+    if not toolbar.isresultsshown(name) then select_results(name) end
   end
 
   --the toolbar config is saved inside the project configuration file
@@ -77,12 +73,10 @@ if toolbar then
 
   local function afterload_res(cfg)
     toolbar.resultsheight= cfg.results_height
-    --show list toolbar
     toolbar.sel_results_bar()
     --select first result option
-    if #toolbar.resultsselect > 0 then toolbar.select_results(toolbar.resultsselect[1][1]) end
+    if #toolbar.resultsselect > 0 then select_results(toolbar.resultsselect[1][1]) end
     toolbar.results_tb= cfg.results_show
-    toolbar.resultsheight= cfg.results_height
     toolbar.show(toolbar.results_tb, toolbar.resultsheight)
   end
 
@@ -101,19 +95,17 @@ if toolbar then
     toolbar.resultsheight= toolbar.getsize(toolbar.RESULTS_TOOLBAR)
   end
 
-  function toolbar.results_init_title(closebt)
+  function toolbar.results_init_title(show_but)
     toolbar.listtb_y= 1
     toolbar.listtb_x= 3
     toolbar.list_cmdright= 24
     toolbar.sel_results_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
-    toolbar.list_addbutton("edit-clear", "Clear all", results_act)
-    toolbar.list_addbutton("edit-select-all", "Copy all", results_act)
-    toolbar.list_addbutton("edit-copy", "Copy", results_act)
-    if closebt then
-      toolbar.gotopos( 0, toolbar.listtb_y)
-      toolbar.cmd("results-close", toolbar.results_onoff, "Close", "window-close")
-      toolbar.listtb_x= 23
+    toolbar.list_addbutton("window-close", "Close", toolbar.results_onoff)
+    if show_but then
+      toolbar.list_addbutton("edit-clear", "Clear all", results_act)
+      toolbar.list_addbutton("edit-select-all", "Copy all", results_act)
+      toolbar.list_addbutton("edit-copy", "Copy", results_act)
     end
   end
 
@@ -125,7 +117,7 @@ if toolbar then
       results_update()
     end
     if #toolbar.resultsselect == 0 then
-      toolbar.results_init_title(true)
+      toolbar.results_init_title(false) --only resize and close buttons
       toolbar.list_addinfo("No results module found",true)
     end
   end
@@ -164,13 +156,13 @@ if toolbar then
 
     --add buttons to select the lists
     if #toolbar.resultsselect > 0 then
-      toolbar.results_init_title(false) --hide close button
+      toolbar.results_init_title(true) --show all buttons
 
       for i=1,#toolbar.resultsselect do
         local ls= toolbar.resultsselect[i] --{name, tooltip, icon, createfun, notify, show}
         toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
         toolbar.listtb_x=toolbar.listtb_x+toolbar.cfg.butsize
-        toolbar.cmd(ls[1], toolbar.select_results, ls[2], ls[3], true)
+        toolbar.cmd(ls[1], select_results, ls[2], ls[3], true)
       end
       toolbar.listtb_x=toolbar.listtb_x+toolbar.cfg.butsize/2
       lblResult= toolbar.list_addinfo("Results",true)
