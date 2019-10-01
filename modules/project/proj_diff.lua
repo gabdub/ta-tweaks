@@ -81,23 +81,6 @@ local function synchronize()
   end
 end
 
-local function dump_changes(n, buff, r)
-  if n > 0 then
-    local c= 10
-    for i=1, #r, 2 do
-      local snum= ('%4d'):format(r[i])
-      local line= buff:get_line(r[i]-1)
-      buffer:append_text(('  @%s:%s'):format(snum, line))
-      c= c-1
-      if c == 0 then --only show first 10 blocks
-        if i < #r-1 then buffer:append_text('  ...') end
-        break
-      end
-    end
-  end
-  buffer:append_text('\n')
-end
-
 -- Mark the differences between the two buffers.
 local function mark_changes(goto_first)
   --if not check_comp_buffers() then return end --already checked
@@ -130,7 +113,7 @@ local function mark_changes(goto_first)
   --enum modified lines
   local rm= filediff.getdiff( 1, 2 )
   if #rm > 0 and (first == 0 or rm[1]<first) then first= rm[1] end
-  local n3= #rm / 2
+  local n3= #rm // 2
   for i=1, #rm, 2 do
     buffer1:marker_add(rm[i]-1, Proj.MARK_MODIFICATION)
     buffer2:marker_add(rm[i+1]-1, Proj.MARK_MODIFICATION)
@@ -162,40 +145,8 @@ local function mark_changes(goto_first)
   end
   if goto_first and first > 0 then buffer1:goto_line(first-1) end
   synchronize()
-
-  if goto_first then
-    Proj.clear_search_results()
-    --activate/create search view
-    Proj.goto_searchview()
-    buffer.read_only= false
-     --delete search content
-    buffer:append_text('[File compare]\n')
-    buffer:goto_pos(buffer.length)
-    local fn1= buffer1.filename and buffer1.filename or 'left buffer'
-    local p,f,e= Util.splitfilename(fn1)
-    if f == '' then f= fn1 end
-    buffer:append_text((' (+)%4d %s::%s::\n'):format(n1, f, fn1))
-    --enum lines that are only in buffer 1
-    dump_changes(n1,buffer1,r1)
-
-    local fn2= buffer2.filename and buffer2.filename or 'right buffer'
-    p,f,e= Util.splitfilename(fn2)
-    if f == '' then f= fn2 end
-    buffer:append_text((' (-)%4d %s::%s::\n'):format(n2, f, fn2))
-    --enum lines that are only in buffer 2
-    dump_changes(n2,buffer2,r2)
-
-    buffer:append_text((' (*)%4d edited lines::%s::\n'):format(n3,fn1))
-    --enum modified lines in buffer 1
-    dump_changes(n3,buffer1,rm)
-
-    buffer:append_text('\n')
-    buffer:set_save_point()
-    buffer.read_only= true
-    buffer:set_lexer('myproj')
-    --return to file #1
-    Util.goto_view(vfp1)
-  end
+  --load some info in the results view the first time the files are compared
+  if goto_first then plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm) end
 end
 
 ---- TA EVENTS ----

@@ -131,8 +131,55 @@ if toolbar then
     yout= toolbar.listtb_y
     ensurevisible()
   end
+
+  --------------- COMPARE FILE RESULTS INTERFACE --------------
+  local function dump_changes(n, buff, r, fname)
+    if n > 0 then
+      local c= 10
+      for i=1, #r, 2 do
+        local line= buff:get_line(r[i]-1)
+        plugs.search_result_found(fname, r[i], line, 0, 0)
+        c= c-1
+        if c == 0 then --only show first 10 blocks
+          if i < #r-1 then plugs.search_result_info('...', false) end
+          break
+        end
+      end
+    end
+  end
+
+  function plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm)
+    toolbar.results_clear()
+
+    local fn1= buffer1.filename and buffer1.filename or 'left buffer'
+    local p,f,e= Util.splitfilename(fn1)
+    if f == '' then f= fn1 end
+    local f1=f
+
+    local fn2= buffer2.filename and buffer2.filename or 'right buffer'
+    p,f,e= Util.splitfilename(fn2)
+    if f == '' then f= fn2 end
+
+    plugs.search_result_start("File compare: "..f1..' - '..f, nil)
+    if n1+n2+n3 == 0 then
+      plugs.search_result_info( "No changes found", false)
+      return
+    end
+
+    plugs.search_result_in_file(' (+) '..n1..' '..f1, fn1, 1)
+    curr_file= f1
+    dump_changes(n1, buffer1, r1, fn1) --enum lines that are only in buffer 1
+
+    plugs.search_result_in_file(' (-) '..n2..' '..f, fn2, 2)
+    curr_file= f
+    dump_changes(n2, buffer2, r2, fn2) --enum lines that are only in buffer 2
+
+    plugs.search_result_in_file(' (*) '..n3..' edited lines', fn1, 3)
+    curr_file= f1
+    dump_changes(n3, buffer1, rm, fn1) --enum modified lines in buffer 1
+  end
   -------------------------------------------------------
 
   toolbar.registerresultstb("searchresults", "Search results", "system-search", search_create, search_notify, search_showlist, search_act)
-  toolbar.cmd_dclick("sch-item",search_dclick)
+  toolbar.cmd_dclick("sch-item", search_dclick)
 end

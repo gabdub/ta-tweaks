@@ -404,6 +404,8 @@ toolbar.icon_ext_path= _USERHOME.."/toolbar/icons/mime/"
 function toolbar.icon_fname(fname)
   local p,f,e= Util.splitfilename(string.lower(fname))
   if p then
+    local eh= string.match(e, "^(.-):head")
+    if eh then e=eh end --remove ":head" from extension
     local icon= toolbar.icon_ext[e]
     if icon then return toolbar.icon_ext_path..icon..".png" end
     if f == "makefile" then return toolbar.icon_ext_path.."text-x-makefile.png" end

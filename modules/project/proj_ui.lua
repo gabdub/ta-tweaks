@@ -308,7 +308,7 @@ function Proj.go_file(file, line_num)
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
         --already open (keep panel)
-        Proj.getout_projview(buf._right_side)
+        Proj.getout_projview(buf._right_side, true)
         Util.goto_buffer(buf)
         fn = nil
         break
@@ -1002,7 +1002,7 @@ end
 function Proj.goto_projview(prjv)
   local pref= Proj.prefview[prjv] --preferred view for this buffer type
   if pref == _VIEWS[view] then
-    return  --already in the right view
+    return false --already in the right view
   end
   local nv= #_VIEWS
   while pref > nv do
@@ -1029,6 +1029,7 @@ function Proj.goto_projview(prjv)
     end
   end
   Util.goto_view(pref)
+  return true
 end
 
 function Proj.goto_filesview(dontprjcheck, right_side)
@@ -1049,11 +1050,14 @@ function Proj.goto_filesview(dontprjcheck, right_side)
 end
 
 --if the current view is a project or project-search, goto left/only files view. if not, keep the current view
-function Proj.getout_projview(right_side)
+function Proj.getout_projview(right_side, force)
   if (buffer._project_select ~= nil or buffer._type ~= nil) then
     --move to files view (left/only panel) and exit
     Proj.goto_filesview(true,right_side)
     return true
+  end
+  if force then --enforce left/right view?
+    return Proj.goto_projview( (right_side) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
   end
   return false
 end
