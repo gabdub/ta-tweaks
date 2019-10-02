@@ -49,6 +49,7 @@ local function diff_stop()
     Proj.is_compare_on= false
     Proj.is_svn_on= false
     clear_marked_changes(true)
+    plugs.close_results()
     ui.statusbar_text= "File compare: OFF"
   end
 end
@@ -58,7 +59,9 @@ local function check_comp_buffers()
   if Proj.is_compare_on and #_VIEWS >= vfp2 then
     local b1= _VIEWS[vfp1].buffer
     local b2= _VIEWS[vfp2].buffer
-    return b1 and b2 and b1._comparing and b2._comparing
+    --NOTE: when the last file in a view is closed, the same buffer can be in more than one view
+    -- until the view is closed (check: b1 ~= b2)
+    if b1 and b2 and (b1 ~= b2) and b1._comparing and b2._comparing then return true end
   end
   return false
 end
@@ -164,7 +167,7 @@ end
 --TA-EVENT: BUFFER_DELETED
 --Stop diff'ing when one of the buffer's being diff'ed is closed
 function Proj.check_diff_stop()
-  Proj.clear_pend_file_diff()
+  if not check_comp_buffers() then diff_stop() end
 end
 
 --TA-EVENT: UPDATE_UI
