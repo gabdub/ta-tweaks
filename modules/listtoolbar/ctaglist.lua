@@ -77,7 +77,7 @@ if toolbar then
 
   local function load_ctags()
     --ignore project views
-    if Proj and (buffer._project_select or buffer._type == Proj.PRJT_SEARCH) then return end
+    if Proj and Proj.isHiddenTabBuf(buffer) then return end
     list_clear()
     --title group
     toolbar.list_init_title() --add a resize handle

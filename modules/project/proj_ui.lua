@@ -4,8 +4,6 @@ local Proj = Proj
 local data = Proj.data
 local Util = Util
 
-local last_print_buftype
-
 --  Proj.update_ui= number of ui updates in progress (ignore some events if > 0)
 Proj.update_ui= 0
 
@@ -37,13 +35,15 @@ function Proj.EVinitialize()
 
   --load recent projects list / project preferences
   Proj.load_config()
-  --check if search results is open
-  for _, buff in ipairs(_BUFFERS) do
-    if buff._type == Proj.PRJT_SEARCH then
-      --activate search view
-      Proj.goto_searchview()
-      buff.read_only= true
-      break
+  if not USE_RESULTS_PANEL then
+    --check if search results is open
+    for _, buff in ipairs(_BUFFERS) do
+      if buff._type == Proj.PRJT_SEARCH then
+        --activate search view
+        plugs.goto_searchview()
+        buff.read_only= true
+        break
+      end
     end
   end
   --check if a project file is open
@@ -114,10 +114,37 @@ function Proj.get_buffertype(p_buffer)
   return Proj.PRJB_NORMAL             --is a regular file
 end
 
---returns true if buffer is a regular file (not a project nor a search results)
+--returns true if the buffer is a regular file (not a project nor a search results)
 function Proj.isRegularBuf(pbuffer)
   return (pbuffer._project_select == nil) and (pbuffer._type ~= Proj.PRJT_SEARCH)
 end
+
+--returns true if the buffer must be hidden in the tab control
+--NOTE: a project is hidden only in select mode
+function Proj.isHiddenTabBuf(pbuffer)
+  return pbuffer._project_select or pbuffer._type == Proj.PRJT_SEARCH
+end
+
+function Proj.changeViewBuf(pbuffer)
+  --check if a view change is needed
+  if #_VIEWS > 1 then
+    if pbuffer._project_select ~= nil then
+      --project buffer: force project view
+      Util.goto_view(Proj.prefview[Proj.PRJV_PROJECT]) --preferred view for project
+      return true --changed
+    end
+    --search results?
+    if pbuffer._type == Proj.PRJT_SEARCH then
+      plugs.goto_searchview()
+      return true --changed
+    end
+    --normal file: check we are not in a project view
+    --change to left/right files view if needed (without project: 1/2, with project: 2/4)
+    Proj.goto_filesview(false, pbuffer._right_side)
+  end
+  return false
+end
+
 
 --find the first regular buffer
 --panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
@@ -290,9 +317,9 @@ function Proj.go_file(file, line_num)
     --new file (add only one)
     local n= nil
     for i=1, #_BUFFERS do
-      if (_BUFFERS[i].filename == nil) and (_BUFFERS[i]._type ~= Proj.PRJT_SEARCH) and not _BUFFERS[i]._right_side then
-        --there is one new file, select this instead of adding a new one
-        n= i
+      local b= _BUFFERS[i]
+      if (b.filename == nil) and (b._type == nil) and (not b._right_side) then
+        n= i --there is one new file, select this instead of adding a new one
         break
       end
     end
@@ -682,7 +709,7 @@ function Proj.update_after_switch()
   if Proj.update_ui > 0 then return end
   Proj.stop_update_ui(true)
   if buffer._project_select == nil then
-    --normal file: restore current line default settings
+    --NOT a PROJECT buffer: restore current line default settings
     Proj.show_default(buffer)
     if buffer._type == Proj.PRJT_SEARCH then
       --set search context menu
@@ -869,29 +896,25 @@ function Proj.EVkeypress(code)
       Proj.toggle_projview()
     end
   elseif ks == 'esc' then --"Escape"
-    --1) try to close config panel
-    if toolbar and toolbar.hide_config() then
-      return
-    end
-    --2) try to close search view (only if there are not more views)
-    if USE_RESULTS_PANEL and toolbar.results_tb then toolbar.results_onoff() return end
-    if #_VIEWS ~= Proj.prefview[Proj.PRJV_SEARCH] or not Proj.close_search_view() then
-      --3) change view
-      if #_VIEWS > 1 then
-        local nv= _VIEWS[view] +1
-        if nv > #_VIEWS then nv=1 end
-        Util.goto_view(nv)
-        if nv == Proj.prefview[Proj.PRJV_PROJECT] and Proj.is_visible == 0 then
-          --in project's view, force visibility
-          Proj.is_visible= 1  --1:shown in selection mode
-          view.size= Proj.select_width
-          Proj.update_projview()
-          Proj.temporal_view= true  --close if escape is again pressed or a file is opened
+    --1) try to close the config panel
+    if toolbar and toolbar.hide_config() then return end
+    --2) try to close the search view
+    if plugs.close_results() then return end
+    --3) change view
+    if #_VIEWS > 1 then
+      local nv= _VIEWS[view] +1
+      if nv > #_VIEWS then nv=1 end
+      Util.goto_view(nv)
+      if nv == Proj.prefview[Proj.PRJV_PROJECT] and Proj.is_visible == 0 then
+        --in project's view, force visibility
+        Proj.is_visible= 1  --1:shown in selection mode
+        view.size= Proj.select_width
+        Proj.update_projview()
+        Proj.temporal_view= true  --close if escape is pressed again or if a file is opened
 
-        elseif Proj.temporal_view then
-          Proj.temporal_view= false
-          Proj.toggle_projview()
-        end
+      elseif Proj.temporal_view then
+        Proj.temporal_view= false
+        Proj.toggle_projview()
       end
     end
   end
@@ -991,7 +1014,7 @@ function Proj.EVtabclicked(ntab)
       local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
       Util.goto_view(projv)
     --search results?
-    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then Proj.goto_searchview()
+    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then plugs.goto_searchview()
     --normal file: check we are not in a project view
     else Proj.goto_filesview(false, _BUFFERS[ntab]._right_side) end
   end
@@ -1070,7 +1093,7 @@ function Proj.goto_buffer(nb)
     Proj.goto_projview(Proj.PRJV_PROJECT)
   elseif b._type == Proj.PRJT_SEARCH then
     --activate project in the proper view
-    Proj.goto_searchview()
+    plugs.goto_searchview()
   else
     --activate files view
     Proj.goto_filesview(true, b._right_side)
@@ -1079,77 +1102,6 @@ function Proj.goto_buffer(nb)
 end
 
 ------SEARCH VIEW------
---activate/create search view
-function Proj.goto_searchview()
-  --goto the view for search results, split views and create empty buffers if needed
-  Proj.goto_projview(Proj.PRJV_SEARCH)
-  --goto search results view
-  if buffer._type ~= Proj.PRJT_SEARCH then
-    for nbuf, sbuf in ipairs(_BUFFERS) do
-      if sbuf._type == Proj.PRJT_SEARCH then
-        Util.goto_buffer(sbuf)
-        return
-      end
-    end
-  end
-end
-
-function Proj.clear_search_results()
-  local sv= Proj.prefview[Proj.PRJV_SEARCH]
-  if #_VIEWS < sv then return false end
-  Proj.beg_search_add()
-   --delete search content
-  textadept.bookmarks.clear()
-  Proj.remove_search_from_pos_table()
-  buffer:set_text('')
-  Proj.end_search_add()
-end
-
---goto search view and activate text modifications
-function Proj.beg_search_add()
-  Proj.goto_searchview()
-  buffer.read_only= false
-end
-
---end search text modifications
-function Proj.end_search_add(buftype)
-  buffer:set_save_point()
-  buffer.read_only= true
-  buffer:set_lexer('myproj')
-  last_print_buftype= buftype
-end
-
-function Proj.close_search_view()
-  local sv= Proj.prefview[Proj.PRJV_SEARCH]
-  --if more views are open, ignore the close
-  if #_VIEWS > sv then return false end
-  last_print_buftype=''
-  if #_VIEWS == sv then
-    --remove search from position table
-    Proj.remove_search_from_pos_table()
-    --activate search view
-    Proj.goto_searchview()
-    --close buffer / view
-    buffer:set_save_point()
-    io.close_buffer()
-    Util.goto_view( sv -1 )
-    view.unsplit(view)
-    return true
-  end
-  --no search view, try to close the search buffer
-  for _, sbuffer in ipairs(_BUFFERS) do
-    if sbuffer._type == Proj.PRJT_SEARCH then
-      --goto search results view
-      if view.buffer._type ~= Proj.PRJT_SEARCH then
-        Util.goto_buffer(sbuffer)
-      end
-      io.close_buffer()
-      break
-    end
-  end
-  return false
-end
-
 function Proj.check_leftpanel()
   --check the left/only panel content
   local vfp1= Proj.prefview[Proj.PRJV_FILES]
@@ -1167,8 +1119,8 @@ end
 
 function Proj.check_searchpanel()
   local vsp= Proj.prefview[Proj.PRJV_SEARCH]
-  if #_VIEWS >= vsp then
-    Proj.goto_searchview()
+  if (vsp > 0) and (#_VIEWS >= vsp) then
+    plugs.goto_searchview()
   end
 end
 
@@ -1184,7 +1136,7 @@ function Proj.check_rightpanel()
       local br= Proj.getFirstRegularBuf(2)
       if br then Util.goto_buffer(br) else
         view.unsplit(view)
-        Proj.close_search_view()  --close search view too (TODO: don't close search view)
+        if not USE_RESULTS_PANEL then plugs.close_results() end --close the search view too
       end
     end
   end

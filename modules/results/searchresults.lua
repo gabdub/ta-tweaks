@@ -73,6 +73,7 @@ if toolbar then
     if #txt > 2000 then txt= txt:sub(1,2000).."..." end
     local oneline= Util.str_one_line(txt)
     if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
+    oneline= string.gsub(oneline, "\t", " ") --replace TABs with spaces
     local tt= (toolt ~= nil) and toolt or txt
     full_search[#full_search+1]= tt
     toolbar.list_add_txt_ico(name, oneline, tt, bold, search_click, icon, (nitems%2==1), 0, 0, 0)

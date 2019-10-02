@@ -1,9 +1,85 @@
 -- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 local Proj = Proj
+local last_print_buftype
+
+local function beg_search_add()
+  --goto search view and activate text modifications
+  plugs.goto_searchview()
+  buffer.read_only= false
+end
+
+local function end_search_add(buftype)
+  --end search text modifications
+  buffer:set_save_point()
+  buffer.read_only= true
+  buffer:set_lexer('myproj')
+  last_print_buftype= buftype
+end
+
+local function clear_search_results()
+  local sv= Proj.prefview[Proj.PRJV_SEARCH]
+  if #_VIEWS < sv then return false end
+  beg_search_add()
+   --delete search content
+  textadept.bookmarks.clear()
+  Proj.remove_search_from_pos_table()
+  buffer:set_text('')
+  end_search_add()
+end
+
+local function close_search_view()
+  local sv= Proj.prefview[Proj.PRJV_SEARCH]
+  --if more views are open, ignore the close
+  if #_VIEWS > sv then return false end
+  last_print_buftype=''
+  if #_VIEWS == sv then
+    --remove search from position table
+    Proj.remove_search_from_pos_table()
+    --activate search view
+    plugs.goto_searchview()
+    --close buffer / view
+    buffer:set_save_point()
+    io.close_buffer()
+    Util.goto_view( sv -1 )
+    view.unsplit(view)
+    return true
+  end
+  --no search view, try to close the search buffer
+  for _, sbuffer in ipairs(_BUFFERS) do
+    if sbuffer._type == Proj.PRJT_SEARCH then
+      --goto search results view
+      if view.buffer._type ~= Proj.PRJT_SEARCH then
+        Util.goto_buffer(sbuffer)
+      end
+      io.close_buffer()
+      break
+    end
+  end
+  return false
+end
 
 --------------- RESULTS INTERFACE --------------
+function plugs.goto_searchview()
+  --activate/create search view
+  --goto the view for search results, split views and create empty buffers if needed
+  Proj.goto_projview(Proj.PRJV_SEARCH)
+  --goto search results view
+  if buffer._type ~= Proj.PRJT_SEARCH then
+    for nbuf, sbuf in ipairs(_BUFFERS) do
+      if sbuf._type == Proj.PRJT_SEARCH then
+        Util.goto_buffer(sbuf)
+        return
+      end
+    end
+  end
+end
+
+function plugs.close_results()
+  return close_search_view()  --only close this view if this is the last one
+end
+
 function plugs.clear_results()
-  Proj.clear_search_results()
+  clear_search_results()
 end
 
 --------------- SEARCH RESULTS INTERFACE --------------
@@ -11,7 +87,7 @@ function plugs.search_result_start(s_txt, s_filter)
   --a new "search in files" begin
   Proj.stop_update_ui(true)
   --activate/create search view
-  Proj.beg_search_add()
+  beg_search_add()
   buffer:append_text('['..s_txt..']\n')
   if s_filter then buffer:append_text(' search dir '..s_filter..'::::\n') end
   buffer:goto_pos(buffer.length)
@@ -40,7 +116,7 @@ end
 function plugs.search_result_end()
   --mark the end of the search
   buffer:append_text('\n')
-  Proj.end_search_add()
+  end_search_add()
   --set search context menu
   Proj.set_contextm_search()
   Proj.stop_update_ui(false)
@@ -65,9 +141,9 @@ local function dump_changes(n, buff, r)
 end
 
 function plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm)
-  Proj.clear_search_results()
+  clear_search_results()
   --activate/create search view
-  Proj.goto_searchview()
+  plugs.goto_searchview()
   buffer.read_only= false
    --delete search content
   buffer:append_text('[File compare]\n')
@@ -104,7 +180,7 @@ end
 -- Helper function for printing messages to buffers.
 local function proj_print(buffer_type, ...)
   --add to the search-view buffer
-  Proj.beg_search_add()
+  beg_search_add()
   --show buffer_type when changed
   if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
   buffer:goto_pos(buffer.length)
@@ -112,7 +188,7 @@ local function proj_print(buffer_type, ...)
   for i = 1, n do args[i] = tostring(args[i]) end
   buffer:append_text(table.concat(args, '\t'))
   buffer:append_text('\n')
-  Proj.end_search_add(buffer_type)
+  end_search_add(buffer_type)
 end
 function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end
 -------------------------------------------------------

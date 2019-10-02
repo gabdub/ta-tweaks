@@ -31,7 +31,7 @@ function Proj.close_buffer()
 
   elseif buffer._type == Proj.PRJT_SEARCH then
     --close search results
-    Proj.close_search_view()
+    plugs.close_results()
 
   else
     --close a regular file
@@ -57,7 +57,7 @@ function Proj.onlykeep_projopen(keepone)
   --close all buffers except project (and buffer._dont_close)
   if Proj.get_projectbuffer(false) ~= nil then
     --close search results
-    Proj.close_search_view()
+    plugs.close_results()
     --change to left/only file view if needed
     Proj.goto_filesview(true)
   elseif not keepone then
@@ -485,7 +485,7 @@ function Proj.close_project(keepviews)
       Proj.closed_cleardata()
       Proj.update_projview()  --update project view button
       if not keepviews then
-        Proj.close_search_view()
+        plugs.close_results()
         if #_VIEWS > 1 then
           view.unsplit(view)
         end
@@ -792,65 +792,5 @@ function Proj.last_buffer()
   if toolbar then
     toolbar.sel_top_bar()
     toolbar.gototab(2)
-  end
-end
-
---ACTION: vc_changes
---Version control SVN/GIT changes
-function Proj.vc_changes_status()
-  return (buffer._is_svn and 1 or 2) --check
-end
-function Proj.vc_changes()
-  if buffer._right_side then
-    Proj.goto_filesview()
-  end
-  Proj.getout_projview()
-  local orgbuf= buffer
-  if orgbuf._is_svn then
-    orgbuf._is_svn= nil
-    --close right file (svn HEAD)
-    Proj.goto_filesview(false,true)
-    Proj.close_buffer()
-    Proj.goto_filesview()
-    Util.goto_buffer(orgbuf)
-    return
-  end
-  local orgfile= buffer.filename
-  if orgfile then
-    --get version control params for filename
-    local verctrl, cwd, url= Proj.get_versioncontrol_url(orgfile)
-    if url then
-      buffer._is_svn= true
-      local enc= buffer.encoding     --keep encoding
-      local lex= buffer:get_lexer()  --keep lexer
-      local eol= buffer.eol_mode     --keep EOL
-      --new buffer
-      if actions then actions.run("new") else Proj.new_file() end
-      buffer.filename= orgfile..":HEAD"
-      local cmd
-      if verctrl == 1 then
-        cmd= "svn cat "..url
-        path=nil
-      else
-        cmd= "git show HEAD:"..url
-      end
-      local p = assert(os.spawn(cmd,cwd))
-      p:close()
-      buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
-      if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
-      --force the same EOL (git changes EOL when needed)
-      buffer.eol_mode= eol
-      buffer:convert_eols(eol)
-      buffer:set_lexer(lex)
-      buffer.read_only= true
-      buffer:set_save_point()
-      buffer._is_svn= true
-      --show in the right panel
-      Proj.toggle_showin_rightpanel()
-      Proj.goto_filesview()
-      Util.goto_buffer(orgbuf)
-      --compare files (keep statusbar text)
-      Proj.diff_start(true)
-    end
   end
 end

@@ -212,7 +212,7 @@ if toolbar then
   end
 
   local function track_file() --select the current buffer in the list
-    if buffer._project_select == nil and buffer._type ~= Proj.PRJT_SEARCH then
+    if Proj.isRegularBuf(buffer) then
       --normal file: restore current line default settings
       local file= buffer.filename
       if file ~= nil then

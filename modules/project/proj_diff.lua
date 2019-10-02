@@ -12,10 +12,11 @@ Proj.INDIC_DELETION = _SCINTILLA.next_indic_number()
 
 local vfp1= Proj.prefview[Proj.PRJV_FILES]
 local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
-local compareon=false
-local synchronizing = false
+local synchronizing= false
+Proj.is_compare_on= false
+Proj.is_svn_on= false
 
-local function clear_buf_marks(b)
+local function clear_buf_marks(b, clrflags)
   if b then
     for _, mark in ipairs{Proj.MARK_ADDITION, Proj.MARK_DELETION, Proj.MARK_MODIFICATION} do
       b:marker_delete_all(mark)
@@ -25,34 +26,36 @@ local function clear_buf_marks(b)
       b:indicator_clear_range(0, b.length)
     end
     b:annotation_clear_all()
+    if clrflags then b._comparing= nil end
   end
 end
 
-local function clear_view_marks(nview)
+local function clear_view_marks(nview, clrflags)
   if #_VIEWS >= nview then
-    clear_buf_marks(_VIEWS[nview].buffer)
+    clear_buf_marks(_VIEWS[nview].buffer, clrflags)
   end
 end
 
 -- Clear markers, indicators, and placeholder lines.
 -- Used when re-marking changes or finished diff'ing.
-local function clear_marked_changes()
-  clear_view_marks(vfp1)
-  clear_view_marks(vfp2)
+local function clear_marked_changes(clrflags)
+  clear_view_marks(vfp1, clrflags)
+  clear_view_marks(vfp2, clrflags)
 end
 
 -- Stops diff'ing.
 local function diff_stop()
-  if compareon then
-    compareon= false
-    clear_marked_changes()
+  if Proj.is_compare_on then
+    Proj.is_compare_on= false
+    Proj.is_svn_on= false
+    clear_marked_changes(true)
     ui.statusbar_text= "File compare: OFF"
   end
 end
 
 --check that the buffers in both view hasn't changed
 local function check_comp_buffers()
-  if compareon and #_VIEWS >= vfp2 then
+  if Proj.is_compare_on and #_VIEWS >= vfp2 then
     local b1= _VIEWS[vfp1].buffer
     local b2= _VIEWS[vfp2].buffer
     return b1 and b2 and b1._comparing and b2._comparing
@@ -84,7 +87,7 @@ end
 -- Mark the differences between the two buffers.
 local function mark_changes(goto_first)
   --if not check_comp_buffers() then return end --already checked
-  clear_marked_changes() -- clear previous marks
+  clear_marked_changes(false) -- clear previous marks
   -- Perform the diff.
   local buffer1= _VIEWS[vfp1].buffer
   local buffer2= _VIEWS[vfp2].buffer
@@ -153,16 +156,15 @@ end
 --TA-EVENT: BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
 --clear pending file-diff
 function Proj.clear_pend_file_diff()
-  if buffer._comparing and not compareon then
-    clear_buf_marks(buffer)
-    buffer._comparing=nil
-  end
+  if Proj.is_compare_on then
+    if not check_comp_buffers() then diff_stop() end
+  elseif buffer._comparing then clear_buf_marks(buffer, true) end
 end
 
 --TA-EVENT: BUFFER_DELETED
 --Stop diff'ing when one of the buffer's being diff'ed is closed
 function Proj.check_diff_stop()
-  if not check_comp_buffers() then diff_stop() end
+  Proj.clear_pend_file_diff()
 end
 
 --TA-EVENT: UPDATE_UI
@@ -203,12 +205,8 @@ end
 --ACTION: toggle_filediff
 -- Highlight differences between files in left (NEW) / right (OLD) panel
 function Proj.diff_start(silent)
-  if not Proj then return end
-  clear_marked_changes()
-  if compareon then
-    diff_stop()
-    return
-  end
+  if Proj.is_compare_on then diff_stop() return end
+
   if #_VIEWS < vfp2 then
     ui.statusbar_text= "Can't compare, the right panel is closed"
     return
@@ -224,9 +222,72 @@ function Proj.diff_start(silent)
   buffer.annotation_visible= buffer.ANNOTATION_STANDARD
   buffer._comparing=true
 
-  compareon= true
+  Proj.is_compare_on= true
    --goto first change in buffer1 / show some info in search view
   mark_changes(true)
 
   Proj.stop_update_ui(false)
+end
+
+--ACTION: vc_changes
+--Version control SVN/GIT changes
+function Proj.vc_changes_status()
+  return (Proj.is_svn_on and 1 or 2) --check
+end
+function Proj.vc_changes()
+  if buffer._right_side then
+    Proj.goto_filesview()
+  end
+  Proj.getout_projview()
+  local orgbuf= buffer
+  if Proj.is_svn_on then
+    diff_stop() --clear marks
+    --close right file (svn HEAD)
+    Proj.goto_filesview(true,true)
+    Proj.close_buffer()
+    Proj.goto_filesview()
+    --Util.goto_buffer(orgbuf)
+    plugs.close_results()
+    ui.statusbar_text= "Compare to HEAD: OFF"
+    return
+  end
+
+  diff_stop() --stop posible file compare
+  local orgfile= buffer.filename
+  if orgfile then
+    --get version control params for filename
+    local verctrl, cwd, url= Proj.get_versioncontrol_url(orgfile)
+    if url then
+      Proj.is_svn_on= true
+      local enc= buffer.encoding     --keep encoding
+      local lex= buffer:get_lexer()  --keep lexer
+      local eol= buffer.eol_mode     --keep EOL
+      --new buffer
+      if actions then actions.run("new") else Proj.new_file() end
+      buffer.filename= orgfile..":HEAD"
+      local cmd
+      if verctrl == 1 then
+        cmd= "svn cat "..url
+        path=nil
+      else
+        cmd= "git show HEAD:"..url
+      end
+      local p = assert(os.spawn(cmd,cwd))
+      p:close()
+      buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
+      if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
+      --force the same EOL (git changes EOL when needed)
+      buffer.eol_mode= eol
+      buffer:convert_eols(eol)
+      buffer:set_lexer(lex)
+      buffer.read_only= true
+      buffer:set_save_point()
+      --show in the right panel
+      Proj.toggle_showin_rightpanel()
+      Proj.goto_filesview()
+      Util.goto_buffer(orgbuf)
+      --compare files (keep statusbar text)
+      Proj.diff_start(true)
+    end
+  end
 end

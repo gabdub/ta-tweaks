@@ -49,7 +49,7 @@ local function goto_current_pos()
     ui.statusbar_text= 'Pos: '..jump_list.pos..' / '..#jump_list
     local bname= jump_list[jump_list.pos][1]
     if bname == Proj.PRJT_SEARCH then
-      Proj.goto_searchview()
+      plugs.goto_searchview()
     else
       --if the current view is a project view, goto left/only files view. if not, keep the current view
       Proj.go_file(bname)

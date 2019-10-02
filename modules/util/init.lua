@@ -32,7 +32,7 @@ function Util.goto_buffer(buf)
 --  if Util.TA_MAYOR_VER < 9 then
 --    view:goto_buffer(_BUFFERS[buf])
 --  else
-    view:goto_buffer(buf)
+    if buf then view:goto_buffer(buf) end
 --  end
 end
 

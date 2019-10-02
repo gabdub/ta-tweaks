@@ -43,9 +43,9 @@ if toolbar then
   end
 
   function toolbar.isbufhide(buf)
-    if Proj then  --Project module?
-      return toolbar.hideproject and (buf._project_select or buf._type == Proj.PRJT_SEARCH)
-    end
+    --hide all project buffers (but not projects in edit mode)
+    if Proj then return Proj.isHiddenTabBuf(buf) end
+    --show all other buffers
     return false
   end
 
@@ -118,22 +118,8 @@ if toolbar then
     if nb > 0 then
       local buf= _BUFFERS[nb]
       toolbar.seltabbuf(buf)
-      if Proj then  --Project module?
-        --check if a view change is needed
-        if #_VIEWS > 1 then
-          if buf._project_select ~= nil then
-            --project buffer: force project view
-            local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-            Util.goto_view(projv)
-            return
-          end
-          --search results?
-          if buf._type == Proj.PRJT_SEARCH then Proj.goto_searchview() return end
-          --normal file: check we are not in a project view
-          --change to left/right files view if needed (without project: 1/2, with project: 2/4)
-          Proj.goto_filesview(false, buf._right_side)
-        end
-      end
+      --check if a view change is needed
+      if Proj and Proj.changeViewBuf(buf) then return end
       Util.goto_buffer(buf)
     end
   end
@@ -370,8 +356,6 @@ if toolbar then
     toolbar.html_tb=false --html toolbar on/off
     toolbar.list_tb=false --list toolbar on/off
     toolbar.results_tb=false --results toolbar on/off
-    --tabs
-    toolbar.hideproject= true --don't show project files in tabs
     --config panel
     toolbar.cfgpnl_width=350
     toolbar.cfgpnl_ymargin=3

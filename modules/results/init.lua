@@ -205,6 +205,16 @@ if toolbar then
   end
 
   --------------- RESULTS INTERFACE --------------
+  function plugs.goto_searchview()
+    --activate search panel
+    --if not toolbar.results_tb then toolbar.results_onoff() end
+  end
+
+  function plugs.close_results()
+    if toolbar.results_tb then toolbar.results_onoff() return true end
+    return false --already closed
+  end
+
   function plugs.clear_results()
     toolbar.results_clear()
     toolbar.print_clear()
