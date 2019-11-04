@@ -99,6 +99,7 @@ actions.list = {
   ["copy"]=                 {_L['_Copy'], buffer.copy},
   ["copyfilename"]=         {_L['_Copy']..' filename', function () buffer:copy_text( buffer.filename or "") end},
   ["paste"]=                {_L['_Paste'], buffer.paste},
+  ["paste_reindent"]=       {'paste _Reindent', function () if textadept.editing.paste_reindent then textadept.editing.paste_reindent() end end},
   ["duplicate_line"]=       {_L['Duplicate _Line'], buffer.line_duplicate},
   ["delete_char"]=          {_L['_Delete'], buffer.clear},
   ["delete_word"]=          {_L['D_elete Word'], function()
@@ -120,7 +121,11 @@ actions.list = {
   ["transpose_chars"]=      {_L['T_ranspose Characters'], textadept.editing.transpose_chars},
   ["join_lines"]=           {_L['_Join Lines'], textadept.editing.join_lines},
   ["filterthrough"]=        {_L['_Filter Through'], function()
-      ui.command_entry.enter_mode('filter_through', 'bash')
+      if ui.command_entry.run then
+        ui.command_entry.run(textadept.editing.filter_through, 'bash')
+      else
+        ui.command_entry.enter_mode('filter_through', 'bash') --TA10.6
+      end
     end},
 
 --EDIT + SELECT
@@ -176,7 +181,8 @@ actions.list = {
 
 --TOOLS
   ["toggle_commandentry"]=  {_L['Command _Entry'], function()
-      ui.command_entry.enter_mode('lua_command', 'lua')
+      if ui.command_entry.run then ui.command_entry.run()
+      else ui.command_entry.enter_mode('lua_command', 'lua') end --TA10.6
     end},
   ["run_command"]=          {_L['Select Co_mmand'], function() actions.select_command() end},
   ["run"]=                  {_L['_Run'], textadept.run.run},

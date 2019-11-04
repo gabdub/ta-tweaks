@@ -58,6 +58,7 @@ local default_accelerators= {
   "cut",                    "mx",           "mx",
   "copy",                   "mc",           "mc",
   "paste",                  "mv",           "mv",
+  "paste_reindent",         "mV",           "mV",
   "duplicate_line",         "md",           "",
   "delete_char",            "del",          "del",
   "delete_word",            "cdel",         "cdel",
@@ -241,33 +242,27 @@ if TA_MAYOR_VER < 10 then
 end
 
 -- Movement commands.
-if CURSES then
-  keys.cf, keys.cF = buffer.char_right, buffer.char_right_extend
-  keys.cmf, keys.cmF = buffer.word_right, buffer.word_right_extend
-  keys.cb, keys.cB = buffer.char_left, buffer.char_left_extend
-  keys.cmb, keys.cmB = buffer.word_left, buffer.word_left_extend
-  keys.cn, keys.cN = buffer.line_down, buffer.line_down_extend
-  keys.cp, keys.cP = buffer.line_up, buffer.line_up_extend
-  keys.ca, keys.cA = buffer.vc_home, buffer.vc_home_extend
-  keys.ce, keys.cE = buffer.line_end, buffer.line_end_extend
-  keys.aright, keys.aleft = buffer.word_right, buffer.word_left
-  keys.cd = buffer.clear
-  keys.ck = function()
-    buffer:line_end_extend()
-    buffer:cut()
-  end
-  keys.cl = buffer.vertical_centre_caret
-  -- UTF-8 input.
-  keys.utf8_input = {
-    ['\n'] = function()
-      return ui.command_entry.finish_mode(function(code)
-        buffer:add_text(utf8.char(tonumber(code, 16)))
-      end)
-    end
-  }
-  keys['mU'] = function()
-    ui.command_entry.enter_mode('utf8_input')
-  end
+keys.cf, keys.cF = buffer.char_right, buffer.char_right_extend
+keys.cmf, keys.cmF = buffer.word_right, buffer.word_right_extend
+keys.cb, keys.cB = buffer.char_left, buffer.char_left_extend
+keys.cmb, keys.cmB = buffer.word_left, buffer.word_left_extend
+keys.cn, keys.cN = buffer.line_down, buffer.line_down_extend
+keys.cp, keys.cP = buffer.line_up, buffer.line_up_extend
+keys.ca, keys.cA = buffer.vc_home, buffer.vc_home_extend
+keys.ce, keys.cE = buffer.line_end, buffer.line_end_extend
+keys.aright, keys.aleft = buffer.word_right, buffer.word_left
+keys.cd = buffer.clear
+keys.ck = function()
+  buffer:line_end_extend()
+  if not buffer.selection_empty then buffer:cut() else buffer:clear() end
+end
+keys.cl = buffer.vertical_centre_caret
+
+-- UTF-8 input.
+keys['mU'] = function()
+  ui.command_entry.run(function(code)
+    buffer:add_text(utf8.char(tonumber(code, 16)))
+  end)
 end
 
 -- GTK-OSX reports Fn-key as a single keycode which confuses Scintilla. Do

@@ -370,7 +370,7 @@ else
   gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
 endif
 
-scintilla_zip = 9fac55a64022.zip
+scintilla_zip = d14e1b1086de.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_7_0_2.zip
@@ -452,7 +452,7 @@ clean-deps:
 # Count lines of code and generate ctags.
 
 sources = ../core ../modules/ansi_c ../modules/lua ../modules/textadept \
-          ../themes textadept.c Makefile ../init.lua
+          textadept.c Makefile ../init.lua
 count: $(cloc) ; perl $< $(sources) --not-match-f=tadoc.lua
 ctags:
 	ctags -R --langdef=luax --langmap=luax:.lua --exclude="*doc*" \

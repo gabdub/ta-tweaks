@@ -2,7 +2,7 @@
 // USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 106  //update to textadept 10.6
+#define TA_VERSION 107  //update to textadept 10.7
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -1361,8 +1361,8 @@ static void lL_adddoc(lua_State *L, sptr_t doc) {
  */
 static void new_buffer(sptr_t doc) {
   if (!doc) {
-    doc = SS(focused_view, SCI_CREATEDOCUMENT, 0, 0); // create the new document
     lL_event(lua, "buffer_before_switch", -1);
+    doc = SS(focused_view, SCI_CREATEDOCUMENT, 0, 0); // create the new document
     lL_adddoc(lua, doc);
     lL_gotodoc(lua, focused_view, -1, FALSE);
   } else lL_adddoc(lua, doc), SS(focused_view, SCI_ADDREFDOCUMENT, 0, doc);

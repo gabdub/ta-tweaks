@@ -58,6 +58,7 @@ local default_accelerators= {
   "cut",                    "cx",          "cx",
   "copy",                   "cc",          "cc",
   "paste",                  "cv",          "cv",
+  "paste_reindent",         "cV",          "cV",
   "duplicate_line",         "cd",          "",
   "delete_char",            "del",         "del",
   "delete_word",            "adel",        "mdel",
@@ -254,20 +255,13 @@ if CURSES then
   keys.cd, keys.md, keys.ch = buffer.clear, keys.mdel, buffer.delete_back
   keys.ck = function()
     buffer:line_end_extend()
-    buffer:cut()
+    if not buffer.selection_empty then buffer:cut() else buffer:clear() end
   end
-  -- UTF-8 input.
-  keys.utf8_input = {
-    ['\n'] = function()
-      return ui.command_entry.finish_mode(function(code)
-        buffer:add_text(utf8.char(tonumber(code, 16)))
-      end)
-    end
-  }
   keys['mu'] = function()
-    ui.command_entry.enter_mode('utf8_input')
+    ui.command_entry.run(function(code)
+      buffer:add_text(utf8.char(tonumber(code, 16)))
+    end)
   end
-
 --complete_word=   CURSES: Win32: c\n + LINUX:cmj
   if WIN32 then
     actions.accelerators["complete_word"]=   "c\n"

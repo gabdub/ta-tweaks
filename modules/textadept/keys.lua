@@ -379,38 +379,11 @@ end
 
 events.connect(events.INITIALIZED, setacceleratorskeys)
 
--- Modes.
-keys.filter_through = {
-  ['\n'] = function()
-    return ui.command_entry.finish_mode(textadept.editing.filter_through)
-  end,
-}
-keys.find_incremental = {
-  ['\n'] = function()
-    ui.find.find_entry_text = ui.command_entry:get_text() -- save
-    ui.find.find_incremental(ui.command_entry:get_text(), true, true)
-  end,
-  ['cr'] = function()
-    ui.find.find_incremental(ui.command_entry:get_text(), false, true)
-  end,
-  ['\b'] = function()
-    local e = ui.command_entry:position_before(ui.command_entry.length)
-    ui.find.find_incremental(ui.command_entry:text_range(0, e), true)
-    return false -- propagate
-  end
-}
--- Add the character for any key pressed without modifiers to incremental find.
-setmetatable(keys.find_incremental, {__index = function(_, k)
-               if #k > 1 and k:find('^[cams]*.+$') then return end
-               ui.find.find_incremental(ui.command_entry:get_text()..k, true)
-             end})
--- Show documentation for symbols in the Lua command entry.
-keys.lua_command[CURSES and 'mh' or 'ch'] = function()
-  -- Temporarily change _G.buffer since ui.command_entry is the "active" buffer.
-  local orig_buffer = _G.buffer
-  _G.buffer = ui.command_entry
-  textadept.editing.show_documentation()
-  _G.buffer = orig_buffer
+-- Other.
+if ui.find.find_incremental_keys then
+	ui.find.find_incremental_keys.cr = function()
+	  ui.find.find_incremental(ui.command_entry:get_text(), false, true) -- reverse
+	end
 end
 
 return M
