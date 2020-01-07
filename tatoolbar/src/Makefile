@@ -1,4 +1,4 @@
-# Copyright 2007-2019 Mitchell mitchell.att.foicica.com. See LICENSE.
+# Copyright 2007-2020 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 CC = gcc
 CFLAGS = -Os
@@ -270,11 +270,13 @@ manual: ../*.md ../doc/manual.md | ../doc/bombay
 		../doc/manual.html
 	sed -i -e "s/Textadept Manual/Textadept $(subst _, ,$(version)) Manual/;" \
 		../doc/manual.html
-luadoc: ../modules ../core ../lexers
+luadoc: ../modules ../core ../lexers | ../modules/lua/lua.luadoc
 	cd ../doc && luadoc -d . -t . --doclet markdowndoc $^/lexer.lua
 	sed -i -e "s/Textadept API/Textadept $(subst _, ,$(version)) API/;" \
 		../doc/api.html
 	cd ../modules && luadoc -d lua --doclet lua/tadoc $^/lexer.lua
+	cd ../modules/lua && mv tags ta_tags && mv api ta_api
+	cd ../modules && luadoc -d lua --doclet lua/tadoc $|
 
 # Releases.
 
@@ -370,7 +372,7 @@ else
   gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
 endif
 
-scintilla_zip = d14e1b1086de.zip
+scintilla_zip = 99fa62b828ee.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_7_0_2.zip
@@ -406,9 +408,9 @@ lua/src/lib/lpeg: | $(lpeg_tgz)
 	mkdir -p $@ && tar xzf $| -C $@ && mv $@/*/*.c $@/*/*.h $(dir $@)
 lua/src/lib/lfs: | $(lfs_zip)
 	if [ -d $@ ]; then rm -r $@; fi
-	mkdir -p $@ && unzip -d $@ $| && mv $@/*/src/*.c $@/*/src/*.h $(dir $@)
+	mkdir -p $@ && unzip -d $(dir $@) -j $| "*/src/*.c" "*/src/*.h"
 $(gtdialog_zip): ; $(WGET) $(gtdialog_url)
-gtdialog: | $(gtdialog_zip) ; mkdir $@ && unzip -d $@ $| && mv $@/*/* $@
+gtdialog: | $(gtdialog_zip) ; unzip -d $@ -j $|
 $(cdk_tgz): ; $(WGET) http://invisible-mirror.net/archives/cdk/$@
 cdk: cdk.patch | $(cdk_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
@@ -434,9 +436,7 @@ win32curses: | $(win32curses_zip) $(pdcurses_zip)
 $(gtkosx_tgz): ; $(WGET) http://foicica.com/textadept/download/$@
 gtkosx: | $(gtkosx_tgz) ; mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 $(bombay_zip): ; $(WGET) http://foicica.com/hg/bombay/archive/tip.zip
-../doc/bombay: | $(bombay_zip)
-	mkdir $(notdir $@) && unzip -d $(notdir $@) $| && \
-		mv $(notdir $@)/*/* $(dir $@)
+../doc/bombay: | $(bombay_zip) ; unzip -d $(dir $@) -j $|
 $(cloc): ; $(WGET) http://prdownloads.sourceforge.net/cloc/$@
 sign-deps: | $(scintilla_tgz) $(lua_tgz) $(lpeg_tgz) $(lfs_zip) \
              $(gtdialog_zip) $(cdk_tgz) $(termkey_tgz) $(win32gtk_zip) \

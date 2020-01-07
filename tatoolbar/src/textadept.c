@@ -1,8 +1,8 @@
-// Copyright 2007-2019 Mitchell mitchell.att.foicica.com. See LICENSE.
-// USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+// Copyright 2007-2020 Mitchell mitchell.att.foicica.com. See LICENSE.
+// USE_TA_TOOLBAR and UNUSED() changes: Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define UNUSED(expr) do { (void)(expr); } while (0)
-#define TA_VERSION 107  //update to textadept 10.7
+#define TA_VERSION 108  //update to textadept 10.8
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -1230,6 +1230,41 @@ static int lbuf_closure(lua_State *L) {
                          lua_istable(L, 1) ? 2 : 1);
 }
 
+#if GTK
+/**
+ * Shows the context menu for a widget based on a mouse event.
+ * @param L The Lua state.
+ * @param event An optional GTK mouse button event.
+ * @param k The ui table field that contains the context menu.
+ */
+static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k) {
+  if (lua_getglobal(L, "ui") == LUA_TTABLE) {
+    if (lua_getfield(L, -1, k) == LUA_TLIGHTUSERDATA) {
+      GtkWidget *menu = (GtkWidget *)lua_touserdata(L, -1);
+      gtk_widget_show_all(menu);
+      gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
+                     event ? event->button : 0,
+                     gdk_event_get_time((GdkEvent *)event));
+    }
+    lua_pop(L, 1); // ui context menu field
+  } else lua_pop(L, 1); // non-table
+}
+
+/** Signal for a tab label mouse click. */
+static int t_tabbuttonpress(GtkWidget *label, GdkEventButton *event, void*__) {
+  GtkNotebook *tabs = GTK_NOTEBOOK(tabbar);
+  for (int i = 0; i < gtk_notebook_get_n_pages(tabs); i++) {
+    GtkWidget *page = gtk_notebook_get_nth_page(tabs, i);
+    if (label != gtk_notebook_get_tab_label(tabs, page)) continue;
+    lL_event(lua, "tab_clicked", LUA_TNUMBER, i + 1, LUA_TNUMBER, event->button,
+             event_mod(SHIFT), event_mod(CONTROL), event_mod(MOD1),
+             event_mod(META), -1);
+    if (event->button == 3) lL_showcontextmenu(lua, event, "tab_context_menu");
+  }
+  return TRUE;
+}
+#endif
+
 /** `buffer.__index` and `buffer.__newindex` Lua metamethods. */
 static int lbuf_property(lua_State *L) {
   int newindex = (lua_gettop(L) == 3);
@@ -1288,8 +1323,13 @@ static int lbuf_property(lua_State *L) {
     GtkNotebook *tabs = GTK_NOTEBOOK(tabbar);
     GtkWidget *tab = (GtkWidget *)lua_touserdata(L, -1);
     lua_pushstring(L, gtk_notebook_get_tab_label_text(tabs, tab));
-    if (newindex)
-      gtk_notebook_set_tab_label_text(tabs, tab, luaL_checkstring(L, 3));
+    if (newindex) {
+      GtkWidget *box = gtk_event_box_new();
+      GtkWidget *label = gtk_label_new(luaL_checkstring(L, 3));
+      gtk_container_add(GTK_CONTAINER(box), label), gtk_widget_show(label);
+      gtk_notebook_set_tab_label(tabs, tab, box);
+      signal(box, "button-press-event", t_tabbuttonpress);
+    }
 //#elif CURSES
     // TODO: tabs
 #endif
@@ -1857,45 +1897,7 @@ static void w_quit_osx(GtkosxApplication*_, void*__) {
 static void t_tabchange(GtkNotebook*_, GtkWidget*__, int page_num, void*___) {
   UNUSED(_); UNUSED(__); UNUSED(___);
   if (tab_sync) return;
-  lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, -1);
-}
-
-/**
- * Shows the context menu for a widget based on a mouse event.
- * @param L The Lua state.
- * @param event An optional GTK mouse button event.
- * @param k The ui table field that contains the context menu.
- */
-static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k) {
-  if (lua_getglobal(L, "ui") == LUA_TTABLE) {
-    if (lua_getfield(L, -1, k) == LUA_TLIGHTUSERDATA) {
-      GtkWidget *menu = (GtkWidget *)lua_touserdata(L, -1);
-      gtk_widget_show_all(menu);
-      gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-                     event ? event->button : 0,
-                     gdk_event_get_time((GdkEvent *)event));
-    }
-    lua_pop(L, 1); // ui context menu field
-  } else lua_pop(L, 1); // non-table
-}
-
-/** Signal for a tabbar mouse click. */
-static int t_tabbuttonpress(GtkWidget*_, GdkEventButton *event, void*__) {
-  UNUSED(_); UNUSED(__);
-  if (event->type != GDK_BUTTON_PRESS || event->button != 3) return FALSE;
-  GtkNotebook *tabs = GTK_NOTEBOOK(tabbar);
-  for (int i = 0; i < gtk_notebook_get_n_pages(tabs); i++) {
-    GtkWidget *page = gtk_notebook_get_nth_page(tabs, i);
-    GtkWidget *label = gtk_notebook_get_tab_label(tabs, page);
-    int x0, y0;
-    gdk_window_get_origin(gtk_widget_get_window(label), &x0, &y0);
-    GtkAllocation allocation;
-    gtk_widget_get_allocation(label, &allocation);
-    if (event->x_root > x0 + allocation.x + allocation.width) continue;
-    gtk_notebook_set_current_page(tabs, i);
-    return (lL_showcontextmenu(lua, event, "tab_context_menu"), TRUE);
-  }
-  return FALSE;
+  lL_event(lua, "tab_clicked", LUA_TNUMBER, page_num + 1, LUA_TNUMBER, 1, -1);
 }
 #endif // if GTK
 
