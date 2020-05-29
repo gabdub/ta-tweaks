@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local _L = _L
 local SEPARATOR = ""
 local Proj = Proj
@@ -97,7 +97,7 @@ if actions then
   --actions.add("onlykeepproj",      _L['Close All'],         Proj.onlykeep_projopen) --"closeall"="onlykeepproj"
   actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
 
-  actions.add("toggle_editproj",     _L['_Edit'] .. ' project', Proj.toggle_editproj, "f4")
+  actions.add("toggle_editproj",     Util.EDITMENU_TEXT .. ' project', Proj.toggle_editproj, "f4")
   --"_end_editproj" = "toggle_editproj" with different text menu
   actions.add("_end_editproj",       '_End edit',             Proj.toggle_editproj)
   actions.accelerators["_end_editproj"]="f4" --(alias)
@@ -120,7 +120,7 @@ if actions then
   actions.add("clear_position",      'C_lear positions',      Proj.clear_pos_table,   "cf12")
 
   --add actions defined in "proj_diff"
-  actions.add("toggle_filediff", "Start/stop file diff", Proj.diff_start, "f8", "edit-copy")
+  actions.add("toggle_filediff", "Compare panels", Proj.diff_start, "f8", "edit-copy", Proj.compare_status)
 
   actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, "cf5", "document-properties", Proj.vc_changes_status)
 
@@ -128,15 +128,15 @@ if actions then
 
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,
-    {title='_Project',
+    {title = Util.PROJECTMENU_TEXT,
      {"new_project","open_project","recent_project","close_project",SEPARATOR,
-      "search_project","goto_tag","vc_changes","show_filevcinfo",SEPARATOR,
+      "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
       "save_position","next_position","prev_position","clear_position",SEPARATOR,
       "addthisfiles_proj","addallfiles_proj","adddirfiles_proj"}
     })
 
   --add TRIM_TRAILINGSPACES / REMOVE_TABS at the end of the EDIT menu
-  local m_ed= actions.getmenu_fromtitle(_L['_Edit'])
+  local m_ed= actions.getmenu_fromtitle(Util.EDITMENU_TEXT)
   if m_ed then m_ed[#m_ed+1]= {SEPARATOR,"trim_trailingspaces", "remove_tabs"} end
 
   --add OPEN_SELFILE at the end of the QUICK-OPEN submenu
@@ -144,7 +144,7 @@ if actions then
   if m_qo then m_qo[#m_qo+1]= {SEPARATOR,"open_selfile"} end
 
   --add FIRST/LAST BUFFER at the top of the BUFFER menu
-  local med= actions.getmenu_fromtitle(_L['_Buffer'])
+  local med= actions.getmenu_fromtitle(Util.BUFFERMENU_TEXT)
   if med then
     local m1=med[1]
     table.insert(m1, 1, "first_buffer")
@@ -152,7 +152,7 @@ if actions then
   end
 
   --add VIEWPROJECT at the end of the VIEW menu
-  local m_vi= actions.getmenu_fromtitle(_L['_View'])
+  local m_vi= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
   if m_vi then m_vi[#m_vi+1]= {SEPARATOR,"toggle_viewproj"} end
 
   ----------------- CONTEXT MENUS -------------------
@@ -184,9 +184,9 @@ if actions then
        "selectall"
       },
       {
-        title = '_Project',
+        title = Util.PROJECTMENU_TEXT,
         {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-         "search_project","goto_tag","vc_changes","show_filevcinfo",SEPARATOR,
+         "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
          "save_position","next_position","prev_position",SEPARATOR,
          "toggle_viewproj"}
       },

@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local events = events
 local Proj = Proj
 local data = Proj.data
@@ -106,7 +106,7 @@ function Proj.get_buffertype(p_buffer)
   end
   --check if the current file is a valid project
   --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= p_buffer:get_line(0)
+  local line= p_buffer:get_line( Util.LINE_BASE )
   local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
   if n ~= nil then
     return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
@@ -199,7 +199,7 @@ function Proj.toggle_selectionmode()
   else
     --if the current file is a project, enter SELECTION mode--
     if not Proj.ifproj_setselectionmode() then
-      ui.statusbar_text='This file is not a project'
+      ui.statusbar_text= 'This file is not a project'
     end
   end
   buffer.home()
@@ -210,7 +210,7 @@ end
 function Proj.set_selectionmode(buff,selmode)
   if selmode and buffer.modify then
     data.proj_parsed= false --prevent list update when saving the project until it's parsed
-    io.save_file()
+    Util.save_file()
   end
   local editmode= not selmode
   --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
@@ -344,7 +344,7 @@ function Proj.go_file(file, line_num)
     Proj.getout_projview()
     if fn then io.open_file(fn) end
 
-    if line_num then Util.goto_line(buffer, line_num-1) end
+    if line_num then Util.goto_line(buffer, line_num) end
     Proj.update_after_switch()
   end
 end
@@ -435,16 +435,13 @@ function Proj.add_files(p_buffer, flist, groupfiles)
         end
       end
       data.proj_parsed= false --prevent list update when saving the project until it's parsed
-      io.save_file()
+      Util.save_file()
       p_buffer.read_only= save_ro
       --update Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
       Proj.parse_project_file()
 
-      if row then
-        --move the selection bar
-        p_buffer:ensure_visible_enforce_policy(row- 1)
-        p_buffer:goto_line(row-1)
-      end
+      --move the selection bar
+      if row then Util.goto_line(p_buffer,row) end
       -- project in SELECTION mode without focus--
       Proj.show_lost_focus(p_buffer)
       p_buffer.home()
@@ -616,13 +613,14 @@ buffer.indic_style[indic_open]= buffer.INDIC_DOTS
 --remove all open-indicators from project
 function Proj.clear_open_indicators(pbuf)
   pbuf.indicator_current= indic_open
-  pbuf:indicator_clear_range(0,pbuf.length-1)
+  pbuf:indicator_clear_range(Util.LINE_BASE, pbuf.length)
 end
 
 function Proj.add_open_indicator(pbuf,row)
+  local r= row -1 + Util.LINE_BASE
   pbuf.indicator_current= indic_open
-  local pos= pbuf.line_indent_position[row]
-  local len= pbuf.line_end_position[row] - pos
+  local pos= pbuf.line_indent_position[r]
+  local len= pbuf.line_end_position[r] - pos
   pbuf:indicator_fill_range(pos,len)
 end
 
@@ -634,7 +632,7 @@ function Proj.show_open_indicator(pbuf,buff)
     if file then
       local row= Proj.get_file_row(file)
       if row then
-        Proj.add_open_indicator(pbuf,row-1)
+        Proj.add_open_indicator(pbuf,row)
       end
     end
   end
@@ -678,7 +676,7 @@ end
 --project is in SELECTION mode with focus--
 function Proj.show_sel_w_focus(buff)
   --hide line numbers
-  buff.margin_width_n[0] = 0
+  buff.margin_width_n[Util.LINE_BASE] = 0
   --highlight current line as selected
   buff.caret_width= 0
   buff.caret_line_back = buff.property['color.prj_sel_bar']
@@ -697,7 +695,7 @@ function Proj.show_default(buff)
   --project in EDIT mode / default text file--
   --show line numbers
   local width = 4 * buff:text_width(buffer.STYLE_LINENUMBER, '9')
-  buff.margin_width_n[0] = width + (not CURSES and 4 or 0)
+  buff.margin_width_n[ Util.LINE_BASE ] = width + (not CURSES and 4 or 0)
   --return to default
   buff.caret_width= 2
   buff.caret_line_back = buff.property['color.curr_line_back']
@@ -778,11 +776,10 @@ function Proj.track_this_file()
         local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
         Util.goto_view(projv)
         --move the selection bar
-        p_buffer:ensure_visible_enforce_policy(row- 1)
-        p_buffer:goto_line(row-1)
+        Util.goto_line(p_buffer,row)
         p_buffer:home()
         --hilight the file as open
-        Proj.add_open_indicator(p_buffer,row-1)
+        Proj.add_open_indicator(p_buffer,row)
          -- project in SELECTION mode without focus--
         Proj.show_lost_focus(p_buffer)
         --return to this file (it could be in a different view)
@@ -838,7 +835,7 @@ function Proj.EVfile_opened()
       for nbuf,buf in ipairs(_BUFFERS) do
         if not (buf.filename or buf._type or buf.modify or buf._project_select ~= nil) then
           Util.goto_buffer(buf)
-          io.close_buffer()
+          Util.close_buffer()
           break
         end
       end
@@ -855,7 +852,9 @@ function Proj.open_search_file()
   local file
   if line_num then
     --get file name from previous lines
-    for i = buffer:line_from_position(buffer.current_pos) - 1, 0, -1 do
+    local fromln= buffer:line_from_position(buffer.current_pos) + Util.LINE_BASE-1
+    local toln= Util.LINE_BASE
+    for i = fromln, toln, -1 do
       file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
       if file then break end
     end
@@ -944,7 +943,7 @@ function Proj.change_proj_ed_mode()
       end
     end
     Proj.toggle_selectionmode()
-    buffer.colourise(buffer, 0, -1)
+    refresh_syntax()
     Proj.update_projview()
   else
     --file: goto project view

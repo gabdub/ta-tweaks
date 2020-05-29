@@ -1,9 +1,9 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 ------------ WIN32 & LINUX KEYS ------------
 -- GUI key bindings
 --
 -- Unassigned keys (~ denotes keys reserved by the operating system):
--- c:       C         H I   K        p  Q     T ~ V     Y  _   ) ] }   +
+-- c:       C         H I            p  Q     T ~ V     Y  _   ) ] }   +
 -- a:  aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ_   ) ] }  *+-/=\n\s
 -- ca: aAbBcCdD   F      jJkKlLmM N    qQ    t       xXy zZ_"'()[]{}<>*  /   \s
 --
@@ -22,13 +22,12 @@
 --   * Control+Shift and Control+Meta+Shift keys are not recognized.
 --   * Modifiers for function keys F1-F12 are not recognized.
 -- For pdcurses (Win32):
---   * Control+Shift+Letter keys are not recognized. Other Control+Shift keys
---     are.
+--   * Many Control+Symbol keys are not recognized, but most
+--     Control+Shift+Symbol keys are.
 --
 -- Unassigned keys (~ denotes keys reserved by the operating system):
 -- c:        g~~   ~            ~
 -- cm:   cd  g~~ k ~   q  t    yz
--- m:          e          J K          qQ  sS    vVw   yY  _          +
 -- Note: m[befhstv] may be used by Linux/BSD GUI terminals for menu access.
 --
 -- CTRL = 'c' (Control ^)
@@ -124,7 +123,8 @@ local default_accelerators= {
 --"open_textadepthome",     "",             "",
   "open_currentdir",        "caO",          "mO",
   "open_projectdir",        "caP",          "cmp",
-  "insert_snippet",         "ck",           "mk",
+  "insert_snippet",         "cK",           "mK",
+  "complete_trigger",       "ck",           "mk",
   "tab_key",                "\t",           "\t",
   "shift_tab_key",          "s\t",          "s\t",
   "cancel_snippet",         "esc",          "esc",
@@ -217,14 +217,15 @@ local default_accelerators= {
   "del_word_right",         "cdel",         "cdel"
 }
 
-local default_acc_pre10= { --not in TA10 anymore
-  "sel_singlequotes",       "c'",          "m'",
-  "sel_doublequotes",       'c"',          'm"',
-  "sel_parentheses",        "c(",          "m(",
-  "sel_brackets",           "c[",          "m[",
-  "sel_braces",             "c{",          "m{"
-}
-local TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
+--local default_acc_pre10= { --not in TA10 anymore
+--  "sel_singlequotes",       "c'",          "m'",
+--  "sel_doublequotes",       'c"',          'm"',
+--  "sel_parentheses",        "c(",          "m(",
+--  "sel_brackets",           "c[",          "m[",
+--  "sel_braces",             "c{",          "m{"
+--}
+
+--local TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
 
 local function load_accel_list(lst)
   --load the accelerators for this OS
@@ -238,9 +239,8 @@ end
 
 actions.accelerators = {}
 load_accel_list(default_accelerators)
-if TA_MAYOR_VER < 10 then
-  load_accel_list(default_acc_pre10)
-end
+
+--if TA_MAYOR_VER < 10 then load_accel_list(default_acc_pre10) end
 
 -- Movement commands.
 if CURSES then

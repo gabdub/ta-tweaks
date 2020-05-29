@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
   local events, events_connect = events, events.connect
@@ -172,7 +172,7 @@ if toolbar then
     if actions then
       toolbar.idviewresultstb= actions.add("toggle_viewresults", 'Show _Results toolbar', toolbar.results_onoff, "cf10", "view-list-compact-symbolic", function()
         return (toolbar.results_tb and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(_L['_View'])
+      local med= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
       if med then
         local m=med[#med]
         m[#m+1]= "toggle_viewresults"

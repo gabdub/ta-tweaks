@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 ----------------------------------------------------------------------
 -------- Project file format --------
 -- Valid project lines:

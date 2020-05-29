@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local keys, OSX = keys, OSX
 
 --list of accelerators (index= action)
@@ -158,7 +158,7 @@ local function check_dirty()
       title = 'Macro overwrite confirmation',
       text = "The last recorded macro wasn't saved",
       informative_text = 'Do you want to overwrite it?',
-      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel']
+      icon = 'gtk-dialog-question', button1 = Util.OK_TEXT, button2 = Util.CANCEL_TEXT
     } ~= 1 then return false end
     record_dirty=false
   end
@@ -285,9 +285,13 @@ local function key_return()
   buffer.add_text('\n')
   if not textadept.editing.auto_indent then return end
   local line = buffer:line_from_position(buffer.current_pos)
+  if line > Util.LINE_BASE and buffer:get_line(line - 1):find('^[\r\n]+$') and
+     buffer:get_line(line):find('^[^\r\n]') then
+    return -- do not auto-indent when pressing enter from start of previous line
+  end
   local i = line - 1
-  while i >= 0 and buffer:get_line(i):find('^[\r\n]+$') do i = i - 1 end
-  if i >= 0 then
+  while i >= Util.LINE_BASE and buffer:get_line(i):find('^[\r\n]+$') do i = i - 1 end
+  if i >= Util.LINE_BASE then
     buffer.line_indentation[line] = buffer.line_indentation[i]
     buffer:vc_home()
   end

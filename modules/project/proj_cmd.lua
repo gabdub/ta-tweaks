@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 ---- PROJECT ACTIONS ----
 local Proj = Proj
 local Util = Util
@@ -35,7 +35,7 @@ function Proj.close_buffer()
 
   else
     --close a regular file
-    if io.close_buffer() then
+    if Util.close_buffer() then
       --check that at least one regular buffer remains after closing
       Proj.check_panels()
     end
@@ -71,7 +71,7 @@ function Proj.onlykeep_projopen(keepone)
     if Proj.isRegularBuf(buf) and not buf._dont_close then
       --regular file, close it
       Util.goto_buffer(buf)
-      if not io.close_buffer() then
+      if not Util.close_buffer() then
         Proj.stop_update_ui(false)
         return
       end
@@ -132,11 +132,11 @@ function Proj.snapopen()
   end
   local options = {
     title = _L['Open'], columns = _L['File'], items = utf8_list,
-    button1 = _L['_OK'], button2 = _L['_Cancel'], select_multiple = true,
+    button1 = Util.OK_TEXT, button2 = Util.CANCEL_TEXT, select_multiple = true,
     string_output = true, width = CURSES and ui.size[1] - 2 or nil
   }
   local button, files = ui.dialogs.filteredlist(options)
-  if button ~= _L['_OK'] or not files then return end
+  if button ~= Util.OK_TEXT or not files then return end
   for i = 1, #files do files[i] = files[i]:iconv(_CHARSET, 'UTF-8') end
   io.open_file(files)
   Proj.update_after_switch()
@@ -201,7 +201,7 @@ function Proj.show_doc()
   --call_tip_show
   if buffer._project_select ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
-    local r= buffer.line_from_position(buffer.current_pos)+1
+    local r= buffer.line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
     local info = data.proj_files[r]
     local ftype= data.proj_filestype[r]
     if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
@@ -288,7 +288,7 @@ function Proj.refresh_hilight()
     Proj.toggle_selectionmode()
     Proj.toggle_selectionmode()
   end
-  buffer.colourise(buffer, 0, -1)
+  refresh_syntax()
 end
 
 --ACTION: trim_trailingspaces
@@ -296,15 +296,17 @@ end
 function Proj.trim_trailing_spaces()
   local buffer = buffer
   buffer:begin_undo_action()
-  local n=0
-  for line = 0, buffer.line_count - 1 do
+  local n= 0
+  local fromln= Util.LINE_BASE
+  local toln= fromln + buffer.line_count - 1
+  for line = fromln, toln do
     local trail = buffer:get_line(line):match('^.-(%s-)[\n\r]*$')
     if trail and trail ~= '' then
-      local e = buffer.line_end_position[line]
-      local s = e - string.len(trail)
+      local e= buffer.line_end_position[line]
+      local s= e - string.len(trail)
       buffer:set_target_range(s, e)
       buffer:replace_target('')
-      n=n+1
+      n= n+1
     end
   end
   buffer:end_undo_action()
@@ -388,7 +390,7 @@ function Proj.new_project()
   --save project file
   data.filename= filename
   data.proj_parsed= false --prevent list update when saving the project until it's parsed
-  io.save_file()
+  Util.save_file()
   --remember project file in recent list
   Proj.add_recentproject()
 
@@ -481,7 +483,7 @@ function Proj.close_project(keepviews)
       Util.goto_view(projv)
     end
     Util.goto_buffer(p_buffer)
-    if io.close_buffer() then
+    if Util.close_buffer() then
       Proj.closed_cleardata()
       Proj.update_projview()  --update project view button
       if not keepviews then
@@ -511,7 +513,7 @@ function Proj.search_in_files(where)
       return
     end
     local find, case, word= Proj.ask_search_in_files(true)
-    local currow= p_buffer.line_from_position(p_buffer.current_pos)+1
+    local currow= p_buffer.line_from_position(p_buffer.current_pos) +1 -Util.LINE_BASE
     if find then Proj.find_in_files(currow, find, case, word, true, where) end
   else
     ui.statusbar_text= 'goto_nearest module not found'
@@ -585,8 +587,8 @@ function Proj.open_sel_file()
   if #data.proj_files == 0 then return end
 
   --read selected line range
-  local r1= buffer.line_from_position(buffer.selection_start)+1
-  local r2= buffer.line_from_position(buffer.selection_end)+1
+  local r1= buffer.line_from_position(buffer.selection_start) +1 -Util.LINE_BASE
+  local r2= buffer.line_from_position(buffer.selection_end) +1 -Util.LINE_BASE
   --clear selection
   buffer.selection_start= buffer.selection_end
 
@@ -605,7 +607,7 @@ function Proj.open_sel_file()
   end
   if #flist == 0 and #rlist == 0 then
     --no files/run in range, use current line; action=fold
-    r1= buffer.line_from_position(buffer.current_pos)+1
+    r1= buffer.line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
     if data.proj_files[r] ~= "" then
       local ft= data.proj_filestype[r]
       if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then

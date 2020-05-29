@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 ------------------ goto nearest occurrence --------------------------
 -- for local mode:
 --  replace M.last_search with buffer.last_search
@@ -91,7 +91,6 @@ local function goto_nearest_config(choose)
   goto_nearest_default()
   local r,sel
   local curr = (M.goto_nearest_whole_word and 3 or 1) + (M.goto_nearest_match_case and 1 or 0)
-
   if choose then
     r,sel= ui.dialogs.dropdown{title = 'Search options', select = curr, width= 300, items = {'Word:no + Ignore case (soft match)', 'Word:no + Match case', 'Word:yes + Ignore case', 'Word:yes + Match case (strict match)'}}
   else
@@ -123,13 +122,13 @@ function goto_line_col(askcol)
     local button, inputs = ui.dialogs.inputbox{
       title = 'Goto Line and Column',
       informative_text = {'Goto Position', 'Line:', 'Col:'},
-      text = {buffer:line_from_position(pos) + 1,buffer.column[pos]+1}
+      text = {buffer:line_from_position(pos) +1 -Util.LINE_BASE, buffer.column[pos] +1 -Util.LINE_BASE}
     }
     local line = tonumber(inputs[1])
     local column = tonumber(inputs[2])
     if button == 1 and line and column then
-      buffer:ensure_visible_enforce_policy(line - 1)
-      local pos = buffer:find_column(line - 1, column - 1)
+      buffer:ensure_visible_enforce_policy(line -1 + Util.LINE_BASE)
+      local pos = buffer:find_column(line -1 +Util.LINE_BASE, column -1 +Util.LINE_BASE)
       buffer:goto_pos(pos)
     end
   else

@@ -1,4 +1,4 @@
--- Copyright 2016-2017 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local buffer = buffer
 local property, property_int = buffer.property, buffer.property_int
 
@@ -87,6 +87,9 @@ buffer.indic_fore[INDIC_PLACEHOLDER] = property_int['color.placeholder']
 
 --Long Lines
 buffer.edge_colour = property_int['color.curr_line_back']
+
+--solve underscore visibility after updating to Ubuntu 20.04
+buffer.extra_descent= 1
 
 -- User overrides (thanks Lukas)
 do

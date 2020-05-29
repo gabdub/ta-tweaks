@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 if toolbar then
   local Util = Util
   require('toolbar.constants')
@@ -7,6 +7,7 @@ if toolbar then
   require('toolbar.configtb') --config panel on toolbar #3
 
   local events, events_connect = events, events.connect
+  toolbar.tabpos= 0
 
   --select a toolbar as current
   function toolbar.sel_toolbar_n(ntb, ngrp, emptygrp)
@@ -186,7 +187,7 @@ if toolbar then
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
     if ntoolbar == 0 and toolbar.cfg.tab2clickclose then
-      if Proj then Proj.close_buffer() else io.close_buffer() end
+      if Proj then Proj.close_buffer() else Util.close_buffer() end
     end
   end)
 
@@ -194,7 +195,7 @@ if toolbar then
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
     if ntoolbar == 0 then
-      if Proj then Proj.close_buffer() else io.close_buffer() end
+      if Proj then Proj.close_buffer() else Util.close_buffer() end
     end
   end)
 

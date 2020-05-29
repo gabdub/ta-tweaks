@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local Util = Util
 
 -- Alt+1 = ($=cursor position) TYPE
@@ -77,13 +77,13 @@ end
 local function get_sel_linerange(all_lines)
   local n1, n2
   if all_lines then
-    n1= 0 --all lines
-    n2= buffer.line_count-1
+    n1= Util.LINE_BASE
+    n2= buffer.line_count + Util.LINE_BASE-1
   else  --current line
     n1= buffer:line_from_position(buffer.current_pos)
     n2= n1
   end
-  local s, e= buffer.selection_n_start[0], buffer.selection_n_end[0]
+  local s, e= buffer.selection_n_start[ Util.LINE_BASE ], buffer.selection_n_end[ Util.LINE_BASE ]
   if (buffer.selections > 1) or (s ~= e) then
     --if something is selected use the selected line range
     n1= buffer:line_from_position(s)
@@ -150,14 +150,16 @@ local function multiline_typer()
     text = {"","","",n1+1,n2+1}
   }
   if button == 1 then
-    n1=tonumber(inputs[4])-1
-    n2=tonumber(inputs[5])-1
+    n1= tonumber(inputs[4]) + Util.LINE_BASE-1
+    n2= tonumber(inputs[5]) + Util.LINE_BASE-1
+    local minln= Util.LINE_BASE
+    local maxln= buffer.line_count + Util.LINE_BASE-1
     if n2 >= n1 then
       local totne= 0
       local totem= 0
       buffer:begin_undo_action()
-      if n1 < 0 then n1=0 end
-      if n2 > buffer.line_count-1 then n2=buffer.line_count-1 end
+      if n1 < minln then n1= minln end
+      if n2 > maxln then n2= maxln end
       for i= n1, n2 do
         buffer:goto_line(i)
         if buffer:get_line(i):match('^[\r\n]*$') then
@@ -176,21 +178,22 @@ local function multiline_typer()
   end
 end
 
--- Alt+) (Shift 0) = Select rectangular column down
+-- Alt+")" = Select rectangular column down
 local function sel_rec_col_down()
   local pos, e = buffer.selection_start, buffer.selection_end
   if pos == e then
     pos= buffer.current_pos
     e= pos
   end
-  local col= buffer.column[e]+1
+  local toln= buffer.line_count + Util.LINE_BASE-1
+  local col= buffer.column[e] + 1 - Util.LINE_BASE
   buffer.rectangular_selection_anchor= pos
   local erow= buffer:line_from_position(pos)
-  for r= erow, buffer.line_count-1 do
+  for r= erow, toln do
     if buffer:line_length(r) <= col then break end
     erow= r
   end
-  pos= buffer:find_column(erow, col-1)
+  pos= buffer:find_column(erow, col+ Util.LINE_BASE-1)
   buffer.rectangular_selection_caret= pos
   buffer.ensure_visible_enforce_policy(erow)
 end
@@ -203,15 +206,17 @@ end
 local function find_line(fmatch,dirf,roff)
   local r
   local curr= buffer:line_from_position(buffer.current_pos)
+  local fromln= Util.LINE_BASE
+  local toln= buffer.line_count + Util.LINE_BASE-1
   if dirf then --forward
-    for i = curr +1 -roff, buffer.line_count, 1 do
+    for i = curr +1 -roff, toln, 1 do
       if buffer:get_line(i):match(fmatch) then
         r=i+roff
         break
       end
     end
   else  --backward
-    for i = curr -1 -roff, 0, -1 do
+    for i = curr -1 -roff, fromln, -1 do
       if buffer:get_line(i):match(fmatch) then
         r=i+roff
         break
@@ -219,9 +224,8 @@ local function find_line(fmatch,dirf,roff)
     end
   end
   if r then
-    if r < 0 then r= 0 end
-    buffer:ensure_visible_enforce_policy(r)
-    buffer:goto_line(r)
+    if r < fromln then r= fromln end
+    Util.goto_line(buffer,r)
     return true
   end
   return false

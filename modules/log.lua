@@ -5,7 +5,7 @@ function log_event(event)
   log_ev[#log_ev+1]= line
 end
 
-keys.cf5 = function()
+keys.csf5 = function()
   Proj.go_file(nil) --new file
   log_event("DUMP\n")
   for i=1,#log_ev do

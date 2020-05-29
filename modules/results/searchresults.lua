@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
   local itemsgrp
@@ -138,7 +138,7 @@ if toolbar then
     if n > 0 then
       local c= 10
       for i=1, #r, 2 do
-        local line= buff:get_line(r[i]-1)
+        local line= buff:get_line(r[i] -1 + Util.LINE_BASE)
         plugs.search_result_found(fname, r[i], line, 0, 0)
         c= c-1
         if c == 0 then --only show first 10 blocks

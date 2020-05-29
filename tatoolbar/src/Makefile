@@ -100,7 +100,7 @@ else
   endif
 endif
 version = $(shell grep -m 1 _RELEASE ../core/init.lua | cut -d ' ' -f4- | \
-                  tr ' ' '_' | tr -d '"')
+                  tr ' ' '_' | tr -d "'")
 WGET = wget -O $@
 
 # Scintilla.
@@ -114,9 +114,9 @@ sci_objs = AutoComplete.o CallTip.o CaseConvert.o CaseFolder.o Catalogue.o \
            Indicator.o KeyMap.o LineMarker.o MarginView.o PerLine.o \
            PositionCache.o RESearch.o RunStyles.o ScintillaBase.o Selection.o \
            Style.o UniConversion.o ViewStyle.o UniqueString.o XPM.o
-sci_lex_objs = Accessor.o CharacterCategory.o CharacterSet.o LexerBase.o \
-               LexerModule.o LexerNoExceptions.o LexerSimple.o PropSetSimple.o \
-               StyleContext.o WordList.o
+sci_lex_objs = Accessor.o CharacterCategory.o CharacterSet.o DefaultLexer.o \
+               LexerBase.o LexerModule.o LexerNoExceptions.o LexerSimple.o \
+               PropSetSimple.o StyleContext.o WordList.o
 sci_lexer_objs = LexLPeg.o LexLPeg-curses.o
 sci_gtk_objs = PlatGTK.o ScintillaGTK.o ScintillaGTKAccessible.o
 sci_curses_objs = ScintillaCurses.o
@@ -143,13 +143,21 @@ cdk_objs = $(addprefix cdk-, binding.o buttonbox.o cdk.o cdk_display.o \
                              cdk_objs.o cdkscreen.o draw.o entry.o fselect.o \
                              itemlist.o label.o mentry.o popup_label.o \
                              scroll.o scroller.o select_file.o selection.o \
-                             traverse.o version.o)
+                             slider.o traverse.o version.o)
 
 # Add debugging symbols and disable optimizations when DEBUG=1.
-# Note: In order to profile with gprof (-pg), do not retain symbols in LDFLAGS.
+# Notes:
+# In order to profile with gprof (-pg), do not retain symbols in LDFLAGS.
+# In order to report code coverage with gcov (-fprofile-arcs -ftest-coverage):
+#   Run test suite with textadept, run gcov textadept.c, then examine
+#     textadept.c.gcov
+#   Run test suite with textadept-curses, run gcov textadept-curses.c, then
+#     examine textadept.c.gcov.
 ifdef DEBUG
   CFLAGS += -g -O0
   CXXFLAGS += -g -O0
+  LUA_CFLAGS += -DLUA_USE_APICHECK
+  sci_flags += -UNDEBUG -DDEBUG
 endif
 
 # Build.
@@ -263,6 +271,8 @@ clean: ; rm -f *.o ../textadept*
 
 # Documentation.
 
+ta_home = $(shell dirname `pwd`)
+
 doc: manual luadoc
 manual: ../*.md ../doc/manual.md | ../doc/bombay
 	$| -d ../doc -t ../doc --title Textadept $^
@@ -270,13 +280,13 @@ manual: ../*.md ../doc/manual.md | ../doc/bombay
 		../doc/manual.html
 	sed -i -e "s/Textadept Manual/Textadept $(subst _, ,$(version)) Manual/;" \
 		../doc/manual.html
-luadoc: ../modules ../core ../lexers | ../modules/lua/lua.luadoc
-	cd ../doc && luadoc -d . -t . --doclet markdowndoc $^/lexer.lua
+luadoc: ../modules ../core ../lexers/lexer.lua | ../modules/lua/lua.luadoc
+	cd ../doc && luadoc -d . -t . --doclet markdowndoc $^
 	sed -i -e "s/Textadept API/Textadept $(subst _, ,$(version)) API/;" \
 		../doc/api.html
-	cd ../modules && luadoc -d lua --doclet lua/tadoc $^/lexer.lua
+	cd ../modules && luadoc -d lua --doclet lua/tadoc $^ --ta-home=$(ta_home)
 	cd ../modules/lua && mv tags ta_tags && mv api ta_api
-	cd ../modules && luadoc -d lua --doclet lua/tadoc $|
+	cd ../modules && luadoc -d lua --doclet lua/tadoc $| --ta-home=$(ta_home)
 
 # Releases.
 
@@ -310,7 +320,7 @@ release: $(basedir).i386
 		CURSES_CFLAGS=-I/opt/ncursesw/include/ncursesw \
 		CURSES_LIBS="-L/opt/ncursesw/lib -lncursesw" curses
 	cp -rL ../doc ../lexers ../textadept* $< && cp *.asc $</src
-	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg -ab /tmp/$<.tgz
+	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg --batch -ab /tmp/$<.tgz
 $(basedir).x86_64: ; hg archive $@ -X ".hg*"
 release64: $(basedir).x86_64
 	make clean
@@ -321,7 +331,7 @@ release64: $(basedir).x86_64
 		CURSES_CFLAGS=-I/opt/ncursesw64/include/ncursesw \
 		CURSES_LIBS="-L/opt/ncursesw64/lib -lncursesw" curses || return 0
 	cp -rL ../doc ../lexers ../textadept* $< && cp *.asc $</src
-	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg -ab /tmp/$<.tgz
+	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg --batch -ab /tmp/$<.tgz
 $(basedir).win32: ; hg archive $@ -X ".hg*"
 win32-release: $(basedir).win32
 	make -j4 clean win32-deps
@@ -332,19 +342,19 @@ win32-release: $(basedir).win32
 	make -j4 win32-curses
 	cp -rL ../doc ../lexers ../textadept* $<
 	cp *.asc $</src
-	zip -r /tmp/$<.zip $< && rm -rf $< && gpg -ab /tmp/$<.zip
+	zip -r /tmp/$<.zip $< && rm -rf $< && gpg --batch -ab /tmp/$<.zip
 $(basedir).osx: ; mkdir $@ && cp ../scripts/osx/ta $@
 osx-release: $(basedir).osx
 	make clean osx-deps
 	make -j4 osx
 	make -j4 osx-curses
 	make osx-app && mv $(osxapp) $<
-	zip -r /tmp/$<.zip $< && rm -rf $< && gpg -ab /tmp/$<.zip
+	zip -r /tmp/$<.zip $< && rm -rf $< && gpg --batch -ab /tmp/$<.zip
 $(basedir).modules:
 	mkdir -p $@/modules
 	hg archive -R /home/mitchell/code/textadept_modules/ -r tip $@/modules
 modules-release: $(basedir).modules
-	zip -r /tmp/$<.zip $< && rm -r $< && gpg -ab /tmp/$<.zip
+	zip -r /tmp/$<.zip $< && rm -r $< && gpg --batch -ab /tmp/$<.zip
 
 osx-app: ../textadept ../textadept-curses ../scripts/osx/textadept_osx
 	mkdir -p $(osxapp_bin) $(osxapp_res)
@@ -372,16 +382,16 @@ else
   gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
 endif
 
-scintilla_zip = 99fa62b828ee.zip
+scintilla_zip = faaabc636de6.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_7_0_2.zip
-gtdialog_zip = db67f8a489e8.zip
+gtdialog_zip = 6edd57eeed93.zip
 cdk_tgz = cdk-5.0-20150928.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
 win32gtk_zip = win32gtk-2.24.32.zip
-win32curses_zip = win32curses36.zip
-pdcurses_zip = pdcurs36.zip
+win32curses_zip = win32curses39.zip
+pdcurses_zip = PDCurses-3.9.zip
 gtkosx_tgz = gtkosx-2.24.31.tar.gz
 bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
@@ -416,6 +426,8 @@ cdk: cdk.patch | $(cdk_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 	mv $@/include/*.h $@
+	$@/gen-scale.sh SLIDER Slider Int int $@/gen-slider.h > $@/slider.h
+	$@/gen-scale.sh SLIDER Slider Int int $@/gen-slider.c > $@/slider.c
 	patch -d $@ -N -p1 < $<
 $(termkey_tgz): ; $(WGET) http://www.leonerd.org.uk/code/libtermkey/$@
 termkey: termkey.patch | $(termkey_tgz)
@@ -426,10 +438,11 @@ $(win32gtk_zip): ; $(WGET) http://foicica.com/textadept/download/$@
 win32gtk: | $(win32gtk_zip) ; unzip $|
 $(win32curses_zip): ; $(WGET) http://foicica.com/textadept/download/$@
 $(pdcurses_zip): ; $(WGET) http://prdownloads.sourceforge.net/pdcurses/$@
-win32curses: | $(win32curses_zip) $(pdcurses_zip)
+win32curses: pdcurses.patch | $(win32curses_zip) $(pdcurses_zip)
 	unzip $(win32curses_zip)
-	mkdir $@/src && unzip -d $@/src $(pdcurses_zip)
-	cp $@/lib/pdckbd.c $@/src/wincon
+	mkdir $@/src && unzip -d $@/src $(pdcurses_zip) && mv $@/src/*/* $@/src
+	cp $@/src/curses.h $@/include
+	patch -d $@/src -N -p1 < $<
 	cd $@/src/wincon && $(MAKE) CC="$(CROSS)$(CC) $(CFLAGS)" LIBEXE=$(CROSS)ar \
 		LINK="$(CROSS)$(CC) $(CFLAGS)" WIDE=Y UTF8=Y libs
 	cp $@/src/wincon/pdcurses.a $@/lib/
@@ -441,7 +454,7 @@ $(cloc): ; $(WGET) http://prdownloads.sourceforge.net/cloc/$@
 sign-deps: | $(scintilla_tgz) $(lua_tgz) $(lpeg_tgz) $(lfs_zip) \
              $(gtdialog_zip) $(cdk_tgz) $(termkey_tgz) $(win32gtk_zip) \
              $(win32curses_zip) $(pdcurses_zip) $(gtkosx_tgz)
-	@for file in $|; do gpg -ab $$file; done
+	@for file in $|; do gpg --batch -ab $$file; done
 verify-deps: | $(wildcard $(basename $(wildcard *.asc)))
 	@for file in $|; do echo "$$file"; gpg --verify $$file.asc || return 1; done
 
@@ -449,17 +462,8 @@ clean-deps:
 	rm -rf scintilla ../lexers lua gtdialog cdk termkey win32gtk win32curses \
 		gtkosx $(notdir ../doc/bombay)
 
-# Count lines of code and generate ctags.
+# Count lines of code.
 
 sources = ../core ../modules/ansi_c ../modules/lua ../modules/textadept \
           textadept.c Makefile ../init.lua
 count: $(cloc) ; perl $< $(sources) --not-match-f=tadoc.lua
-ctags:
-	ctags -R --langdef=luax --langmap=luax:.lua --exclude="*doc*" \
-		--exclude=scintilla/cocoa --exclude=scintilla/lexers \
-		--exclude=scintilla/qt --exclude=scintilla/scripts \
-		--exclude=scintilla/test --exclude=scintilla/win32 \
-		--regex-luax="/^\s*function\s+[^[:space:]\.]*\.?([[:alnum:]_]+)\(/\1/f/" \
-		--regex-luax="/^\s*local\s+function\s+([[:alnum:]_]+)\(/\1/F/" \
-		--regex-luax="/^[^[:space:]\.]*\.?([[:alnum:]_]+)\s*=\s*[{]/\1/t/" \
-		$(sources) scintilla gtdialog/gtdialog.c

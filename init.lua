@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 if toolbar then
   USE_RESULTS_PANEL= true --true:show results in a toolbar panel; false= use a buffer
 end
@@ -11,9 +11,9 @@ keys.cf4 = reset
 
 require('util')
 if not CURSES then
-  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else
+--  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else
     for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
-  end
+--  end
 end
 
 require('export')
@@ -40,15 +40,17 @@ if toolbar then
   require('toolbar')
   --require('htmltoolbar')
 
-  require('listtoolbar')
-  require('listtoolbar.recentprojlist')
-  require('listtoolbar.projlist')
-  require('listtoolbar.ctaglist')
+  if Proj then
+    require('listtoolbar')
+    require('listtoolbar.recentprojlist')
+    require('listtoolbar.projlist')
+    require('listtoolbar.ctaglist')
 
-  if USE_RESULTS_PANEL then
-    require('results')
-    require('results.printresults')
-    require('results.searchresults')
+    if USE_RESULTS_PANEL then
+      require('results')
+      require('results.printresults')
+      require('results.searchresults')
+    end
   end
 
   --set the configured theme
@@ -100,6 +102,6 @@ end
 
 --reload changed files without prompting
 events.connect(events.FILE_CHANGED, function()
-  io.reload_file()
+  Util.reload_file()
   return false
 end,1)

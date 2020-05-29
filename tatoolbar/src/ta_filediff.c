@@ -1,4 +1,4 @@
-// Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+// Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 /* TA  file diff */
 #include <stdio.h>
 #include <stdlib.h>

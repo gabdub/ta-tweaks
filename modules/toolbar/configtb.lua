@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local Util = Util
 local toolbar = toolbar
 local events, events_connect = events, events.connect
@@ -325,10 +325,10 @@ local function add_config_colorpicker()
   add_color_preset(7,0x000000)
   add_color_preset(8,0xffffff)
   toolbar.cfgpnl_y= ynext
-  if Util.TA_MAYOR_VER >= 10 then
+--  if Util.TA_MAYOR_VER >= 10 then
     toolbar.gotopos(290, toolbar.cfgpnl_y)
     toolbar.cmd("colorwheel", colorwheel_clicked, "Show color wheel", "edit-find", true)
-  end
+--  end
 end
 
 local function _add_config_radio(name,text,tooltip,checked)
@@ -1228,7 +1228,7 @@ end
 actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, "cf9", tcv_icon, tcv_status, tcv_text)
 
 --add VIEWCONFIGPANEL at the end of the VIEW menu
-local m_vi= actions.getmenu_fromtitle(_L['_View'])
+local m_vi= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
 if m_vi then
   local m=m_vi[#m_vi]
   m[#m+1]= "toggle_viewcfgpanel"
@@ -1237,7 +1237,7 @@ end
 if minimap then
   --"logical line number" (1..) to "visual line number" (1..)
   local function lin2vis(nl)
-    return buffer:visible_from_doc_line(nl-1)+1
+    return buffer:visible_from_doc_line( nl+Util.LINE_BASE-1 ) +1-Util.LINE_BASE
   end
 
   --add a hilight to the minimap (correcting annotation/hidden lines)
@@ -1247,12 +1247,12 @@ if minimap then
 
   --add markers to the minimap
   local function add_mmap_markers(markbit, colorprop)
-    local mbit= 2^markbit
+    local mbit= 1 << (markbit -Util.LINE_BASE)
     local color= toolbar.get_rgbcolor_prop(colorprop)
-    local nl= buffer.marker_next(buffer, 0, mbit)+1
-    while nl >= 1 do
-      mmhilight(nl,color)
-      local nl2= buffer.marker_next(buffer, nl, mbit)+1
+    local nl= buffer:marker_next(0, mbit)
+    while nl >= 0 do
+      mmhilight(nl +1 -Util.LINE_BASE,color)
+      local nl2= buffer:marker_next(nl+1, mbit)
       if nl2 <= nl then break end
       nl= nl2
     end
@@ -1261,11 +1261,11 @@ if minimap then
   --add indicators to the minimap
   local function add_mmap_indicators(indicator, colorprop)
     local color= toolbar.get_rgbcolor_prop(colorprop)
-    local pos= buffer:indicator_end(indicator, 0)
-    while pos > 0 and pos < buffer.length do
-      local nl= buffer:line_from_position(pos)+1
+    local pos= buffer:indicator_end(indicator, Util.LINE_BASE)
+    while pos > Util.LINE_BASE and pos < buffer.length do
+      local nl= buffer:line_from_position(pos) + 1 - Util.LINE_BASE
       mmhilight(nl, color)
-      pos= buffer:indicator_end(indicator, buffer:position_from_line(nl))
+      pos= buffer:indicator_end(indicator, buffer:position_from_line(nl + Util.LINE_BASE))
     end
   end
 
@@ -1284,9 +1284,11 @@ if minimap then
       minimap.line_count= totlin
       --bookmarks
       add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
-      add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
-      add_mmap_markers(Proj.MARK_DELETION, 'color.red')
-      add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
+      if Proj then
+        add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
+        add_mmap_markers(Proj.MARK_DELETION, 'color.red')
+        add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
+      end
       --highlighted words
       add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
     --  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
@@ -1299,16 +1301,18 @@ if minimap then
     end
   end
 
-  events_connect(events.UPDATE_UI, function(updated)
-  --if we are updating, ignore this event
-    if updated and Proj.update_ui == 0 then
-      if (updated & buffer.UPDATE_CONTENT) > 0 then
-        toolbar.minimap_load()
-      elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
-        minimap_scroll()
+  if Proj then
+    events_connect(events.UPDATE_UI, function(updated)
+    --if we are updating, ignore this event
+      if updated and Proj.update_ui == 0 then
+        if (updated & buffer.UPDATE_CONTENT) > 0 then
+          toolbar.minimap_load()
+        elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
+          minimap_scroll()
+        end
       end
-    end
-  end)
+    end)
+  end
 
   --check every second: hidden lines / window size
   local function check_vis_changes()
@@ -1328,7 +1332,7 @@ if minimap then
     local nl= minimap.getclickline()
     if nl > 0 then
       --"visual line number" (1..) to "logical line number" (0..)
-      nl= buffer:doc_line_from_visible(nl-1)
+      nl= buffer:doc_line_from_visible(nl-1+Util.LINE_BASE)
       if nl >= buffer.line_count then nl= buffer.line_count-1 end
       textadept.editing.goto_line(nl)
       buffer:vertical_centre_caret()

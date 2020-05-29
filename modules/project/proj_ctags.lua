@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local Proj = Proj
 local Util = Util
 local data = Proj.data
@@ -153,7 +153,7 @@ function Proj.goto_tag(ask)
   --code from CTAGS Textadept module
   local tags = {}
   local patt = '^('..word..'%S*)\t(%S+)\t(.-);"\t?(.*)$'
-
+  local i
   for i = 1, #tag_files do
     local dir, found = tag_files[i]:match('^.+[/\\]'), false
     local f = io.open(tag_files[i])
@@ -186,13 +186,13 @@ function Proj.goto_tag(ask)
       --items[#items + 1] = tags[i][4]:match('^%a?%s*(.*)$') -- ignore kind
       items[#items + 1] = tags[i][2]:match('(.-)[^\\/]-$') -- path only
     end
-    local button, i = ui.dialogs.filteredlist{
+    local button, opt = ui.dialogs.filteredlist{
       title = _L['Go To'],
       columns = {_L['Name'], _L['File'], _L['Line:'], 'Path'}, --'Extra Information'},
       items = items, search_column = 2, width = CURSES and ui.size[1] - 2 or nil
     }
     if button < 1 then return end
-    tag = tags[i]
+    tag = tags[opt]
   else
     tag = tags[1]
     ui.statusbar_text = 'TAG: '..word..' (1 match)'
@@ -203,14 +203,16 @@ function Proj.goto_tag(ask)
   --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.go_file(tag[2])
   if not tonumber(tag[3]) then
-    for i = 0, buffer.line_count - 1 do
+    local fromln= Util.LINE_BASE
+    local toln= buffer.line_count -1 + Util.LINE_BASE
+    for i= fromln, toln do
       if buffer:get_line(i):find(tag[3], 1, true) then
         Util.goto_line(buffer, i)
         break
       end
     end
   else
-    Util.goto_line(buffer, tonumber(tag[3])-1)
+    Util.goto_line(buffer, tonumber(tag[3]))
   end
   -- Store the current position at the end of the jump history.
   Proj.append_current_pos()

@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
   local itemsgrp, firsttag
@@ -30,7 +30,7 @@ if toolbar then
   local function gototag(cmd)
     Proj.getout_projview()
     local linenum= toolbar.getnum_cmd(cmd)
-    Util.goto_line(buffer, linenum-1)
+    Util.goto_line(buffer, linenum)
     buffer:vertical_centre_caret()
   end
 

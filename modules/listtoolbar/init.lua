@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 
 if toolbar then
   local events, events_connect = events, events.connect
@@ -151,7 +151,7 @@ if toolbar then
     if actions then
       toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "cf6", "view-list-compact-symbolic", function()
         return (toolbar.list_tb and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(_L['_View'])
+      local med= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
       if med then
         local m=med[#med]
         m[#m+1]= "toggle_viewlist"
@@ -171,7 +171,7 @@ if toolbar then
   function toolbar.list_init_title()
     toolbar.listtb_y= 1
     toolbar.listtb_x= 3
-    toolbar.list_cmdright= 24
+    toolbar.list_cmdright= 18
     toolbar.sel_left_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeList", 150, new_tb_size) --add a resize handle
   end

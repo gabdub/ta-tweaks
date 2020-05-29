@@ -1,4 +1,4 @@
-// Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+// Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 /* ============================================================================= */
 /* GLUE between ta-toolbar and textadept/LUA/GTK                                 */
 /*   when modified, touch textadept.c to compile (because it's "included" there) */
@@ -8,9 +8,9 @@
 #include "ta_filediff.h"
 
 //from textadept.c
-static void lL_showcontextmenu(lua_State *L, GdkEventButton *event, char *k);
+static void show_context_menu(lua_State *L, GdkEventButton *event, char *k);
 //pre-def
-static void create_tatoolbar( GtkWidget *vbox, int ntoolbar );
+static void create_tatoolbar( lua_State *L, GtkWidget *vbox, int ntoolbar );
 static void setmenuitemstatus( int menu_id, int status);
 int toolbar_set_statusbar_text(const char *text, int bar);
 
@@ -1335,21 +1335,21 @@ static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, voi
 void fire_tab_clicked_event( struct toolbar_item * p )
 {
   if( p != NULL ){
-    lL_event(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, p->group->toolbar->num, -1);
+    emit(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, p->group->toolbar->num, -1);
   }
 }
 
 void fire_tb_clicked_event( struct toolbar_item * p )
 {
   if( (p != NULL) && (p->name != NULL) ){
-    lL_event(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+    emit(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
   }
 }
 
 int fire_tb_Rclicked_event( struct toolbar_item * p )
 {
   if( (p != NULL) && (p->name != NULL) ){
-    return lL_event(lua, "toolbar_Rclicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+    return emit(lua, "toolbar_Rclicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
   }
   return 0;
 }
@@ -1357,7 +1357,7 @@ int fire_tb_Rclicked_event( struct toolbar_item * p )
 void fire_tb_2clicked_event( struct toolbar_item * p )
 {
   if( (p != NULL) && (p->name != NULL) ){
-    lL_event(lua, "toolbar_2clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+    emit(lua, "toolbar_2clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
   }
 }
 
@@ -1415,22 +1415,22 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 
         }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
           fire_tab_clicked_event(p);
-          lL_event(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+          emit(lua, "toolbar_tabclose",   LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
 
         }else if( (p->flags & TTBF_TAB) == 0 ){
           if( event->button == 1 ){
             fire_tb_clicked_event(p);         //button left click
           }else if(event->button == 3){
             if( fire_tb_Rclicked_event(p) ){  //button right click
-              lL_showcontextmenu(lua, event, "toolbar_context_menu"); //open context menu
+              show_context_menu(lua, event, "toolbar_context_menu"); //open context menu
             }
           }
         }else{
           if(event->button == 1){
             fire_tab_clicked_event(p);  //tab left click
           }else if(event->button == 3){ //tab right click
-            if( lL_event(lua, "toolbar_tabRclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1) ){
-              lL_showcontextmenu(lua, event, "tab_context_menu"); //open context menu
+            if( emit(lua, "toolbar_tabRclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1) ){
+              show_context_menu(lua, event, "tab_context_menu"); //open context menu
             }
           }
         }
@@ -1457,7 +1457,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           if( (p->flags & TTBF_TAB) == 0 ){
             fire_tb_2clicked_event(p);  //button left double-click
           }else{                        //tab left double-click
-            lL_event(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
+            emit(lua, "toolbar_tab2clicked", LUA_TNUMBER, p->num, LUA_TNUMBER, T->num, -1);
           }
         }
       }
@@ -1474,7 +1474,7 @@ static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
   UNUSED(_); UNUSED(__);
   struct toolbar_data *T= toolbar_from_popup(widget);
   if( T != NULL ){
-    lL_event(lua, "popup_close", LUA_TNUMBER, T->num, -1);
+    emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
     return TRUE;
   }
   return FALSE;
@@ -1484,13 +1484,13 @@ static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
   UNUSED(_);
   struct toolbar_data *T= toolbar_from_popup(widget);
   if( (T != NULL) && (event->keyval == GDK_Escape) ){
-    lL_event(lua, "popup_close", LUA_TNUMBER, T->num, -1);
+    emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
     return TRUE;
   }
   return FALSE;
 }
 
-static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
+static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w, int h )
 {
   struct toolbar_data *T;
   if((ntb < POPUP_FIRST) || (ntb >= NTOOLBARS)){
@@ -1517,12 +1517,12 @@ static void ttb_show_popup( int ntb, int show, int x, int y, int w, int h )
 
         gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK);
 
-        signal(T->win, "focus-out-event", popup_focus_out_ev);
-        signal(T->win, "key-press-event", popup_keypress_ev);
+        g_signal_connect(T->win, "focus-out-event", G_CALLBACK(popup_focus_out_ev), L );
+        g_signal_connect(T->win, "key-press-event", G_CALLBACK(popup_keypress_ev), L );
 
         GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
         gtk_container_add(GTK_CONTAINER(T->win), vbox);
-        create_tatoolbar(vbox, ntb);
+        create_tatoolbar(L, vbox, ntb);
         gtk_widget_show_all(T->win);
         show_toolbar( T, 1, 0 );
         gtk_widget_grab_focus(T->win);
@@ -1615,7 +1615,7 @@ static int ltoolbar_popup(lua_State *L)
     x= intluadef(L, 3, 100);
     y= intluadef(L, 4, 100);
   }
-  ttb_show_popup( ntb, show, x, y, w, h );
+  ttb_show_popup( L, ntb, show, x, y, w, h );
   return 0;
 }
 
@@ -1727,6 +1727,7 @@ static int lminimap_scrollpos(lua_State *L)
   return 0;
 }
 
+#define DEF_C_FUNC(lua, funct, name) lua_pushcfunction(lua,funct), lua_setfield(lua, -2, name)
 /* ============================================================================= */
 /*                          FUNCTIONS CALLED FROM TA                             */
 /* ============================================================================= */
@@ -1739,70 +1740,70 @@ void register_toolbar(lua_State *L)
   //register "toolbar" functions
   lua_newtable(L);
   //toolbars
-  l_setcfunction(L, -1, "new",          ltoolbar_new);          //create a new toolbar (returns toolbar num)
-  l_setcfunction(L, -1, "adjust",       ltoolbar_adjust);       //optionaly fine tune some parameters
-  l_setcfunction(L, -1, "show",         ltoolbar_show);         //show/hide toolbar
+  DEF_C_FUNC(L, ltoolbar_new,           "new");             //create a new toolbar (returns toolbar num)
+  DEF_C_FUNC(L, ltoolbar_adjust,        "adjust");          //optionaly fine tune some parameters
+  DEF_C_FUNC(L, ltoolbar_show,          "show");            //show/hide toolbar
   //groups
-  l_setcfunction(L, -1, "seltoolbar",   ltoolbar_seltoolbar);   //select which toolbar/group to edit
-  l_setcfunction(L, -1, "addgroup",     ltoolbar_addgroup);     //add a new group (returns group num)
-  l_setcfunction(L, -1, "addtabs",      ltoolbar_addtabs);      //add a tabs-group
-  l_setcfunction(L, -1, "showgroup",    ltoolbar_showgroup);    //show/hide a group
+  DEF_C_FUNC(L, ltoolbar_seltoolbar,    "seltoolbar");      //select which toolbar/group to edit
+  DEF_C_FUNC(L, ltoolbar_addgroup,      "addgroup");        //add a new group (returns group num)
+  DEF_C_FUNC(L, ltoolbar_addtabs,       "addtabs");         //add a tabs-group
+  DEF_C_FUNC(L, ltoolbar_showgroup,     "showgroup");       //show/hide a group
   //buttons
-  l_setcfunction(L, -1, "addbutton",    ltoolbar_addbutton);    //add button
-  l_setcfunction(L, -1, "addtext",      ltoolbar_addtext);      //add text button
-  l_setcfunction(L, -1, "addlabel",     ltoolbar_addlabel);     //add a text label
-  l_setcfunction(L, -1, "addspace",     ltoolbar_addspace);     //add some space
-  l_setcfunction(L, -1, "gotopos",      ltoolbar_gotopos);      //change next button position
-  l_setcfunction(L, -1, "enable",       ltoolbar_enable);       //enable/disable a button
-  l_setcfunction(L, -1, "selected",     ltoolbar_selected);     //un/select/press a button
-  l_setcfunction(L, -1, "ensurevisible",ltoolbar_ensurevisible);//ensure a button in a scrollable group is visible
-  l_setcfunction(L, -1, "collapse",     ltoolbar_collapse);     //collapse/expand a block of items under this
-  l_setcfunction(L, -1, "seticon",      ltoolbar_seticon);      //change a button, GROUP or TOOLBAR icon
-  l_setcfunction(L, -1, "setbackcolor", ltoolbar_setbackcolor); //change a button, GROUP or TOOLBAR back color
-  l_setcfunction(L, -1, "settooltip",   ltoolbar_settooltip);   //change a button tooltip
-  l_setcfunction(L, -1, "settext",      ltoolbar_settext);      //change a button text
-  l_setcfunction(L, -1, "textfont",     ltoolbar_textfont);     //set text buttons font size and colors
-  l_setcfunction(L, -1, "anchor",       ltoolbar_anchor);       //anchor a buttons x position to the right
-  l_setcfunction(L, -1, "setresize",    ltoolbar_setresize);    //the button resize the toolbar
+  DEF_C_FUNC(L, ltoolbar_addbutton,     "addbutton");       //add button
+  DEF_C_FUNC(L, ltoolbar_addtext,       "addtext");         //add text button
+  DEF_C_FUNC(L, ltoolbar_addlabel,      "addlabel");        //add a text label
+  DEF_C_FUNC(L, ltoolbar_addspace,      "addspace");        //add some space
+  DEF_C_FUNC(L, ltoolbar_gotopos,       "gotopos");         //change next button position
+  DEF_C_FUNC(L, ltoolbar_enable,        "enable");          //enable/disable a button
+  DEF_C_FUNC(L, ltoolbar_selected,      "selected");        //un/select/press a button
+  DEF_C_FUNC(L, ltoolbar_ensurevisible, "ensurevisible");   //ensure a button in a scrollable group is visible
+  DEF_C_FUNC(L, ltoolbar_collapse,      "collapse");        //collapse/expand a block of items under this
+  DEF_C_FUNC(L, ltoolbar_seticon,       "seticon");         //change a button, GROUP or TOOLBAR icon
+  DEF_C_FUNC(L, ltoolbar_setbackcolor,  "setbackcolor");    //change a button, GROUP or TOOLBAR back color
+  DEF_C_FUNC(L, ltoolbar_settooltip,    "settooltip");      //change a button tooltip
+  DEF_C_FUNC(L, ltoolbar_settext,       "settext");         //change a button text
+  DEF_C_FUNC(L, ltoolbar_textfont,      "textfont");        //set text buttons font size and colors
+  DEF_C_FUNC(L, ltoolbar_anchor,        "anchor");          //anchor a buttons x position to the right
+  DEF_C_FUNC(L, ltoolbar_setresize,     "setresize");       //the button resize the toolbar
   //tabs
-  l_setcfunction(L, -1, "tabfontcolor", ltoolbar_tabfontcolor); //change default tab font color
-  l_setcfunction(L, -1, "settab",       ltoolbar_settab);       //set tab num
-  l_setcfunction(L, -1, "deletetab",    ltoolbar_deletetab);    //delete tab num
-  l_setcfunction(L, -1, "activatetab",  ltoolbar_activatetab);  //activate tab num
-  l_setcfunction(L, -1, "enabletab",    ltoolbar_enabletab);    //enable/disable tab num
-  l_setcfunction(L, -1, "modifiedtab",  ltoolbar_modifiedtab);  //show/hide changed indicator in tab num
-  l_setcfunction(L, -1, "hidetab",      ltoolbar_hidetab);      //hide/show tab num
-  l_setcfunction(L, -1, "tabwidth",     ltoolbar_tabwidth);     //set tab num tabwidth (varible/fixed)
-  l_setcfunction(L, -1, "gototab",      ltoolbar_gototab);      //generate a click in tab: -1:prev,1:next,0:first,2:last
+  DEF_C_FUNC(L, ltoolbar_tabfontcolor,  "tabfontcolor");    //change default tab font color
+  DEF_C_FUNC(L, ltoolbar_settab,        "settab");          //set tab num
+  DEF_C_FUNC(L, ltoolbar_deletetab,     "deletetab");       //delete tab num
+  DEF_C_FUNC(L, ltoolbar_activatetab,   "activatetab");     //activate tab num
+  DEF_C_FUNC(L, ltoolbar_enabletab,     "enabletab");       //enable/disable tab num
+  DEF_C_FUNC(L, ltoolbar_modifiedtab,   "modifiedtab");     //show/hide changed indicator in tab num
+  DEF_C_FUNC(L, ltoolbar_hidetab,       "hidetab");         //hide/show tab num
+  DEF_C_FUNC(L, ltoolbar_tabwidth,      "tabwidth");        //set tab num tabwidth (varible/fixed)
+  DEF_C_FUNC(L, ltoolbar_gototab,       "gototab");         //generate a click in tab: -1:prev,1:next,0:first,2:last
   //get
-  l_setcfunction(L, -1, "getpickcolor", ltoolbar_getpickcolor); //return integer (RGB) current selected color in picker
-  l_setcfunction(L, -1, "getversion",   ltoolbar_getversion);   //return string ta-toolbar version
-  l_setcfunction(L, -1, "getflags",     ltoolbar_getflags);     //return item/current group flags
-  l_setcfunction(L, -1, "getsize",      ltoolbar_getsize);      //return the toolbar height (horizontal tb) or width (vertical tb)
+  DEF_C_FUNC(L, ltoolbar_getpickcolor,  "getpickcolor");    //return integer (RGB) current selected color in picker
+  DEF_C_FUNC(L, ltoolbar_getversion,    "getversion");      //return string ta-toolbar version
+  DEF_C_FUNC(L, ltoolbar_getflags,      "getflags");        //return item/current group flags
+  DEF_C_FUNC(L, ltoolbar_getsize,       "getsize");         //return the toolbar height (horizontal tb) or width (vertical tb)
   //popup
-  l_setcfunction(L, -1, "popup",        ltoolbar_popup);        //show a popup toolbar
+  DEF_C_FUNC(L, ltoolbar_popup,         "popup");           //show a popup toolbar
   //menuitem
-  l_setcfunction(L, -1, "menustatus",   ltoolbar_menustatus);   //change menu item status
+  DEF_C_FUNC(L, ltoolbar_menustatus,    "menustatus");      //change menu item status
   //ui
-  l_setcfunction(L, -1, "updatebuffinfo",ltoolbar_updatebuffinfo); //update buffer info (app title/status bar)
+  DEF_C_FUNC(L, ltoolbar_updatebuffinfo,"updatebuffinfo");  //update buffer info (app title/status bar)
   //toolbar object
   lua_setglobal(L, "toolbar");
 
   //register "filediff" functions
   lua_newtable(L);
   //file diff
-  l_setcfunction(L, -1, "setfile",      lfilediff_setfile);     //load a file to compare
-  l_setcfunction(L, -1, "getdiff",      lfilediff_getdiff);     //get file differences (int array)
-  l_setcfunction(L, -1, "strdiff",      lfilediff_strdiff);     //compare to strings
+  DEF_C_FUNC(L, lfilediff_setfile,      "setfile");         //load a file to compare
+  DEF_C_FUNC(L, lfilediff_getdiff,      "getdiff");         //get file differences (int array)
+  DEF_C_FUNC(L, lfilediff_strdiff,      "strdiff");         //compare to strings
   //filediff object
   lua_setglobal(L, "filediff");
 
   //register "minimap" functions
   lua_newtable(L);
-  l_setcfunction(L, -1, "init",         lminimap_init);         //clear minimap
-  l_setcfunction(L, -1, "hilight",      lminimap_hilight);      //highlight a line
-  l_setcfunction(L, -1, "getclickline", lminimap_getclickline); //get clicked line number
-  l_setcfunction(L, -1, "scrollpos",    lminimap_scrollpos);    //set scroll bar position and size
+  DEF_C_FUNC(L, lminimap_init,          "init");            //clear minimap
+  DEF_C_FUNC(L, lminimap_hilight,       "hilight");         //highlight a line
+  DEF_C_FUNC(L, lminimap_getclickline,  "getclickline");    //get clicked line number
+  DEF_C_FUNC(L, lminimap_scrollpos,     "scrollpos");       //set scroll bar position and size
   lua_setglobal(L, "minimap");
 }
 
@@ -1871,7 +1872,7 @@ void toolbar_set_win_title( const char *title )
 }
 
 /* create a DRAWING-AREA for each toolbar */
-static void create_tatoolbar( GtkWidget *box, int ntoolbar )
+static void create_tatoolbar( lua_State *L, GtkWidget *box, int ntoolbar )
 {
   struct toolbar_data *T;
   GtkWidget * draw;
@@ -1900,13 +1901,13 @@ static void create_tatoolbar( GtkWidget *box, int ntoolbar )
     }
     gtk_widget_set_events(draw, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
       GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
-    signal(draw, "size-allocate",        ttb_size_ev);
-    signal(draw, "expose_event",         ttb_paint_ev);
-    signal(draw, "leave-notify-event",   ttb_mouseleave_ev);
-    signal(draw, "motion_notify_event",  ttb_mousemotion_ev);
-    signal(draw, "scroll-event",         ttb_scrollwheel_ev);
-    signal(draw, "button-press-event",   ttb_button_ev);
-    signal(draw, "button-release-event", ttb_button_ev);
+    g_signal_connect(draw, "size-allocate",        G_CALLBACK(ttb_size_ev), L );
+    g_signal_connect(draw, "expose_event",         G_CALLBACK(ttb_paint_ev), L );
+    g_signal_connect(draw, "leave-notify-event",   G_CALLBACK(ttb_mouseleave_ev), L );
+    g_signal_connect(draw, "motion_notify_event",  G_CALLBACK(ttb_mousemotion_ev), L );
+    g_signal_connect(draw, "scroll-event",         G_CALLBACK(ttb_scrollwheel_ev), L );
+    g_signal_connect(draw, "button-press-event",   G_CALLBACK(ttb_button_ev), L );
+    g_signal_connect(draw, "button-release-event", G_CALLBACK(ttb_button_ev), L );
 
     gtk_box_pack_start(GTK_BOX(box), draw, FALSE, FALSE, 0);
   }
@@ -2110,5 +2111,5 @@ void kill_tatoolbar( void )
 
 void fire_minimap_scroll( int dir )
 {
-  lL_event(lua, "minimap_scroll", LUA_TNUMBER, dir, -1);
+  emit(lua, "minimap_scroll", LUA_TNUMBER, dir, -1);
 }

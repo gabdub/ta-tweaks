@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local Util = Util
 if toolbar then
   --HTML quicktype toolbar
@@ -128,7 +128,7 @@ if toolbar then
     if actions then
       toolbar.idviewhtmltb= actions.add("toggle_viewhtmltb", 'Show HTML Tool_Bar', toolbar.html_toolbar_onoff, "sf10", nil, function()
         return (buffer.html_toolbar_on and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(_L['_View'])
+      local med= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
       if med then
         local m=med[#med]
         m[#m+1]= "toggle_viewhtmltb"

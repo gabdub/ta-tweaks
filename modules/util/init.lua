@@ -1,21 +1,23 @@
--- Copyright 2016-2018 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 ----- utility functions
-Util = {}
-
-Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
+if Util == nil then
+  Util = {}
+  Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
+  Util.LINE_BASE= (Util.TA_MAYOR_VER < 11) and 0 or 1
+end
 
 function Util.info(msg,info)
   ui.dialogs.msgbox{
     title = 'Information',
     text = msg or '',
     informative_text = info or '',
-    icon = 'gtk-dialog-info', button1 = _L['_OK']
+    icon = 'gtk-dialog-info', button1 = Util.OK_TEXT
   }
 end
 
 function Util.confirm(tit, txt, info)
   return ui.dialogs.msgbox{ title = tit or 'Confirmation', text = txt or '', informative_text = info or '',
-      icon = 'gtk-dialog-question', button1 = _L['_OK'], button2 = _L['_Cancel'] } == 1
+      icon = 'gtk-dialog-question', button1 = Util.OK_TEXT, button2 = Util.CANCEL_TEXT } == 1
 end
 
 function Util.goto_view(numview)
@@ -36,12 +38,26 @@ function Util.goto_buffer(buf)
 --  end
 end
 
---goto line= 0...
+--goto line= 1...
 function Util.goto_line(p_buffer,line)
-  p_buffer:ensure_visible_enforce_policy(line)
-  p_buffer:goto_line(line)
+  local r= line -1 + Util.LINE_BASE
+  p_buffer:ensure_visible_enforce_policy(r)
+  p_buffer:goto_line(r)
 end
 
+function Util.close_buffer()
+  local ok
+  if Util.TA_MAYOR_VER < 11 then ok= io.close_buffer() else ok= buffer:close() end
+  return ok
+end
+
+function Util.reload_file()
+  if Util.TA_MAYOR_VER < 11 then io.reload_file() else buffer:reload() end
+end
+
+function Util.save_file()
+  if Util.TA_MAYOR_VER < 11 then io.save_file() else buffer:save() end
+end
 
 -- Returns the Path, Filename, and Extension of a filename as 3 strings
 function Util.splitfilename(strfilename)
@@ -85,7 +101,7 @@ function Util.file_exists(fn)
 end
 
 function Util.type_before_after(before,after)
-  if (buffer.selections > 1) or (buffer.selection_n_start[0] ~= buffer.selection_n_end[0]) then
+  if (buffer.selections > 1) or (buffer.selection_n_start[ Util.LINE_BASE ] ~= buffer.selection_n_end[ Util.LINE_BASE ]) then
     --if something is selected use enclose (left the cursor at the end)
     textadept.editing.enclose(before,after)
     return
