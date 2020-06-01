@@ -1227,13 +1227,11 @@ void set_hilight_tooltipT( struct toolbar_data *T )
 /* ============================================================================= */
 static void ttb_size_ev(GtkWidget *widget, GdkRectangle *prec, void*__)
 {
-  UNUSED(__);
   ttb_set_toolbarsize( toolbar_from_widget(widget), prec->width, prec->height );
 }
 
 static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 {
-  UNUSED(__);
   int x0, y0, wt, ht, y2;
   struct toolbar_group *g;
   struct area drawarea;
@@ -1290,7 +1288,6 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
 
 static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
 {
-  UNUSED(event);
   mouse_leave_toolbar( toolbar_from_widget(widget) );
   return FALSE;
 }
@@ -1317,7 +1314,6 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
 
 static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, void*__)
 {
-  UNUSED(__);
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T != NULL ){
     //don't scroll if a button is pressed (mouse still down)
@@ -1364,7 +1360,6 @@ void fire_tb_2clicked_event( struct toolbar_item * p )
 static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 {
   struct toolbar_item * p;
-  UNUSED(__);
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T == NULL ){
     return FALSE;
@@ -1471,7 +1466,6 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 /*                          TOOLBAR POPUPS                                       */
 /* ============================================================================= */
 static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
-  UNUSED(_); UNUSED(__);
   struct toolbar_data *T= toolbar_from_popup(widget);
   if( T != NULL ){
     emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
@@ -1481,7 +1475,6 @@ static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
 }
 
 static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
-  UNUSED(_);
   struct toolbar_data *T= toolbar_from_popup(widget);
   if( (T != NULL) && (event->keyval == GDK_Escape) ){
     emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
