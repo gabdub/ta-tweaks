@@ -1,4 +1,4 @@
--- Copyright 2016-2019 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 local Proj = Proj
 local last_print_buftype
 
@@ -59,6 +59,18 @@ local function close_search_view()
 end
 
 --------------- RESULTS INTERFACE --------------
+function plugs.init_searchview()
+  --check if a search results buffer is open
+  for _, buff in ipairs(_BUFFERS) do
+    if buff._type == Proj.PRJT_SEARCH then
+      --activate search view
+      plugs.goto_searchview()
+      buff.read_only= true
+      break
+    end
+  end
+end
+
 function plugs.goto_searchview()
   --activate/create search view
   --goto the view for search results, split views and create empty buffers if needed
@@ -74,7 +86,8 @@ function plugs.goto_searchview()
   end
 end
 
-function plugs.close_results()
+function plugs.close_results(viewclosed)
+  --viewclosed= the right view was closed, close this too
   return close_search_view()  --only close this view if this is the last one
 end
 

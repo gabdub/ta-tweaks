@@ -35,17 +35,8 @@ function Proj.EVinitialize()
 
   --load recent projects list / project preferences
   Proj.load_config()
-  if not USE_RESULTS_PANEL then
-    --check if search results is open
-    for _, buff in ipairs(_BUFFERS) do
-      if buff._type == Proj.PRJT_SEARCH then
-        --activate search view
-        plugs.goto_searchview()
-        buff.read_only= true
-        break
-      end
-    end
-  end
+  --check if a search results buffer is open
+  plugs.init_searchview()
   --check if a project file is open
   --TODO: mark rigth side files
   for _, buff in ipairs(_BUFFERS) do
@@ -1135,7 +1126,7 @@ function Proj.check_rightpanel()
       local br= Proj.getFirstRegularBuf(2)
       if br then Util.goto_buffer(br) else
         view.unsplit(view)
-        if not USE_RESULTS_PANEL then plugs.close_results() end --close the search view too
+        plugs.close_results(true) --close the search view too
       end
     end
   end

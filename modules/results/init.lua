@@ -205,13 +205,18 @@ if toolbar then
   end
 
   --------------- RESULTS INTERFACE --------------
+  function plugs.init_searchview()
+    --check if a search results buffer is open
+  end
+
   function plugs.goto_searchview()
     --activate search panel
     --if not toolbar.results_tb then toolbar.results_onoff() end
   end
 
-  function plugs.close_results()
-    if toolbar.results_tb then toolbar.results_onoff() return true end
+  function plugs.close_results(viewclosed)
+    --viewclosed= true (the right view was closed, don't close, results are in a toolbar not in a buffer)
+    if not viewclosed and toolbar.results_tb then toolbar.results_onoff() return true end
     return false --already closed
   end
 
