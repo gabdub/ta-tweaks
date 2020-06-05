@@ -108,7 +108,8 @@ if toolbar then
     end
   end
 
-  local function recentproj_create()
+  local function recentproj_create_cb()
+    --LSTSEL_CREATE_CB: create callback
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_left_bar(itemsgrp)
@@ -119,13 +120,14 @@ if toolbar then
     toolbar.cmd_dclick("goproj",goproj_dclick)
   end
 
-  local function recentproj_notify(switching)
-    if not switching then load_recentproj() end
+  local function recentproj_update_cb(reload)
+    --LSTSEL_UPDATE_CB: update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
+    if reload then load_recentproj() end
     mark_open_proj()
   end
 
-  local function recentproj_showlist(show)
-    --show/hide list items
+  local function recentproj_showlist_cb(show)
+    --LSTSEL_SHOW_CB: the list has been shown/hidden (parameter: show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end
@@ -139,6 +141,6 @@ if toolbar then
     toolbar.select_list("recentprojlist",true) --activate this list
   end
 
-  toolbar.registerlisttb("recentprojlist", "Recent Projects", "go-home", recentproj_create, recentproj_notify, recentproj_showlist)
+  toolbar.registerlisttb("recentprojlist", "Recent Projects", "go-home", recentproj_create_cb, recentproj_update_cb, recentproj_showlist_cb)
 end
 

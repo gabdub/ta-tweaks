@@ -98,6 +98,11 @@ function Proj.clear_proj_arrays()
 end
 Proj.clear_proj_arrays()
 
+local CFGHOOK_BEFORE_LOAD=   1  --add hooked fields to config
+local CFGHOOK_CONFIG_LOADED= 2  --notify config loaded
+local CFGHOOK_BEFORE_SAVE=   3  --get hooked fields value
+local CFGHOOK_PROJ_LOADED=   4  --notify project loaded
+
 function Proj.add_config_hook(beforeload, afterload, beforesave, projloaded)
   data.config_hooks[#data.config_hooks+1]= {beforeload, afterload, beforesave, projloaded}
 end
@@ -109,7 +114,8 @@ function Proj.load_config()
   Util.add_config_field(cfg, "edit_width",   Util.cfg_int, 600)
   Util.add_config_field(cfg, "select_width", Util.cfg_int, 200)
   Util.add_config_field(cfg, "recent",       Util.cfg_str, "", Proj.MAX_RECENT_PROJ)
-  for i=1, #data.config_hooks do data.config_hooks[i][1](cfg) end  --add hooked fields to config
+  --add hooked fields to config
+  for i=1, #data.config_hooks do data.config_hooks[i][CFGHOOK_BEFORE_LOAD](cfg) end
   Util.load_config_file(cfg, Proj.PROJ_CONFIG_FILE)
   data.recent_prj_change= false
 
@@ -124,18 +130,19 @@ function Proj.load_config()
     local rc= cfg["recent#"..i]
     if rc and (rc ~= "") then data.recent_projects[#data.recent_projects+1]=rc end
   end
-  for i=1, #data.config_hooks do data.config_hooks[i][2](data.config) end  --notify hooks afterload
+  --notify config loaded
+  for i=1, #data.config_hooks do data.config_hooks[i][CFGHOOK_CONFIG_LOADED](data.config) end
 end
 
-local function notify_projload_ends()
-  for i=1, #data.config_hooks do data.config_hooks[i][4](data.config) end  --notify hooks projloaded
+local function notify_projload_ends() --notify hooks projloaded
+  for i=1, #data.config_hooks do data.config_hooks[i][CFGHOOK_PROJ_LOADED](data.config) end
 end
 
 function Proj.save_config()
   local cfg= data.config
   local changed= data.recent_prj_change
-  for i=1, #data.config_hooks do
-    if data.config_hooks[i][3](cfg) then changed=true end  --get hooked fields value
+  for i=1, #data.config_hooks do --get hooked fields value
+    if data.config_hooks[i][CFGHOOK_BEFORE_SAVE](cfg) then changed=true end
   end
   if changed or Proj.data.config.is_visible ~= Proj.is_visible then
     cfg.is_visible= Proj.is_visible
@@ -177,6 +184,50 @@ function Proj.create_empty_project(filename, projname, rootdir)
   fo:write('[' .. projname .. ']::' .. rootdir .. '::')
   fo:close()
   return true
+end
+
+function Proj.add_files_to_project(flist, groupfiles, all, finprj)
+  local fo, err= io.open(data.filename, 'a+b')
+  if not fo then
+    Util.info("ERROR: Can't add file/s to project", err)
+    ui.statusbar_text= "ERROR: Can't add file/s to project"
+    return nil
+  end
+  data.proj_parsed= false --prevent list update when saving the project until it's parsed
+  local row= nil
+  local curpath= nil
+  local defdir= data.proj_grp_path[1]
+  for i,file in ipairs(flist) do
+    if all or finprj[i] == false then --all files or just new ones
+      local path,fn,ext = Util.splitfilename(file)
+      if groupfiles then
+        --add file with relative path
+        if curpath == nil or curpath ~= path then
+          curpath= path
+          local ph=path
+          --remove default proyect base
+          if defdir and string.sub(ph,1,string.len(defdir)) == defdir then
+            ph= string.sub(ph,string.len(defdir)+1)
+            if ph ~= "" then
+              local lastch= string.sub(ph,-1) --remove "\" or "/" end
+              if lastch == "\\" or lastch == "/" then ph= string.sub(ph,1,string.len(ph)-1) end
+            end
+          end
+          fo:write( '\n (' .. ph .. ')::' .. path .. '::')
+        end
+        fo:write( '\n  ' .. fn)
+      else
+        --add files with absolute path
+        fo:write( '\n ' .. fn .. '::' .. file .. '::')
+      end
+      --add the new line to the proj. file list
+      if not row then row= #data.proj_files+1 end
+    end
+  end
+  fo:close()
+  --update Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
+  Proj.parse_project_file()
+  return row
 end
 
 --parse Proj.data.filename and fill project arrays

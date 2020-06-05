@@ -231,7 +231,7 @@ if toolbar then
           local row= Proj.get_file_row(file)
           if row then
             local name= "open-gofile#"..row
-            if openfs[name] == nil then toolbar.setthemeicon(name,"open-back") end
+            if not openfs[name] then toolbar.setthemeicon(name,"open-back") end
             openfs[name]= true
           end
         end
@@ -245,7 +245,8 @@ if toolbar then
     end
   end
 
-  local function proj_create()
+  local function proj_create_cb()
+    --LSTSEL_CREATE_CB: create callback
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_left_bar(itemsgrp)
@@ -256,17 +257,18 @@ if toolbar then
     toolbar.cmd_dclick("gofile",gofile_dclick)
   end
 
-  local function proj_notify(switching)
-    if not switching then load_proj() end
+  local function proj_update_cb(reload)
+    --LSTSEL_UPDATE_CB: update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
+    if reload then load_proj() end
     track_file()
     mark_open_files()
   end
 
-  local function proj_showlist(show)
-    --show/hide list items
+  local function proj_showlist_cb(show)
+    --LSTSEL_SHOW_CB: the list has been shown/hidden (parameter: show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end
 
-  toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create, proj_notify, proj_showlist)
+  toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create_cb, proj_update_cb, proj_showlist_cb)
 end

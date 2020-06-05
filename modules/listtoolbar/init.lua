@@ -8,17 +8,32 @@ if toolbar then
   toolbar.listselections= {}
   toolbar.listwidth= 250
 
-  local function listtb_update(switching)
-    --{name, tooltip, icon, createfun, **notify**, show}
-    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][5](switching or false) end
+  local LSTSEL_NAME=      1  --list name
+  local LSTSEL_TOOLTIP=   2  --list tooltip
+  local LSTSEL_ICON=      3  --list icon
+  local LSTSEL_CREATE_CB= 4  --create callback
+  local LSTSEL_UPDATE_CB= 5  --update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
+  local LSTSEL_SHOW_CB=   6  --the list has been shown/hidden (parameter: show)
+
+  function toolbar.registerlisttb(name, tooltip, icon, createfun_cb, notify_cb, showlist_cb)
+    toolbar.listselections[#toolbar.listselections+1]= {name, tooltip, icon, createfun_cb, notify_cb, showlist_cb}
   end
 
-  events_connect(events.BUFFER_AFTER_SWITCH,  function() listtb_update(true) end)
-  events_connect(events.VIEW_AFTER_SWITCH,    function() listtb_update(true) end)
-  events_connect(events.BUFFER_NEW,           listtb_update)
-  events_connect(events.FILE_OPENED,          listtb_update)
-  events_connect(events.FILE_CHANGED,         listtb_update)
-  events_connect(events.FILE_AFTER_SAVE,      listtb_update)
+  local function listtb_update(reload)
+    --notify the list is shown (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
+    if toolbar.list_tb and currlistidx > 0 then toolbar.listselections[currlistidx][LSTSEL_UPDATE_CB](reload or false) end
+  end
+
+  local function reload_list()
+    listtb_update(true) --reload the list
+  end
+
+  events_connect(events.BUFFER_AFTER_SWITCH,  listtb_update)  --no need to reload the list
+  events_connect(events.VIEW_AFTER_SWITCH,    listtb_update)  --no need to reload the list
+  events_connect(events.BUFFER_NEW,           reload_list)    --reload the list
+  events_connect(events.FILE_OPENED,          reload_list)    --reload the list
+  events_connect(events.FILE_CHANGED,         reload_list)    --reload the list
+  events_connect(events.FILE_AFTER_SAVE,      reload_list)    --reload the list
 
   function toolbar.select_list(listname, dont_hide_show)
     if listname == currlist then
@@ -29,10 +44,10 @@ if toolbar then
       --change the active list
       if currlistidx > 0 then
         toolbar.selected(currlist, false, false)
-        toolbar.listselections[currlistidx][6](false) --hide list items
+        toolbar.listselections[currlistidx][LSTSEL_SHOW_CB](false) --hide
       end
       for i=1,#toolbar.listselections do
-        if toolbar.listselections[i][1] == listname then
+        if toolbar.listselections[i][LSTSEL_NAME] == listname then
           currlist= listname
           currlistidx= i
           break
@@ -40,8 +55,8 @@ if toolbar then
       end
       if currlistidx > 0 then
         toolbar.selected(currlist, false, toolbar.list_tb)
-        toolbar.listselections[currlistidx][6](true) --show list items
-        listtb_update()
+        toolbar.listselections[currlistidx][LSTSEL_SHOW_CB](true) --show
+        reload_list() --reload the list
       end
     end
   end
@@ -51,7 +66,7 @@ if toolbar then
     if toolbar.list_tb then
       if n < #toolbar.listselections then n=n+1 else n=1 end
     end
-    toolbar.select_list(toolbar.listselections[n][1])
+    toolbar.select_list(toolbar.listselections[n][LSTSEL_NAME])
   end
 
   function toolbar.prev_list()
@@ -59,25 +74,23 @@ if toolbar then
     if toolbar.list_tb then
       if n > 1 then n=n-1 else n=#toolbar.listselections end
     end
-    toolbar.select_list(toolbar.listselections[n][1])
+    toolbar.select_list(toolbar.listselections[n][LSTSEL_NAME])
   end
 
   function toolbar.islistshown(name)
     return (toolbar.list_tb) and (currlist==name)
   end
 
-  function toolbar.registerlisttb(name, tooltip, icon, createfun, notify, showlist)
-    toolbar.listselections[#toolbar.listselections+1]= {name, tooltip, icon, createfun, notify, showlist}
-  end
-
   --the toolbar config is saved inside the project configuration file
   local function beforeload_ltb(cfg)
+    --CFGHOOK_BEFORE_LOAD: add hooked fields to config
     Util.add_config_field(cfg, "lst_width", Util.cfg_int, 250)
     Util.add_config_field(cfg, "lst_show",  Util.cfg_bool, true)
     Util.add_config_field(cfg, "open_proj", Util.cfg_str, "")
   end
 
   local function afterload_ltb(cfg)
+    --CFGHOOK_CONFIG_LOADED: notify config loaded
     --show list toolbar
     toolbar.sel_left_bar()
     toolbar.list_tb= cfg.lst_show
@@ -88,6 +101,7 @@ if toolbar then
   end
 
   local function beforesave_ltb(cfg)
+    --CFGHOOK_BEFORE_SAVE: get hooked fields value
     local changed= false
     if cfg.lst_show  ~= toolbar.list_tb    then cfg.lst_show=toolbar.list_tb     changed=true end
     if cfg.lst_width ~= toolbar.listwidth  then cfg.lst_width=toolbar.listwidth  changed=true end
@@ -96,12 +110,12 @@ if toolbar then
   end
 
   local function projloaded_ltb(cfg)
-    --the project file parsing is complete
+    --CFGHOOK_PROJ_LOADED: the project parsing is complete
     if cfg.open_proj ~= "" then toolbar.select_list("projlist", true) end
     if currlistidx > 0 then
       toolbar.selected(currlist, false, toolbar.list_tb)
-      toolbar.listselections[currlistidx][6](true) --show list
-      listtb_update()
+      toolbar.listselections[currlistidx][LSTSEL_SHOW_CB](true) --show
+      reload_list() --reload the list
     end
     if #toolbar.listselections == 0 then
       toolbar.list_init_title()
@@ -135,16 +149,14 @@ if toolbar then
 
     toolbar.show(false, toolbar.listwidth)  --hide until the project config is loaded
 
-    for i=1,#toolbar.listselections do
-      local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
-      ls[4]() --create list
-    end
+    --create lists
+    for i=1,#toolbar.listselections do toolbar.listselections[i][LSTSEL_CREATE_CB]() end
 
     toolbar.sel_top_bar() --add buttons to select the lists in the top toolbar
     if #toolbar.listselections > 0 then
       for i=1,#toolbar.listselections do
-        local ls= toolbar.listselections[i] --{name, tooltip, icon, createfun, notify, show}
-        toolbar.cmd(ls[1], toolbar.select_list, ls[2], ls[3], true)
+        local ls= toolbar.listselections[i]
+        toolbar.cmd(ls[LSTSEL_NAME], toolbar.select_list, ls[LSTSEL_TOOLTIP], ls[LSTSEL_ICON], true)
       end
       toolbar.addspace()
     end
@@ -199,7 +211,7 @@ if toolbar then
       end
     end
     toolbar.sel_left_bar()
-    listtb_update()
+    reload_list() --reload the list
 
     toolbar.show(toolbar.list_tb, toolbar.listwidth)
     --check menuitem

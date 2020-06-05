@@ -356,19 +356,16 @@ function Proj.add_files(p_buffer, flist, groupfiles)
       table.sort(flist, file_sort)
     end
     for _,file in ipairs(flist) do
-      --check if already in the project
+      --check if this file is in the project
       local in_prj= (Proj.get_file_row(file) ~= nil)
       finprj[ #finprj+1]= in_prj
       if in_prj then n_inprj= n_inprj+1 end
     end
     --if some files are already in the project, ask for confirmation
-    if n_inprj == 1 then
-      info= '1 file is'
-    else
-      info= '' .. n_inprj .. ' files are'
-    end
-    all= true
-    nadd= #flist
+    local info= '1 file is'
+    if n_inprj > 1 then info= '' .. n_inprj .. ' files are' end
+    local all= true
+    local nadd= #flist
     local confirm = (n_inprj == 0) or Util.confirm( 'Add confirmation',
       info..' already in the project', 'Do you want to add it/them again?')
     if (not confirm) and (#flist > n_inprj) then
@@ -392,51 +389,21 @@ function Proj.add_files(p_buffer, flist, groupfiles)
         Util.goto_view(projv)
       end
 
-      --if the project is in readonly, change it
-      save_ro= p_buffer.read_only
-      p_buffer.read_only= false
-      row= nil
-      local curpath
-      local defdir= data.proj_grp_path[1]
-      for i,file in ipairs(flist) do
-        if all or finprj[i] == false then
-          path,fn,ext = Util.splitfilename(file)
-          if groupfiles then
-            --add file with relative path
-            if curpath == nil or curpath ~= path then
-              curpath= path
-              local ph=path
-              --remove default proyect base
-              if defdir and string.sub(ph,1,string.len(defdir)) == defdir then
-                ph= string.sub(ph,string.len(defdir)+1)
-                if ph ~= "" then
-                  local lastch= string.sub(ph,-1) --remove "\" or "/" end
-                  if lastch == "\\" or lastch == "/" then ph= string.sub(ph,1,string.len(ph)-1) end
-                end
-              end
-              p_buffer:append_text( '\n (' .. ph .. ')::' .. path .. '::')
-            end
-            p_buffer:append_text( '\n  ' .. fn)
-          else
-            --add files with absolute path
-            p_buffer:append_text( '\n ' .. fn .. '::' .. file .. '::')
-          end
-          --add the new line to the proj. file list
-          if not row then row= #data.proj_files+1 end
-        end
-      end
-      data.proj_parsed= false --prevent list update when saving the project until it's parsed
-      Util.save_file()
-      p_buffer.read_only= save_ro
-      --update Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-      Proj.parse_project_file()
+      local row= Proj.add_files_to_project(flist, groupfiles, all, finprj)
+      if row then
+        local save_ro= p_buffer.read_only
+        p_buffer.read_only= false
+        Util.reload_file()
+        p_buffer.read_only= save_ro
 
-      --move the selection bar
-      if row then Util.goto_line(p_buffer,row) end
+        --move the selection bar to the first added file
+        Util.goto_line(p_buffer, row)
+      end
+
       -- project in SELECTION mode without focus--
       Proj.show_lost_focus(p_buffer)
       p_buffer.home()
-      ui.statusbar_text= '' .. nadd .. ' file/s added to project'
+      if row then ui.statusbar_text= '' .. nadd .. ' file/s added to project' end
 
       Proj.stop_update_ui(false)
     end

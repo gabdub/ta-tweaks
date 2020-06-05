@@ -16,7 +16,8 @@ if toolbar then
     firsttag= nil
   end
 
-  local function ctags_create()
+  local function ctags_create_cb()
+    --LSTSEL_CREATE_CB: create callback
     --items group: fixed width=300 / height=use buttons + vertical scroll
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_left_bar(itemsgrp)
@@ -163,20 +164,21 @@ if toolbar then
     end
   end
 
-  local function ctags_notify(switching)
+  local function ctags_update_cb(reload)
+    --LSTSEL_UPDATE_CB: update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
     --when switching buffers/view: update only if the current buffer filename change
-    if (not switch) or (toolbar.tag_listedfile ~= buffer.filename) then load_ctags() end
+    if reload or (toolbar.tag_listedfile ~= buffer.filename) then load_ctags() end
   end
 
-  local function ctags_showlist(show)
-    --show/hide list items
+  local function ctags_showlist_cb(show)
+    --LSTSEL_SHOW_CB: the list has been shown/hidden (parameter: show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end
 
-  function toolbar.ctaglist_update() --the CTAG file was regenerated
+  function toolbar.ctaglist_update() --the CTAG file was regenerated: reload if visible
     if toolbar.islistshown("ctaglist") then load_ctags() end
   end
 
-  toolbar.registerlisttb("ctaglist", "Ctag List", "t_struct", ctags_create, ctags_notify, ctags_showlist)
+  toolbar.registerlisttb("ctaglist", "Ctag List", "t_struct", ctags_create_cb, ctags_update_cb, ctags_showlist_cb)
 end
