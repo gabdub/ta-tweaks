@@ -45,7 +45,7 @@ if toolbar then
       local isvp= Proj.is_visible
       --toolbar.list_toolbar_onoff() --hide toolbar to see the project view
       Proj.open_project(Proj.data.recent_projects[linenum])
-      toolbar.select_list("projlist") --show project list
+      toolbar.select_list("projlist", true) --show project list
       Proj.is_visible= isvp
       Proj.update_projview() --update action: toggle_viewproj
     end

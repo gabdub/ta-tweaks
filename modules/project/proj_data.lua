@@ -167,6 +167,18 @@ function Proj.add_recentproject()
   if toolbar and toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
 end
 
+function Proj.create_empty_project(filename, projname, rootdir)
+  local fo, err= io.open(filename, 'wb')
+  if not fo then
+    Util.info("ERROR: Can't create the project file", err)
+    ui.statusbar_text= "ERROR: Can't create the project file"
+    return false
+  end
+  fo:write('[' .. projname .. ']::' .. rootdir .. '::')
+  fo:close()
+  return true
+end
+
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
   data.proj_parsed= true

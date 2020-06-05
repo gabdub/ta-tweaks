@@ -97,6 +97,7 @@ if toolbar then
 
   local function projloaded_ltb(cfg)
     --the project file parsing is complete
+    if cfg.open_proj ~= "" then toolbar.select_list("projlist", true) end
     if currlistidx > 0 then
       toolbar.selected(currlist, false, toolbar.list_tb)
       toolbar.listselections[currlistidx][6](true) --show list

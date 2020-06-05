@@ -358,57 +358,20 @@ function Proj.new_project()
   if not filename then return end
   --first close the current project (keep views)
   if not Proj.close_project(true) then
-    ui.statusbar_text= 'Open cancelled'
+    ui.statusbar_text= 'New project cancelled'
     return
   end
   path,fn,ext = Util.splitfilename(filename)
-  if ext ~= '' then
-    --remove extension
-    fn= fn:match('^(.+)%.')
-  end
+  --remove extension
+  if ext ~= '' then fn= fn:match('^(.+)%.') end
   --select the root of the project (suggest project path)
   rootdir = ui.dialogs.fileselect{
     title = 'Select project root (Cancel = relative to project file)',
     select_only_directories = true, with_directory = path
   }
-  if not rootdir then
-    rootdir=''  --relative
-  else
-    rootdir= rootdir .. (WIN32 and '\\' or '/')
-  end
-
-  --keep current file after project open
-  local proj_keep_file
-  if buffer ~= nil and buffer.filename ~= nil then
-    proj_keep_file= buffer.filename
-  end
-  Proj.goto_projview(Proj.PRJV_PROJECT)
-  --create the project buffer
-  local buffer = buffer.new()
-  buffer.filename = filename
-  buffer:append_text('[' .. fn .. ']::' .. rootdir .. '::')
-  --save project file
-  data.filename= filename
-  data.proj_parsed= false --prevent list update when saving the project until it's parsed
-  Util.save_file()
-  --remember project file in recent list
-  Proj.add_recentproject()
-
-  -- project in SELECTION mode without focus--
-  Proj.set_selectionmode(buffer,true)
-  Proj.show_lost_focus(buffer)
-  --update ui
-  Proj.stop_update_ui(true)
-  Proj.goto_filesview(true) --change to files
-  Proj.stop_update_ui(false)
-  -- project in SELECTION mode without focus--
-  --local p_buffer = Proj.get_projectbuffer(true)
-  --Proj.show_lost_focus(p_buffer)
-
-  --project ui
-  Proj.ifproj_setselectionmode()
-  --restore the file that was current before opening the project or open an empty one
-  Proj.go_file(proj_keep_file)
+  if not rootdir then rootdir='' else rootdir= rootdir .. Util.PATH_SEP end
+  --create the project file and open it
+  if Proj.create_empty_project(filename, fn, rootdir) then Proj.open_project(filename) end
 end
 
 --ACTION: open_project
@@ -426,21 +389,13 @@ function Proj.open_project(filename)
       return
     end
 
-    --TODO: check if there are buffers open (except a project and/or Untitled not modified buffer)
-    --and ask to close all buffers before open the project
-    --io.close_all_buffers()
-    --TODO: add "project-sessions" to keep track of project open files
-
-    --keep current file after project open
-    local proj_keep_file
-    if buffer ~= nil and buffer.filename ~= nil then
-      proj_keep_file= buffer.filename
-    end
+    local proj_keep_file --keep the current file selected
+    if buffer ~= nil and buffer.filename ~= nil then proj_keep_file= buffer.filename end
     Proj.goto_projview(Proj.PRJV_PROJECT)
     data.filename= prjfile
-    --open the project
+    --open the project file
     io.open_file(prjfile)
-    --remember project file in recent list
+    --add the project to the recent list
     Proj.add_recentproject()
     --update ui
     Proj.stop_update_ui(true)
@@ -449,7 +404,6 @@ function Proj.open_project(filename)
     -- project in SELECTION mode without focus--
     local p_buffer = Proj.get_projectbuffer(true)
     Proj.show_lost_focus(p_buffer)
-
     --project ui
     Proj.ifproj_setselectionmode()
     --restore the file that was current before opening the project or open an empty one

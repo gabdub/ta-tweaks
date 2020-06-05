@@ -6,6 +6,8 @@ if Util == nil then
   Util.LINE_BASE= (Util.TA_MAYOR_VER < 11) and 0 or 1
 end
 
+Util.PATH_SEP= (WIN32 and '\\' or '/')
+
 function Util.info(msg,info)
   ui.dialogs.msgbox{
     title = 'Information',
