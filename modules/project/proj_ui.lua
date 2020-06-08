@@ -150,55 +150,9 @@ function Proj.getFirstRegularBuf(panel)
 end
 
 ------------------PROJECT CONTROL-------------------
---if the current file is a project, enter SELECTION mode--
-function Proj.ifproj_setselectionmode(p_buffer)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
-    Proj.set_selectionmode(p_buffer,true)
-    if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. buffer.filename
-    end
-    return true
-  end
-  return false
-end
-
---if the current file is a project, enter EDIT mode--
-function Proj.ifproj_seteditmode(buff)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
-    Proj.set_selectionmode(p_buffer,false)
-    if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. buffer.filename
-    end
-    return true
-  end
-  return false
-end
-
---return if a project is open in edit mode
-function Proj.isin_editmode()
-  local pbuf= Proj.get_projectbuffer(true)
-  return pbuf and (Proj.get_buffertype(pbuf) == Proj.PRJB_PROJ_EDIT)
-end
-
---toggle project between SELECTION and EDIT modes
-function Proj.toggle_selectionmode()
-  local mode= Proj.get_buffertype()
-  if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then
-    Proj.set_selectionmode(buffer, (mode == Proj.PRJB_PROJ_EDIT)) --toggle current mode
-  else
-    --if the current file is a project, enter SELECTION mode--
-    if not Proj.ifproj_setselectionmode() then
-      ui.statusbar_text= 'This file is not a project'
-    end
-  end
-  buffer.home()
-end
-
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
-function Proj.set_selectionmode(buff,selmode)
+local function setproj_selectionmode(buff,selmode)
   if selmode and buffer.modify then
     data.is_parsed= false --prevent list update when saving the project until it's parsed
     Util.save_file()
@@ -245,6 +199,52 @@ function Proj.set_selectionmode(buff,selmode)
     Proj.update_projview()  --update project view button
     if toolbar then toolbar.seltabbuf(buff) end --hide/show and select tab in edit mode
   end
+end
+
+--if the current file is a project, enter SELECTION mode--
+function Proj.ifproj_setselectionmode(p_buffer)
+  if not p_buffer then p_buffer = buffer end  --use current buffer?
+  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+    setproj_selectionmode(p_buffer,true)
+    if p_buffer.filename then
+      ui.statusbar_text= 'Project file =' .. buffer.filename
+    end
+    return true
+  end
+  return false
+end
+
+--if the current file is a project, enter EDIT mode--
+function Proj.ifproj_seteditmode(p_buffer)
+  if not p_buffer then p_buffer = buffer end  --use current buffer?
+  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+    setproj_selectionmode(p_buffer,false)
+    if p_buffer.filename then
+      ui.statusbar_text= 'Project file =' .. buffer.filename
+    end
+    return true
+  end
+  return false
+end
+
+--toggle project between SELECTION and EDIT modes
+function Proj.toggle_selectionmode()
+  local mode= Proj.get_buffertype()
+  if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then
+    setproj_selectionmode(buffer, (mode == Proj.PRJB_PROJ_EDIT)) --toggle current mode
+  else
+    --if the current file is a project, enter SELECTION mode--
+    if not Proj.ifproj_setselectionmode() then
+      ui.statusbar_text= 'This file is not a project'
+    end
+  end
+  buffer.home()
+end
+
+--return if a project is open in edit mode
+function Proj.isin_editmode()
+  local pbuf= Proj.get_projectbuffer(true)
+  return pbuf and (Proj.get_buffertype(pbuf) == Proj.PRJB_PROJ_EDIT)
 end
 
 --return the project buffer (the working one)
