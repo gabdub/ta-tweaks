@@ -105,9 +105,7 @@ if toolbar then
   end
 
   local function currproj_change()
-    if not Proj.data.proj_parsed then return false end  --wait until the project is parsed
-    local prjfn= Proj.data.filename
-    if prjfn == "" then
+    if not Proj.data.is_open then
       if currproj then
         currproj= nil
         projmod= nil
@@ -115,6 +113,8 @@ if toolbar then
       end
       return false
     end
+    if not Proj.data.is_parsed then return false end  --wait until the project is parsed
+    local prjfn= Proj.data.filename
     local modt= lfs.attributes(prjfn, 'modification')
     if prjfn == currproj then --same file, check modification time
       if modt == projmod then return false end --SAME
@@ -151,7 +151,7 @@ if toolbar then
       toolbar.list_addinfo('The Project module is not installed')
       return
     end
-    if data.filename == "" then
+    if not data.is_open then
       toolbar.list_addinfo('No open project', true)
       list_clear()
       return

@@ -49,39 +49,30 @@ if actions then
 
   --"toggle_viewproj" = '_Hide/show project'
   local function tpv_open()
-    --wait until the project is parsed
-    return Proj.data.proj_parsed and (Proj.data.filename ~= "")
+    return Proj.data.is_open
   end
   local function tpv_status()
-    return (tpv_open() and (Proj.is_visible == 0 and 2 or 1) or 10) --1=checked 2=unchecked 8=disabled
+    return tpv_open() and (Proj.data.is_visible == Proj.V_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
   end
   local function tpv_icon()
     local ena= tpv_open()
     if ena then
-      if Proj.is_visible == 0 then      --0:hidden
-        return "ttb-proj-c"
-      end
-      if Proj.is_visible == 2 then      --2:shown in edit mode
-        return "ttb-proj-e"
-      end
+      if Proj.data.is_visible == Proj.V_HIDDEN then return "ttb-proj-c" end --hidden
+      if Proj.data.is_visible == Proj.V_EDIT   then return "ttb-proj-e" end --edit mode
     end
-    return "ttb-proj-o"  --1:shown in selection mode (or disabled)
+    return "ttb-proj-o"  --selection mode (or disabled)
   end
   local function tpv_text()
     local ena= tpv_open()
     if ena then
-      if Proj.is_visible == 0 then      --0:hidden
-        return "Show project"
-      end
-      if Proj.is_visible == 2 then      --2:shown in edit mode
-        return "End edit mode"
-      end
-      return "Hide project"  --1:shown in selection mode
+      if Proj.data.is_visible == Proj.V_HIDDEN then return "Show project"  end --hidden
+      if Proj.data.is_visible == Proj.V_EDIT   then return "End edit mode" end --edit mode
+      return "Hide project"  --selection mode
     end
     return "No project is open"  --disabled
   end
   local function closeprj_status()
-    return (Proj.data.filename == "" and 8 or 0) --0=normal 8=disabled
+    return Proj.data.is_open and 0 or 8 --0=normal 8=disabled
   end
 
   --add new PROJECT actions

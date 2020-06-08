@@ -53,7 +53,8 @@
 -----------------------------------------------------------------------
 --  Proj.data:          PROJECT DATA
 --   filename           = open project filename or ""
---   proj_parsed        = the project file was parsed
+--   is_open            = (filename ~= "")
+--   is_parsed          = the project file was parsed
 --   proj_files[]       = array with the filename in each row (1...) or ''
 --   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
 --   proj_fold_row[]    = array with the row numbers to fold on open
@@ -67,11 +68,13 @@
 --   recent_projects[]  = recent Projects list (array[ Proj.MAX_RECENT_PROJ ])
 --   recent_prj_change  = the recent Projects list has been modified
 -----------------------------------------------------------------------
---  Proj.data.config:   PROJECT CONFIGURATION
---   is_visible         = 0=hidden  1=shown in selection mode  2=shown in edit mode
---   edit_width         = view width in edit mode
---   select_width       = view width in selection mode
---   recent#1..30       = recent projects (#1= the more recent)
+--  Proj.data.config[]  PROJECT CONFIGURATION
+--   [is_visible]       = 0=hidden  1=shown in selection mode  2=shown in edit mode
+--   [edit_width]       = view width in edit mode
+--   [select_width]     = view width in selection mode
+--   [recent#1..30]     = recent projects (#1= the most recent)
+--  Proj.data.config.is_visible/edit_width/..= last saved configuration
+--  Proj.data.is_visible/edit_width/..= current value
 -----------------------------------------------------------------------
 local Proj = Proj
 local Util = Util
@@ -82,7 +85,16 @@ Proj.MAX_RECENT_PROJ = 30
 Proj.data= {}
 local data= Proj.data
 data.filename= ""  --open project filename or ""
-data.proj_parsed= true
+data.is_open= false
+data.is_parsed= true
+
+Proj.V_HIDDEN= 0
+Proj.V_SELECT= 1
+Proj.V_EDIT=   2
+data.is_visible= Proj.V_HIDDEN  --0=hidden  1=shown in selection mode  2=shown in edit mode
+
+data.edit_width= 600
+data.select_width= 200
 data.recent_projects= {} --recent Projects list
 data.recent_prj_change = false
 data.config= {}
@@ -119,11 +131,11 @@ function Proj.load_config()
   Util.load_config_file(cfg, Proj.PROJ_CONFIG_FILE)
   data.recent_prj_change= false
 
-  Proj.is_visible= cfg.is_visible
-  Proj.edit_width= cfg.edit_width
-  if Proj.edit_width < 50 then Proj.edit_width= 600 end
-  Proj.select_width= cfg.select_width
-  if Proj.select_width < 50 then Proj.select_width= 200 end
+  data.is_visible= cfg.is_visible
+  data.edit_width= cfg.edit_width
+  if data.edit_width < 50 then data.edit_width= 600 end
+  data.select_width= cfg.select_width
+  if data.select_width < 50 then data.select_width= 200 end
 
   data.recent_projects={}
   for i=1, Proj.MAX_RECENT_PROJ do
@@ -144,10 +156,10 @@ function Proj.save_config()
   for i=1, #data.config_hooks do --get hooked fields value
     if data.config_hooks[i][CFGHOOK_BEFORE_SAVE](cfg) then changed=true end
   end
-  if changed or Proj.data.config.is_visible ~= Proj.is_visible then
-    cfg.is_visible= Proj.is_visible
-    cfg.edit_width= Proj.edit_width
-    cfg.select_width= Proj.select_width
+  if changed or Proj.data.config.is_visible ~= Proj.data.is_visible then
+    cfg.is_visible= Proj.data.is_visible
+    cfg.edit_width= data.edit_width
+    cfg.select_width= data.select_width
     for i=1, #data.recent_projects do cfg["recent#"..i]= data.recent_projects[i] end
     if #data.recent_projects < Proj.MAX_RECENT_PROJ then
       for i=#data.recent_projects+1, Proj.MAX_RECENT_PROJ do cfg["recent#"..i]= "" end
@@ -187,13 +199,14 @@ function Proj.create_empty_project(filename, projname, rootdir)
 end
 
 function Proj.add_files_to_project(flist, groupfiles, all, finprj)
+  if not data.is_open then return nil end
   local fo, err= io.open(data.filename, 'a+b')
   if not fo then
     Util.info("ERROR: Can't add file/s to project", err)
     ui.statusbar_text= "ERROR: Can't add file/s to project"
     return nil
   end
-  data.proj_parsed= false --prevent list update when saving the project until it's parsed
+  data.is_parsed= false --prevent list update when saving the project until it's parsed
   local row= nil
   local curpath= nil
   local defdir= data.proj_grp_path[1]
@@ -232,12 +245,12 @@ end
 
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
-  data.proj_parsed= true
+  data.is_parsed= true
   Proj.clear_proj_arrays()
-  if data.filename == nil or data.filename == "" then
+  if not data.is_open then
     notify_projload_ends()
-    Util.info("ERROR", "Project filename unknown")
-    ui.statusbar_text= 'ERROR: Project filename unknown'
+    Util.info("ERROR", "Unknown project filename")
+    ui.statusbar_text= 'ERROR: Unknown project filename'
     return
   end
   local fi, err= io.open(data.filename, 'rb')
@@ -347,6 +360,7 @@ end
 
 function Proj.closed_cleardata()
   data.filename= ""
+  data.is_open= false
   Proj.clear_proj_arrays()
   ui.statusbar_text= 'Project closed'
   notify_projload_ends()
@@ -385,8 +399,8 @@ function Proj.run_command(cmd)
     end
     if s and e then
       --replace %{projfiles} is with a temporary file with the list of project files
-      if data.filename == "" then
-        ui.statusbar_text= 'No project found'
+      if not data.is_open then
+        ui.statusbar_text= 'You must first open a project'
         return
       end
 
@@ -437,8 +451,8 @@ end
 
 --get "version control number, path, url" for filename
 function Proj.get_versioncontrol_url(filename)
-  if data.filename == "" then
-    ui.statusbar_text= 'No project found'
+  if not data.is_open then
+    ui.statusbar_text= 'You must first open a project'
     return
   end
   if data.proj_vcontrol == nil or #data.proj_vcontrol == 0 then

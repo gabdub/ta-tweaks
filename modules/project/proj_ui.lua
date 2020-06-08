@@ -44,16 +44,16 @@ function Proj.EVinitialize()
     local pt= Proj.get_buffertype(buff)
     if pt == Proj.PRJB_PROJ_NEW or pt == Proj.PRJB_PROJ_SELECT then
       data.filename= buff.filename
+      data.is_open= true
       --activate project in the proper view
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Util.goto_buffer(buff)
-      if Proj.is_visible == 2 then
-        --2:shown in edit mode
-        Proj.ifproj_seteditmode(buff)
+      if data.is_visible == Proj.V_EDIT then
+        Proj.ifproj_seteditmode(buff)  --edit mode
       else
-        --0:hidden  1:shown in selection mode
-        Proj.ifproj_setselectionmode(buff)
-        Proj.is_visible= Proj.data.config.is_visible  --keep 0 is hidden
+        --hidden / shown in selection mode
+        Proj.ifproj_setselectionmode(buff) --selection mode (this set data.is_visible= selection mode)
+        data.is_visible= data.config.is_visible  --keep the original value (hidden or selection mode)
       end
       --start in left/only files view
       Proj.goto_filesview(true)
@@ -200,7 +200,7 @@ end
 --if selmode=true, parse the project and build file list: "proj_file[]"
 function Proj.set_selectionmode(buff,selmode)
   if selmode and buffer.modify then
-    data.proj_parsed= false --prevent list update when saving the project until it's parsed
+    data.is_parsed= false --prevent list update when saving the project until it's parsed
     Util.save_file()
   end
   local editmode= not selmode
@@ -229,7 +229,7 @@ function Proj.set_selectionmode(buff,selmode)
     for i= #data.proj_fold_row, 1, -1 do
       buff.toggle_fold(data.proj_fold_row[i])
     end
-    Proj.is_visible= 1  --1:shown in selection mode
+    data.is_visible= Proj.V_SELECT  --selection mode
     Proj.mark_open_files(buff)
   else
     --edit project as a text file (show control info)
@@ -238,7 +238,7 @@ function Proj.set_selectionmode(buff,selmode)
     Proj.set_contextm_edit()
     --project in EDIT mode--
     Proj.show_default(buff)
-    Proj.is_visible= 2  --2:shown in edit mode
+    data.is_visible= Proj.V_EDIT  --edit mode
     Proj.clear_open_indicators(buff)
   end
   if toolbar then
@@ -862,10 +862,10 @@ function Proj.EVkeypress(code)
       local nv= _VIEWS[view] +1
       if nv > #_VIEWS then nv=1 end
       Util.goto_view(nv)
-      if nv == Proj.prefview[Proj.PRJV_PROJECT] and Proj.is_visible == 0 then
+      if nv == Proj.prefview[Proj.PRJV_PROJECT] and data.is_visible == Proj.V_HIDDEN then
         --in project's view, force visibility
-        Proj.is_visible= 1  --1:shown in selection mode
-        view.size= Proj.select_width
+        data.is_visible= Proj.V_SELECT  --selection mode
+        view.size= data.select_width
         Proj.update_projview()
         Proj.temporal_view= true  --close if escape is pressed again or if a file is opened
 
@@ -883,21 +883,21 @@ function Proj.change_proj_ed_mode()
     --project: toggle mode
     if view.size ~= nil then
       if buffer._project_select then
-        if Proj.select_width ~= view.size then
-          Proj.select_width= view.size  --save current width
-          if Proj.select_width < 50 then Proj.select_width= 200 end
+        if data.select_width ~= view.size then
+          data.select_width= view.size  --save current width
+          if data.select_width < 50 then data.select_width= 200 end
           data.recent_prj_change= true  --save it on exit
         end
-        Proj.is_visible= 2  --2:shown in edit mode
-        view.size= Proj.edit_width
+        data.is_visible= Proj.V_EDIT  --edit mode
+        view.size= data.edit_width
       else
-        if Proj.edit_width ~= view.size then
-          Proj.edit_width= view.size  --save current width
-          if Proj.edit_width < 50 then Proj.edit_width= 600 end
+        if data.edit_width ~= view.size then
+          data.edit_width= view.size  --save current width
+          if data.edit_width < 50 then data.edit_width= 600 end
           data.recent_prj_change= true  --save it on exit
         end
-        Proj.is_visible= 1  --1:shown in selection mode
-        view.size= Proj.select_width
+        data.is_visible= Proj.V_SELECT  --selection mode
+        view.size= data.select_width
       end
     end
     Proj.toggle_selectionmode()
@@ -919,9 +919,9 @@ function Proj.show_projview()
   --Show project / goto project view
   if Proj.get_projectbuffer(true) then
     Proj.goto_projview(Proj.PRJV_PROJECT)
-    if Proj.is_visible == 0 then
-      Proj.is_visible= 1  --1:shown in selection mode
-      view.size= Proj.select_width
+    if data.is_visible == Proj.V_HIDDEN then
+      data.is_visible= Proj.V_SELECT  --selection mode
+      view.size= data.select_width
       Proj.update_projview()
     end
   end
@@ -939,17 +939,17 @@ function Proj.show_hide_projview()
     --select mode
     Proj.goto_projview(Proj.PRJV_PROJECT)
     if view.size then
-      if Proj.is_visible > 0 then
-        Proj.is_visible= 0  --0:hidden
-        if Proj.select_width ~= view.size then
-          Proj.select_width= view.size  --save current width
-          if Proj.select_width < 50 then Proj.select_width= 200 end
+      if data.is_visible ~= Proj.V_HIDDEN then
+        data.is_visible= Proj.V_HIDDEN  --hidden
+        if data.select_width ~= view.size then
+          data.select_width= view.size  --save current width
+          if data.select_width < 50 then data.select_width= 200 end
           data.recent_prj_change= true  --save it on exit
         end
         view.size= 0
       else
-        Proj.is_visible= 1  --1:shown in selection mode
-        view.size= Proj.select_width
+        data.is_visible= Proj.V_SELECT  --selection mode
+        view.size= data.select_width
       end
       Proj.update_projview()
     end

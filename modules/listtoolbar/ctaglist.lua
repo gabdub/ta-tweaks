@@ -91,7 +91,7 @@ if toolbar then
       toolbar.list_addinfo('The project module is not installed')
       return
     end
-    if data.filename == "" then
+    if not data.is_open  then
       toolbar.list_addinfo('No open project',true)
       return
     end

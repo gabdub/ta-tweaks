@@ -393,6 +393,7 @@ function Proj.open_project(filename)
     if buffer ~= nil and buffer.filename ~= nil then proj_keep_file= buffer.filename end
     Proj.goto_projview(Proj.PRJV_PROJECT)
     data.filename= prjfile
+    data.is_open= true
     --open the project file
     io.open_file(prjfile)
     --add the project to the recent list

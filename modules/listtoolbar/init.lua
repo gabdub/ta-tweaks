@@ -177,7 +177,7 @@ if toolbar then
   local function new_tb_size() --the toolbar was resized
     local w= toolbar.getsize(toolbar.LEFT_TOOLBAR)
     toolbar.listwidth= w
-    Proj.select_width= w
+    Proj.data.select_width= w
     Proj.data.recent_prj_change= true --save it on exit
   end
 
@@ -202,10 +202,10 @@ if toolbar then
       listtb_hide_p= false
       if toolbar.get_check_val("tblist_hideprj") then
         if Proj.isin_editmode() then Proj.show_hide_projview() end --end edit mode
-        if (Proj.is_visible > 0) and toolbar.list_tb then
+        if (Proj.data.is_visible ~= Proj.V_HIDDEN) and toolbar.list_tb then
           listtb_hide_p= true
           Proj.show_hide_projview()
-        elseif washidebylist and (Proj.is_visible == 0) and (not toolbar.list_tb) then
+        elseif washidebylist and (Proj.data.is_visible == Proj.V_HIDDEN) and (not toolbar.list_tb) then
           Proj.show_hide_projview()
         end
       end
