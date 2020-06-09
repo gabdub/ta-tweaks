@@ -72,13 +72,10 @@ function Proj.EVinitialize()
       --activate project in the proper view
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Util.goto_buffer(buff)
-      if data.is_visible == Proj.V_EDIT then
-        Proj.ifproj_seteditmode(buff)  --edit mode
-      else
-        --hidden / shown in selection mode
-        Proj.ifproj_setselectionmode(buff) --selection mode (this set data.is_visible= selection mode)
-        data.is_visible= data.config.is_visible  --keep the original value (hidden or selection mode)
-      end
+      --hidden / shown in selection mode
+      Proj.ifproj_setselectionmode(buff) --open in selection mode
+      --keep the saved value (hidden / selection mode)
+      if data.config.is_visible == Proj.V_HIDDEN then data.is_visible= Proj.V_HIDDEN end
       --start in left/only files view
       Proj.goto_filesview(true)
       --check that at least there's one regular buffer
@@ -99,6 +96,8 @@ end
 
 -- TA-EVENT QUIT: Saves recent projects list
 function Proj.EVquit()
+  --end edit mode at exit
+  if data.is_visible == Proj.V_EDIT then Proj.change_proj_ed_mode() end
   Proj.save_config()
 end
 
@@ -149,7 +148,7 @@ end
 ------------------PROJECT CONTROL-------------------
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
-local function setproj_selectionmode(__buff)
+local function setproj_selectionmode()
   local buff= Proj.get_projectbuffer(false) or buffer
   local editmode= (data.is_visible == Proj.V_EDIT)
   local selmode= not editmode
@@ -205,7 +204,7 @@ function Proj.ifproj_setselectionmode(p_buffer)
   if getprj_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
     data.is_visible= Proj.V_SELECT  --selection mode
     Proj.update_projview()
-    setproj_selectionmode(p_buffer)
+    setproj_selectionmode()
     if p_buffer.filename then
       ui.statusbar_text= 'Project file =' .. p_buffer.filename
     end
@@ -220,7 +219,7 @@ function Proj.ifproj_seteditmode(p_buffer)
   if getprj_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
     data.is_visible= Proj.V_EDIT  --edit mode
     Proj.update_projview()
-    setproj_selectionmode(p_buffer)
+    setproj_selectionmode()
     if p_buffer.filename then
       ui.statusbar_text= 'Project file =' .. p_buffer.filename
     end
