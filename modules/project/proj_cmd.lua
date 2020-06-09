@@ -406,7 +406,7 @@ function Proj.open_project(filename)
     local p_buffer = Proj.get_projectbuffer(true)
     Proj.show_lost_focus(p_buffer)
     --project ui
-    Proj.ifproj_setselectionmode()
+    Proj.ifproj_setselectionmode(p_buffer)
     --restore the file that was current before opening the project or open an empty one
     Proj.go_file(proj_keep_file)
   end

@@ -107,12 +107,10 @@ end
 --ACTION: goto_tag
 function Proj.goto_tag(ask)
   --find CTAGS file in project
-  local p_buffer = Proj.get_projectbuffer(true)
-  if p_buffer == nil then
-    ui.statusbar_text= 'No project found'
+  if not data.is_open then
+    ui.statusbar_text= 'You must first open a project'
     return
   end
-
   local tag_files = {}
   if data.proj_files ~= nil then
     for row= 1, #data.proj_files do

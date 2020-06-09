@@ -361,6 +361,8 @@ end
 function Proj.closed_cleardata()
   data.filename= ""
   data.is_open= false
+  data.is_visible= Proj.V_HIDDEN
+  Proj.update_projview()
   Proj.clear_proj_arrays()
   ui.statusbar_text= 'Project closed'
   notify_projload_ends()
