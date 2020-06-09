@@ -408,7 +408,7 @@ function Proj.open_project(filename)
       Proj.add_recentproject()
       Proj.show_lost_focus(buffer)
       -- project in SELECTION mode without focus--
-      Proj.ifproj_setselectionmode(buffer)
+      Proj.setselectionmode()
       Proj.goto_filesview(true) --change to files
     end
     --restore the file that was current before opening the project or open an empty one

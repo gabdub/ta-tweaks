@@ -71,7 +71,7 @@ function Proj.EVinitialize()
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Util.goto_buffer(buff)
       --hidden / shown in selection mode
-      Proj.ifproj_setselectionmode(buff) --open in selection mode (parse data.filename)
+      Proj.setselectionmode() --open in selection mode (parse data.filename)
       --keep the saved value (hidden / selection mode)
       if data.config.is_visible == Proj.V_HIDDEN then data.is_visible= Proj.V_HIDDEN end
       --start in left/only files view
@@ -144,12 +144,15 @@ function Proj.getFirstRegularBuf(panel)
 end
 
 ------------------PROJECT CONTROL-------------------
---set the project mode as: selected (selmode=true) or edit (selmode=false)
---if selmode=true, parse the project and build file list: "proj_file[]"
-local function setproj_selectionmode()
+--set the project buffer according to the current visible mode: V_EDIT or V_SELECT
+--when entering V_SELECT mode: force buffer save and parse the project file
+local function setproj_visible_mode()
   local buff= Proj.get_projectbuffer(false) or buffer
   local editmode= (data.is_visible == Proj.V_EDIT)
   local selmode= not editmode
+
+  Proj.update_projview()  --update action
+  ui.statusbar_text= 'Project file =' .. data.filename
 
   if selmode and buff.modify then
     data.is_parsed= false --prevent list update when saving the project until it's parsed
@@ -196,40 +199,26 @@ local function setproj_selectionmode()
   end
 end
 
---if the current file is a project, enter SELECTION mode--
-function Proj.ifproj_setselectionmode(p_buffer)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if getprj_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+--enter SELECTION mode--
+function Proj.setselectionmode()
+  if data.is_open then
     data.is_visible= Proj.V_SELECT  --selection mode
-    Proj.update_projview()
-    setproj_selectionmode()
-    if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. p_buffer.filename
-    end
-    return true
+    setproj_visible_mode()
   end
-  return false
 end
 
---if the current file is a project, enter EDIT mode--
-function Proj.ifproj_seteditmode(p_buffer)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if getprj_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+--enter EDIT mode--
+function Proj.seteditmode()
+  if data.is_open then
     data.is_visible= Proj.V_EDIT  --edit mode
-    Proj.update_projview()
-    setproj_selectionmode()
-    if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. p_buffer.filename
-    end
-    return true
+    setproj_visible_mode()
   end
-  return false
 end
 
 --toggle project between SELECTION and EDIT modes
 function Proj.toggle_selectionmode()
   --toggle current mode: select->edit; hidden/edit->select
-  if data.is_visible == Proj.V_SELECT then Proj.ifproj_seteditmode() else Proj.ifproj_setselectionmode() end
+  if data.is_visible == Proj.V_SELECT then Proj.seteditmode() else Proj.setselectionmode() end
 end
 
 --return the project buffer (the working one)
