@@ -396,17 +396,21 @@ function Proj.open_project(filename)
     data.is_open= true
     --open the project file
     io.open_file(prjfile)
-    --add the project to the recent list
-    Proj.add_recentproject()
-    --update ui
-    Proj.stop_update_ui(true)
-    Proj.goto_filesview(true) --change to files
-    Proj.stop_update_ui(false)
-    -- project in SELECTION mode without focus--
-    local p_buffer = Proj.get_projectbuffer(true)
-    Proj.show_lost_focus(p_buffer)
-    --project ui
-    Proj.ifproj_setselectionmode(p_buffer)
+    if not Proj.is_prj_buffer(buffer) then  --invalid file
+      Util.close_buffer()
+      Proj.closed_cleardata()
+      Proj.update_projview()  --update project view button
+      Proj.goto_filesview(true)
+      ui.statusbar_text= 'Invalid project file'
+      Util.info('Open error', 'Invalid project file')
+    else
+      --add the project to the recent list
+      Proj.add_recentproject()
+      Proj.show_lost_focus(buffer)
+      -- project in SELECTION mode without focus--
+      Proj.ifproj_setselectionmode(buffer)
+      Proj.goto_filesview(true) --change to files
+    end
     --restore the file that was current before opening the project or open an empty one
     Proj.go_file(proj_keep_file)
   end

@@ -243,6 +243,14 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
   return row
 end
 
+function Proj.is_prj_buffer(p_buffer)
+  --check if the buffer is a valid project
+  --The first file line MUST BE a valid "option 1)": ...##...##...
+  local line= p_buffer:get_line( Util.LINE_BASE )
+  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
+  return (n ~= nil)   --return: is a project file
+end
+
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
   data.is_parsed= true

@@ -64,16 +64,14 @@ function Proj.EVinitialize()
   --check if a project file is open
   --TODO: mark rigth side files
   for _, buff in ipairs(_BUFFERS) do
-    --check buffer type
-    local pt= getprj_buffertype(buff)
-    if pt == Proj.PRJB_PROJ_NEW or pt == Proj.PRJB_PROJ_SELECT then
+    if Proj.is_prj_buffer(buff) then  --the buffer is a valid project?
       data.filename= buff.filename
       data.is_open= true
       --activate project in the proper view
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Util.goto_buffer(buff)
       --hidden / shown in selection mode
-      Proj.ifproj_setselectionmode(buff) --open in selection mode
+      Proj.ifproj_setselectionmode(buff) --open in selection mode (parse data.filename)
       --keep the saved value (hidden / selection mode)
       if data.config.is_visible == Proj.V_HIDDEN then data.is_visible= Proj.V_HIDDEN end
       --start in left/only files view
@@ -769,8 +767,6 @@ function Proj.EVfile_opened()
   if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
   --ignore session load
   if Proj.update_ui == 0 then
-    --open project in selection mode
-    Proj.ifproj_setselectionmode()
     -- Closes the initial "Untitled" buffer (project version)
     -- only when a regular file is opened
     -- #3: project + untitled + file
