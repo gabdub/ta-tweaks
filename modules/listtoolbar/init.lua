@@ -201,7 +201,7 @@ if toolbar then
       local washidebylist= listtb_hide_p
       listtb_hide_p= false
       if toolbar.get_check_val("tblist_hideprj") then
-        if Proj.isin_editmode() then Proj.show_hide_projview() end --end edit mode
+        if Proj.data.is_visible == Proj.V_EDIT then Proj.show_hide_projview() end --end edit mode
         if (Proj.data.is_visible ~= Proj.V_HIDDEN) and toolbar.list_tb then
           listtb_hide_p= true
           Proj.show_hide_projview()

@@ -28,9 +28,33 @@ end
 --don't update the UI until Proj.EVinitialize is called
 Proj.stop_update_ui(true)
 
+--get the buffer type: Proj.PRJT_...
+local function getprj_buffertype(p_buffer)
+  if p_buffer._project_select ~= nil then  --marked as a project file?
+    if p_buffer._is_working_project then
+      if p_buffer._project_select then
+        return Proj.PRJB_PROJ_SELECT  --is a project in "selection mode"
+      end
+      return Proj.PRJB_PROJ_EDIT      --is a project in "edit mode"
+    end
+    return Proj.PRJB_PROJ_IDLE        --is a project (but not the working one)
+  end
+  if p_buffer._type == Proj.PRJT_SEARCH then
+    return Proj.PRJB_FSEARCH          --is a search results buffer
+  end
+  --check if the buffer is a valid project
+  --The first file line MUST BE a valid "option 1)": ...##...##...
+  local line= p_buffer:get_line( Util.LINE_BASE )
+  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
+  if n ~= nil then
+    return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
+  end
+  return Proj.PRJB_NORMAL             --is a regular file
+end
+
 -- TA-EVENT INITIALIZED
 function Proj.EVinitialize()
-  --after session load ends, verify all the buffers (this prevents view creation conflicts)
+  --session load complete: verify all the buffers (this prevents view creation conflicts)
   Proj.stop_update_ui(false)
 
   --load recent projects list / project preferences
@@ -41,7 +65,7 @@ function Proj.EVinitialize()
   --TODO: mark rigth side files
   for _, buff in ipairs(_BUFFERS) do
     --check buffer type
-    local pt= Proj.get_buffertype(buff)
+    local pt= getprj_buffertype(buff)
     if pt == Proj.PRJB_PROJ_NEW or pt == Proj.PRJB_PROJ_SELECT then
       data.filename= buff.filename
       data.is_open= true
@@ -79,32 +103,6 @@ function Proj.EVquit()
 end
 
 --------buffer functions----------
---get the buffer type: Proj.PRJT_...
-function Proj.get_buffertype(p_buffer)
-  if not p_buffer then p_buffer = buffer end  --use current buffer?
-
-  if p_buffer._project_select ~= nil then  --marked as a project file?
-    if p_buffer._is_working_project then
-      if p_buffer._project_select then
-        return Proj.PRJB_PROJ_SELECT  --is a project in "selection mode"
-      end
-      return Proj.PRJB_PROJ_EDIT      --is a project in "edit mode"
-    end
-    return Proj.PRJB_PROJ_IDLE        --is a project (but not the working one)
-  end
-  if p_buffer._type == Proj.PRJT_SEARCH then
-    return Proj.PRJB_FSEARCH          --is a search results buffer
-  end
-  --check if the current file is a valid project
-  --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= p_buffer:get_line( Util.LINE_BASE )
-  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
-  if n ~= nil then
-    return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
-  end
-  return Proj.PRJB_NORMAL             --is a regular file
-end
-
 --returns true if the buffer is a regular file (not a project nor a search results)
 function Proj.isRegularBuf(pbuffer)
   return (pbuffer._project_select == nil) and (pbuffer._type ~= Proj.PRJT_SEARCH)
@@ -136,7 +134,6 @@ function Proj.changeViewBuf(pbuffer)
   return false
 end
 
-
 --find the first regular buffer
 --panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
 --TO DO: use MRU order
@@ -153,7 +150,7 @@ end
 --set the project mode as: selected (selmode=true) or edit (selmode=false)
 --if selmode=true, parse the project and build file list: "proj_file[]"
 local function setproj_selectionmode(buff,selmode)
-  if selmode and buffer.modify then
+  if selmode and buff.modify then
     data.is_parsed= false --prevent list update when saving the project until it's parsed
     Util.save_file()
   end
@@ -204,10 +201,10 @@ end
 --if the current file is a project, enter SELECTION mode--
 function Proj.ifproj_setselectionmode(p_buffer)
   if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+  if getprj_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
     setproj_selectionmode(p_buffer,true)
     if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. buffer.filename
+      ui.statusbar_text= 'Project file =' .. p_buffer.filename
     end
     return true
   end
@@ -217,10 +214,10 @@ end
 --if the current file is a project, enter EDIT mode--
 function Proj.ifproj_seteditmode(p_buffer)
   if not p_buffer then p_buffer = buffer end  --use current buffer?
-  if Proj.get_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
+  if getprj_buffertype(p_buffer) >= Proj.PRJB_PROJ_MIN then
     setproj_selectionmode(p_buffer,false)
     if p_buffer.filename then
-      ui.statusbar_text= 'Project file =' .. buffer.filename
+      ui.statusbar_text= 'Project file =' .. p_buffer.filename
     end
     return true
   end
@@ -229,7 +226,7 @@ end
 
 --toggle project between SELECTION and EDIT modes
 function Proj.toggle_selectionmode()
-  local mode= Proj.get_buffertype()
+  local mode= getprj_buffertype(buffer)
   if mode == Proj.PRJB_PROJ_SELECT or mode == Proj.PRJB_PROJ_EDIT then
     setproj_selectionmode(buffer, (mode == Proj.PRJB_PROJ_EDIT)) --toggle current mode
   else
@@ -239,12 +236,6 @@ function Proj.toggle_selectionmode()
     end
   end
   buffer.home()
-end
-
---return if a project is open in edit mode
-function Proj.isin_editmode()
-  local pbuf= Proj.get_projectbuffer(true)
-  return pbuf and (Proj.get_buffertype(pbuf) == Proj.PRJB_PROJ_EDIT)
 end
 
 --return the project buffer (the working one)
@@ -930,7 +921,7 @@ end
 --Show/Hide project
 function Proj.show_hide_projview()
   if ena_toggle_projview() then
-    if Proj.isin_editmode() then
+    if data.is_visible == Proj.V_EDIT then
       --project in edit mode
       Proj.goto_projview(Proj.PRJV_PROJECT)
       Proj.change_proj_ed_mode() --return to select mode
