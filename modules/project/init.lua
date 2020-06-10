@@ -43,7 +43,6 @@ else
   }
 end
 
-
 --project row/file types
 Proj.PRJF_EMPTY =       0   -- not a file (could be an empty row or a file group)
 Proj.PRJF_PATH  =       1   -- a path
@@ -51,15 +50,6 @@ Proj.PRJF_FILE  =       2   -- a regular file (could be opened and searched)
 Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only using TAG functions)
 Proj.PRJF_RUN   =       4   -- a run command
 Proj.PRJF_VCS   =       5   -- version control entry
-
---buffer types
-Proj.PRJB_NORMAL =      0   -- a regular file
-Proj.PRJB_FSEARCH =     1   -- a "search in project files" results
-Proj.PRJB_PROJ_MIN =    2   -- start of project values
-Proj.PRJB_PROJ_NEW =     2  -- a project file (not marked yet)
-Proj.PRJB_PROJ_IDLE =    3  -- a project file (but not the working one)
-Proj.PRJB_PROJ_SELECT =  4  -- a project file in "selection mode"
-Proj.PRJB_PROJ_EDIT =    5  -- a project file in "edit mode"
 
 --buffer "_type" constants
 Proj.PRJT_SEARCH= '[Project search]'  --search results

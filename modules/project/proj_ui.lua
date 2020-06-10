@@ -28,30 +28,6 @@ end
 --don't update the UI until Proj.EVinitialize is called
 Proj.stop_update_ui(true)
 
---get the buffer type: Proj.PRJT_...
-local function getprj_buffertype(p_buffer)
-  if p_buffer._project_select ~= nil then  --marked as a project file?
-    if p_buffer._is_working_project then
-      if p_buffer._project_select then
-        return Proj.PRJB_PROJ_SELECT  --is a project in "selection mode"
-      end
-      return Proj.PRJB_PROJ_EDIT      --is a project in "edit mode"
-    end
-    return Proj.PRJB_PROJ_IDLE        --is a project (but not the working one)
-  end
-  if p_buffer._type == Proj.PRJT_SEARCH then
-    return Proj.PRJB_FSEARCH          --is a search results buffer
-  end
-  --check if the buffer is a valid project
-  --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= p_buffer:get_line( Util.LINE_BASE )
-  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
-  if n ~= nil then
-    return Proj.PRJB_PROJ_NEW         --is a project file not marked as such yet
-  end
-  return Proj.PRJB_NORMAL             --is a regular file
-end
-
 -- TA-EVENT INITIALIZED
 function Proj.EVinitialize()
   --session load complete: verify all the buffers (this prevents view creation conflicts)
