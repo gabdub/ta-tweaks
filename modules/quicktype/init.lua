@@ -205,19 +205,19 @@ end
 
 local function find_line(fmatch,dirf,roff)
   local r
-  local curr= buffer:line_from_position(buffer.current_pos)
+  local curr= buffer:line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
   local fromln= Util.LINE_BASE
   local toln= buffer.line_count + Util.LINE_BASE-1
   if dirf then --forward
     for i = curr +1 -roff, toln, 1 do
-      if buffer:get_line(i):match(fmatch) then
+      if buffer:get_line(i+Util.LINE_BASE-1):match(fmatch) then
         r=i+roff
         break
       end
     end
   else  --backward
     for i = curr -1 -roff, fromln, -1 do
-      if buffer:get_line(i):match(fmatch) then
+      if buffer:get_line(i+Util.LINE_BASE-1):match(fmatch) then
         r=i+roff
         break
       end
