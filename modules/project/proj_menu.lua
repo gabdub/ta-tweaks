@@ -52,21 +52,21 @@ if actions then
     return Proj.data.is_open
   end
   local function tpv_status()
-    return tpv_open() and (Proj.data.is_visible == Proj.V_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
+    return tpv_open() and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
   end
   local function tpv_icon()
     local ena= tpv_open()
     if ena then
-      if Proj.data.is_visible == Proj.V_HIDDEN then return "ttb-proj-c" end --hidden
-      if Proj.data.is_visible == Proj.V_EDIT   then return "ttb-proj-e" end --edit mode
+      if Proj.data.show_mode == Proj.SM_HIDDEN then return "ttb-proj-c" end --hidden
+      if Proj.data.show_mode == Proj.SM_EDIT   then return "ttb-proj-e" end --edit mode
     end
     return "ttb-proj-o"  --selection mode (or disabled)
   end
   local function tpv_text()
     local ena= tpv_open()
     if ena then
-      if Proj.data.is_visible == Proj.V_HIDDEN then return "Show project"  end --hidden
-      if Proj.data.is_visible == Proj.V_EDIT   then return "End edit mode" end --edit mode
+      if Proj.data.show_mode == Proj.SM_HIDDEN then return "Show project"  end --hidden
+      if Proj.data.show_mode == Proj.SM_EDIT   then return "End edit mode" end --edit mode
       return "Hide project"  --selection mode
     end
     return "No project is open"  --disabled

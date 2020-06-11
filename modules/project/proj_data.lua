@@ -69,12 +69,12 @@
 --   recent_prj_change  = the recent Projects list has been modified
 -----------------------------------------------------------------------
 --  Proj.data.config[]  PROJECT CONFIGURATION
---   [is_visible]       = 0=hidden  1=shown in selection mode  2=shown in edit mode
+--   [show_mode]        = 0=hidden  1=shown in selection mode  2=shown in edit mode
 --   [edit_width]       = view width in edit mode
 --   [select_width]     = view width in selection mode
 --   [recent#1..30]     = recent projects (#1= the most recent)
---  Proj.data.config.is_visible/edit_width/..= last saved configuration
---  Proj.data.is_visible/edit_width/..= current value
+--  Proj.data.config.show_mode/edit_width/..= last saved configuration
+--  Proj.data.show_mode/edit_width/..= current value
 -----------------------------------------------------------------------
 local Proj = Proj
 local Util = Util
@@ -88,10 +88,11 @@ data.filename= ""  --open project filename or ""
 data.is_open= false
 data.is_parsed= true
 
-Proj.V_HIDDEN= 0
-Proj.V_SELECT= 1
-Proj.V_EDIT=   2
-data.is_visible= Proj.V_HIDDEN  --0=hidden  1=shown in selection mode  2=shown in edit mode
+--show mode
+Proj.SM_HIDDEN= 0
+Proj.SM_SELECT= 1
+Proj.SM_EDIT=   2
+data.show_mode= Proj.SM_HIDDEN  --0=hidden  1=selection mode  2=edit mode
 
 data.edit_width= 600
 data.select_width= 200
@@ -122,7 +123,7 @@ end
 function Proj.load_config()
   data.config= {}
   local cfg= data.config
-  Util.add_config_field(cfg, "is_visible",   Util.cfg_int, 1)
+  Util.add_config_field(cfg, "show_mode",    Util.cfg_int, Proj.SM_HIDDEN)
   Util.add_config_field(cfg, "edit_width",   Util.cfg_int, 600)
   Util.add_config_field(cfg, "select_width", Util.cfg_int, 200)
   Util.add_config_field(cfg, "recent",       Util.cfg_str, "", Proj.MAX_RECENT_PROJ)
@@ -131,7 +132,7 @@ function Proj.load_config()
   Util.load_config_file(cfg, Proj.PROJ_CONFIG_FILE)
   data.recent_prj_change= false
 
-  data.is_visible= cfg.is_visible
+  data.show_mode= cfg.show_mode
   data.edit_width= cfg.edit_width
   if data.edit_width < 50 then data.edit_width= 600 end
   data.select_width= cfg.select_width
@@ -156,8 +157,8 @@ function Proj.save_config()
   for i=1, #data.config_hooks do --get hooked fields value
     if data.config_hooks[i][CFGHOOK_BEFORE_SAVE](cfg) then changed=true end
   end
-  if changed or Proj.data.config.is_visible ~= Proj.data.is_visible then
-    cfg.is_visible= Proj.data.is_visible
+  if changed or Proj.data.config.show_mode ~= Proj.data.show_mode then
+    cfg.show_mode= Proj.data.show_mode
     cfg.edit_width= data.edit_width
     cfg.select_width= data.select_width
     for i=1, #data.recent_projects do cfg["recent#"..i]= data.recent_projects[i] end
@@ -369,7 +370,7 @@ end
 function Proj.closed_cleardata()
   data.filename= ""
   data.is_open= false
-  data.is_visible= Proj.V_HIDDEN
+  data.show_mode= Proj.SM_HIDDEN
   Proj.update_projview()
   Proj.clear_proj_arrays()
   ui.statusbar_text= 'Project closed'
