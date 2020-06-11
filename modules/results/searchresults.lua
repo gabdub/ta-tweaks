@@ -1,5 +1,10 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
-
+--
+-- This module shows search results in the "results" toolbar
+--
+-- ** This module is used when USE_RESULTS_PANEL is true **
+-- The SEARCH RESULTS INTERFACE is accessed through the "plugs" object
+--
 if toolbar then
   local itemsgrp
   local selitem=0

@@ -1,8 +1,12 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- code adjusted for TA 10 and 11
+
 if toolbar then
-  USE_RESULTS_PANEL= true --true:show results in a toolbar panel; false= use a buffer
+  USE_LISTS_PANEL= true   --true:show project lists in the left toolbar;   false= use a buffer
+  USE_RESULTS_PANEL= true --true:show results lists in the bottom toolbar; false= use a buffer
 end
-plugs= {} --add here functions from interfaces (e.g. search results)
+
+plugs= {} --add here functions from interfaces (e.g. project/results lists)
 
 -- Control+F4 = RESET textadept
 keys.cf4 = reset
@@ -38,18 +42,28 @@ keys.KEYSYMS[0xFF8D] = '\n' --keypad Enter = normal Enter
 
 if toolbar then
   require('toolbar')
-  --require('htmltoolbar')
+
+  --if not USE_LISTS_PANEL then require('htmltoolbar') end
 
   if Proj then
-    require('listtoolbar')
-    require('listtoolbar.recentprojlist')
-    require('listtoolbar.projlist')
-    require('listtoolbar.ctaglist')
+    if USE_LISTS_PANEL then
+      --show project lists in the left toolbar
+      require('listtoolbar')
+      require('listtoolbar.recentprojlist')
+      require('listtoolbar.projlist')
+      require('listtoolbar.ctaglist')
+--<<<< UN COMMENT THIS WHEN READY
+--  else  --or using a buffer
+      require('project.proj_buffer')
+    end
 
     if USE_RESULTS_PANEL then
+      --show results lists in the bottom toolbar
       require('results')
       require('results.printresults')
       require('results.searchresults')
+    else  --or using a buffer
+      require('project.proj_results')
     end
   end
 
@@ -62,14 +76,18 @@ if toolbar then
   --create the configured toolbars
   toolbar.create_from_config()
 
-  --create lists/results toolbars
-  if toolbar.createlisttb    then toolbar.createlisttb()    end
-  if toolbar.createresultstb then toolbar.createresultstb() end
+  --create "lists" toolbar (add buttons to select the lists)
+  if USE_LISTS_PANEL then toolbar.createlisttb() end
+
+  --create "results" toolbar
+  if USE_RESULTS_PANEL then toolbar.createresultstb() end
 
   --add some buttons
   if Proj then
-    toolbar.addaction("toggle_viewproj")
-    toolbar.addspace(4,true)
+    if not USE_LISTS_PANEL then
+      toolbar.addaction("toggle_viewproj")
+      toolbar.addspace(4,true)
+    end
     toolbar.addaction("prev_position")
     toolbar.addaction("next_position")
     toolbar.addspace()
@@ -93,7 +111,7 @@ if toolbar then
 --  toolbar.cmd("window-new", showpopup, "TEST show popup")
 --  toolbar.create_popup()
 
-  -- MINI MAP (toolbar #4)
+  -- minimap/scrollbar (right internal toolbar)
   if minimap then toolbar.minimap_setup() end
 
   --toolbars are ready to show

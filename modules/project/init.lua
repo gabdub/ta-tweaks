@@ -60,9 +60,6 @@ require('project.proj_cmd')
 require('project.proj_ctags')
 require('project.proj_diff')
 require('project.proj_menu')
-if not USE_RESULTS_PANEL then
-  require('project.proj_results')
-end
 
 --- TA-EVENTS ---
 events_connect(events.INITIALIZED,          Proj.EVinitialize)

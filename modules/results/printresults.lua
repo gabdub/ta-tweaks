@@ -1,5 +1,9 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
-
+--
+-- This module overwrites ui._print() to display its output in the "results" toolbar
+--
+-- ** This module is used when USE_RESULTS_PANEL is true **
+--
 if toolbar then
   local itemsgrp
   local selitem=0

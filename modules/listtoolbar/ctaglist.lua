@@ -1,5 +1,9 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
-
+--
+-- This module shows the tags of the current file using the "lists" toolbar
+--
+-- ** This module is used when USE_LISTS_PANEL is true **
+--
 if toolbar then
   local itemsgrp, firsttag
   local Proj = Proj

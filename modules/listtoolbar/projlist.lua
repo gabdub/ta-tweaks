@@ -1,5 +1,9 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
-
+--
+-- This module implements the selection of project files using the "lists" toolbar
+--
+-- ** This module is used when USE_LISTS_PANEL is true **
+--
 if toolbar then
   local itemsgrp, itselected, currproj, projmod, first_row
   local collarow= {}

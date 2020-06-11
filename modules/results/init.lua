@@ -1,5 +1,10 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
-
+--
+-- This module control the "results" toolbar
+--
+-- ** This module is used when USE_RESULTS_PANEL is true **
+-- The SEARCH RESULTS INTERFACE is accessed through the "plugs" object
+--
 if toolbar then
   local events, events_connect = events, events.connect
   local titgrp, curresult, curresultidx

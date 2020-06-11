@@ -1,4 +1,11 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+--
+-- This module shows search results in a buffer and
+-- overwrites ui._print() to display its output in the same buffer
+--
+-- ** This module is NOT used when USE_RESULTS_PANEL is true **
+-- The SEARCH RESULTS INTERFACE is accessed through the "plugs" object
+--
 local Proj = Proj
 local last_print_buftype
 
