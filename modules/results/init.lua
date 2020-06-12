@@ -215,7 +215,7 @@ if toolbar then
   end
 
   function plugs.goto_searchview()
-    --activate/create search view (not used with panels)
+    return false --activate/create search view (not used with panels)
   end
 
   function plugs.close_results(viewclosed)

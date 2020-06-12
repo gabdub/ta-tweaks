@@ -42,7 +42,7 @@ function Proj.EVinitialize()
   plugs.init_projectview()
 
   Proj.update_after_switch()
-  Proj.update_projview_action() --gray toggle project view button
+  Proj.update_projview_action() --update action: toggle_viewproj
 end
 
 -- TA-EVENT QUIT: Saves recent projects list
@@ -52,7 +52,7 @@ function Proj.EVquit()
   Proj.save_config()
 end
 
---------buffer functions----------
+-------- buffer/view functions----------
 --returns true if the buffer is a regular file (not a project nor a search results)
 function Proj.isRegularBuf(pbuffer)
   return (pbuffer._project_select == nil) and (pbuffer._type ~= Proj.PRJT_SEARCH)
@@ -64,24 +64,104 @@ function Proj.isHiddenTabBuf(pbuffer)
   return pbuffer._project_select or pbuffer._type == Proj.PRJT_SEARCH
 end
 
+--goto the view for the requested project buffer type
+--split views if needed
+function Proj.goto_projview(prjv)
+  if prjv == -1 then return false end --invalid view
+  local pref= Proj.prefview[prjv] --preferred view for this buffer type
+  if pref == _VIEWS[view] then return false end --already in the right view
+  local nv= #_VIEWS
+  while pref > nv do
+    --more views are needed: split the last one
+    local porcent  = Proj.prefsplit[nv][1]
+    local vertical = Proj.prefsplit[nv][2]
+    Util.goto_view(Proj.prefsplit[nv][3])
+    --split view to show search results
+    view:split(vertical)
+    --adjust view size (actual = 50%)
+    view.size= math.floor(view.size*porcent*2)
+    nv= nv +1
+    if nv == Proj.prefview[Proj.PRJV_FILES] then
+      --create an empty file
+      Util.goto_view(nv)
+      buffer.new()
+      events.emit(events.FILE_OPENED)
+    elseif nv == Proj.prefview[Proj.PRJV_SEARCH] then
+      --create an empty search results buffer
+      Util.goto_view(nv)
+      buffer.new()
+      buffer._type = Proj.PRJT_SEARCH
+      events.emit(events.FILE_OPENED)
+    end
+  end
+  Util.goto_view(pref)
+  return true
+end
+
+function Proj.goto_filesview(dontprjcheck, right_side)
+  --goto the view for editing files, split views if needed
+  if dontprjcheck or Proj.get_projectbuffer(false) ~= nil then
+    --if a project is open, this will create all the needed views
+    if right_side then Proj.goto_projview(Proj.PRJV_FILES_2) else Proj.goto_projview(Proj.PRJV_FILES) end
+  elseif right_side then
+    --if no project is open, view #2 is the right_side panel
+    if #_VIEWS == 1 then
+      view:split(true)
+    end
+    if _VIEWS[view] == 1 then Util.goto_view(2) end
+  else
+    --if no project is open, view #1 is the left/only panel
+    if _VIEWS[view] ~= 1 then Util.goto_view(1) end
+  end
+end
+
+--if the current view is a project or project-search, goto left/only files view. if not, keep the current view
+function Proj.getout_projview(right_side, force)
+  if (buffer._project_select ~= nil or buffer._type ~= nil) then
+    --move to files view (left/only panel) and exit
+    Proj.goto_filesview(true,right_side)
+    return true
+  end
+  if force then --enforce left/right view?
+    return Proj.goto_projview( (right_side) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
+  end
+  return false
+end
+
 function Proj.tab_changeView(pbuffer)
   --when a tab is clicked check if a view change is needed
   if #_VIEWS > 1 then
-    if pbuffer._project_select ~= nil then
-      --project buffer: force project view
-      plugs.goto_projectview()
-      return true --changed
-    end
+    --project buffer: force project view
+    if pbuffer._project_select ~= nil then return plugs.goto_projectview() end
     --search results?
-    if pbuffer._type == Proj.PRJT_SEARCH then
-      plugs.goto_searchview()
-      return true --changed
-    end
+    if pbuffer._type == Proj.PRJT_SEARCH then return plugs.goto_searchview() end
     --normal file: check we are not in a project view
     --change to left/right files view if needed (without project: 1/2, with project: 2/4)
     Proj.goto_filesview(false, pbuffer._right_side)
   end
   return false
+end
+
+-- TA-EVENT TAB_CLICKED
+function Proj.EVtabclicked(ntab)
+  --tab clicked = buffer num; check if a view change is needed
+  Proj.tab_changeView(_BUFFERS[ntab])
+end
+
+function Proj.goto_buffer(nb)
+  local b= _BUFFERS[nb]
+  if b == nil then return end
+  if b._project_select ~= nil then
+    --activate project in the proper view
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+  elseif b._type == Proj.PRJT_SEARCH then
+    --activate project in the proper view
+    plugs.goto_searchview()
+  else
+    --activate files view
+    Proj.goto_filesview(true, b._right_side)
+    Util.goto_buffer(b)
+  end
 end
 
 Proj.FILEPANEL_ANY=    0
@@ -102,11 +182,15 @@ function Proj.getBufFromPanel(panel)
 end
 
 ------------------PROJECT CONTROL-------------------
+function Proj.update_projview_action() --update action: toggle_viewproj
+  if toolbar then actions.updateaction("toggle_viewproj") end
+end
+
 -- ENTER SELECTION mode
 function Proj.selection_mode()
   if data.is_open then
     data.show_mode= Proj.SM_SELECT  --selection mode
-    Proj.update_projview_action()  --update action
+    Proj.update_projview_action()  --update action: toggle_viewproj
     ui.statusbar_text= 'Project: ' .. data.filename
 
     --if modified, save the project buffer
@@ -131,7 +215,7 @@ end
 function Proj.seteditmode()
   if data.is_open then
     data.show_mode= Proj.SM_EDIT  --edit mode
-    Proj.update_projview_action()  --update action
+    Proj.update_projview_action()  --update action: toggle_viewproj
     ui.statusbar_text= 'Edit project: ' .. data.filename
     --visualize edit mode
     plugs.projmode_edit()
@@ -708,7 +792,7 @@ function Proj.EVkeypress(code)
       if nv == Proj.prefview[Proj.PRJV_PROJECT] and data.show_mode == Proj.SM_HIDDEN then
         --in project's view, force visibility
         data.show_mode= Proj.SM_SELECT  --selection mode
-        Proj.update_projview_action()
+        Proj.update_projview_action() --update action: toggle_viewproj
         view.size= data.select_width
         Proj.temporal_view= true  --close if escape is pressed again or if a file is opened
 
@@ -743,7 +827,7 @@ function Proj.change_proj_ed_mode()
       end
     end
     refresh_syntax()
-    Proj.update_projview_action()
+    Proj.update_projview_action() --update action: toggle_viewproj
   else
     --file: goto project view
     Proj.show_projview()
@@ -762,7 +846,7 @@ function Proj.show_projview()
     Proj.goto_projview(Proj.PRJV_PROJECT)
     if data.show_mode == Proj.SM_HIDDEN then
       data.show_mode= Proj.SM_SELECT  --selection mode
-      Proj.update_projview_action()
+      Proj.update_projview_action() --update action: toggle_viewproj
       view.size= data.select_width
     end
   end
@@ -782,7 +866,7 @@ function Proj.show_hide_projview()
     if view.size then
       if data.show_mode ~= Proj.SM_HIDDEN then
         data.show_mode= Proj.SM_HIDDEN  --hidden
-        Proj.update_projview_action()
+        Proj.update_projview_action() --update action: toggle_viewproj
         if data.select_width ~= view.size then
           data.select_width= view.size  --save current width
           if data.select_width < 50 then data.select_width= 200 end
@@ -791,112 +875,11 @@ function Proj.show_hide_projview()
         view.size= 0
       else
         data.show_mode= Proj.SM_SELECT  --selection mode
-        Proj.update_projview_action()
+        Proj.update_projview_action() --update action: toggle_viewproj
         view.size= data.select_width
       end
     end
     Proj.goto_filesview(true)
-  end
-end
-
-function Proj.update_projview_action()
-  --update toggle project view button
-  if toolbar then actions.updateaction("toggle_viewproj") end
-end
-
--- TA-EVENT TAB_CLICKED
-function Proj.EVtabclicked(ntab)
-  --tab clicked (0...) check if a view change is needed
-  if #_VIEWS > 1 then
-    if _BUFFERS[ntab]._project_select ~= nil then
-      --project buffer: force project view
-      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-      Util.goto_view(projv)
-    --search results?
-    elseif _BUFFERS[ntab]._type == Proj.PRJT_SEARCH then plugs.goto_searchview()
-    --normal file: check we are not in a project view
-    else Proj.goto_filesview(false, _BUFFERS[ntab]._right_side) end
-  end
-end
-
---goto the view for the requested project buffer type
---split views if needed
-function Proj.goto_projview(prjv)
-  local pref= Proj.prefview[prjv] --preferred view for this buffer type
-  if pref == _VIEWS[view] then
-    return false --already in the right view
-  end
-  local nv= #_VIEWS
-  while pref > nv do
-    --more views are needed: split the last one
-    local porcent  = Proj.prefsplit[nv][1]
-    local vertical = Proj.prefsplit[nv][2]
-    Util.goto_view(Proj.prefsplit[nv][3])
-    --split view to show search results
-    view:split(vertical)
-    --adjust view size (actual = 50%)
-    view.size= math.floor(view.size*porcent*2)
-    nv= nv +1
-    if nv == Proj.prefview[Proj.PRJV_FILES] then
-      --create an empty file
-      Util.goto_view(nv)
-      buffer.new()
-      events.emit(events.FILE_OPENED)
-    elseif nv == Proj.prefview[Proj.PRJV_SEARCH] then
-      --create an empty search results buffer
-      Util.goto_view(nv)
-      buffer.new()
-      buffer._type = Proj.PRJT_SEARCH
-      events.emit(events.FILE_OPENED)
-    end
-  end
-  Util.goto_view(pref)
-  return true
-end
-
-function Proj.goto_filesview(dontprjcheck, right_side)
-  --goto the view for editing files, split views if needed
-  if dontprjcheck or Proj.get_projectbuffer(false) ~= nil then
-    --if a project is open, this will create all the needed views
-    if right_side then Proj.goto_projview(Proj.PRJV_FILES_2) else Proj.goto_projview(Proj.PRJV_FILES) end
-  elseif right_side then
-    --if no project is open, view #2 is the right_side panel
-    if #_VIEWS == 1 then
-      view:split(true)
-    end
-    if _VIEWS[view] == 1 then Util.goto_view(2) end
-  else
-    --if no project is open, view #1 is the left/only panel
-    if _VIEWS[view] ~= 1 then Util.goto_view(1) end
-  end
-end
-
---if the current view is a project or project-search, goto left/only files view. if not, keep the current view
-function Proj.getout_projview(right_side, force)
-  if (buffer._project_select ~= nil or buffer._type ~= nil) then
-    --move to files view (left/only panel) and exit
-    Proj.goto_filesview(true,right_side)
-    return true
-  end
-  if force then --enforce left/right view?
-    return Proj.goto_projview( (right_side) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
-  end
-  return false
-end
-
-function Proj.goto_buffer(nb)
-  local b= _BUFFERS[nb]
-  if b == nil then return end
-  if b._project_select ~= nil then
-    --activate project in the proper view
-    Proj.goto_projview(Proj.PRJV_PROJECT)
-  elseif b._type == Proj.PRJT_SEARCH then
-    --activate project in the proper view
-    plugs.goto_searchview()
-  else
-    --activate files view
-    Proj.goto_filesview(true, b._right_side)
-    Util.goto_buffer(b)
   end
 end
 

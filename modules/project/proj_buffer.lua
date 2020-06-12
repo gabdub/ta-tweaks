@@ -94,6 +94,7 @@ end
 function plugs.goto_projectview()
   --activate/create project view
   Util.goto_view(Proj.prefview[Proj.PRJV_PROJECT])
+  return true
 end
 
 function plugs.projmode_select()

@@ -87,10 +87,11 @@ function plugs.goto_searchview()
     for nbuf, sbuf in ipairs(_BUFFERS) do
       if sbuf._type == Proj.PRJT_SEARCH then
         Util.goto_buffer(sbuf)
-        return
+        break
       end
     end
   end
+  return true
 end
 
 function plugs.close_results(viewclosed)

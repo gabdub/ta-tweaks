@@ -257,7 +257,7 @@ if toolbar then
     --check if a project buffer is open
   --end
   --function plugs.goto_projectview()
-    --activate/create project view (not used with panels)
+  --  return false --activate/create project view (not used with panels)
   --end
   --function plugs.projmode_select()
     --activate select mode
