@@ -54,7 +54,6 @@
 --  Proj.data:          PROJECT DATA
 --   filename           = open project filename or ""
 --   is_open            = (filename ~= "")
---   is_parsed          = the project file was parsed
 --   proj_files[]       = array with the filename in each row (1...) or ''
 --   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
 --   proj_fold_row[]    = array with the row numbers to fold on open
@@ -86,7 +85,6 @@ Proj.data= {}
 local data= Proj.data
 data.filename= ""  --open project filename or ""
 data.is_open= false
-data.is_parsed= true
 
 --show mode
 Proj.SM_HIDDEN= 0
@@ -207,7 +205,6 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
     ui.statusbar_text= "ERROR: Can't add file/s to project"
     return nil
   end
-  data.is_parsed= false --prevent list update when saving the project until it's parsed
   local row= nil
   local curpath= nil
   local defdir= data.proj_grp_path[1]
@@ -254,7 +251,6 @@ end
 
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
-  data.is_parsed= true
   Proj.clear_proj_arrays()
   if not data.is_open then
     notify_projload_ends()
@@ -368,12 +364,12 @@ function Proj.parse_project_file()
 end
 
 function Proj.closed_cleardata()
+  if data.is_open then ui.statusbar_text= 'Project closed' end
   data.filename= ""
   data.is_open= false
   data.show_mode= Proj.SM_HIDDEN
-  Proj.update_projview()
+  Proj.update_projview_action() --update project view button
   Proj.clear_proj_arrays()
-  ui.statusbar_text= 'Project closed'
   notify_projload_ends()
 end
 

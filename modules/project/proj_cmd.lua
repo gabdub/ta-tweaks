@@ -48,7 +48,7 @@ function Proj.close_all_buffers()
   Proj.close_project(false)
   --close all buffers
   io.close_all_buffers()
-  Proj.update_projview()  --update project view button
+  Proj.update_projview_action()  --update project view button
 end
 
 --ACTION: closeall (dont'close project) replaces "onlykeepproj" action
@@ -399,7 +399,6 @@ function Proj.open_project(filename)
     if not Proj.is_prj_buffer(buffer) then  --invalid file
       Util.close_buffer()
       Proj.closed_cleardata()
-      Proj.update_projview()  --update project view button
       Proj.goto_filesview(true)
       ui.statusbar_text= 'Invalid project file'
       Util.info('Open error', 'Invalid project file')
@@ -408,7 +407,7 @@ function Proj.open_project(filename)
       Proj.add_recentproject()
       Proj.show_lost_focus(buffer)
       -- project in SELECTION mode without focus--
-      Proj.setselectionmode()
+      Proj.selection_mode()
       Proj.goto_filesview(true) --change to files
     end
     --restore the file that was current before opening the project or open an empty one
@@ -444,7 +443,6 @@ function Proj.close_project(keepviews)
     Util.goto_buffer(p_buffer)
     if Util.close_buffer() then
       Proj.closed_cleardata()
-      Proj.update_projview()  --update project view button
       if not keepviews then
         plugs.close_results()
         if #_VIEWS > 1 then

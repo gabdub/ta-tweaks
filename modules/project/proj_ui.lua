@@ -35,37 +35,14 @@ function Proj.EVinitialize()
 
   --load recent projects list / project preferences
   Proj.load_config()
+
   --check if a search results buffer is open
   plugs.init_searchview()
-  --check if a project file is open
-  --TODO: mark rigth side files
-  for _, buff in ipairs(_BUFFERS) do
-    if Proj.is_prj_buffer(buff) then  --the buffer is a valid project?
-      data.filename= buff.filename
-      data.is_open= true
-      --activate project in the proper view
-      Proj.goto_projview(Proj.PRJV_PROJECT)
-      Util.goto_buffer(buff)
-      --hidden / shown in selection mode
-      Proj.setselectionmode() --open in selection mode (parse data.filename)
-      --keep the saved value (hidden / selection mode)
-      if data.config.show_mode == Proj.SM_HIDDEN then data.show_mode= Proj.SM_HIDDEN end
-      --start in left/only files view
-      Proj.goto_filesview(true)
-      --check that at least there's one regular buffer
-      local rbuf = Proj.getFirstRegularBuf(1)
-      if rbuf == nil then
-        --no regular buffer found
-        Proj.go_file() --open a blank file
-      end
-      Proj.update_projview() --update toggle project view button
-      return
-    end
-  end
-  --no project file found
-  Proj.closed_cleardata() --clear Proj.data and notify end of config load
+  --check if a project buffer is open
+  plugs.init_projectview()
+
   Proj.update_after_switch()
-  Proj.update_projview() --gray toggle project view button
+  Proj.update_projview_action() --gray toggle project view button
 end
 
 -- TA-EVENT QUIT: Saves recent projects list
@@ -87,12 +64,12 @@ function Proj.isHiddenTabBuf(pbuffer)
   return pbuffer._project_select or pbuffer._type == Proj.PRJT_SEARCH
 end
 
-function Proj.changeViewBuf(pbuffer)
-  --check if a view change is needed
+function Proj.tab_changeView(pbuffer)
+  --when a tab is clicked check if a view change is needed
   if #_VIEWS > 1 then
     if pbuffer._project_select ~= nil then
       --project buffer: force project view
-      Util.goto_view(Proj.prefview[Proj.PRJV_PROJECT]) --preferred view for project
+      plugs.goto_projectview()
       return true --changed
     end
     --search results?
@@ -107,146 +84,64 @@ function Proj.changeViewBuf(pbuffer)
   return false
 end
 
+Proj.FILEPANEL_ANY=    0
+Proj.FILEPANEL_LEFT=   1
+Proj.FILEPANEL_RIGHT=  2
 --find the first regular buffer
 --panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
---TO DO: use MRU order
-function Proj.getFirstRegularBuf(panel)
+--TO DO: prefer MRU order
+function Proj.getBufFromPanel(panel)
   for _, buf in ipairs(_BUFFERS) do
     if Proj.isRegularBuf(buf) then
-      if (panel==0) or ((panel==1) and (not buf._right_side)) or ((panel==2) and (buf._right_side)) then return buf end
+      if (panel==Proj.FILEPANEL_ANY) or
+         ((panel==Proj.FILEPANEL_LEFT) and (not buf._right_side)) or
+         ((panel==Proj.FILEPANEL_RIGHT) and (buf._right_side)) then return buf end
     end
   end
   return nil
 end
 
 ------------------PROJECT CONTROL-------------------
---set the project buffer according to the current visible mode: SM_EDIT or SM_SELECT
---when entering SM_SELECT mode: force buffer save and parse the project file
-local function setproj_visible_mode()
-  local buff= Proj.get_projectbuffer(false) or buffer
-  local editmode= (data.show_mode == Proj.SM_EDIT)
-  local selmode= not editmode
-
-  Proj.update_projview()  --update action
-  ui.statusbar_text= 'Project file =' .. data.filename
-
-  if selmode and buff.modify then
-    data.is_parsed= false --prevent list update when saving the project until it's parsed
-    Util.save_file()
-  end
-  --mark this buffer as a project (true=SELECTION mode) (false=EDIT mode)
-  buff._project_select= selmode
-  --selection is read-only
-  buff.read_only= selmode
-  --in SELECTION mode the current line is always visible
-  buff.caret_line_visible_always= selmode
-  --and the scrollbars hidden
-  buff.h_scroll_bar= editmode
-  buff.v_scroll_bar= editmode
-
-  if selmode then
-    --fill Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]"
-    Proj.parse_project_file()
-    --set lexer to highlight groups and hidden control info ":: ... ::"
-    buff:set_lexer('myproj')
-    --project in SELECTION mode--
-    Proj.show_sel_w_focus(buff)
-
-    --set SELECTION mode context menu
-    Proj.set_contextm_sel()
-
-    --fold the requested folders
-    for i= #data.proj_fold_row, 1, -1 do
-      buff.toggle_fold(data.proj_fold_row[i])
-    end
-    Proj.mark_open_files(buff)
-  else
-    --edit project as a text file (show control info)
-    buff:set_lexer('text')
-    --set EDIT mode context menu
-    Proj.set_contextm_edit()
-    --project in EDIT mode--
-    Proj.show_default(buff)
-    Proj.clear_open_indicators(buff)
-  end
-  if toolbar then
-    Proj.update_projview()  --update project view button
-    if toolbar then toolbar.seltabbuf(buff) end --hide/show and select tab in edit mode
-  end
-end
-
---enter SELECTION mode--
-function Proj.setselectionmode()
+-- ENTER SELECTION mode
+function Proj.selection_mode()
   if data.is_open then
     data.show_mode= Proj.SM_SELECT  --selection mode
-    setproj_visible_mode()
-  end
-end
+    Proj.update_projview_action()  --update action
+    ui.statusbar_text= 'Project: ' .. data.filename
 
---enter EDIT mode--
-function Proj.seteditmode()
-  if data.is_open then
-    data.show_mode= Proj.SM_EDIT  --edit mode
-    setproj_visible_mode()
-  end
-end
-
---toggle project between SELECTION and EDIT modes
-function Proj.toggle_selectionmode()
-  --toggle current mode: select->edit; hidden/edit->select
-  if data.show_mode == Proj.SM_SELECT then Proj.seteditmode() else Proj.setselectionmode() end
-end
-
---return the project buffer (the working one)
---enforce: project in preferred view, mark it as the "working one"
-function Proj.get_projectbuffer(force_view)
-  -- search for the working project
-  local pbuff, nview
-  local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-  for _, buffer in ipairs(_BUFFERS) do
-    if buffer._is_working_project then
-      --working project found
-      if not force_view or _VIEWS[projv].buffer == buffer then
-        return buffer --ok (is in the right view)
-      end
-      --need to change the view
-      pbuff = buffer
-      break
-    end
-  end
-  if pbuff == nil then
-    -- not found, choose a new one
-    -- 1) check the preferred project view
-    if projv <= #_VIEWS and _VIEWS[projv].buffer._project_select ~= nil then
-      _VIEWS[projv].buffer._is_working_project = true
-      return _VIEWS[projv].buffer --ok (marked and in the right view)
-    end
-    -- 2) check projects in all views
-    for i= 1, #_VIEWS do
-      if _VIEWS[i].buffer._project_select ~= nil then
-        pbuff = _VIEWS[i].buffer
-        nview = i
+    --if modified, save the project buffer
+    local fn = data.filename:iconv(_CHARSET, 'UTF-8')
+    for _, buff in ipairs(_BUFFERS) do
+      if buff.filename == fn then
+        if buff.modify then
+          Util.goto_buffer(buff)
+          Util.save_file()
+        end
         break
       end
     end
-    if pbuff == nil then
-      -- 3) check all buffers, use the first found
-      for _, buffer in ipairs(_BUFFERS) do
-        if buffer._project_select ~= nil then
-          pbuff = buffer
-          break
-        end
-      end
-    end
+    --parse project (fill Proj.data arrays: "proj_files[]", "proj_fold_row[]" and "proj_grp_path[]")
+    Proj.parse_project_file()
+    --visualize select mode
+    plugs.projmode_select()
   end
+end
 
-  if pbuff then
-    --force: marked as the working project
-    pbuff._is_working_project = true
-    --force: show the project in the preferred view
-    if force_view then Proj.force_buffer_inview(pbuff, projv) end
+-- ENTER EDIT mode
+function Proj.seteditmode()
+  if data.is_open then
+    data.show_mode= Proj.SM_EDIT  --edit mode
+    Proj.update_projview_action()  --update action
+    ui.statusbar_text= 'Edit project: ' .. data.filename
+    --visualize edit mode
+    plugs.projmode_edit()
   end
-  return pbuff
+end
+
+-- TOGGLE between SELECTION and EDIT modes
+function Proj.toggle_selectionmode()
+  --toggle current mode: select->edit; hidden/edit->select
+  if data.show_mode == Proj.SM_SELECT then Proj.seteditmode() else Proj.selection_mode() end
 end
 
 --open files in the preferred view
@@ -813,7 +708,7 @@ function Proj.EVkeypress(code)
       if nv == Proj.prefview[Proj.PRJV_PROJECT] and data.show_mode == Proj.SM_HIDDEN then
         --in project's view, force visibility
         data.show_mode= Proj.SM_SELECT  --selection mode
-        Proj.update_projview()
+        Proj.update_projview_action()
         view.size= data.select_width
         Proj.temporal_view= true  --close if escape is pressed again or if a file is opened
 
@@ -848,7 +743,7 @@ function Proj.change_proj_ed_mode()
       end
     end
     refresh_syntax()
-    Proj.update_projview()
+    Proj.update_projview_action()
   else
     --file: goto project view
     Proj.show_projview()
@@ -857,7 +752,7 @@ end
 
 local function ena_toggle_projview()
   local ena= Proj.get_projectbuffer(true)
-  Proj.update_projview() --update action: toggle_viewproj
+  Proj.update_projview_action() --update action: toggle_viewproj
   return ena
 end
 
@@ -867,7 +762,7 @@ function Proj.show_projview()
     Proj.goto_projview(Proj.PRJV_PROJECT)
     if data.show_mode == Proj.SM_HIDDEN then
       data.show_mode= Proj.SM_SELECT  --selection mode
-      Proj.update_projview()
+      Proj.update_projview_action()
       view.size= data.select_width
     end
   end
@@ -887,7 +782,7 @@ function Proj.show_hide_projview()
     if view.size then
       if data.show_mode ~= Proj.SM_HIDDEN then
         data.show_mode= Proj.SM_HIDDEN  --hidden
-        Proj.update_projview()
+        Proj.update_projview_action()
         if data.select_width ~= view.size then
           data.select_width= view.size  --save current width
           if data.select_width < 50 then data.select_width= 200 end
@@ -896,7 +791,7 @@ function Proj.show_hide_projview()
         view.size= 0
       else
         data.show_mode= Proj.SM_SELECT  --selection mode
-        Proj.update_projview()
+        Proj.update_projview_action()
         view.size= data.select_width
       end
     end
@@ -904,7 +799,7 @@ function Proj.show_hide_projview()
   end
 end
 
-function Proj.update_projview()
+function Proj.update_projview_action()
   --update toggle project view button
   if toolbar then actions.updateaction("toggle_viewproj") end
 end
@@ -1015,7 +910,7 @@ function Proj.check_leftpanel()
     --check current file
     if not Proj.isRegularBuf(buffer) or buffer._right_side then
       --it is not a proper file for this panel, find one or open a blank one
-      local bl= Proj.getFirstRegularBuf(1)
+      local bl= Proj.getBufFromPanel(Proj.FILEPANEL_LEFT)
       if bl then Util.goto_buffer(bl) else Proj.go_file() end
     end
   end
@@ -1037,7 +932,7 @@ function Proj.check_rightpanel()
     --check current file
     if not Proj.isRegularBuf(buffer) or not buffer._right_side then
       --it is not a proper file for this panel, find one or close the panel
-      local br= Proj.getFirstRegularBuf(2)
+      local br= Proj.getBufFromPanel(Proj.FILEPANEL_RIGHT)
       if br then Util.goto_buffer(br) else
         view.unsplit(view)
         plugs.close_results(true) --close the search view too

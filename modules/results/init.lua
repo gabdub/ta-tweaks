@@ -211,12 +211,11 @@ if toolbar then
 
   --------------- RESULTS INTERFACE --------------
   function plugs.init_searchview()
-    --check if a search results buffer is open
+    --check if a search results buffer is open (not used with panels)
   end
 
   function plugs.goto_searchview()
-    --activate search panel
-    --if not toolbar.results_tb then toolbar.results_onoff() end
+    --activate/create search view (not used with panels)
   end
 
   function plugs.close_results(viewclosed)

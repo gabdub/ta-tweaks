@@ -108,28 +108,6 @@ if toolbar then
     collarow= {}
   end
 
-  local function currproj_change()
-    if not Proj.data.is_open then
-      if currproj then
-        currproj= nil
-        projmod= nil
-        return true --closed: changed
-      end
-      return false
-    end
-    if not Proj.data.is_parsed then return false end  --wait until the project is parsed
-    local prjfn= Proj.data.filename
-    local modt= lfs.attributes(prjfn, 'modification')
-    if prjfn == currproj then --same file, check modification time
-      if modt == projmod then return false end --SAME
-    else
-      clear_selected()
-    end
-    currproj= prjfn
-    projmod= modt
-    return true --new or modified
-  end
-
   function expand_list(cmd)
     sel_file(cmd)
     toolbar.set_expand_icon(cmd,"list-colapse2")
@@ -146,9 +124,8 @@ if toolbar then
     collarow[cmd]= true
   end
 
-  local function load_proj()
+  function toolbar.load_proj_list()
     local rowcol= toolbar.cfg.backcolor_erow
-    changed= currproj_change()
     toolbar.list_init_title() --add a resize handle
     toolbar.list_addaction("close_project")
     if (not Proj) then
@@ -170,8 +147,6 @@ if toolbar then
     local fname= data.proj_rowinfo[first_row][1]
     if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
-
-    if not changed then return end
 
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
@@ -263,7 +238,7 @@ if toolbar then
 
   local function proj_update_cb(reload)
     --LSTSEL_UPDATE_CB: update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
-    if reload then load_proj() end
+    if reload then toolbar.load_proj_list() end
     track_file()
     mark_open_files()
   end
@@ -275,4 +250,33 @@ if toolbar then
   end
 
   toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create_cb, proj_update_cb, proj_showlist_cb)
+
+  --------------- LISTS INTERFACE --------------
+  --<<<< UN COMMENT THIS WHEN READY
+  --function plugs.init_projectview()
+    --check if a project buffer is open
+  --end
+  --function plugs.goto_projectview()
+    --activate/create project view (not used with panels)
+  --end
+  --function plugs.projmode_select()
+    --activate select mode
+
+    --locate and close the project buffer
+--    local fn = data.filename:iconv(_CHARSET, 'UTF-8')
+--    for _, buff in ipairs(_BUFFERS) do
+--      if buff.filename == fn then
+--        Util.goto_buffer(buff)
+--        Util.close_buffer()
+--        break
+--      end
+--    end
+  --end
+  --function plugs.projmode_edit()
+    --activate edit mode
+    --open the project buffer
+    --Proj.go_file(data.filename)
+  --end
+
+
 end

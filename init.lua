@@ -84,10 +84,10 @@ if toolbar then
 
   --add some buttons
   if Proj then
-    if not USE_LISTS_PANEL then
+    --if not USE_LISTS_PANEL then --<<<< UN COMMENT THIS WHEN READY
       toolbar.addaction("toggle_viewproj")
       toolbar.addspace(4,true)
-    end
+    --end
     toolbar.addaction("prev_position")
     toolbar.addaction("next_position")
     toolbar.addspace()

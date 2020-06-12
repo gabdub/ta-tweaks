@@ -114,8 +114,10 @@ if toolbar then
   end
 
   local function projloaded_ltb(cfg)
-    --CFGHOOK_PROJ_LOADED: the project parsing is complete
-    if cfg.open_proj ~= "" then toolbar.select_list("projlist", true) end
+    --CFGHOOK_PROJ_LOADED: the project parsing is complete, update view
+    if Proj.data.is_open then toolbar.select_list("projlist", true) end --activate project list
+    if toolbar.load_proj_list then toolbar.load_proj_list() end  --update file list
+
     if currlistidx > 0 then
       toolbar.selected(currlist, false, toolbar.list_tb)
       toolbar.listselections[currlistidx][LSTSEL_SHOW_CB](true) --show

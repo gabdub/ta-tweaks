@@ -103,9 +103,7 @@ if toolbar then
   end
 
   local function mark_open_proj()
-    if Proj.data.is_parsed then --wait until the project is parsed
-      toolbar.setthemeicon("open-goproj#1", Proj.data.is_open and "open-back" or "closed-back")
-    end
+    toolbar.setthemeicon("open-goproj#1", Proj.data.is_open and "open-back" or "closed-back")
   end
 
   local function recentproj_create_cb()

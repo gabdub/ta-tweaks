@@ -120,7 +120,7 @@ if toolbar then
       local buf= _BUFFERS[nb]
       toolbar.seltabbuf(buf)
       --check if a view change is needed
-      if Proj and Proj.changeViewBuf(buf) then return end
+      if Proj and Proj.tab_changeView(buf) then return end
       Util.goto_buffer(buf)
     end
   end
