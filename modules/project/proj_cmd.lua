@@ -7,19 +7,19 @@ local data = Proj.data
 
 --ACTION: new
 function Proj.new_file()
-  Proj.getout_projview()
+  Proj.goto_filesview()
   buffer.new()
 end
 
 --ACTION: open
 function Proj.open_file()
-  Proj.getout_projview()
+  Proj.goto_filesview()
   io.open_file()
 end
 
 --ACTION: recent
 function Proj.open_recent_file()
-  Proj.getout_projview()
+  Proj.goto_filesview()
   io.open_recent_file()
 end
 
@@ -59,7 +59,7 @@ function Proj.onlykeep_projopen(keepone)
     --close search results
     plugs.close_results()
     --change to left/only file view if needed
-    Proj.goto_filesview(true)
+    Proj.goto_filesview(false, true)
   elseif not keepone then
      io.close_all_buffers()
      Proj.stop_update_ui(false)
@@ -89,14 +89,14 @@ end
 
 --ACTION: open_userhome
 function Proj.qopen_user()
-  Proj.getout_projview()
+  Proj.goto_filesview()
   io.quick_open(_USERHOME)
   Proj.track_this_file()
 end
 
 --ACTION: open_textadepthome
 function Proj.qopen_home()
-  Proj.getout_projview()
+  Proj.goto_filesview()
   io.quick_open(_HOME)
   Proj.track_this_file()
 end
@@ -104,7 +104,7 @@ end
 --ACTION: open_currentdir
 function Proj.qopen_curdir()
   local fname= buffer.filename
-  Proj.getout_projview()
+  Proj.goto_filesview()
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
     Proj.track_this_file()
@@ -120,7 +120,7 @@ function Proj.snapopen()
     return
   end
   --if the current view is a project view, goto files view
-  Proj.getout_projview()
+  Proj.goto_filesview()
   local utf8_list = {}
   for row= 1, #data.proj_files do
     local file= data.proj_files[row]
@@ -399,7 +399,7 @@ function Proj.open_project(filename)
     if not Proj.is_prj_buffer(buffer) then  --invalid file
       Util.close_buffer()
       Proj.closed_cleardata()
-      Proj.goto_filesview(true)
+      Proj.goto_filesview(false, true)
       ui.statusbar_text= 'Invalid project file'
       Util.info('Open error', 'Invalid project file')
     else
@@ -408,7 +408,7 @@ function Proj.open_project(filename)
       Proj.show_lost_focus(buffer)
       -- project in SELECTION mode without focus--
       Proj.selection_mode()
-      Proj.goto_filesview(true) --change to files
+      Proj.goto_filesview(false, true) --change to files
     end
     --restore the file that was current before opening the project or open an empty one
     Proj.go_file(proj_keep_file)
@@ -493,7 +493,7 @@ end
 --ACTION: close_others
 function Proj.close_others()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
-  Proj.getout_projview()
+  Proj.goto_filesview()
   buffer._dont_close= true --force keep this
   --close the other buffers (except the project)
   Proj.onlykeep_projopen(true)
@@ -505,7 +505,7 @@ function Proj.keepthisbuff_status()
 end
 function Proj.toggle_keep_thisbuffer()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
-  Proj.getout_projview()
+  Proj.goto_filesview()
   if buffer._dont_close then buffer._dont_close=nil else buffer._dont_close= true end
   if actions then actions.updateaction("dont_close") end
 end
@@ -517,7 +517,7 @@ end
 function Proj.toggle_showin_rightpanel()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.stop_update_ui(true)
-  Proj.getout_projview()
+  Proj.goto_filesview()
   local buf= buffer
   if buf._right_side then
     buf._right_side= nil

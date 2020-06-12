@@ -77,7 +77,7 @@ function plugs.init_projectview()
       --keep the saved value (hidden / selection mode)
       if data.config.show_mode == Proj.SM_HIDDEN then data.show_mode= Proj.SM_HIDDEN end
       --start in left/only files view
-      Proj.goto_filesview(true)
+      Proj.goto_filesview(false, true)
       --check that at least there's one regular buffer
       local rbuf = Proj.getBufFromPanel(Proj.FILEPANEL_LEFT)
       if rbuf == nil then

@@ -33,7 +33,7 @@ if toolbar then
   end
 
   local function gototag(cmd)
-    Proj.getout_projview()
+    Proj.goto_filesview()
     local linenum= toolbar.getnum_cmd(cmd)
     Util.goto_line(buffer, linenum)
     buffer:vertical_centre_caret()

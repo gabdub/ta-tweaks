@@ -58,8 +58,8 @@ local function mru_ctrl_tab_handler(shift)
   local right= nil
   --Project module? check current view and goto files view before handling control+tab
   if Proj then
-    if Proj.getout_projview() then return end
-    --in right panel, only switch right files
+    if Proj.goto_filesview() then return end  --exit if the view changed
+    --in the right panel: only switch to another right marked file
     if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then right= true end
   end
 
@@ -113,7 +113,7 @@ local function mru_ctrl_tab_handler(shift)
   --Project module? change to left/right files view if needed (without project: 1/2, with project: 2/4)
   local newb= mru_buff[1]
   if Proj then
-    Proj.goto_filesview(false, newb._right_side)
+    Proj.goto_filesview(newb._right_side, true)
   else
     --no project module: view #2 is the right_side panel
     if newb._right_side then
@@ -166,10 +166,20 @@ events_connect(events.BUFFER_DELETED, function()
         end
         mru_buff[j]= nil
       end
-      i=i+1
     end
+    i=i+1
   end
 end)
+
+--return the top buffer in the MRU list (any/left/right)
+function gettop_MRUbuff(any, right)
+  if right == false then right= nil end
+  for i= 1, #mru_buff do
+    local b= mru_buff[i]
+    if b._project_select==nil and b._type==nil and (any or b._right_side==right) then return b end
+  end
+  return nil
+end
 
 --load existing buffers in the MRU list
 if #_BUFFERS > 0 then

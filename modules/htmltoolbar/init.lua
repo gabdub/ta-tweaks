@@ -140,7 +140,7 @@ if toolbar then
 
   function toolbar.html_toolbar_onoff()
     --if the current view is a project view, goto left/only files view. if not, keep the current view
-    Proj.getout_projview()
+    Proj.goto_filesview()
     if buffer.html_toolbar_on == true then
       buffer.html_toolbar_on= false
     else

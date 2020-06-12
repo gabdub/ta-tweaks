@@ -55,6 +55,8 @@ local function update_comp_actions()
     actions.updateaction("toggle_filediff")
     actions.updateaction("vc_changes")
   end
+  --force to select the current file in the tab bar
+  if toolbar then toolbar.seltabbuf(buffer) end
 end
 
 -- Stops diff'ing.
@@ -268,18 +270,15 @@ function Proj.vc_changes_status()
   return (Proj.is_svn_on and 1 or 2) --check
 end
 function Proj.vc_changes()
-  if buffer._right_side then
-    Proj.goto_filesview()
-  end
-  Proj.getout_projview()
+  Proj.goto_filesview(false, true) --move to the left
   local orgbuf= buffer
   if Proj.is_svn_on then
     diff_stop() --clear marks
     --close right file (svn HEAD)
-    Proj.goto_filesview(true,true)
+    Proj.goto_filesview(true, true)
     Proj.close_buffer()
-    Proj.goto_filesview()
-    --Util.goto_buffer(orgbuf)
+    Proj.goto_filesview(false, true)
+    Util.goto_buffer(orgbuf)
     plugs.close_results()
     ui.statusbar_text= "Compare to HEAD: OFF"
     update_comp_actions()
@@ -318,7 +317,7 @@ function Proj.vc_changes()
       buffer:set_save_point()
       --show in the right panel
       Proj.toggle_showin_rightpanel()
-      Proj.goto_filesview()
+      Proj.goto_filesview(false, true)
       Util.goto_buffer(orgbuf)
       --compare files (keep statusbar text)
       Proj.diff_start(true)

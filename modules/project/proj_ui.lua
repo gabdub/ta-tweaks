@@ -36,10 +36,10 @@ function Proj.EVinitialize()
   --load recent projects list / project preferences
   Proj.load_config()
 
-  --check if a search results buffer is open
-  plugs.init_searchview()
   --check if a project buffer is open
   plugs.init_projectview()
+  --check if a search results buffer is open
+  plugs.init_searchview()
 
   Proj.update_after_switch()
   Proj.update_projview_action() --update action: toggle_viewproj
@@ -66,8 +66,9 @@ end
 
 --goto the view for the requested project buffer type
 --split views if needed
+--return true when the view changes
 function Proj.goto_projview(prjv)
-  if prjv == -1 then return false end --invalid view
+  if prjv == -1 then return false end --invalid param
   local pref= Proj.prefview[prjv] --preferred view for this buffer type
   if pref == _VIEWS[view] then return false end --already in the right view
   local nv= #_VIEWS
@@ -95,37 +96,34 @@ function Proj.goto_projview(prjv)
     end
   end
   Util.goto_view(pref)
-  return true
+  return true --view changed
 end
 
-function Proj.goto_filesview(dontprjcheck, right_side)
-  --goto the view for editing files, split views if needed
-  if dontprjcheck or Proj.get_projectbuffer(false) ~= nil then
-    --if a project is open, this will create all the needed views
-    if right_side then Proj.goto_projview(Proj.PRJV_FILES_2) else Proj.goto_projview(Proj.PRJV_FILES) end
-  elseif right_side then
-    --if no project is open, view #2 is the right_side panel
-    if #_VIEWS == 1 then
-      view:split(true)
+Proj.FILEPANEL_ANY=    0
+Proj.FILEPANEL_LEFT=   1
+Proj.FILEPANEL_RIGHT=  2
+--find the first regular buffer
+--panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
+function Proj.getBufFromPanel(panel)
+  --prefer MRU order (ask ctrl_tab_mru)
+  if gettop_MRUbuff then return gettop_MRUbuff((panel==Proj.FILEPANEL_ANY), (panel==Proj.FILEPANEL_RIGHT)) end
+  --ctrl_tab_mru not installed: use buffer orden
+  for _, buf in ipairs(_BUFFERS) do
+    if Proj.isRegularBuf(buf) then
+      if (panel==Proj.FILEPANEL_ANY) or
+         ((panel==Proj.FILEPANEL_LEFT) and (not buf._right_side)) or
+         ((panel==Proj.FILEPANEL_RIGHT) and (buf._right_side)) then return buf end
     end
-    if _VIEWS[view] == 1 then Util.goto_view(2) end
-  else
-    --if no project is open, view #1 is the left/only panel
-    if _VIEWS[view] ~= 1 then Util.goto_view(1) end
   end
+  return nil
 end
 
---if the current view is a project or project-search, goto left/only files view. if not, keep the current view
-function Proj.getout_projview(right_side, force)
-  if (buffer._project_select ~= nil or buffer._type ~= nil) then
-    --move to files view (left/only panel) and exit
-    Proj.goto_filesview(true,right_side)
-    return true
-  end
-  if force then --enforce left/right view?
-    return Proj.goto_projview( (right_side) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
-  end
-  return false
+--goto a view for editing files (split views if needed)
+--if force is false, left or right are ok
+--return true when the view changes
+function Proj.goto_filesview(right_side, force)
+  if not force and Proj.isRegularBuf(buffer) then return false end
+  return Proj.goto_projview( (right_side) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
 end
 
 function Proj.tab_changeView(pbuffer)
@@ -137,7 +135,7 @@ function Proj.tab_changeView(pbuffer)
     if pbuffer._type == Proj.PRJT_SEARCH then return plugs.goto_searchview() end
     --normal file: check we are not in a project view
     --change to left/right files view if needed (without project: 1/2, with project: 2/4)
-    Proj.goto_filesview(false, pbuffer._right_side)
+    Proj.goto_filesview(pbuffer._right_side, true)
   end
   return false
 end
@@ -159,26 +157,9 @@ function Proj.goto_buffer(nb)
     plugs.goto_searchview()
   else
     --activate files view
-    Proj.goto_filesview(true, b._right_side)
+    Proj.goto_filesview(b._right_side, true)
     Util.goto_buffer(b)
   end
-end
-
-Proj.FILEPANEL_ANY=    0
-Proj.FILEPANEL_LEFT=   1
-Proj.FILEPANEL_RIGHT=  2
---find the first regular buffer
---panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
---TO DO: prefer MRU order
-function Proj.getBufFromPanel(panel)
-  for _, buf in ipairs(_BUFFERS) do
-    if Proj.isRegularBuf(buf) then
-      if (panel==Proj.FILEPANEL_ANY) or
-         ((panel==Proj.FILEPANEL_LEFT) and (not buf._right_side)) or
-         ((panel==Proj.FILEPANEL_RIGHT) and (buf._right_side)) then return buf end
-    end
-  end
-  return nil
 end
 
 ------------------PROJECT CONTROL-------------------
@@ -233,7 +214,7 @@ end
 function Proj.go_file(file, line_num)
   --if the current view is a project view, goto left/only files view. if not, keep the current view
   if file == nil or file == '' then
-    Proj.getout_projview()
+    Proj.goto_filesview()
     --new file (add only one)
     local n= nil
     for i=1, #_BUFFERS do
@@ -254,14 +235,14 @@ function Proj.go_file(file, line_num)
     local fn = file:iconv(_CHARSET, 'UTF-8')
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
-        --already open (keep panel)
-        Proj.getout_projview(buf._right_side, true)
+        --already open (keep the side)
+        Proj.goto_filesview(buf._right_side, true)
         Util.goto_buffer(buf)
         fn = nil
         break
       end
     end
-    Proj.getout_projview()
+    Proj.goto_filesview()
     if fn then io.open_file(fn) end
 
     if line_num then Util.goto_line(buffer, line_num) end
@@ -457,7 +438,7 @@ end
 --or change buffer extension {c,cpp} <--> {h,hpp} or ask
 function Proj.open_cursor_file()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
-  Proj.getout_projview()
+  Proj.goto_filesview()
   local s, e = buffer.selection_start, buffer.selection_end
   if s == e then
     --suggest current word
@@ -879,7 +860,7 @@ function Proj.show_hide_projview()
         view.size= data.select_width
       end
     end
-    Proj.goto_filesview(true)
+    Proj.goto_filesview()
   end
 end
 

@@ -203,7 +203,7 @@ if toolbar then
     end
 
     if Proj then
-      Proj.getout_projview()
+      Proj.goto_filesview()
       local washidebylist= listtb_hide_p
       listtb_hide_p= false
       if toolbar.get_check_val("tblist_hideprj") then
