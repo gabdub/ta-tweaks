@@ -6,6 +6,7 @@
 --
 if toolbar then
   local itemsgrp, itselected, currproj, projmod, first_row
+  local prj_parse_ver= -1
   local collarow= {}
   local openfs= {}
   local Proj = Proj
@@ -147,6 +148,11 @@ if toolbar then
     local fname= data.proj_rowinfo[first_row][1]
     if fname == "" then fname= 'Project' else first_row=2 end
     toolbar.list_addinfo(fname, true)
+
+    --Has the content of the project changed?
+    if prj_parse_ver == data.parse_ver then return end
+    --yes: update file list
+    prj_parse_ver= data.parse_ver
 
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()

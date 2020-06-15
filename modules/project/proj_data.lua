@@ -54,6 +54,7 @@
 --  Proj.data:          PROJECT DATA
 --   filename           = open project filename or ""
 --   is_open            = (filename ~= "")
+--   parse_ver          = parse version (+1 in every parse)
 --   proj_files[]       = array with the filename in each row (1...) or ''
 --   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
 --   proj_fold_row[]    = array with the row numbers to fold on open
@@ -85,6 +86,7 @@ Proj.data= {}
 local data= Proj.data
 data.filename= ""  --open project filename or ""
 data.is_open= false
+data.parse_ver= 0
 
 --show mode
 Proj.SM_HIDDEN= 0
@@ -106,6 +108,7 @@ function Proj.clear_proj_arrays()
   data.proj_grp_path=  {}
   data.proj_vcontrol=  {}
   data.proj_rowinfo=   {}   --{row-text, indent, indent-len}
+  data.parse_ver= data.parse_ver+1 --advance parse version
 end
 Proj.clear_proj_arrays()
 
@@ -251,7 +254,7 @@ end
 
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
-  Proj.clear_proj_arrays()
+  Proj.clear_proj_arrays()  --clear data and advance parse version
   if not data.is_open then
     notify_projload_ends()
     Util.info("ERROR", "Unknown project filename")
@@ -369,7 +372,7 @@ function Proj.closed_cleardata()
   data.is_open= false
   data.show_mode= Proj.SM_HIDDEN
   Proj.update_projview_action() --update project view button
-  Proj.clear_proj_arrays()
+  Proj.clear_proj_arrays() --clear data and advance parse version
   notify_projload_ends()
 end
 
