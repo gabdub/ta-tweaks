@@ -113,7 +113,7 @@ local function mru_ctrl_tab_handler(shift)
   --Project module? change to left/right files view if needed (without project: 1/2, with project: 2/4)
   local newb= mru_buff[1]
   if Proj then
-    Proj.goto_filesview(newb._right_side, true)
+    Proj.goto_filesview(newb._right_side and Proj.FILEPANEL_RIGHT or Proj.FILEPANEL_LEFT)
   else
     --no project module: view #2 is the right_side panel
     if newb._right_side then

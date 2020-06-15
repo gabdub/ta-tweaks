@@ -89,7 +89,6 @@ if actions then
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.toggle_keep_thisbuffer, nil, nil, Proj.keepthisbuff_status) --check
   actions.add("showin_rightpanel",   "Show file in the right panel", Proj.toggle_showin_rightpanel, nil, nil, Proj.showin_rightpanel_status) --check
-  --actions.add("onlykeepproj",      _L['Close All'],         Proj.onlykeep_projopen) --"closeall"="onlykeepproj"
   actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
 
   actions.add("toggle_editproj",     Util.EDITMENU_TEXT .. ' project', Proj.toggle_editproj, "f4")

@@ -43,23 +43,22 @@ function Proj.close_buffer()
 end
 
 --ACTION: closeall (close project)
-function Proj.close_all_buffers()
-  --close project file and views
-  Proj.close_project(false)
-  --close all buffers
-  io.close_all_buffers()
-  Proj.update_projview_action()  --update project view button
-end
-
---ACTION: closeall (dont'close project) replaces "onlykeepproj" action
+--function Proj.close_all_buffers()
+--  --close project file and views
+--  Proj.close_project(false)
+--  --close all buffers
+--  io.close_all_buffers()
+--end
+--
+--ACTION: closeall (dont'close project)
 function Proj.onlykeep_projopen(keepone)
   Proj.stop_update_ui(true)
   --close all buffers except project (and buffer._dont_close)
-  if Proj.get_projectbuffer(false) ~= nil then
+  if Proj.data.is_open then
     --close search results
     plugs.close_results()
     --change to left/only file view if needed
-    Proj.goto_filesview(false, true)
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
   elseif not keepone then
      io.close_all_buffers()
      Proj.stop_update_ui(false)
@@ -399,7 +398,7 @@ function Proj.open_project(filename)
     if not Proj.is_prj_buffer(buffer) then  --invalid file
       Util.close_buffer()
       Proj.closed_cleardata()
-      Proj.goto_filesview(false, true)
+      Proj.goto_filesview(Proj.FILEPANEL_LEFT)
       ui.statusbar_text= 'Invalid project file'
       Util.info('Open error', 'Invalid project file')
     else
@@ -408,7 +407,7 @@ function Proj.open_project(filename)
       Proj.show_lost_focus(buffer)
       -- project in SELECTION mode without focus--
       Proj.selection_mode()
-      Proj.goto_filesview(false, true) --change to files
+      Proj.goto_filesview(Proj.FILEPANEL_LEFT)
     end
     --restore the file that was current before opening the project or open an empty one
     Proj.go_file(proj_keep_file)

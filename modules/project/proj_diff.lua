@@ -270,14 +270,14 @@ function Proj.vc_changes_status()
   return (Proj.is_svn_on and 1 or 2) --check
 end
 function Proj.vc_changes()
-  Proj.goto_filesview(false, true) --move to the left
+  Proj.goto_filesview(Proj.FILEPANEL_LEFT)
   local orgbuf= buffer
   if Proj.is_svn_on then
     diff_stop() --clear marks
     --close right file (svn HEAD)
-    Proj.goto_filesview(true, true)
+    Proj.goto_filesview(Proj.FILEPANEL_RIGHT)
     Proj.close_buffer()
-    Proj.goto_filesview(false, true)
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
     Util.goto_buffer(orgbuf)
     plugs.close_results()
     ui.statusbar_text= "Compare to HEAD: OFF"
@@ -317,7 +317,7 @@ function Proj.vc_changes()
       buffer:set_save_point()
       --show in the right panel
       Proj.toggle_showin_rightpanel()
-      Proj.goto_filesview(false, true)
+      Proj.goto_filesview(Proj.FILEPANEL_LEFT)
       Util.goto_buffer(orgbuf)
       --compare files (keep statusbar text)
       Proj.diff_start(true)

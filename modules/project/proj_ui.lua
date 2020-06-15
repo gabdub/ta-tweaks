@@ -119,11 +119,11 @@ function Proj.getBufFromPanel(panel)
 end
 
 --goto a view for editing files (split views if needed)
---if force is false, left or right are ok
+--panel=0 (any), panel=1 (_right_side=false), panel=2 (_right_side=true)
 --return true when the view changes
-function Proj.goto_filesview(right_side, force)
-  if not force and Proj.isRegularBuf(buffer) then return false end
-  return Proj.goto_projview( (right_side) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
+function Proj.goto_filesview(panel)
+  if (not panel or panel == Proj.FILEPANEL_ANY) and Proj.isRegularBuf(buffer) then return false end  --no change is needed
+  return Proj.goto_projview( (panel == Proj.FILEPANEL_RIGHT) and Proj.PRJV_FILES_2 or Proj.PRJV_FILES )
 end
 
 function Proj.tab_changeView(pbuffer)
@@ -135,7 +135,7 @@ function Proj.tab_changeView(pbuffer)
     if pbuffer._type == Proj.PRJT_SEARCH then return plugs.goto_searchview() end
     --normal file: check we are not in a project view
     --change to left/right files view if needed (without project: 1/2, with project: 2/4)
-    Proj.goto_filesview(pbuffer._right_side, true)
+    Proj.goto_filesview(pbuffer._right_side and Proj.FILEPANEL_RIGHT or Proj.FILEPANEL_LEFT)
   end
   return false
 end
@@ -157,7 +157,7 @@ function Proj.goto_buffer(nb)
     plugs.goto_searchview()
   else
     --activate files view
-    Proj.goto_filesview(b._right_side, true)
+    Proj.goto_filesview(b._right_side and Proj.FILEPANEL_RIGHT or Proj.FILEPANEL_LEFT)
     Util.goto_buffer(b)
   end
 end
@@ -236,7 +236,7 @@ function Proj.go_file(file, line_num)
     for i, buf in ipairs(_BUFFERS) do
       if buf.filename == fn then
         --already open (keep the side)
-        Proj.goto_filesview(buf._right_side, true)
+        Proj.goto_filesview(buf._right_side and Proj.FILEPANEL_RIGHT or Proj.FILEPANEL_LEFT)
         Util.goto_buffer(buf)
         fn = nil
         break
