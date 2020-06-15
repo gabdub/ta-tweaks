@@ -64,6 +64,13 @@ function Proj.isHiddenTabBuf(pbuffer)
   return pbuffer._project_select or pbuffer._type == Proj.PRJT_SEARCH
 end
 
+function Proj.check_is_open()
+  if not data.is_open then
+    ui.statusbar_text= 'You must first open a project'
+  end
+  return data.is_open
+end
+
 --goto the view for the requested project buffer type
 --split views if needed
 --return true when the view changes
@@ -258,7 +265,10 @@ local function file_sort(filea,fileb)
 end
 
 --add a list of files to the project (check for duplicates)
-function Proj.add_files(p_buffer, flist, groupfiles)
+function Proj.add_files(flist, groupfiles)
+  local p_buffer = Proj.get_projectbuffer(true)
+  if not p_buffer then return end
+
   local finprj= {}
   local n_inprj= 0
   if #flist > 0 then
@@ -584,7 +594,7 @@ function Proj.update_after_switch()
       --set regular file context menu
       Proj.set_contextm_file()
       --try to select the current file in the project
-      Proj.track_this_file()
+      plugs.track_this_file()
     end
     --refresh some options (when views are closed this is mixed)
     --the current line is not always visible
@@ -625,38 +635,6 @@ function Proj.update_after_switch()
     end
   end
   Proj.stop_update_ui(false)
-end
-
---try to select the current file in the working project
---(only if the project is currently visible)
-function Proj.track_this_file()
-  local p_buffer = Proj.get_projectbuffer(false)
-  --only track the file if the project is visible and in SELECTION mode and is not an special buffer
-  if p_buffer and p_buffer._project_select and buffer._type == nil then
-    --get file path
-    local file= buffer.filename
-    if file ~= nil then
-      row= Proj.get_file_row(file)
-      if row ~= nil then
-        --prevent some events to fire for ever
-        Proj.stop_update_ui(true)
-
-        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-        Util.goto_view(projv)
-        --move the selection bar
-        Util.goto_line(p_buffer,row)
-        p_buffer:home()
-        --hilight the file as open
-        Proj.add_open_indicator(p_buffer,row)
-         -- project in SELECTION mode without focus--
-        Proj.show_lost_focus(p_buffer)
-        --return to this file (it could be in a different view)
-        Proj.go_file(file)
-
-        Proj.stop_update_ui(false)
-      end
-    end
-  end
 end
 
 ------------------ TA-EVENTS -------------------

@@ -54,16 +54,15 @@ end
 function Proj.onlykeep_projopen(keepone)
   Proj.stop_update_ui(true)
   --close all buffers except project (and buffer._dont_close)
-  if Proj.data.is_open then
-    --close search results
-    plugs.close_results()
-    --change to left/only file view if needed
-    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
-  elseif not keepone then
+  if (not Proj.data.is_open) and (not keepone) then
      io.close_all_buffers()
      Proj.stop_update_ui(false)
      return
   end
+  --close search results
+  plugs.close_results()
+  --change to left/only file view if needed
+  Proj.goto_filesview(Proj.FILEPANEL_LEFT)
   local i=1
   while i <= #_BUFFERS do
     local buf=_BUFFERS[i]
@@ -90,34 +89,31 @@ end
 function Proj.qopen_user()
   Proj.goto_filesview()
   io.quick_open(_USERHOME)
-  Proj.track_this_file()
+  plugs.track_this_file()
 end
 
 --ACTION: open_textadepthome
 function Proj.qopen_home()
   Proj.goto_filesview()
   io.quick_open(_HOME)
-  Proj.track_this_file()
+  plugs.track_this_file()
 end
 
 --ACTION: open_currentdir
 function Proj.qopen_curdir()
-  local fname= buffer.filename
   Proj.goto_filesview()
+  local fname= buffer.filename
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
-    Proj.track_this_file()
+    plugs.track_this_file()
   end
 end
 
 --ACTION: open_projectdir
 --snapopen project files based on io.snapopen @ file_io.lua
 function Proj.snapopen()
-  local p_buffer = Proj.get_projectbuffer(true)
-  if p_buffer == nil then
-    ui.statusbar_text= 'No project found'
-    return
-  end
+  if not Proj.check_is_open() then return end
+
   --if the current view is a project view, goto files view
   Proj.goto_filesview()
   local utf8_list = {}
@@ -144,11 +140,10 @@ end
 function Proj.get_filevcinfo(fname)
   --show filename
   local info= fname
-  local fn=string.match(fname..'::','(.-):HEAD::')
+  local fn= string.match(fname..'::','(.-):HEAD::')
   if fn then fname=fn end
   --get version control params for filename
-  local cmd
-  local post= ""
+  local cmd, post= ""
   local verctrl, cwd, url= Proj.get_versioncontrol_url(fname)
   if verctrl == 1 then
     cmd= "svn info "..url
@@ -232,9 +227,9 @@ function Proj.next_buffer()
       local retry= 3
       --if project files are not shown in tabs, skip them
       while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
-        nb=nb+1
+        nb= nb+1
         if nb > #_BUFFERS then nb= 1 end
-        retry=retry-1
+        retry= retry-1
       end
     end
     Proj.goto_buffer(nb)
@@ -253,9 +248,9 @@ function Proj.prev_buffer()
       local retry= 3
       --if project files are not shown in tabs, skip them
       while toolbar.isbufhide(_BUFFERS[nb]) and retry > 0 do
-        nb=nb-1
+        nb= nb-1
         if nb < 1 then nb= #_BUFFERS end
-        retry=retry-1
+        retry= retry-1
       end
     end
     Proj.goto_buffer(nb)
@@ -283,10 +278,7 @@ end
 --ACTION: refresh_syntax
 -- refresh syntax highlighting + project folding
 function Proj.refresh_hilight()
-  if buffer._project_select ~= nil then
-    Proj.toggle_selectionmode()
-    Proj.toggle_selectionmode()
-  end
+  plugs.proj_refresh_hilight()
   refresh_syntax()
 end
 
@@ -433,55 +425,29 @@ end
 --ACTION: close_project
 --close current project / view
 function Proj.close_project(keepviews)
-  local p_buffer = Proj.get_projectbuffer(true)
-  if p_buffer ~= nil then
-    local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-    if #_VIEWS >= projv then
-      Util.goto_view(projv)
-    end
-    Util.goto_buffer(p_buffer)
-    if Util.close_buffer() then
-      Proj.closed_cleardata()
-      if not keepviews then
-        plugs.close_results()
-        if #_VIEWS > 1 then
-          view.unsplit(view)
-        end
-      end
-    else
-      --close was cancelled
-      return false
-    end
-  else
-    ui.statusbar_text= 'No project found'
-  end
-  --closed / not found / show projects list if available
-  if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
-  return true
+  return plugs.close_project(keepviews)
 end
 
 --ACTION: search_project
 function Proj.search_in_files(where)
-  if Proj.ask_search_in_files then --goto_nearest module?
-    local p_buffer = Proj.get_projectbuffer(true)
-    if p_buffer == nil then
-      ui.statusbar_text= 'No project found'
-      return
-    end
-    local find, case, word= Proj.ask_search_in_files(true)
-    local currow= p_buffer.line_from_position(p_buffer.current_pos) +1 -Util.LINE_BASE
-    if find then Proj.find_in_files(currow, find, case, word, true, where) end
-  else
+  if not Proj.ask_search_in_files then --goto_nearest module?
     ui.statusbar_text= 'goto_nearest module not found'
+    return
+  end
+  if not Proj.check_is_open() then return end
+  local currow= plugs.get_prj_currow() --get the selected project row number
+  if currow > 0 then
+    local find, case, word= Proj.ask_search_in_files(true)
+    if find then Proj.find_in_files(currow, find, case, word, true, where) end
   end
 end
 --ACTION: search_sel_dir
 function Proj.search_in_sel_dir()
-  Proj.search_in_files(1)
+  Proj.search_in_files(1) --1=selected directory
 end
 --ACTION: search_sel_file
 function Proj.search_in_sel_file()
-  Proj.search_in_files(2)
+  Proj.search_in_files(2) --2=selected file
 end
 
 --ACTION: clear_search
@@ -505,7 +471,7 @@ end
 function Proj.toggle_keep_thisbuffer()
   --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.goto_filesview()
-  if buffer._dont_close then buffer._dont_close=nil else buffer._dont_close= true end
+  if buffer._dont_close then buffer._dont_close= nil else buffer._dont_close= true end
   if actions then actions.updateaction("dont_close") end
 end
 
@@ -535,85 +501,11 @@ function Proj.toggle_showin_rightpanel()
   if actions then actions.updateaction("showin_rightpanel") end
 end
 
---ACTION: open_projsel
+--ACTION: open_projsel (only used for project in buffers)
 --open the selected file/s
 --when more than one line is selected, ask for confirmation
 function Proj.open_sel_file()
-  --check we have a file list
-  if #data.proj_files == 0 then return end
-
-  --read selected line range
-  local r1= buffer.line_from_position(buffer.selection_start) +1 -Util.LINE_BASE
-  local r2= buffer.line_from_position(buffer.selection_end) +1 -Util.LINE_BASE
-  --clear selection
-  buffer.selection_start= buffer.selection_end
-
-  --count files/run in range
-  local flist= {}
-  local rlist= {}
-  for r= r1, r2 do
-    if data.proj_files[r] ~= "" then
-      local ft= data.proj_filestype[r]
-      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
-        flist[ #flist+1 ]= data.proj_files[r]
-      elseif ft == Proj.PRJF_RUN then
-        rlist[ #rlist+1 ]= data.proj_files[r]
-      end
-    end
-  end
-  if #flist == 0 and #rlist == 0 then
-    --no files/run in range, use current line; action=fold
-    r1= buffer.line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
-    if data.proj_files[r] ~= "" then
-      local ft= data.proj_filestype[r]
-      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
-        flist[ #flist+1 ]= data.proj_files[r]
-      elseif ft == Proj.PRJF_RUN then
-        rlist[ #rlist+1 ]= data.proj_files[r]
-      end
-    end
-  end
-
-  --don't mix open/run (if both are selected: open)
-  local list = {}
-  local action
-  if #flist > 0 then
-    list= flist
-    action= 'Open'
-  elseif #rlist > 0 then
-    list= rlist
-    action= 'Run'
-  end
-
-  if action then
-    --if there is more than one file in range, ask for confirmation
-    local confirm = (#list == 1) or Util.confirm( action..' confirmation',
-      'There are ' .. #list .. ' files selected', 'Do you want to open them?')
-    if not confirm then
-      return
-    end
-    if #list == 1 then
-      ui.statusbar_text= action..': ' .. list[1]
-    else
-      ui.statusbar_text= action..': ' .. #list .. ' files'
-    end
-    if action == 'Open' then
-      --open all
-      for r= 1, #list do
-        Proj.go_file(list[r])
-      end
-    elseif action == 'Run' then
-      --run all
-      for r= 1, #list do
-        Proj.run_command(list[r])
-      end
-    end
-    --try to select the current file in the working project
-    Proj.track_this_file()
-    return
-  end
-  --there is no file for this row, fold instead
-  buffer.toggle_fold(r1)
+  plugs.open_sel_file()
 end
 
 --ACTION: toggle_editproj / _end_editproj (alias)
@@ -630,57 +522,49 @@ end
 --ACTION: addthisfiles_proj
 -- add the current file to the project
 function Proj.add_this_file()
-  local p_buffer = Proj.get_projectbuffer(true)
-  if p_buffer then
-    local file= buffer.filename
-    if file ~= nil and buffer._project_select == nil and buffer._type == nil then
-      local flist= {}
-      flist[1]= file
-      Proj.add_files(p_buffer, flist, false)
-    end
-  else
-    ui.statusbar_text='Project not found'
+  if not Proj.check_is_open() then return end
+  local file= buffer.filename
+  if file ~= nil and buffer._project_select == nil and buffer._type == nil then
+    local flist= {}
+    flist[1]= file
+    Proj.add_files(flist, false)
   end
 end
 
 --ACTION: addallfiles_proj
 -- add all open files to the project
 function Proj.add_all_files()
-  local p_buffer = Proj.get_projectbuffer(true)
-  if p_buffer then
-    --put all buffer.filename in a list (ignore the project and special buffers)
-    local flist= {}
-    for _, b in ipairs(_BUFFERS) do
-      local file= b.filename
-      if file ~= nil and b._project_select == nil and b._type == nil then
-        flist[ #flist+1 ]= file
-      end
+  if not Proj.check_is_open() then return end
+  --put all buffer.filename in a list (ignore the project and special buffers)
+  local flist= {}
+  for _, b in ipairs(_BUFFERS) do
+    local file= b.filename
+    if file ~= nil and b._project_select == nil and b._type == nil then
+      flist[ #flist+1 ]= file
     end
-    Proj.add_files(p_buffer, flist, false)
-  else
-    ui.statusbar_text='Project not found'
   end
+  Proj.add_files(flist, false)
 end
 
 --ACTION: adddirfiles_proj
 -- add files from a directory to the project
 function Proj.add_dir_files(dir)
-  local p_buffer = Proj.get_projectbuffer(true)
-  if p_buffer then
-    local defdir
-    if #data.proj_files > 0 then
-      defdir= data.proj_grp_path[1]
-    end
-    dir = dir or ui.dialogs.fileselect{
-      title = 'Add all files from a Directory', select_only_directories = true,
-      with_directory = defdir or (buffer.filename or ''):match('^.+[/\\]') or
-                       lfs.currentdir()
-    }
-    if not dir then return end
+  if not Proj.check_is_open() then return end
 
-    local flist= {}
-    local extlist= {}
-    local ext
+  local defdir
+  if #data.proj_files > 0 then
+    defdir= data.proj_grp_path[1]
+  end
+  dir = dir or ui.dialogs.fileselect{
+    title = 'Add all files from a Directory', select_only_directories = true,
+    with_directory = defdir or (buffer.filename or ''):match('^.+[/\\]') or
+                     lfs.currentdir()
+  }
+  if not dir then return end
+
+  local flist= {}
+  local extlist= {}
+  local ext
 --    if Util.TA_MAYOR_VER < 9 then
 --      lfs.dir_foreach(dir, function(file)
 --        flist[ #flist+1 ]= file
@@ -688,47 +572,44 @@ function Proj.add_dir_files(dir)
 --        if ext then extlist[ext]= true end
 --        end, lfs.FILTER, false)
 --    else
-      lfs.dir_foreach(dir, function(file)
-        flist[ #flist+1 ]= file
-        ext= file:match('[^%.\\/]+$')
-        if ext then extlist[ext]= true end
-        end, lfs.FILTER, nil, false)
+    lfs.dir_foreach(dir, function(file)
+      flist[ #flist+1 ]= file
+      ext= file:match('[^%.\\/]+$')
+      if ext then extlist[ext]= true end
+      end, lfs.FILTER, nil, false)
 --    end
-    if #flist > 0 then
-      --choose extension to import
-      local allext= ""
-      for e,v in pairs(extlist) do
-        if allext == "" then
-          allext= e
-        else
-          allext= allext..","..e
-        end
-      end
-      r,word= ui.dialogs.inputbox{title = 'Extension list', informative_text = 'Choose the extensions to add (empty= all)', width = 400, text = allext}
-      if type(word) == 'table' then
-        word= table.concat(word, ',')
-      end
-      if word == "" then
-        --all files / dirs
-        Proj.add_files(p_buffer, flist, true) --sort and group files with the same path
+  if #flist > 0 then
+    --choose extension to import
+    local allext= ""
+    for e,v in pairs(extlist) do
+      if allext == "" then
+        allext= e
       else
-        --filtered by extensions
-        extlist= {}
-        for i in string.gmatch(word, "[^,]+") do
-          extlist[i] = true
-        end
-        local flist2= {}
-        for i,f in ipairs(flist) do
-          ext= f:match('[^%.\\/]+$')
-          if ext and extlist[ext] then
-            flist2[#flist2+1]= f
-          end
-        end
-        Proj.add_files(p_buffer, flist2, true) --sort and group files with the same path
+        allext= allext..","..e
       end
     end
-  else
-    ui.statusbar_text='Project not found'
+    r,word= ui.dialogs.inputbox{title = 'Extension list', informative_text = 'Choose the extensions to add (empty= all)', width = 400, text = allext}
+    if type(word) == 'table' then
+      word= table.concat(word, ',')
+    end
+    if word == "" then
+      --all files / dirs
+      Proj.add_files(flist, true) --sort and group files with the same path
+    else
+      --filtered by extensions
+      extlist= {}
+      for i in string.gmatch(word, "[^,]+") do
+        extlist[i] = true
+      end
+      local flist2= {}
+      for i,f in ipairs(flist) do
+        ext= f:match('[^%.\\/]+$')
+        if ext and extlist[ext] then
+          flist2[#flist2+1]= f
+        end
+      end
+      Proj.add_files(flist2, true) --sort and group files with the same path
+    end
   end
 end
 

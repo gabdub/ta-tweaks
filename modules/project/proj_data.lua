@@ -409,10 +409,7 @@ function Proj.run_command(cmd)
     end
     if s and e then
       --replace %{projfiles} is with a temporary file with the list of project files
-      if not data.is_open then
-        ui.statusbar_text= 'You must first open a project'
-        return
-      end
+      if not Proj.check_is_open() then return end
 
       --get a list of project files
       local flist= {}
@@ -461,10 +458,8 @@ end
 
 --get "version control number, path, url" for filename
 function Proj.get_versioncontrol_url(filename)
-  if not data.is_open then
-    ui.statusbar_text= 'You must first open a project'
-    return
-  end
+  if not Proj.check_is_open() then return end
+
   if data.proj_vcontrol == nil or #data.proj_vcontrol == 0 then
     ui.statusbar_text= 'No SVN/GIT repository set in project'
     return

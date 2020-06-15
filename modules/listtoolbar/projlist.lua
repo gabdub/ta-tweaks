@@ -283,6 +283,19 @@ if toolbar then
     --open the project buffer
     --Proj.go_file(data.filename)
   --end
-
+  --function plugs.track_this_file()
+  --end
+  --function plugs.proj_refresh_hilight()
+  --end
+--  function plugs.close_project(keepviews)
+--    if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
+--    return true
+--  end
+--  function plugs.get_prj_currow()
+--    --get the selected project row number
+--    return sel_file(itselected)
+--  end
+--function plugs.open_sel_file() --not used
+--  end
 
 end

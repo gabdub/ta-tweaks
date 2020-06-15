@@ -152,3 +152,161 @@ function plugs.projmode_edit()
 
   if toolbar then toolbar.seltabbuf(buff) end --hide/show and select tab in edit mode
 end
+
+--try to select the current file in the working project
+--(only if the project is currently visible)
+function plugs.track_this_file()
+  local p_buffer = Proj.get_projectbuffer(false)
+  --only track the file if the project is visible and in SELECTION mode and is not an special buffer
+  if p_buffer and p_buffer._project_select and buffer._type == nil then
+    --get file path
+    local file= buffer.filename
+    if file ~= nil then
+      row= Proj.get_file_row(file)
+      if row ~= nil then
+        --prevent some events to fire for ever
+        Proj.stop_update_ui(true)
+
+        local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+        Util.goto_view(projv)
+        --move the selection bar
+        Util.goto_line(p_buffer,row)
+        p_buffer:home()
+        --hilight the file as open
+        Proj.add_open_indicator(p_buffer,row)
+         -- project in SELECTION mode without focus--
+        Proj.show_lost_focus(p_buffer)
+        --return to this file (it could be in a different view)
+        Proj.go_file(file)
+
+        Proj.stop_update_ui(false)
+      end
+    end
+  end
+end
+
+function plugs.proj_refresh_hilight()
+  -- refresh syntax highlighting + project folding
+  if buffer._project_select ~= nil then
+    Proj.toggle_selectionmode()
+    Proj.toggle_selectionmode()
+  end
+end
+
+function plugs.close_project(keepviews)
+  local p_buffer = Proj.get_projectbuffer(true)
+  if p_buffer ~= nil then
+    local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+    if #_VIEWS >= projv then
+      Util.goto_view(projv)
+    end
+    Util.goto_buffer(p_buffer)
+    if Util.close_buffer() then
+      Proj.closed_cleardata()
+      if not keepviews then
+        plugs.close_results()
+        if #_VIEWS > 1 then
+          view.unsplit(view)
+        end
+      end
+    else
+      --close was cancelled
+      return false
+    end
+  end
+
+  --<<<< REMOVE THIS WHEN READY
+  if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
+
+  return true
+end
+
+function plugs.get_prj_currow()
+  --get the selected project row number
+  local p_buffer = Proj.get_projectbuffer(true)
+  if p_buffer == nil then
+    ui.statusbar_text= 'No project found'
+    return 0
+  end
+  return p_buffer.line_from_position(p_buffer.current_pos) +1 -Util.LINE_BASE
+end
+
+--open the selected file/s
+--when more than one line is selected, ask for confirmation
+function plugs.open_sel_file()
+  --check we have a file list
+  if #data.proj_files == 0 then return end
+
+  --read selected line range
+  local r1= buffer.line_from_position(buffer.selection_start) +1 -Util.LINE_BASE
+  local r2= buffer.line_from_position(buffer.selection_end) +1 -Util.LINE_BASE
+  --clear selection
+  buffer.selection_start= buffer.selection_end
+
+  --count files/run in range
+  local flist= {}
+  local rlist= {}
+  for r= r1, r2 do
+    if data.proj_files[r] ~= "" then
+      local ft= data.proj_filestype[r]
+      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
+        flist[ #flist+1 ]= data.proj_files[r]
+      elseif ft == Proj.PRJF_RUN then
+        rlist[ #rlist+1 ]= data.proj_files[r]
+      end
+    end
+  end
+  if #flist == 0 and #rlist == 0 then
+    --no files/run in range, use current line; action=fold
+    r1= buffer.line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
+    if data.proj_files[r] ~= "" then
+      local ft= data.proj_filestype[r]
+      if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
+        flist[ #flist+1 ]= data.proj_files[r]
+      elseif ft == Proj.PRJF_RUN then
+        rlist[ #rlist+1 ]= data.proj_files[r]
+      end
+    end
+  end
+
+  --don't mix open/run (if both are selected: open)
+  local list = {}
+  local action
+  if #flist > 0 then
+    list= flist
+    action= 'Open'
+  elseif #rlist > 0 then
+    list= rlist
+    action= 'Run'
+  end
+
+  if action then
+    --if there is more than one file in range, ask for confirmation
+    local confirm = (#list == 1) or Util.confirm( action..' confirmation',
+      'There are ' .. #list .. ' files selected', 'Do you want to open them?')
+    if not confirm then
+      return
+    end
+    if #list == 1 then
+      ui.statusbar_text= action..': ' .. list[1]
+    else
+      ui.statusbar_text= action..': ' .. #list .. ' files'
+    end
+    if action == 'Open' then
+      --open all
+      for r= 1, #list do
+        Proj.go_file(list[r])
+      end
+    elseif action == 'Run' then
+      --run all
+      for r= 1, #list do
+        Proj.run_command(list[r])
+      end
+    end
+    --try to select the current file in the working project
+    plugs.track_this_file()
+  else
+    --there is no file for this row, fold instead
+    buffer.toggle_fold(r1)
+  end
+end
