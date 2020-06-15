@@ -793,12 +793,6 @@ function Proj.change_proj_ed_mode()
   end
 end
 
-local function ena_toggle_projview()
-  local ena= Proj.get_projectbuffer(true)
-  Proj.update_projview_action() --update action: toggle_viewproj
-  return ena
-end
-
 function Proj.show_projview()
   --Show project / goto project view
   if Proj.get_projectbuffer(true) then
@@ -813,7 +807,7 @@ end
 
 --Show/Hide project
 function Proj.show_hide_projview()
-  if ena_toggle_projview() then
+  if Proj.data.is_open then
     if data.show_mode == Proj.SM_EDIT then
       --project in edit mode
       Proj.goto_projview(Proj.PRJV_PROJECT)

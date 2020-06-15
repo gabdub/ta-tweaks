@@ -48,23 +48,18 @@ if actions then
   actions.accelerators["open_textadepthome"]="caP"
 
   --"toggle_viewproj" = '_Hide/show project'
-  local function tpv_open()
-    return Proj.data.is_open
-  end
   local function tpv_status()
-    return tpv_open() and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
+    return Proj.data.is_open and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
   end
   local function tpv_icon()
-    local ena= tpv_open()
-    if ena then
+    if Proj.data.is_open then
       if Proj.data.show_mode == Proj.SM_HIDDEN then return "ttb-proj-c" end --hidden
       if Proj.data.show_mode == Proj.SM_EDIT   then return "ttb-proj-e" end --edit mode
     end
     return "ttb-proj-o"  --selection mode (or disabled)
   end
   local function tpv_text()
-    local ena= tpv_open()
-    if ena then
+    if Proj.data.is_open then
       if Proj.data.show_mode == Proj.SM_HIDDEN then return "Show project"  end --hidden
       if Proj.data.show_mode == Proj.SM_EDIT   then return "End edit mode" end --edit mode
       return "Hide project"  --selection mode
