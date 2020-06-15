@@ -266,9 +266,6 @@ end
 
 --add a list of files to the project (check for duplicates)
 function Proj.add_files(flist, groupfiles)
-  local p_buffer = Proj.get_projectbuffer(true)
-  if not p_buffer then return end
-
   local finprj= {}
   local n_inprj= 0
   if #flist > 0 then
@@ -309,21 +306,9 @@ function Proj.add_files(flist, groupfiles)
         Util.goto_view(projv)
       end
 
-      local row= Proj.add_files_to_project(flist, groupfiles, all, finprj)
-      if row then
-        local save_ro= p_buffer.read_only
-        p_buffer.read_only= false
-        Util.reload_file()
-        p_buffer.read_only= save_ro
-
-        --move the selection bar to the first added file
-        Util.goto_line(p_buffer, row)
-      end
-
-      -- project in SELECTION mode without focus--
-      Proj.show_lost_focus(p_buffer)
-      p_buffer.home()
-      if row then ui.statusbar_text= '' .. nadd .. ' file/s added to project' end
+      local added= (Proj.add_files_to_project(flist, groupfiles, all, finprj) ~= nil)
+      plugs.update_proj_buffer(added)
+      if added then ui.statusbar_text= '' .. nadd .. ' file/s added to project' end
 
       Proj.stop_update_ui(false)
     end
@@ -654,11 +639,7 @@ end
 
 -- TA-EVENT BUFFER_DELETED
 function Proj.EVbuffer_deleted()
-  --update open files hilight if the project is visible and in SELECTION mode
-  local pbuf = Proj.get_projectbuffer(false)
-  if pbuf and pbuf._project_select then
-    Proj.mark_open_files(pbuf)
-  end
+  plugs.buffer_deleted()
   --Stop diff'ing when one of the buffer's being diff'ed is closed
   Proj.check_diff_stop()
 end
@@ -795,7 +776,7 @@ end
 
 function Proj.show_projview()
   --Show project / goto project view
-  if Proj.get_projectbuffer(true) then
+  if Proj.data.is_open then
     Proj.goto_projview(Proj.PRJV_PROJECT)
     if data.show_mode == Proj.SM_HIDDEN then
       data.show_mode= Proj.SM_SELECT  --selection mode

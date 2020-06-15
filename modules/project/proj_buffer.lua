@@ -10,7 +10,7 @@ local Util = Util
 
 --return the project buffer (the working one)
 --enforce: project in preferred view, mark it as the "working one"
-function Proj.get_projectbuffer(force_view)
+local function get_project_buffer(force_view)
   -- search for the working project
   local pbuff, nview
   local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
@@ -99,7 +99,7 @@ end
 
 function plugs.projmode_select()
   --activate select mode
-  local buff= Proj.get_projectbuffer(false) or buffer
+  local buff= get_project_buffer(false) or buffer
 
   --mark this buffer as a project in SELECTION mode
   buff._project_select= true
@@ -130,7 +130,7 @@ end
 
 function plugs.projmode_edit()
   --activate edit mode
-  local buff= Proj.get_projectbuffer(false) or buffer
+  local buff= get_project_buffer(false) or buffer
 
   --mark this buffer as a project in EDIT mode
   buff._project_select= false
@@ -156,7 +156,7 @@ end
 --try to select the current file in the working project
 --(only if the project is currently visible)
 function plugs.track_this_file()
-  local p_buffer = Proj.get_projectbuffer(false)
+  local p_buffer = get_project_buffer(false)
   --only track the file if the project is visible and in SELECTION mode and is not an special buffer
   if p_buffer and p_buffer._project_select and buffer._type == nil then
     --get file path
@@ -194,7 +194,7 @@ function plugs.proj_refresh_hilight()
 end
 
 function plugs.close_project(keepviews)
-  local p_buffer = Proj.get_projectbuffer(true)
+  local p_buffer= get_project_buffer(true)
   if p_buffer ~= nil then
     local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
     if #_VIEWS >= projv then
@@ -223,7 +223,7 @@ end
 
 function plugs.get_prj_currow()
   --get the selected project row number
-  local p_buffer = Proj.get_projectbuffer(true)
+  local p_buffer= get_project_buffer(true)
   if p_buffer == nil then
     ui.statusbar_text= 'No project found'
     return 0
@@ -308,5 +308,32 @@ function plugs.open_sel_file()
   else
     --there is no file for this row, fold instead
     buffer.toggle_fold(r1)
+  end
+end
+
+function plugs.buffer_deleted()
+  --update open files hilight if the project is visible and in SELECTION mode
+  local pbuf= get_project_buffer(false)
+  if pbuf and pbuf._project_select then
+    Proj.mark_open_files(pbuf)
+  end
+end
+
+function plugs.update_proj_buffer(reload)
+  local p_buffer= get_project_buffer(true)
+  if p_buffer then
+    if reload then
+      local save_ro= p_buffer.read_only
+      p_buffer.read_only= false
+      Util.reload_file()
+      p_buffer.read_only= save_ro
+
+      --move the selection bar to the first added file
+      Util.goto_line(p_buffer, row)
+    end
+
+    -- project in SELECTION mode without focus--
+    Proj.show_lost_focus(p_buffer)
+    p_buffer.home()
   end
 end

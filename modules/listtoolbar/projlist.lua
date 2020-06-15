@@ -297,5 +297,9 @@ if toolbar then
 --  end
 --function plugs.open_sel_file() --not used
 --  end
+--function plugs.buffer_deleted()
+--  end
+--function plugs.update_proj_buffer(reload)
+--  end
 
 end
