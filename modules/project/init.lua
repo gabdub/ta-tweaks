@@ -11,36 +11,66 @@ Proj.PRJV_FILES =       2   -- project files view
 Proj.PRJV_SEARCH =      3   -- search results view
 Proj.PRJV_FILES_2 =     4   -- files #2 (right side of vertical split)
 
---preferred view number for each view type
-if USE_RESULTS_PANEL then
-  Proj.prefview = {
-    [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
-    [Proj.PRJV_PROJECT] = 1,  -- project in view #1
-    [Proj.PRJV_FILES]   = 2,  -- project files in view #2
-    [Proj.PRJV_SEARCH]  = -1, -- search results view REPLACED BY A PANEL
-    [Proj.PRJV_FILES_2] = 3,  -- files #2 (right side of vertical split) in view #4
-  }
-
-  --split control { adjust previous view size [%], vertical/horizontal split, view to split }
-  Proj.prefsplit = {
-    [1] = { 0.20, true,  1 },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
-    [2] = { 0.50, true,  2 },  -- files #2 in view #3       (view #2 size = 50%, VERTICAL)
-  }
+-- PREFERRED VIEW number for each view type and
+-- SPLIT CONTROL { adjust previous view size [%], vertical/horizontal split, view to split }
+if USE_LISTS_PANEL then
+  --show project in a toolbar panel
+  if USE_RESULTS_PANEL then
+    --show results in a toolbar panel     (PROJECT: PANEL    SEARCH: PANEL)
+    Proj.prefview = {
+      [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
+      [Proj.PRJV_PROJECT] = -1, -- project view REPLACED BY A PANEL
+      [Proj.PRJV_FILES]   = 1,  -- project files in view #1
+      [Proj.PRJV_SEARCH]  = -1, -- search results view REPLACED BY A PANEL
+      [Proj.PRJV_FILES_2] = 2,  -- files #2 (right side of vertical split) in view #2
+    }
+    Proj.prefsplit = {
+      [1] = { 0.50, true,  1 },  -- files #2 in view #2       (view #1 size = 50%, VERTICAL)
+    }
+  else
+    --show results in a buffer            (PROJECT: PANEL    SEARCH: BUFFER)
+    Proj.prefview = {
+      [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
+      [Proj.PRJV_PROJECT] = -1, -- project view REPLACED BY A PANEL
+      [Proj.PRJV_FILES]   = 1,  -- project files in view #1
+      [Proj.PRJV_SEARCH]  = 2,  -- search results in view #2
+      [Proj.PRJV_FILES_2] = 3,  -- files #2 (right side of vertical split) in view #3
+    }
+    Proj.prefsplit = {
+      [1] = { 0.75, false, 1 },  -- search results in view #2 (view #1 size = 75%, HORIZONTAL)
+      [2] = { 0.50, true,  1 },  -- files #2 in view #3       (view #1 size = 50%, VERTICAL)
+    }
+  end
 else
-  Proj.prefview = {
-    [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
-    [Proj.PRJV_PROJECT] = 1,  -- project in view #1
-    [Proj.PRJV_FILES]   = 2,  -- project files in view #2
-    [Proj.PRJV_SEARCH]  = 3,  -- search results in view #3
-    [Proj.PRJV_FILES_2] = 4,  -- files #2 (right side of vertical split) in view #4
-  }
-
-  --split control { adjust previous view size [%], vertical/horizontal split, view to split }
-  Proj.prefsplit = {
-    [1] = { 0.20, true,  1 },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
-    [2] = { 0.75, false, 2 },  -- search results in view #3 (view #2 size = 75%, HORIZONTAL)
-    [3] = { 0.50, true,  2 },  -- files #2 in view #4       (view #2 size = 50%, VERTICAL)
-  }
+  --show project in a buffer
+  if USE_RESULTS_PANEL then
+    --show results in a toolbar panel
+    Proj.prefview = {
+      [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
+      [Proj.PRJV_PROJECT] = 1,  -- project in view #1
+      [Proj.PRJV_FILES]   = 2,  -- project files in view #2
+      [Proj.PRJV_SEARCH]  = -1, -- search results view REPLACED BY A PANEL
+      [Proj.PRJV_FILES_2] = 3,  -- files #2 (right side of vertical split) in view #4
+    }
+    Proj.prefsplit = {
+      [1] = { 0.20, true,  1 },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
+      [2] = { 0.50, true,  2 },  -- files #2 in view #3       (view #2 size = 50%, VERTICAL)
+    }
+  else
+    --show results in a buffer
+    Proj.prefview = {
+      [Proj.PRJV_DEFAULT] = 0,  -- default view (no active project)
+      [Proj.PRJV_PROJECT] = 1,  -- project in view #1
+      [Proj.PRJV_FILES]   = 2,  -- project files in view #2
+      [Proj.PRJV_SEARCH]  = 3,  -- search results in view #3
+      [Proj.PRJV_FILES_2] = 4,  -- files #2 (right side of vertical split) in view #4
+    }
+    Proj.prefsplit = {
+      [1] = { 0.20, true,  1 },  -- project files in view #2  (view #1 size = 20%, VERTICAL)
+      [2] = { 0.75, false, 2 },  -- search results in view #3 (view #2 size = 75%, HORIZONTAL)
+      [3] = { 0.50, true,  2 },  -- files #2 in view #4       (view #2 size = 50%, VERTICAL)
+    }
+  end
 end
 
 --project row/file types
@@ -60,6 +90,8 @@ require('project.proj_cmd')
 require('project.proj_ctags')
 require('project.proj_diff')
 require('project.proj_menu')
+if not USE_LISTS_PANEL   then require('project.proj_buffer')  end
+if not USE_RESULTS_PANEL then require('project.proj_results') end
 
 --- TA-EVENTS ---
 events_connect(events.INITIALIZED,          Proj.EVinitialize)

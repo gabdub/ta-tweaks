@@ -511,7 +511,7 @@ end
 --ACTION: toggle_editproj / _end_editproj (alias)
 --toggle project between selection and EDIT modes
 function Proj.toggle_editproj()
-  Proj.change_proj_ed_mode()
+  plugs.change_proj_ed_mode()
 end
 
 --ACTION: toggle_viewproj

@@ -371,7 +371,7 @@ function Proj.closed_cleardata()
   data.filename= ""
   data.is_open= false
   data.show_mode= Proj.SM_HIDDEN
-  Proj.update_projview_action() --update project view button
+  Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
   Proj.clear_proj_arrays() --clear data and advance parse version
   notify_projload_ends()
 end

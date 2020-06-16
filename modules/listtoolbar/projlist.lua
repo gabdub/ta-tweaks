@@ -16,7 +16,7 @@ if toolbar then
   local proj_context_menu = {
     {"open_projlistfile",
      "open_projectdir",SEPARATOR,
-     "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
+     "toggle_editproj","copyfilename",SEPARATOR,
      "adddirfiles_proj",SEPARATOR,
      --"show_documentation",
      "search_project",
@@ -258,48 +258,83 @@ if toolbar then
   toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create_cb, proj_update_cb, proj_showlist_cb)
 
   --------------- LISTS INTERFACE --------------
-  --<<<< UN COMMENT THIS WHEN READY
-  --function plugs.init_projectview()
-    --check if a project buffer is open
-  --end
-  --function plugs.goto_projectview()
-  --  return false --activate/create project view (not used with panels)
-  --end
-  --function plugs.projmode_select()
-    --activate select mode
+  function plugs.init_projectview()
+    --check if a project was saved
+    if toolbar.open_saved_prj ~= "" then Proj.open_project(toolbar.open_saved_prj) end
+  end
 
-    --locate and close the project buffer
---    local fn = data.filename:iconv(_CHARSET, 'UTF-8')
---    for _, buff in ipairs(_BUFFERS) do
---      if buff.filename == fn then
---        Util.goto_buffer(buff)
---        Util.close_buffer()
---        break
---      end
---    end
-  --end
-  --function plugs.projmode_edit()
+  function plugs.goto_projectview()
+    return false --activate/create project view (not used with panels)
+  end
+
+  function plugs.projmode_select()
+    --activate select mode
+    if data.is_open then
+      --locate and close the project buffer
+      local fn = data.filename:iconv(_CHARSET, 'UTF-8')
+      for _, buff in ipairs(_BUFFERS) do
+        if buff.filename == fn then
+          Util.goto_buffer(buff)
+          Util.close_buffer()
+          break
+        end
+      end
+    end
+  end
+
+  function plugs.projmode_edit()
     --activate edit mode
-    --open the project buffer
-    --Proj.go_file(data.filename)
-  --end
-  --function plugs.track_this_file()
-  --end
-  --function plugs.proj_refresh_hilight()
-  --end
---  function plugs.close_project(keepviews)
---    if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
---    return true
---  end
---  function plugs.get_prj_currow()
---    --get the selected project row number
---    return sel_file(itselected)
---  end
---function plugs.open_sel_file() --not used
---  end
---function plugs.buffer_deleted()
---  end
---function plugs.update_proj_buffer(reload)
---  end
+    if data.is_open then Proj.go_file(data.filename) end --open the project in a buffer to edit it
+  end
+
+  function plugs.change_proj_ed_mode()
+    --toggle project between selection and EDIT modes
+    if data.show_mode == Proj.SM_EDIT then
+      data.show_mode= Proj.SM_SELECT
+      plugs.projmode_select()
+    else
+      data.show_mode= Proj.SM_EDIT
+      plugs.projmode_edit()
+    end
+    Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
+  end
+
+  function plugs.track_this_file()
+  end
+
+  function plugs.proj_refresh_hilight()
+  end
+
+  function plugs.close_project(keepviews)
+    Proj.closed_cleardata()
+    if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
+    return true
+  end
+
+  function plugs.get_prj_currow()
+    return sel_file(itselected)  --get the selected project row number
+  end
+
+  function plugs.open_sel_file() --not used
+  end
+
+  function plugs.buffer_deleted()
+    --if the poject buffer was closed, return to selection mode
+    if data.show_mode == Proj.SM_EDIT then
+      --locate and close the project buffer
+      local fn = data.filename:iconv(_CHARSET, 'UTF-8')
+      for _, buff in ipairs(_BUFFERS) do
+        if buff.filename == fn then
+          return --still open, ignore
+        end
+      end
+      --project buffer not found, return to selection mode
+      data.show_mode= Proj.SM_SELECT
+      Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
+    end
+  end
+
+  function plugs.update_proj_buffer(reload)
+  end
 
 end

@@ -47,25 +47,32 @@ if actions then
   actions.accelerators["open_projectdir"]="cO"
   actions.accelerators["open_textadepthome"]="caP"
 
-  --"toggle_viewproj" = '_Hide/show project'
-  local function tpv_status()
-    return Proj.data.is_open and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
-  end
-  local function tpv_icon()
-    if Proj.data.is_open then
-      if Proj.data.show_mode == Proj.SM_HIDDEN then return "ttb-proj-c" end --hidden
-      if Proj.data.show_mode == Proj.SM_EDIT   then return "ttb-proj-e" end --edit mode
+  if not USE_LISTS_PANEL then   --only for project in BUFFER mode
+    --"toggle_viewproj" = '_Hide/show project'
+    local function tpv_status()
+      return Proj.data.is_open and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
     end
-    return "ttb-proj-o"  --selection mode (or disabled)
-  end
-  local function tpv_text()
-    if Proj.data.is_open then
-      if Proj.data.show_mode == Proj.SM_HIDDEN then return "Show project"  end --hidden
-      if Proj.data.show_mode == Proj.SM_EDIT   then return "End edit mode" end --edit mode
-      return "Hide project"  --selection mode
+    local function tpv_icon()
+      if Proj.data.is_open then
+        if Proj.data.show_mode == Proj.SM_HIDDEN then return "ttb-proj-c" end --hidden
+        if Proj.data.show_mode == Proj.SM_EDIT   then return "ttb-proj-e" end --edit mode
+      end
+      return "ttb-proj-o"  --selection mode (or disabled)
     end
-    return "No project is open"  --disabled
+    local function tpv_text()
+      if Proj.data.is_open then
+        if Proj.data.show_mode == Proj.SM_HIDDEN then return "Show project"  end --hidden
+        if Proj.data.show_mode == Proj.SM_EDIT   then return "End edit mode" end --edit mode
+        return "Hide project"  --selection mode
+      end
+      return "No project is open"  --disabled
+    end
   end
+
+  local function edp_status()
+    return Proj.data.is_open and (Proj.data.show_mode == Proj.SM_EDIT and 1 or 2) or 10 --1=checked 2=unchecked 8=disabled
+  end
+
   local function closeprj_status()
     return Proj.data.is_open and 0 or 8 --0=normal 8=disabled
   end
@@ -86,12 +93,14 @@ if actions then
   actions.add("showin_rightpanel",   "Show file in the right panel", Proj.toggle_showin_rightpanel, nil, nil, Proj.showin_rightpanel_status) --check
   actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
 
-  actions.add("toggle_editproj",     Util.EDITMENU_TEXT .. ' project', Proj.toggle_editproj, "f4")
+  actions.add("toggle_editproj",     Util.EDITMENU_TEXT .. ' project', Proj.toggle_editproj, "f4", "ttb-proj-e", edp_status)
   --"_end_editproj" = "toggle_editproj" with different text menu
   actions.add("_end_editproj",       '_End edit',             Proj.toggle_editproj)
   actions.accelerators["_end_editproj"]="f4" --(alias)
 
-  actions.add("toggle_viewproj",     'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
+  if not USE_LISTS_PANEL then --only for project in BUFFER mode
+    actions.add("toggle_viewproj",   'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
+  end
   actions.add("addthisfiles_proj",   '_Add this file',        Proj.add_this_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)
@@ -118,7 +127,7 @@ if actions then
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,
     {title = Util.PROJECTMENU_TEXT,
-     {"new_project","open_project","recent_project","close_project",SEPARATOR,
+     {"new_project","open_project","recent_project","close_project","toggle_editproj",SEPARATOR,
       "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
       "save_position","next_position","prev_position","clear_position",SEPARATOR,
       "addthisfiles_proj","addallfiles_proj","adddirfiles_proj"}
@@ -142,7 +151,10 @@ if actions then
 
   --add VIEWPROJECT at the end of the VIEW menu
   local m_vi= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
-  if m_vi then m_vi[#m_vi+1]= {SEPARATOR,"toggle_viewproj"} end
+  if m_vi then
+    m_vi[#m_vi+1]= {SEPARATOR}
+    if not USE_LISTS_PANEL then m_vi[#m_vi+1]= {"toggle_viewproj"} end --only for project in BUFFER mode
+  end
 
   ----------------- CONTEXT MENUS -------------------
   --replace tab context menu
@@ -154,37 +166,65 @@ if actions then
   }
 
   --right-click context menus
-  local proj_context_menu = {
-    { --#1 project in SELECTION mode
-      {"open_projsel","open_projectdir",SEPARATOR,
-         "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
-         "adddirfiles_proj",SEPARATOR,
-         "show_documentation", "search_project","search_sel_dir","search_sel_file"}
-    },
-    { --#2 project in EDIT mode
-      {"undo","redo",SEPARATOR,
-       "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
-       "selectall",SEPARATOR,
-       "_end_editproj"}
-    },
-    { --#3 regular file
-      {"undo","redo",SEPARATOR,
-       "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
-       "selectall"
+  local proj_context_menu
+  if USE_LISTS_PANEL then   --project in PANEL
+    proj_context_menu = {
+      { --#1 project in SELECTION mode (not used)
+        {SEPARATOR}
       },
-      {
-        title = Util.PROJECTMENU_TEXT,
-        {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-         "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
-         "save_position","next_position","prev_position",SEPARATOR,
-         "toggle_viewproj"}
+      { --#2 project in EDIT mode (not used)
+        {SEPARATOR}
       },
-      {SEPARATOR,"showin_rightpanel"}
-    },
-    { --#4 search view
-      {"copy", "selectall", "clear_search"}
+      { --#3 regular file
+        {"undo","redo",SEPARATOR,
+         "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
+         "selectall"
+        },
+        {
+          title = Util.PROJECTMENU_TEXT,
+          {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
+           "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
+           "save_position","next_position","prev_position"}
+        },
+        {SEPARATOR,"showin_rightpanel"}
+      },
+      { --#4 search view
+        {"copy", "selectall", "clear_search"}
+      }
     }
-  }
+  else  --project in BUFFER
+    proj_context_menu = {
+      { --#1 project in SELECTION mode
+        {"open_projsel","open_projectdir",SEPARATOR,
+           "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
+           "adddirfiles_proj",SEPARATOR,
+           "show_documentation", "search_project","search_sel_dir","search_sel_file"}
+      },
+      { --#2 project in EDIT mode
+        {"undo","redo",SEPARATOR,
+         "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
+         "selectall",SEPARATOR,
+         "_end_editproj"}
+      },
+      { --#3 regular file
+        {"undo","redo",SEPARATOR,
+         "cut","copy","paste","delete_char","copyfilename",SEPARATOR,
+         "selectall"
+        },
+        {
+          title = Util.PROJECTMENU_TEXT,
+          {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
+           "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
+           "save_position","next_position","prev_position",SEPARATOR,
+           "toggle_viewproj"}
+        },
+        {SEPARATOR,"showin_rightpanel"}
+      },
+      { --#4 search view
+        {"copy", "selectall", "clear_search"}
+      }
+    }
+  end
 
   --init desired project context menu
   local ctxmenus= {}

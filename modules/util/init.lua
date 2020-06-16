@@ -23,7 +23,7 @@ function Util.confirm(tit, txt, info)
 end
 
 function Util.goto_view(numview)
-  if _VIEWS[view] ~= numview then
+  if numview > 0 and _VIEWS[view] ~= numview then
 --    if Util.TA_MAYOR_VER < 9 then
 --      ui.goto_view(numview)
 --    else

@@ -128,11 +128,7 @@ if toolbar then
     if actions then
       toolbar.idviewhtmltb= actions.add("toggle_viewhtmltb", 'Show HTML Tool_Bar', toolbar.html_toolbar_onoff, "sf10", nil, function()
         return (buffer.html_toolbar_on and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
-      if med then
-        local m=med[#med]
-        m[#m+1]= "toggle_viewhtmltb"
-      end
+      actions.appendtomenu_fromtitle("toggle_viewhtmltb", Util.VIEWMENU_TEXT)
     end
     toolbar.html_tb= false --hide for now...
     toolbar.show(false)

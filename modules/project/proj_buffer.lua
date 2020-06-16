@@ -153,6 +153,36 @@ function plugs.projmode_edit()
   if toolbar then toolbar.seltabbuf(buff) end --hide/show and select tab in edit mode
 end
 
+function plugs.change_proj_ed_mode()
+  --toggle project between selection and EDIT modes
+  if buffer._project_select ~= nil then
+    --project: toggle mode
+    Proj.toggle_selectionmode()
+    if view.size ~= nil then
+      if data.show_mode == Proj.SM_EDIT then  --edit mode
+        if data.select_width ~= view.size then
+          data.select_width= view.size  --save current width
+          if data.select_width < 50 then data.select_width= 200 end
+          data.recent_prj_change= true  --save it on exit
+        end
+        view.size= data.edit_width
+      else  --selection mode
+        if data.edit_width ~= view.size then
+          data.edit_width= view.size  --save current width
+          if data.edit_width < 50 then data.edit_width= 600 end
+          data.recent_prj_change= true  --save it on exit
+        end
+        view.size= data.select_width
+      end
+    end
+    refresh_syntax()
+    Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
+  else
+    --file: goto project view
+    Proj.show_projview()
+  end
+end
+
 --try to select the current file in the working project
 --(only if the project is currently visible)
 function plugs.track_this_file()
@@ -214,10 +244,6 @@ function plugs.close_project(keepviews)
       return false
     end
   end
-
-  --<<<< REMOVE THIS WHEN READY
-  if toolbar and toolbar.list_show_projects then toolbar.list_show_projects() end
-
   return true
 end
 

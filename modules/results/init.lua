@@ -177,11 +177,7 @@ if toolbar then
     if actions then
       toolbar.idviewresultstb= actions.add("toggle_viewresults", 'Show _Results toolbar', toolbar.results_onoff, "cf10", "view-list-compact-symbolic", function()
         return (toolbar.results_tb and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
-      if med then
-        local m=med[#med]
-        m[#m+1]= "toggle_viewresults"
-      end
+      actions.appendtomenu_fromtitle("toggle_viewresults", Util.VIEWMENU_TEXT)
       actions.add("next_results_list", 'Next results list',     toolbar.next_results_list, "sf10")
       actions.add("prev_results_list", 'Previous results list', toolbar.prev_results_list, "csf10")
     end

@@ -897,6 +897,14 @@ function actions.getmenu_fromtitle(tit)
   return nil
 end
 
+function actions.appendtomenu_fromtitle(action, tit)
+  local menu= actions.getmenu_fromtitle(tit)  --locate menu
+  if menu then
+    local mit= menu[#menu]  --append the action to the end
+    mit[#mit+1]= action
+  end
+end
+
 --list of actions (index= ID)
 actions.action_fromid = {}
 --list of actions (index= action)

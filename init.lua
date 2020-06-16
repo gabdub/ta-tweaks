@@ -15,9 +15,7 @@ keys.cf4 = reset
 
 require('util')
 if not CURSES then
---  if Util.TA_MAYOR_VER < 10 then ui.set_theme('ggg') else
-    for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
---  end
+  for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
 end
 
 require('export')
@@ -46,24 +44,16 @@ if toolbar then
   --if not USE_LISTS_PANEL then require('htmltoolbar') end
 
   if Proj then
-    if USE_LISTS_PANEL then
-      --show project lists in the left toolbar
+    if USE_LISTS_PANEL then --show project lists in the left toolbar
       require('listtoolbar')
       require('listtoolbar.recentprojlist')
       require('listtoolbar.projlist')
       require('listtoolbar.ctaglist')
---<<<< UN COMMENT THIS WHEN READY
---  else  --or using a buffer
-      require('project.proj_buffer')
     end
-
-    if USE_RESULTS_PANEL then
-      --show results lists in the bottom toolbar
+    if USE_RESULTS_PANEL then --show results lists in the bottom toolbar
       require('results')
       require('results.printresults')
       require('results.searchresults')
-    else  --or using a buffer
-      require('project.proj_results')
     end
   end
 
@@ -84,10 +74,10 @@ if toolbar then
 
   --add some buttons
   if Proj then
-    --if not USE_LISTS_PANEL then --<<<< UN COMMENT THIS WHEN READY
+    if not USE_LISTS_PANEL then
       toolbar.addaction("toggle_viewproj")
       toolbar.addspace(4,true)
-    --end
+    end
     toolbar.addaction("prev_position")
     toolbar.addaction("next_position")
     toolbar.addspace()

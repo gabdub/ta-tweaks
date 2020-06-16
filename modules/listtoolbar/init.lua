@@ -11,6 +11,7 @@ if toolbar then
 
   toolbar.listselections= {}
   toolbar.listwidth= 250
+  toolbar.open_saved_prj= ""
 
   local LSTSEL_NAME=      1  --list name
   local LSTSEL_TOOLTIP=   2  --list tooltip
@@ -100,7 +101,8 @@ if toolbar then
     toolbar.list_tb= cfg.lst_show
     toolbar.listwidth= cfg.lst_width
     --start in "recent projects list" or "project list" if the project is open
-    toolbar.select_list((cfg.open_proj ~= "") and "projlist" or "recentprojlist", true)
+    toolbar.open_saved_prj= cfg.open_proj
+    toolbar.select_list((toolbar.open_saved_prj ~= "") and "projlist" or "recentprojlist", true)
     toolbar.show(toolbar.list_tb, toolbar.listwidth)
   end
 
@@ -170,11 +172,7 @@ if toolbar then
     if actions then
       toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "cf6", "view-list-compact-symbolic", function()
         return (toolbar.list_tb and 1 or 2) end) --check
-      local med= actions.getmenu_fromtitle(Util.VIEWMENU_TEXT)
-      if med then
-        local m=med[#med]
-        m[#m+1]= "toggle_viewlist"
-      end
+      actions.appendtomenu_fromtitle("toggle_viewlist", Util.VIEWMENU_TEXT)
       actions.add("next_list", 'Next list',     toolbar.next_list, "f6")
       actions.add("prev_list", 'Previous list', toolbar.prev_list, "sf6")
     end

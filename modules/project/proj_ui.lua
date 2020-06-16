@@ -42,13 +42,13 @@ function Proj.EVinitialize()
   plugs.init_searchview()
 
   Proj.update_after_switch()
-  Proj.update_projview_action() --update action: toggle_viewproj
+  Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
 end
 
 -- TA-EVENT QUIT: Saves recent projects list
 function Proj.EVquit()
   --end edit mode at exit
-  if data.show_mode == Proj.SM_EDIT then Proj.change_proj_ed_mode() end
+  if data.show_mode == Proj.SM_EDIT then plugs.change_proj_ed_mode() end
   Proj.save_config()
 end
 
@@ -75,7 +75,7 @@ end
 --split views if needed
 --return true when the view changes
 function Proj.goto_projview(prjv)
-  if prjv == -1 then return false end --invalid param
+  if prjv < 1 then return false end --invalid param
   local pref= Proj.prefview[prjv] --preferred view for this buffer type
   if pref == _VIEWS[view] then return false end --already in the right view
   local nv= #_VIEWS
@@ -170,15 +170,18 @@ function Proj.goto_buffer(nb)
 end
 
 ------------------PROJECT CONTROL-------------------
-function Proj.update_projview_action() --update action: toggle_viewproj
-  if toolbar then actions.updateaction("toggle_viewproj") end
+function Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
+  if toolbar then
+    if not USE_LISTS_PANEL then actions.updateaction("toggle_viewproj") end --only for project in BUFFER mode
+    actions.updateaction("toggle_editproj")
+  end
 end
 
 -- ENTER SELECTION mode
 function Proj.selection_mode()
   if data.is_open then
     data.show_mode= Proj.SM_SELECT  --selection mode
-    Proj.update_projview_action()  --update action: toggle_viewproj
+    Proj.update_projview_action()  --update action: toggle_viewproj/toggle_editproj
     ui.statusbar_text= 'Project: ' .. data.filename
 
     --if modified, save the project buffer
@@ -203,7 +206,7 @@ end
 function Proj.seteditmode()
   if data.is_open then
     data.show_mode= Proj.SM_EDIT  --edit mode
-    Proj.update_projview_action()  --update action: toggle_viewproj
+    Proj.update_projview_action()  --update action: toggle_viewproj/toggle_editproj
     ui.statusbar_text= 'Edit project: ' .. data.filename
     --visualize edit mode
     plugs.projmode_edit()
@@ -300,11 +303,12 @@ function Proj.add_files(flist, groupfiles)
       --prevent some events to fire forever
       Proj.stop_update_ui(true)
 
-      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-      --this file is in the project view
-      if _VIEWS[view] ~= projv then
-        Util.goto_view(projv)
-      end
+--      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+--      --this file is in the project view
+--      if _VIEWS[view] ~= projv then
+--        Util.goto_view(projv)
+--      end
+      Proj.goto_projview(Proj.PRJV_PROJECT)
 
       local added= (Proj.add_files_to_project(flist, groupfiles, all, finprj) ~= nil)
       plugs.update_proj_buffer(added)
@@ -732,7 +736,7 @@ function Proj.EVkeypress(code)
       if nv == Proj.prefview[Proj.PRJV_PROJECT] and data.show_mode == Proj.SM_HIDDEN then
         --in project's view, force visibility
         data.show_mode= Proj.SM_SELECT  --selection mode
-        Proj.update_projview_action() --update action: toggle_viewproj
+        Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
         view.size= data.select_width
         Proj.temporal_view= true  --close if escape is pressed again or if a file is opened
 
@@ -744,43 +748,13 @@ function Proj.EVkeypress(code)
   end
 end
 
---toggle project between selection and EDIT modes
-function Proj.change_proj_ed_mode()
-  if buffer._project_select ~= nil then
-    --project: toggle mode
-    Proj.toggle_selectionmode()
-    if view.size ~= nil then
-      if data.show_mode == Proj.SM_EDIT then  --edit mode
-        if data.select_width ~= view.size then
-          data.select_width= view.size  --save current width
-          if data.select_width < 50 then data.select_width= 200 end
-          data.recent_prj_change= true  --save it on exit
-        end
-        view.size= data.edit_width
-      else  --selection mode
-        if data.edit_width ~= view.size then
-          data.edit_width= view.size  --save current width
-          if data.edit_width < 50 then data.edit_width= 600 end
-          data.recent_prj_change= true  --save it on exit
-        end
-        view.size= data.select_width
-      end
-    end
-    refresh_syntax()
-    Proj.update_projview_action() --update action: toggle_viewproj
-  else
-    --file: goto project view
-    Proj.show_projview()
-  end
-end
-
 function Proj.show_projview()
   --Show project / goto project view
   if Proj.data.is_open then
     Proj.goto_projview(Proj.PRJV_PROJECT)
     if data.show_mode == Proj.SM_HIDDEN then
       data.show_mode= Proj.SM_SELECT  --selection mode
-      Proj.update_projview_action() --update action: toggle_viewproj
+      Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
       view.size= data.select_width
     end
   end
@@ -792,7 +766,7 @@ function Proj.show_hide_projview()
     if data.show_mode == Proj.SM_EDIT then
       --project in edit mode
       Proj.goto_projview(Proj.PRJV_PROJECT)
-      Proj.change_proj_ed_mode() --return to select mode
+      plugs.change_proj_ed_mode() --return to select mode
       return
     end
     --select mode
@@ -800,7 +774,7 @@ function Proj.show_hide_projview()
     if view.size then
       if data.show_mode ~= Proj.SM_HIDDEN then
         data.show_mode= Proj.SM_HIDDEN  --hidden
-        Proj.update_projview_action() --update action: toggle_viewproj
+        Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
         if data.select_width ~= view.size then
           data.select_width= view.size  --save current width
           if data.select_width < 50 then data.select_width= 200 end
@@ -809,7 +783,7 @@ function Proj.show_hide_projview()
         view.size= 0
       else
         data.show_mode= Proj.SM_SELECT  --selection mode
-        Proj.update_projview_action() --update action: toggle_viewproj
+        Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
         view.size= data.select_width
       end
     end
