@@ -244,14 +244,6 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
   return row
 end
 
-function Proj.is_prj_buffer(p_buffer)
-  --check if the buffer is a valid project
-  --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= p_buffer:get_line( Util.LINE_BASE )
-  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
-  return (n ~= nil)   --return: is a project file
-end
-
 --parse Proj.data.filename and fill project arrays
 function Proj.parse_project_file()
   Proj.clear_proj_arrays()  --clear data and advance parse version
@@ -259,14 +251,14 @@ function Proj.parse_project_file()
     notify_projload_ends()
     Util.info("ERROR", "Unknown project filename")
     ui.statusbar_text= 'ERROR: Unknown project filename'
-    return
+    return false
   end
   local fi, err= io.open(data.filename, 'rb')
   if not fi then
     notify_projload_ends()
     Util.info("ERROR: Can't open the project file", err)
     ui.statusbar_text= "ERROR: Can't open the project file"
-    return
+    return false
   end
   ui.statusbar_text= 'Parsing project file...'
 
@@ -364,6 +356,7 @@ function Proj.parse_project_file()
   fi:close()
   ui.statusbar_text= 'Project: '.. data.filename
   notify_projload_ends()
+  return true
 end
 
 function Proj.closed_cleardata()

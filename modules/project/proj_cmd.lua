@@ -53,25 +53,21 @@ end
 --ACTION: closeall (dont'close project)
 function Proj.onlykeep_projopen(keepone)
   Proj.stop_update_ui(true)
-  --close all buffers except project (and buffer._dont_close)
-  if (not Proj.data.is_open) and (not keepone) then
-     io.close_all_buffers()
-     Proj.stop_update_ui(false)
-     return
-  end
   --close search results
   plugs.close_results()
   --change to left/only file view if needed
   Proj.goto_filesview(Proj.FILEPANEL_LEFT)
-  local i=1
-  while i <= #_BUFFERS do
+  local i= 1
+  local n= #_BUFFERS
+  while n > 0 do
+    n= n-1
     local buf=_BUFFERS[i]
     if Proj.isRegularBuf(buf) and not buf._dont_close then
       --regular file, close it
       Util.goto_buffer(buf)
       if not Util.close_buffer() then
         Proj.stop_update_ui(false)
-        return
+        return --cancel close all
       end
     else
       --skip project buffers and don't close buffers
@@ -380,29 +376,12 @@ function Proj.open_project(filename)
       return
     end
 
-    local proj_keep_file --keep the current file selected
-    if buffer ~= nil and buffer.filename ~= nil then proj_keep_file= buffer.filename end
-    Proj.goto_projview(Proj.PRJV_PROJECT)
     data.filename= prjfile
     data.is_open= true
-    --open the project file
-    io.open_file(prjfile)
-    if not Proj.is_prj_buffer(buffer) then  --invalid file
-      Util.close_buffer()
+    if not plugs.open_project() then   --open the project file
+      data.is_open= false
       Proj.closed_cleardata()
-      Proj.goto_filesview(Proj.FILEPANEL_LEFT)
-      ui.statusbar_text= 'Invalid project file'
-      Util.info('Open error', 'Invalid project file')
-    else
-      --add the project to the recent list
-      Proj.add_recentproject()
-      Proj.show_lost_focus(buffer)
-      -- project in SELECTION mode without focus--
-      Proj.selection_mode()
-      Proj.goto_filesview(Proj.FILEPANEL_LEFT)
     end
-    --restore the file that was current before opening the project or open an empty one
-    Proj.go_file(proj_keep_file)
   end
 end
 

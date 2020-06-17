@@ -289,20 +289,21 @@ if toolbar then
 
   function plugs.change_proj_ed_mode()
     --toggle project between selection and EDIT modes
-    if data.show_mode == Proj.SM_EDIT then
-      data.show_mode= Proj.SM_SELECT
-      plugs.projmode_select()
-    else
-      data.show_mode= Proj.SM_EDIT
-      plugs.projmode_edit()
-    end
-    Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
+    Proj.toggle_selectionmode()
   end
 
   function plugs.track_this_file()
   end
 
   function plugs.proj_refresh_hilight()
+  end
+
+  function plugs.open_project()
+    --open the project file
+    Proj.add_recentproject()  --add the project to the recent list
+    Proj.selection_mode()     --parse the project and put it in SELECTION mode
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
+    return true
   end
 
   function plugs.close_project(keepviews)

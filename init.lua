@@ -65,12 +65,11 @@ if toolbar then
 
   --create the configured toolbars
   toolbar.create_from_config()
+  --create "results" toolbar
+  if USE_RESULTS_PANEL then toolbar.createresultstb() end
 
   --create "lists" toolbar (add buttons to select the lists)
   if USE_LISTS_PANEL then toolbar.createlisttb() end
-
-  --create "results" toolbar
-  if USE_RESULTS_PANEL then toolbar.createresultstb() end
 
   --add some buttons
   if Proj then

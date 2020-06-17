@@ -60,13 +60,21 @@ local function get_project_buffer(force_view)
   return pbuff
 end
 
+local function is_prj_buffer(p_buffer)
+  --check if the buffer is a valid project
+  --The first file line MUST BE a valid "option 1)": ...##...##...
+  local line= p_buffer:get_line( Util.LINE_BASE )
+  local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
+  return (n ~= nil)   --return: is a project file
+end
+
 --------------- LISTS INTERFACE --------------
 function plugs.init_projectview()
   --check if a project buffer is open
   --TODO: use Proj.data.is_open
   --TODO: mark rigth side files
   for _, buff in ipairs(_BUFFERS) do
-    if Proj.is_prj_buffer(buff) then  --the buffer is a valid project?
+    if is_prj_buffer(buff) then  --the buffer is a valid project?
       data.filename= buff.filename
       data.is_open= true
       --activate project in the proper view
@@ -176,7 +184,6 @@ function plugs.change_proj_ed_mode()
       end
     end
     refresh_syntax()
-    Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
   else
     --file: goto project view
     Proj.show_projview()
@@ -221,6 +228,37 @@ function plugs.proj_refresh_hilight()
     Proj.toggle_selectionmode()
     Proj.toggle_selectionmode()
   end
+end
+
+function plugs.open_project()
+  --open the project file
+  local ok= false
+  if data.is_open then
+    --keep the current file selected
+    local proj_keep_file
+    if buffer ~= nil and buffer.filename ~= nil then proj_keep_file= buffer.filename end
+
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+    io.open_file(data.filename)
+    if is_prj_buffer(buffer) then
+      ok= true
+      --add the project to the recent list
+      Proj.add_recentproject()
+      --show project in SELECTION mode without focus
+      Proj.selection_mode() --parse the project and put it in SELECTION mode
+      Proj.show_lost_focus(buffer)
+    else
+      --invalid project
+      Util.close_buffer()
+      Proj.closed_cleardata()
+      ui.statusbar_text= 'Invalid project file'
+      Util.info('Open error', 'Invalid project file')
+    end
+    --restore the file that was current before opening the project or open an empty one
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
+    Proj.go_file(proj_keep_file)
+  end
+  return ok
 end
 
 function plugs.close_project(keepviews)
