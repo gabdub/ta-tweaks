@@ -106,7 +106,7 @@ function Proj.goto_projview(prjv)
     --adjust view size (actual = 50%)
     view.size= math.floor(view.size*porcent*2)
     nv= nv +1
-    if nv == Proj.get_projview(Proj.PRJV_FILES) or nv == Proj.get_projview(Proj.PRJV_FILES_2) then
+    if nv ~= pref and (nv == Proj.get_projview(Proj.PRJV_FILES) or nv == Proj.get_projview(Proj.PRJV_FILES_2)) then
       --create an empty file
       Util.goto_view(nv)
       buffer.new()
