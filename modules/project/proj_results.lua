@@ -46,7 +46,7 @@ local function close_search_view()
     plugs.goto_searchview()
     --close buffer / view
     buffer:set_save_point()
-    io.close_buffer()
+    Util.close_buffer()
     Util.goto_view( sv -1 )
     view.unsplit(view)
     return true
@@ -58,7 +58,7 @@ local function close_search_view()
       if view.buffer._type ~= Proj.PRJT_SEARCH then
         Util.goto_buffer(sbuffer)
       end
-      io.close_buffer()
+      Util.close_buffer()
       break
     end
   end
@@ -193,7 +193,7 @@ function plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm)
   buffer:set_lexer('myproj')
 
   --return to file #1
-  Util.goto_view(Proj.prefview[Proj.PRJV_FILES])
+  Proj.goto_projview(Proj.PRJV_FILES)
 end
 -------------------------------------------------------
 

@@ -98,8 +98,8 @@ events_connect(events.INITIALIZED,          Proj.EVinitialize)
 events_connect(events.QUIT,                 Proj.EVquit, 1)
 events_connect(events.RESET_BEFORE,         Proj.EVquit, 1)
 
-events_connect(events.BUFFER_BEFORE_SWITCH, Proj.show_lost_focus)
-events_connect(events.VIEW_BEFORE_SWITCH,   Proj.show_lost_focus)
+events_connect(events.BUFFER_BEFORE_SWITCH, Proj.check_lost_focus)
+events_connect(events.VIEW_BEFORE_SWITCH,   Proj.check_lost_focus)
 
 events_connect(events.BUFFER_AFTER_SWITCH,  Proj.EVafter_switch)
 events_connect(events.VIEW_AFTER_SWITCH,    Proj.EVafter_switch)

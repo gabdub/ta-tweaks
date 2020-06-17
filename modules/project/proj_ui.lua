@@ -71,25 +71,42 @@ function Proj.check_is_open()
   return data.is_open
 end
 
+function Proj.get_projview(prjv)
+  if prjv < 1 then return 0 end --invalid param
+  local pref= Proj.prefview[prjv] --preferred view for this buffer type
+  if not data.is_open then
+    --when the project is closed use view #2 for the right panel and #1 for everything else
+    pref= (prjv == Proj.PRJV_FILES_2) and 2 or 1
+  end
+  return pref
+end
+
 --goto the view for the requested project buffer type
 --split views if needed
 --return true when the view changes
 function Proj.goto_projview(prjv)
+  local pref= Proj.get_projview(prjv) --preferred view for this buffer type
   if prjv < 1 then return false end --invalid param
-  local pref= Proj.prefview[prjv] --preferred view for this buffer type
+
   if pref == _VIEWS[view] then return false end --already in the right view
   local nv= #_VIEWS
   while pref > nv do
     --more views are needed: split the last one
-    local porcent  = Proj.prefsplit[nv][1]
-    local vertical = Proj.prefsplit[nv][2]
-    Util.goto_view(Proj.prefsplit[nv][3])
+    local porcent = Proj.prefsplit[nv][1]
+    local vertical= Proj.prefsplit[nv][2]
+    local splitview=Proj.prefsplit[nv][3]
+    if not data.is_open then
+      porcent= 0.50 --the project is closed: split 50% vertical
+      vertical= true
+      splitview= 1
+    end
+    Util.goto_view(splitview)
     --split view to show search results
     view:split(vertical)
     --adjust view size (actual = 50%)
     view.size= math.floor(view.size*porcent*2)
     nv= nv +1
-    if nv == Proj.prefview[Proj.PRJV_FILES] then
+    if nv == Proj.get_projview(Proj.PRJV_FILES) or nv == Proj.get_projview(Proj.PRJV_FILES_2) then
       --create an empty file
       Util.goto_view(nv)
       buffer.new()
@@ -302,12 +319,6 @@ function Proj.add_files(flist, groupfiles)
     if confirm then
       --prevent some events to fire forever
       Proj.stop_update_ui(true)
-
---      local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
---      --this file is in the project view
---      if _VIEWS[view] ~= projv then
---        Util.goto_view(projv)
---      end
       Proj.goto_projview(Proj.PRJV_PROJECT)
 
       local added= (Proj.add_files_to_project(flist, groupfiles, all, finprj) ~= nil)
@@ -539,24 +550,6 @@ function Proj.force_buffer_inview(pbuf, nprefv)
   end
 end
 
------------------CURRENT LINE-------------------
---project is in SELECTION mode with focus--
-function Proj.show_sel_w_focus(buff)
-  --hide line numbers
-  buff.margin_width_n[Util.LINE_BASE] = 0
-  --highlight current line as selected
-  buff.caret_width= 0
-  buff.caret_line_back = buff.property['color.prj_sel_bar']
-end
-
--- project in SELECTION mode without focus--
-function Proj.show_lost_focus(buff)
-  if (Proj.update_ui == 0 and buffer._project_select) or (buff ~= nil) then
-    if buff == nil then buff= buffer end
-    buff.caret_line_back = buff.property['color.prj_sel_bar_nof']
-  end
-end
-
 --restore current line default settings
 function Proj.show_default(buff)
   --project in EDIT mode / default text file--
@@ -573,60 +566,16 @@ function Proj.update_after_switch()
   --if we are updating, ignore this event
   if Proj.update_ui > 0 then return end
   Proj.stop_update_ui(true)
-  if buffer._project_select == nil then
-    --NOT a PROJECT buffer: restore current line default settings
-    Proj.show_default(buffer)
-    if buffer._type == Proj.PRJT_SEARCH then
-      --set search context menu
-      Proj.set_contextm_search()
-    else
-      --set regular file context menu
-      Proj.set_contextm_file()
-      --try to select the current file in the project
-      plugs.track_this_file()
-    end
-    --refresh some options (when views are closed this is mixed)
-    --the current line is not always visible
-    buffer.caret_line_visible_always= false
-    --and the scrollbars shown
-    buffer.h_scroll_bar= true
-    if toolbar then
-      buffer.v_scroll_bar= not toolbar.tbreplvscroll --minimap replace V scrollbar
-    else
-      buffer.v_scroll_bar=true
-    end
-
-  else
-    --project buffer--
-    --only process if in the project preferred view
-    --(this prevents some issues when the project is shown in two views at the same time)
-    local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
-    if _VIEWS[view] == projv then
-      if buffer._project_select then
-        -- project in SELECTION mode: set "myprog" lexer --
-        buffer:set_lexer('myproj')
-        --project in SELECTION mode--
-        Proj.show_sel_w_focus(buffer)
-        --set SELECTION mode context menu
-        Proj.set_contextm_sel()
-      else
-        -- project in EDIT mode: restore current line default settings --
-        Proj.show_default(buffer)
-        --set EDIT mode context menu
-        Proj.set_contextm_edit()
-      end
-      --refresh some options (when views are closed this is mixed)
-      --in SELECTION mode the current line is always visible
-      buffer.caret_line_visible_always= buffer._project_select
-      --and the scrollbars hidden
-      buffer.h_scroll_bar= not buffer._project_select
-      buffer.v_scroll_bar= buffer.h_scroll_bar
-    end
-  end
+  plugs.update_after_switch()
   Proj.stop_update_ui(false)
 end
 
 ------------------ TA-EVENTS -------------------
+-- TA-EVENT BUFFER_BEFORE_SWITCH or VIEW_BEFORE_SWITCH
+function Proj.check_lost_focus()
+  plugs.check_lost_focus(buffer)
+end
+
 -- TA-EVENT BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
 function Proj.EVafter_switch()
   --set/restore lexer/ui after a buffer/view switch
@@ -638,7 +587,7 @@ end
 -- TA-EVENT BUFFER_NEW
 function Proj.EVbuffer_new()
   --when a buffer is created in the right panel, mark it as such
-  if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
+  if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
 end
 
 -- TA-EVENT BUFFER_DELETED
@@ -652,7 +601,7 @@ end
 --if the current file is a project, enter SELECTION mode--
 function Proj.EVfile_opened()
   --if the file is open in the right panel, mark it as such
-  if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then buffer._right_side=true end
+  if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
   --ignore session load
   if Proj.update_ui == 0 then
     -- Closes the initial "Untitled" buffer (project version)
@@ -733,7 +682,7 @@ function Proj.EVkeypress(code)
       local nv= _VIEWS[view] +1
       if nv > #_VIEWS then nv=1 end
       Util.goto_view(nv)
-      if nv == Proj.prefview[Proj.PRJV_PROJECT] and data.show_mode == Proj.SM_HIDDEN then
+      if data.is_open and nv == Proj.prefview[Proj.PRJV_PROJECT] and data.show_mode == Proj.SM_HIDDEN then
         --in project's view, force visibility
         data.show_mode= Proj.SM_SELECT  --selection mode
         Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
@@ -794,7 +743,7 @@ end
 ------SEARCH VIEW------
 function Proj.check_leftpanel()
   --check the left/only panel content
-  local vfp1= Proj.prefview[Proj.PRJV_FILES]
+  local vfp1= Proj.get_projview(Proj.PRJV_FILES)
   if #_VIEWS >= vfp1 then
     --goto left view
     Util.goto_view(vfp1)
@@ -816,7 +765,7 @@ end
 
 function Proj.check_rightpanel()
   --if the right panel is open, check it
-  local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
+  local vfp2= Proj.get_projview(Proj.PRJV_FILES_2)
   if #_VIEWS >= vfp2 then
     --goto right view
     Util.goto_view(vfp2)

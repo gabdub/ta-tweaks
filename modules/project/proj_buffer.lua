@@ -68,6 +68,13 @@ local function is_prj_buffer(p_buffer)
   return (n ~= nil)   --return: is a project file
 end
 
+--project is in SELECTION mode with focus--
+local function show_sel_w_focus(buff)
+  buff.margin_width_n[Util.LINE_BASE]= 0 --hide line numbers
+  buff.caret_width= 0 --highlight current line as selected
+  buff.caret_line_back = buff.property['color.prj_sel_bar']
+end
+
 --------------- LISTS INTERFACE --------------
 function plugs.init_projectview()
   --check if a project buffer is open
@@ -99,14 +106,22 @@ function plugs.init_projectview()
   Proj.closed_cleardata() --clear Proj.data and notify end of config load
 end
 
+function plugs.check_lost_focus(buff)
+  if buff == nil then buff= buffer end
+  if Proj.update_ui == 0 and buff._project_select then
+    -- project in SELECTION mode without focus--
+    buff.caret_line_back = buff.property['color.prj_sel_bar_nof']
+  end
+end
+
 function plugs.goto_projectview()
   --activate/create project view
-  Util.goto_view(Proj.prefview[Proj.PRJV_PROJECT])
+  Proj.goto_projview(Proj.PRJV_PROJECT)
   return true
 end
 
 function plugs.projmode_select()
-  --activate select mode
+  --project in SELECTION mode--
   local buff= get_project_buffer(false) or buffer
 
   --mark this buffer as a project in SELECTION mode
@@ -119,13 +134,9 @@ function plugs.projmode_select()
   buff.h_scroll_bar= false
   buff.v_scroll_bar= false
 
-  --set lexer to highlight groups and hidden control info ":: ... ::"
-  buff:set_lexer('myproj')
-  --project in SELECTION mode--
-  Proj.show_sel_w_focus(buff)
-
-  --set SELECTION mode context menu
-  Proj.set_contextm_sel()
+  buff:set_lexer('myproj') --set lexer to highlight groups and hidden control info ":: ... ::"
+  show_sel_w_focus(buff) --remove line numbers / set not-in-focus bar color
+  Proj.set_contextm_sel() --set SELECTION mode context menu
 
   --fold the requested folders
   for i= #data.proj_fold_row, 1, -1 do
@@ -159,6 +170,51 @@ function plugs.projmode_edit()
   Proj.clear_open_indicators(buff)
 
   if toolbar then toolbar.seltabbuf(buff) end --hide/show and select tab in edit mode
+end
+
+function plugs.update_after_switch()
+  if buffer._project_select == nil then
+    --NOT a PROJECT buffer
+    Proj.show_default(buffer) --set current line default settings
+    if buffer._type == Proj.PRJT_SEARCH then
+      Proj.set_contextm_search() --set search context menu
+    else
+      Proj.set_contextm_file() --set regular file context menu
+      plugs.track_this_file() --try to select the current file in the project
+    end
+    --refresh some options (when views are closed this is mixed)
+    --the current line is not always visible
+    buffer.caret_line_visible_always= false
+    --and the scrollbars shown
+    buffer.h_scroll_bar= true
+    if toolbar then
+      buffer.v_scroll_bar= not toolbar.tbreplvscroll --minimap replace V scrollbar
+    else
+      buffer.v_scroll_bar= true
+    end
+  else --PROJECT BUFFER--
+    --only process if in the project preferred view
+    --(this prevents some issues when the project is shown in two views at the same time)
+    local projv= Proj.prefview[Proj.PRJV_PROJECT] --preferred view for project
+    if _VIEWS[view] == projv then
+      if buffer._project_select then
+        --project in SELECTION mode--
+        buffer:set_lexer('myproj') --set lexer to highlight groups and hidden control info ":: ... ::"
+        show_sel_w_focus(buffer) --remove line numbers / set not-in-focus bar color
+        Proj.set_contextm_sel()  --set SELECTION mode context menu
+      else
+        -- project in EDIT mode--
+        Proj.show_default(buffer) --restore current line default settings
+        Proj.set_contextm_edit() --set EDIT mode context menu
+      end
+      --refresh some options (when views are closed this is mixed)
+      --in SELECTION mode the current line is always visible
+      buffer.caret_line_visible_always= buffer._project_select
+      --and the scrollbars hidden
+      buffer.h_scroll_bar= not buffer._project_select
+      buffer.v_scroll_bar= buffer.h_scroll_bar
+    end
+  end
 end
 
 function plugs.change_proj_ed_mode()
@@ -212,7 +268,7 @@ function plugs.track_this_file()
         --hilight the file as open
         Proj.add_open_indicator(p_buffer,row)
          -- project in SELECTION mode without focus--
-        Proj.show_lost_focus(p_buffer)
+        plugs.check_lost_focus(p_buffer)
         --return to this file (it could be in a different view)
         Proj.go_file(file)
 
@@ -246,7 +302,7 @@ function plugs.open_project()
       Proj.add_recentproject()
       --show project in SELECTION mode without focus
       Proj.selection_mode() --parse the project and put it in SELECTION mode
-      Proj.show_lost_focus(buffer)
+      plugs.check_lost_focus(buffer)
     else
       --invalid project
       Util.close_buffer()
@@ -255,8 +311,12 @@ function plugs.open_project()
       Util.info('Open error', 'Invalid project file')
     end
     --restore the file that was current before opening the project or open an empty one
+    --TODO: see why this 2 lines activate line numbers in the project view
     Proj.goto_filesview(Proj.FILEPANEL_LEFT)
     Proj.go_file(proj_keep_file)
+    --TODO: remove hack to hide line numbers in the project view
+    Proj.goto_projview(Proj.PRJV_PROJECT)
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
   end
   return ok
 end
@@ -397,7 +457,7 @@ function plugs.update_proj_buffer(reload)
     end
 
     -- project in SELECTION mode without focus--
-    Proj.show_lost_focus(p_buffer)
+    plugs.check_lost_focus(p_buffer)
     p_buffer.home()
   end
 end

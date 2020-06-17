@@ -47,26 +47,24 @@ if actions then
   actions.accelerators["open_projectdir"]="cO"
   actions.accelerators["open_textadepthome"]="caP"
 
-  if not USE_LISTS_PANEL then   --only for project in BUFFER mode
-    --"toggle_viewproj" = '_Hide/show project'
-    local function tpv_status()
-      return Proj.data.is_open and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
+  --"toggle_viewproj" = '_Hide/show project'
+  local function tpv_status()
+    return Proj.data.is_open and (Proj.data.show_mode == Proj.SM_HIDDEN and 2 or 1) or 10 --1=checked 2=unchecked 8=disabled
+  end
+  local function tpv_icon()
+    if Proj.data.is_open then
+      if Proj.data.show_mode == Proj.SM_HIDDEN then return "ttb-proj-c" end --hidden
+      if Proj.data.show_mode == Proj.SM_EDIT   then return "ttb-proj-e" end --edit mode
     end
-    local function tpv_icon()
-      if Proj.data.is_open then
-        if Proj.data.show_mode == Proj.SM_HIDDEN then return "ttb-proj-c" end --hidden
-        if Proj.data.show_mode == Proj.SM_EDIT   then return "ttb-proj-e" end --edit mode
-      end
-      return "ttb-proj-o"  --selection mode (or disabled)
+    return "ttb-proj-o"  --selection mode (or disabled)
+  end
+  local function tpv_text()
+    if Proj.data.is_open then
+      if Proj.data.show_mode == Proj.SM_HIDDEN then return "Show project"  end --hidden
+      if Proj.data.show_mode == Proj.SM_EDIT   then return "End edit mode" end --edit mode
+      return "Hide project"  --selection mode
     end
-    local function tpv_text()
-      if Proj.data.is_open then
-        if Proj.data.show_mode == Proj.SM_HIDDEN then return "Show project"  end --hidden
-        if Proj.data.show_mode == Proj.SM_EDIT   then return "End edit mode" end --edit mode
-        return "Hide project"  --selection mode
-      end
-      return "No project is open"  --disabled
-    end
+    return "No project is open"  --disabled
   end
 
   local function edp_status()
@@ -98,9 +96,7 @@ if actions then
   actions.add("_end_editproj",       '_End edit',             Proj.toggle_editproj)
   actions.accelerators["_end_editproj"]="f4" --(alias)
 
-  if not USE_LISTS_PANEL then --only for project in BUFFER mode
-    actions.add("toggle_viewproj",   'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
-  end
+  actions.add("toggle_viewproj",   'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
   actions.add("addthisfiles_proj",   '_Add this file',        Proj.add_this_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)

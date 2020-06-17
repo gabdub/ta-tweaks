@@ -719,6 +719,11 @@ if toolbar then
     toolbar.tbshowminimap= toolbar.get_check_val("tbshowminimap")
     toolbar.tbhidemmapcfg= toolbar.get_check_val("tbhidemmapcfg")
     toolbar.tbreplvscroll= toolbar.get_check_val("tbreplvscroll")
+
+    --create "results" toolbar
+    if toolbar.createresultstb then toolbar.createresultstb() end
+    --create "lists" toolbar (add buttons to top_bar to select the lists)
+    if toolbar.createlisttb then toolbar.createlisttb() end
   end
 
   --TEST: create a popup toolbar

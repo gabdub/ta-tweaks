@@ -263,6 +263,9 @@ if toolbar then
     if toolbar.open_saved_prj ~= "" then Proj.open_project(toolbar.open_saved_prj) end
   end
 
+  function plugs.check_lost_focus(buff)
+  end
+
   function plugs.goto_projectview()
     return false --activate/create project view (not used with panels)
   end
@@ -285,6 +288,21 @@ if toolbar then
   function plugs.projmode_edit()
     --activate edit mode
     if data.is_open then Proj.go_file(data.filename) end --open the project in a buffer to edit it
+  end
+
+  function plugs.update_after_switch()
+    Proj.show_default(buffer) --set current line default settings
+    if buffer._type == Proj.PRJT_SEARCH then
+      Proj.set_contextm_search()  --set search context menu
+    else
+      Proj.set_contextm_file() --set regular file context menu
+      plugs.track_this_file() --try to select the current file in the project
+    end
+    if toolbar then
+      buffer.v_scroll_bar= not toolbar.tbreplvscroll --minimap replace V scrollbar
+    else
+      buffer.v_scroll_bar= true
+    end
   end
 
   function plugs.change_proj_ed_mode()

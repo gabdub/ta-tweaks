@@ -10,8 +10,8 @@ Proj.MARK_MODIFICATION = _SCINTILLA.next_marker_number()
 Proj.INDIC_ADDITION = _SCINTILLA.next_indic_number()
 Proj.INDIC_DELETION = _SCINTILLA.next_indic_number()
 
-local vfp1= Proj.prefview[Proj.PRJV_FILES]
-local vfp2= Proj.prefview[Proj.PRJV_FILES_2]
+local vfp1= Proj.get_projview(Proj.PRJV_FILES)
+local vfp2= Proj.get_projview(Proj.PRJV_FILES_2)
 local synchronizing= false
 local marking= false
 Proj.is_compare_on= false

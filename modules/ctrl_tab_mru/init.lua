@@ -60,7 +60,7 @@ local function mru_ctrl_tab_handler(shift)
   if Proj then
     if Proj.goto_filesview() then return end  --exit if the view changed
     --in the right panel: only switch to another right marked file
-    if _VIEWS[view] == Proj.prefview[Proj.PRJV_FILES_2] then right= true end
+    if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then right= true end
   end
 
   if ctrl_key_down then
