@@ -73,7 +73,7 @@ if toolbar then
     if #txt > 2000 then txt= txt:sub(1,2000).."..." end
     local oneline= Util.str_one_line(txt)
     if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
-    toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0)
+    toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0, 250)
     yout= yout + toolbar.cfg.butsize
     toolbar.showresults("printresults")
     toolbar.ensurevisible(name)

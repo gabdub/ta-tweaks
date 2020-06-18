@@ -321,13 +321,13 @@ function toolbar.list_addinfo(text,bold)
   return name
 end
 
-function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen, open_hi)
+function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen, open_hi, lstwidth)
   if not idlen then idlen=0 end
   if idlen > 0 then indent= indent + 10 end --add a collapse icon
   local xtxt= indent
   if bicon then xtxt= indent + toolbar.cfg.barsize end
   toolbar.gotopos(3, toolbar.listtb_y)
-  toolbar.addtext(name, text, tooltip, toolbar.listwidth-13, false, true, bold, xtxt, 0)
+  toolbar.addtext(name, text, tooltip, lstwidth, false, true, bold, xtxt, 0)
   if evenrow then toolbar.setbackcolor(name, toolbar.cfg.backcolor_erow,false,true) end
   toolbar.anchor(name, 10, true)
   if bicon then

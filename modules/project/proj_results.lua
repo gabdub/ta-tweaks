@@ -24,14 +24,14 @@ local function end_search_add(buftype)
 end
 
 local function clear_search_results()
-  local sv= Proj.prefview[Proj.PRJV_SEARCH]
-  if #_VIEWS < sv then return false end
-  beg_search_add()
-   --delete search content
-  textadept.bookmarks.clear()
-  Proj.remove_search_from_pos_table()
-  buffer:set_text('')
-  end_search_add()
+  if #_VIEWS >= Proj.prefview[Proj.PRJV_SEARCH] then
+    beg_search_add()
+     --delete search content
+    textadept.bookmarks.clear()
+    Proj.remove_search_from_pos_table()
+    buffer:set_text('')
+    end_search_add()
+  end
 end
 
 local function close_search_view()

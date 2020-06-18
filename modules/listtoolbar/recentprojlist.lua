@@ -86,6 +86,7 @@ if toolbar then
     toolbar.list_addinfo('Projects', true)
 
     toolbar.listtb_y= 3
+    local w= toolbar.listwidth-13
     toolbar.sel_left_bar(itemsgrp)
     if (not Proj) or (#Proj.data.recent_projects < 1) then
       toolbar.list_addinfo('No recent projects found')
@@ -94,7 +95,7 @@ if toolbar then
         local fname= Util.getfilename(Proj.data.recent_projects[i])
         if fname ~= "" then
           local name= "goproj#"..i
-          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0, 0, (i==1) and 2 or 0)
+          toolbar.list_add_txt_ico(name, fname, Proj.data.recent_projects[i], (i==1), sel_proj, "document-properties", (i%2==1), 0, 0, (i==1) and 2 or 0, w)
         end
       end
       toolbar.list_add_separator()

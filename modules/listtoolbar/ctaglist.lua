@@ -65,13 +65,14 @@ if toolbar then
       toolbar.list_addinfo('No CTAG entry found in this file')
     else
       local filter= Util.escape_filter(toolbar.tag_list_find)
-      local n=0
+      local n= 0
+      local w= toolbar.listwidth-13
       for i=1,#toolbar.tag_list do       --{gotag, tagtext, bicon}
         local tagtext= toolbar.tag_list[i][2]
         if filter == '' or tagtext:match(filter) then
           local gotag= toolbar.tag_list[i][1]
           local bicon= toolbar.tag_list[i][3]
-          toolbar.list_add_txt_ico(gotag, tagtext, "", false, gototag, bicon, (i%2==1), 0, 0, 0)
+          toolbar.list_add_txt_ico(gotag, tagtext, "", false, gototag, bicon, (i%2==1), 0, 0, 0, w)
           if not firsttag then firsttag= gotag end
           n= n+1
         end

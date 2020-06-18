@@ -159,6 +159,7 @@ if toolbar then
 
     toolbar.sel_left_bar(itemsgrp)
     toolbar.listtb_y= 3
+    local w= toolbar.listwidth-13
     if first_row <= #data.proj_files then
       for i= first_row, #data.proj_files do
         local fname= data.proj_rowinfo[i][1]
@@ -183,7 +184,7 @@ if toolbar then
             tip= Proj.get_vcs_info(i, "\n")
           end
           local name= "gofile#"..i
-          if toolbar.list_add_txt_ico(name, fname, tip, (bicon==nil), sel_file, bicon, (i%2==1), ind, idlen, 2) then
+          if toolbar.list_add_txt_ico(name, fname, tip, (bicon==nil), sel_file, bicon, (i%2==1), ind, idlen, 2, w) then
             toolbar.list_add_collapse(name, collapse_list, ind, idlen, collarow)
           end
         end
