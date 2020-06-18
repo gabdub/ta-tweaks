@@ -239,15 +239,14 @@ end
 --open files in the preferred view
 --optinal: goto line_num
 function Proj.go_file(file, line_num)
-  --if the current view is a project view, goto left/only files view. if not, keep the current view
   if file == nil or file == '' then
-    Proj.goto_filesview()
-    --new file (add only one)
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
+    --new file
     local n= nil
     for i=1, #_BUFFERS do
       local b= _BUFFERS[i]
       if (b.filename == nil) and (b._type == nil) and (not b._right_side) then
-        n= i --there is one new file, select this instead of adding a new one
+        n= i --select this instead of adding a new one
         break
       end
     end
@@ -604,17 +603,18 @@ function Proj.EVfile_opened()
   if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
   --ignore session load
   if Proj.update_ui == 0 then
-    -- Closes the initial "Untitled" buffer (project version)
+    -- Closes the initial "Untitled" buffer
     -- only when a regular file is opened
-    -- #3: project + untitled + file
-    -- #4: project + search results + untitled + file
-    -- TO DO: improve this (see check_panels())
-    if buffer.filename and (buffer._project_select == nil) and (#_BUFFERS == 3 or #_BUFFERS == 4) then
-      for nbuf,buf in ipairs(_BUFFERS) do
+    if buffer.filename and (buffer._project_select == nil) then
+      local right= (buffer._right_side == true)
+      for _,buf in ipairs(_BUFFERS) do
         if not (buf.filename or buf._type or buf.modify or buf._project_select ~= nil) then
-          Util.goto_buffer(buf)
-          Util.close_buffer()
-          break
+          if (right and buf._right_side) or (not right) and not buf._right_side then
+            --same side, close auto_opened buffer
+            Util.goto_buffer(buf)
+            Util.close_buffer()
+            break
+          end
         end
       end
     end
