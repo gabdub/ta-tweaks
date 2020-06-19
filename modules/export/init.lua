@@ -53,7 +53,7 @@ function M.to_html(filename, out_filename)
   local html = {}
   html[#html + 1] = '<html><head><meta charset="utf-8"/>'
   html[#html + 1] = format(
-    '<title>%s</title>', filename:iconv('UTF-8', _CHARSET) or _L['Untitled'])
+    '<title>%s</title>', filename:iconv('UTF-8', _CHARSET) or Util.UNTITLED_TEXT)
 
   -- Iterate over defined styles and convert them into CSS.
   html[#html + 1] = '<style type="text/css">'

@@ -70,7 +70,7 @@ local function mru_ctrl_tab_handler(shift)
     ctrl_key_down = false
   end
 
-  local swap
+  local swap, mr
   repeat
     if shift then
       --ctrl+shift+ tab + .. + tab: swap 'backwards'
@@ -107,7 +107,9 @@ local function mru_ctrl_tab_handler(shift)
       mru_buff[1]= mru_buff[swap]
       mru_buff[swap]= b
     end
-  until mru_buff[1]._project_select==nil and mru_buff[1]._type==nil and mru_buff[1]._right_side==right
+
+    mr= mru_buff[1]
+  until mr._project_select == nil and (mr._type == nil or mr._type == Util.UNTITLED_TEXT) and mr._right_side == right
 
   --activate the buffer in the TOP of the MRU list
   --Project module? change to left/right files view if needed (without project: 1/2, with project: 2/4)
@@ -176,7 +178,8 @@ function gettop_MRUbuff(any, right)
   if right == false then right= nil end
   for i= 1, #mru_buff do
     local b= mru_buff[i]
-    if b._project_select==nil and b._type==nil and (any or b._right_side==right) then return b end
+    if b._project_select == nil and (b._type == nil or b._type == Util.UNTITLED_TEXT) and
+      (any or b._right_side == right) then return b end
   end
   return nil
 end

@@ -7,6 +7,7 @@ if Util == nil then
 end
 
 Util.PATH_SEP= (WIN32 and '\\' or '/')
+Util.UNTITLED_TEXT= _L['Untitled']
 
 function Util.info(msg,info)
   ui.dialogs.msgbox{

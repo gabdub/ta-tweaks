@@ -6,6 +6,7 @@ local Util = Util
 
 --  Proj.update_ui= number of ui updates in progress (ignore some events if > 0)
 Proj.update_ui= 0
+local _initializing= true --true until Proj.EVinitialize() is called
 
 function Proj.stop_update_ui(onoff)
   if onoff then
@@ -43,12 +44,17 @@ function Proj.EVinitialize()
 
   Proj.update_after_switch()
   Proj.update_projview_action() --update action: toggle_viewproj/toggle_editproj
+  _initializing= false
 end
 
 -- TA-EVENT QUIT: Saves recent projects list
 function Proj.EVquit()
   --end edit mode at exit
   if data.show_mode == Proj.SM_EDIT then plugs.change_proj_ed_mode() end
+  --remove all buf._type= Util.UNTITLED_TEXT
+  for _, buf in ipairs(_BUFFERS) do
+    if buf._type == Util.UNTITLED_TEXT then buf._type= nil end
+  end
   Proj.save_config()
 end
 
@@ -110,7 +116,6 @@ function Proj.goto_projview(prjv)
       --create an empty file
       Util.goto_view(nv)
       buffer.new()
-      events.emit(events.FILE_OPENED)
     elseif nv == Proj.prefview[Proj.PRJV_SEARCH] then
       --create an empty search results buffer
       Util.goto_view(nv)
@@ -245,7 +250,7 @@ function Proj.go_file(file, line_num)
     local n= nil
     for i=1, #_BUFFERS do
       local b= _BUFFERS[i]
-      if (b.filename == nil) and (b._type == nil) and (not b._right_side) then
+      if (b.filename == nil) and (b._type == nil or b._type == Util.UNTITLED_TEXT) and (not b._right_side) then
         n= i --select this instead of adding a new one
         break
       end
@@ -253,7 +258,6 @@ function Proj.go_file(file, line_num)
     if n == nil then
       buffer.new()
       n= _BUFFERS[buffer]
-      events.emit(events.FILE_OPENED)
     end
     Util.goto_buffer(_BUFFERS[n])
   else
@@ -585,8 +589,12 @@ end
 
 -- TA-EVENT BUFFER_NEW
 function Proj.EVbuffer_new()
-  --when a buffer is created in the right panel, mark it as such
-  if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
+  --ignore session load
+  if not _initializing then
+    --when a buffer is created in the right panel, mark it as such
+    if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
+    buffer._type= Util.UNTITLED_TEXT  --prevent TA auto-close
+  end
 end
 
 -- TA-EVENT BUFFER_DELETED
@@ -596,29 +604,40 @@ function Proj.EVbuffer_deleted()
   Proj.check_diff_stop()
 end
 
--- TA-EVENT FILE_OPENED
---if the current file is a project, enter SELECTION mode--
-function Proj.EVfile_opened()
-  --if the file is open in the right panel, mark it as such
-  if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
-  --ignore session load
-  if Proj.update_ui == 0 then
-    -- Closes the initial "Untitled" buffer
-    -- only when a regular file is opened
-    if buffer.filename and (buffer._project_select == nil) then
-      local right= (buffer._right_side == true)
-      for _,buf in ipairs(_BUFFERS) do
-        if not (buf.filename or buf._type or buf.modify or buf._project_select ~= nil) then
-          if (right and buf._right_side) or (not right) and not buf._right_side then
-            --same side, close auto_opened buffer
-            Util.goto_buffer(buf)
-            Util.close_buffer()
-            break
-          end
+function Proj.close_untitled()
+  --close "Untitled" buffers in the same view
+  --only when the current buffer is a regular one
+  if buffer.filename and (buffer._project_select == nil) then
+    local right= (buffer._right_side == true)
+    for _,buf in ipairs(_BUFFERS) do
+      if buf.filename == nil and (buf._type == nil or buf._type == Util.UNTITLED_TEXT) and
+        (not buf.modify) and buf._project_select == nil then
+        if (right and buf._right_side) or (not right) and not buf._right_side then
+          --same side, close auto_opened buffer
+          Util.goto_buffer(buf)
+          Util.close_buffer()
+          break
         end
       end
     end
   end
+end
+
+-- TA-EVENT FILE_OPENED
+--if the current file is a project, enter SELECTION mode--
+function Proj.EVfile_opened()
+  --remove buf._type= Util.UNTITLED_TEXT when loaded
+  if buffer._type == Util.UNTITLED_TEXT then buffer._type= nil end
+  --if the file is open in the right panel, mark it as such
+  if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
+  --ignore session load / updating ui
+  if Proj.update_ui == 0 then Proj.close_untitled() end --close "Untitled" buffers in the same view
+end
+
+-- TA-EVENT FILE_AFTER_SAVE
+function Proj.EVafter_save()
+  --remove buf._type= Util.UNTITLED_TEXT when saved
+  if buffer._type == Util.UNTITLED_TEXT then buffer._type= nil end
 end
 
 --open the selected file in the search view

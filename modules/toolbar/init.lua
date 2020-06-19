@@ -71,7 +71,7 @@ if toolbar then
     --select the top toolbar and get the tab number of the buffer
     local ntab= getntabbuff(buf)
     --update tab text
-    local filename = buf.filename or buf._type or _L['Untitled']
+    local filename = buf.filename or buf._type or Util.UNTITLED_TEXT
     local tabtext= string.match(filename, ".-([^\\/]*)$")
     --update modified indicator in tab
     if toolbar.cfg.tabmodified == 0 and buf.modify then tabtext= tabtext .. "*" end --modified: change tab text
@@ -202,7 +202,7 @@ if toolbar then
   events_connect(events.FILE_OPENED, function()
     --select the top toolbar and get the tab number of the buffer
     local ntab= getntabbuff(buffer)
-    local filename = buffer.filename or buffer._type or _L['Untitled']
+    local filename = buffer.filename or buffer._type or Util.UNTITLED_TEXT
     toolbar.settab(ntab, string.match(filename, ".-([^\\/]*)$"), filename)
     toolbar.seltabbuf(buffer)
   end)
@@ -211,7 +211,7 @@ if toolbar then
     if _BUFFERS[buffer] > 0 then --ignore command line TA
       --select the top toolbar and get the tab number of the buffer
       local ntab= getntabbuff(buffer)
-      local filename = _L['Untitled']
+      local filename= Util.UNTITLED_TEXT
       toolbar.settab(ntab, filename, filename)
       toolbar.seltabbuf(buffer)
     end

@@ -258,7 +258,7 @@ function Proj.switch_buffer()
   local columns, utf8_list = {_L['Name'], _L['File']}, {}
   for i = 1, #_BUFFERS do
     local buffer = _BUFFERS[i]
-    local filename = buffer.filename or buffer._type or _L['Untitled']
+    local filename = buffer.filename or buffer._type or Util.UNTITLED_TEXT
     if buffer.filename then filename = filename:iconv('UTF-8', _CHARSET) end
     local basename = buffer.filename and filename:match('[^/\\]+$') or filename
     utf8_list[#utf8_list + 1] = (buffer.modify and '*' or '')..basename
@@ -476,6 +476,7 @@ function Proj.toggle_showin_rightpanel()
   end
   --move the buffer to the other panel
   Util.goto_buffer(buf)
+  Proj.close_untitled() --close "Untitled" buffers in the same view
   Proj.stop_update_ui(false)
   if actions then actions.updateaction("showin_rightpanel") end
 end

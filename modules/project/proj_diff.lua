@@ -10,8 +10,8 @@ Proj.MARK_MODIFICATION = _SCINTILLA.next_marker_number()
 Proj.INDIC_ADDITION = _SCINTILLA.next_indic_number()
 Proj.INDIC_DELETION = _SCINTILLA.next_indic_number()
 
-local vfp1= Proj.get_projview(Proj.PRJV_FILES)
-local vfp2= Proj.get_projview(Proj.PRJV_FILES_2)
+local vfp1= 1
+local vfp2= 2
 local synchronizing= false
 local marking= false
 Proj.is_compare_on= false
@@ -240,6 +240,9 @@ end
 function Proj.diff_start(silent)
   if Proj.is_compare_on then diff_stop() return end
 
+  --set the views used for files
+  vfp1= Proj.get_projview(Proj.PRJV_FILES)
+  vfp2= Proj.get_projview(Proj.PRJV_FILES_2)
   if not check_vfp(vfp2) then
     ui.statusbar_text= "Can't compare, the right panel is closed"
     update_comp_actions()

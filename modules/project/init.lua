@@ -108,6 +108,7 @@ events_connect(events.VIEW_NEW,             Proj.EVview_new)
 events_connect(events.BUFFER_NEW,           Proj.EVbuffer_new)
 events_connect(events.BUFFER_DELETED,       Proj.EVbuffer_deleted)
 events_connect(events.FILE_OPENED,          Proj.EVfile_opened)
+events_connect(events.FILE_AFTER_SAVE,      Proj.EVafter_save)
 
 events_connect(events.DOUBLE_CLICK,         Proj.EVdouble_click)
 events_connect(events.KEYPRESS,             Proj.EVkeypress)
