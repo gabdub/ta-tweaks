@@ -7,7 +7,6 @@
 if toolbar then
   local events, events_connect = events, events.connect
   local titgrp, currlist, currlistidx
-  local listtb_hide_p= false --hide project
 
   toolbar.listselections= {}
   toolbar.listwidth= 250
@@ -194,28 +193,9 @@ if toolbar then
   end
 
   function toolbar.list_toolbar_onoff()
-    if toolbar.list_tb == true then
-      toolbar.list_tb= false
-    else
-      toolbar.list_tb= true
-    end
-
-    if Proj then
-      Proj.goto_filesview()
-      local washidebylist= listtb_hide_p
-      listtb_hide_p= false
-      if toolbar.get_check_val("tblist_hideprj") then
-        if Proj.data.show_mode == Proj.SM_EDIT then Proj.show_hide_projview() end --end edit mode
-        if (Proj.data.show_mode ~= Proj.SM_HIDDEN) and toolbar.list_tb then
-          listtb_hide_p= true
-          Proj.show_hide_projview()
-        elseif washidebylist and (Proj.data.show_mode == Proj.SM_HIDDEN) and (not toolbar.list_tb) then
-          Proj.show_hide_projview()
-        end
-      end
-    end
+    toolbar.list_tb= not toolbar.list_tb
     toolbar.sel_left_bar()
-    reload_list() --reload the list
+    if toolbar.list_tb then reload_list() end --reload the list
 
     toolbar.show(toolbar.list_tb, toolbar.listwidth)
     --check menuitem
