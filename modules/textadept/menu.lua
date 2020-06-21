@@ -53,7 +53,11 @@ else
 end
 
 function refresh_syntax()
-  buffer:colourise(Util.LINE_BASE, -1)
+  if Util.TA_MAYOR_VER < 11 then
+    buffer:colourise(Util.LINE_BASE, -1)
+  else
+    buffer:colorize(Util.LINE_BASE, -1)
+  end
 end
 
 -- Commonly used functions in menu commands.

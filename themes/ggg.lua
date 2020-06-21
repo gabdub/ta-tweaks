@@ -53,9 +53,21 @@ buffer.caret_fore = property_int['color.caret']
 buffer.caret_line_back = property_int['color.curr_line_back']
 --buffer.caret_line_back_alpha =
 
---Fold Margin
-buffer:set_fold_margin_colour(true, property_int['color.text_back'])
-buffer:set_fold_margin_hi_colour(true, property_int['color.text_back'])
+if Util.TA_MAYOR_VER < 11 then
+  --Fold Margin
+  buffer:set_fold_margin_colour(true, property_int['color.text_back'])
+  buffer:set_fold_margin_hi_colour(true, property_int['color.text_back'])
+
+  --Long Lines
+  buffer.edge_colour = property_int['color.curr_line_back']
+else
+  --Fold Margin
+  buffer:set_fold_margin_color(true, property_int['color.text_back'])
+  buffer:set_fold_margin_hi_color(true, property_int['color.text_back'])
+
+  --Long Lines
+  buffer.edge_color = property_int['color.curr_line_back']
+end
 
 --Markers
 local MARK_BOOKMARK = textadept.bookmarks.MARK_BOOKMARK
@@ -85,8 +97,6 @@ buffer.indic_fore[INDIC_PLACEHOLDER] = property_int['color.placeholder']
 --Call tips
 --buffer.call_tip_fore_hlt = property_int['color.light_blue']
 
---Long Lines
-buffer.edge_colour = property_int['color.curr_line_back']
 
 --solve underscore visibility after updating to Ubuntu 20.04
 buffer.extra_descent= 1

@@ -15,7 +15,11 @@ keys.cf4 = reset
 
 require('util')
 if not CURSES then
-  for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
+  if Util.TA_MAYOR_VER < 11 then
+    for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
+  else
+    for _, vw in ipairs(_VIEWS) do vw:set_theme('ggg') end
+  end
 end
 
 require('export')
