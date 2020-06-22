@@ -1265,6 +1265,15 @@ if minimap then
     end
   end
 
+  local function add_mmap_changes(changes, colorprop)
+    if changes then
+      local color= toolbar.get_rgbcolor_prop(colorprop)
+      for i=1,#changes do
+        mmhilight(changes[i], color)
+      end
+    end
+  end
+
   local function minimap_scroll()
     local nl= buffer.lines_on_screen
     local first= buffer.first_visible_line+1
@@ -1278,18 +1287,16 @@ if minimap then
       local totlin= lin2vis(buffer.line_count)
       minimap.init(buffer._buffnum, totlin, 6)
       minimap.line_count= totlin
-      --bookmarks
+      --show bookmarks
       add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
-      if Proj then
-        add_mmap_markers(Proj.MARK_ADDITION, 'color.green')
-        add_mmap_markers(Proj.MARK_DELETION, 'color.red')
-        add_mmap_markers(Proj.MARK_MODIFICATION, 'color.yellow')
+      if Proj then  --show file compare results
+        add_mmap_changes(buffer._mark_add, 'color.green')
+        add_mmap_changes(buffer._mark_del, 'color.red')
+        add_mmap_changes(buffer._mark_mod, 'color.yellow')
       end
-      --highlighted words
+      --show highlighted words
       add_mmap_indicators(textadept.editing.INDIC_HIGHLIGHT, 'color.hilight')
-    --  add_mmap_indicators(Proj.INDIC_ADDITION, 'color.green')
-    --  add_mmap_indicators(Proj.INDIC_DELETION, 'color.red')
-      --first/last line
+      --show first/last lines
       color= toolbar.get_rgbcolor_prop('color.curr_line_back')
       minimap.hilight(1,color,true)
       minimap.hilight(totlin,color,true)

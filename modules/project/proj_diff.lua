@@ -117,32 +117,50 @@ local function mark_changes(goto_first)
   filediff.setfile(1, buffer1:get_text()) --#1 = new version (left)
   filediff.setfile(2, buffer2:get_text()) --#2 = old version (right)
 
+  --add/mod/del lines for minimap display
+  buffer1._mark_add= {}
+  buffer1._mark_del= {}
+  buffer1._mark_mod= {}
+  buffer2._mark_add= {}
+  buffer2._mark_del= {}
+  buffer2._mark_mod= {}
+
   local first, n1, n2 = 0, 0, 0
   -- Parse the diff, marking modified lines and changed text.
   local r1= filediff.getdiff( 1, 1 )
+  local n= 1
   --enum lines that are only in buffer1
   if #r1 > 0 then first= r1[1] end
   for i=1,#r1,2 do
     n1= n1 + r1[i+1]-r1[i]+1
     for j=r1[i],r1[i+1] do
       buffer1:marker_add(j-1+Util.LINE_BASE, Proj.MARK_ADDITION)
+      buffer1._mark_add[n]= j
+      n= n+1
     end
   end
   --enum lines that are only in buffer2
   local r2= filediff.getdiff( 2, 1 )
+  n= 1
   for i=1,#r2,2 do
     n2= n2 + r2[i+1]-r2[i]+1
     for j=r2[i],r2[i+1] do
       buffer2:marker_add(j-1+Util.LINE_BASE, Proj.MARK_DELETION)
+      buffer2._mark_del[n]= j
+      n= n+1
     end
   end
   --enum modified lines
   local rm= filediff.getdiff( 1, 2 )
   if #rm > 0 and (first == 0 or rm[1]<first) then first= rm[1] end
   local n3= #rm // 2
+  n= 1
   for i=1, #rm, 2 do
     buffer1:marker_add(rm[i]-1+Util.LINE_BASE, Proj.MARK_MODIFICATION)
     buffer2:marker_add(rm[i+1]-1+Util.LINE_BASE, Proj.MARK_MODIFICATION)
+    buffer1._mark_mod[n]= rm[i]
+    buffer2._mark_mod[n]= rm[i+1]
+    n= n+1
   end
 
   --show the missing lines using annotations
@@ -150,12 +168,14 @@ local function mark_changes(goto_first)
   if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
   for i=1,#r,2 do
     buffer1.annotation_text[r[i]-1+Util.LINE_BASE] = string.rep('\n', r[i+1]-1)
+    buffer1._mark_del[#buffer1._mark_del+1]= r[i]
   end
 
   --idem buffer #2
   r= filediff.getdiff( 2, 3 )--buffer#2, 3=get blank lines list
   for i=1,#r,2 do
     buffer2.annotation_text[r[i]-1+Util.LINE_BASE] = string.rep('\n', r[i+1]-1)
+    buffer2._mark_add[#buffer2._mark_add+1]= r[i]
   end
 
   --mark text changes
