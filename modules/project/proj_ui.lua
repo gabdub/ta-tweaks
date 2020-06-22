@@ -49,6 +49,8 @@ end
 
 -- TA-EVENT QUIT: Saves recent projects list
 function Proj.EVquit()
+  --end file compare
+  Proj.stop_compare()
   --end edit mode at exit
   if data.show_mode == Proj.SM_EDIT then plugs.change_proj_ed_mode() end
   --remove all buf._type= Util.UNTITLED_TEXT

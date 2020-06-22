@@ -27,7 +27,12 @@ local function clear_buf_marks(b, clrflags)
       b:indicator_clear_range(Util.LINE_BASE, b.length)
     end
     b:annotation_clear_all()
-    if clrflags then b._comparing= nil end
+    if clrflags then
+      b._comparing= nil
+      b._mark_add= nil
+      b._mark_del= nil
+      b._mark_mod= nil
+    end
   end
 end
 
@@ -197,6 +202,20 @@ local function mark_changes(goto_first)
 end
 
 ---- TA EVENTS ----
+--TA-EVENT QUIT
+function Proj.stop_compare()
+  local svn_on= Proj.is_svn_on
+  diff_stop() --end file compare
+  if svn_on then
+    --close right file (svn HEAD)
+    Proj.goto_filesview(Proj.FILEPANEL_RIGHT)
+    Proj.close_buffer()
+    Proj.goto_filesview(Proj.FILEPANEL_LEFT)
+    plugs.close_results()
+    --update_comp_actions() --not needed, quiting...
+  end
+end
+
 --TA-EVENT: BUFFER_AFTER_SWITCH or VIEW_AFTER_SWITCH
 --clear pending file-diff
 function Proj.clear_pend_file_diff()
