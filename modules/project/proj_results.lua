@@ -9,35 +9,42 @@
 local Proj = Proj
 local last_print_buftype
 
+local s_started= false
 local function beg_search_add()
   --goto search view and activate text modifications
-  plugs.goto_searchview()
-  buffer.read_only= false
+  local s_started= plugs.goto_searchview()
+  if s_started then buffer.read_only= false end
+  return s_started
 end
 
 local function end_search_add(buftype)
   --end search text modifications
-  buffer:set_save_point()
-  buffer.read_only= true
-  buffer:set_lexer('myproj')
-  last_print_buftype= buftype
+  if s_started then
+    buffer:set_save_point()
+    buffer.read_only= true
+    buffer:set_lexer('myproj')
+    last_print_buftype= buftype
+    s_started= false
+  end
 end
 
 local function clear_search_results()
-  if #_VIEWS >= Proj.prefview[Proj.PRJV_SEARCH] then
-    beg_search_add()
-     --delete search content
-    textadept.bookmarks.clear()
-    Proj.remove_search_from_pos_table()
-    buffer:set_text('')
-    end_search_add()
+  local sv= Proj.get_projview(Proj.PRJV_SEARCH)
+  if sv > 0 and sv <= #_VIEWS then
+    if beg_search_add() then
+       --delete search content
+      textadept.bookmarks.clear()
+      Proj.remove_search_from_pos_table()
+      buffer:set_text('')
+      end_search_add()
+    end
   end
 end
 
 local function close_search_view()
-  local sv= Proj.prefview[Proj.PRJV_SEARCH]
+  local sv= Proj.get_projview(Proj.PRJV_SEARCH)
   --if more views are open, ignore the close
-  if #_VIEWS > sv then return false end
+  if sv < 1 or sv < #_VIEWS then return false end
   last_print_buftype=''
   if #_VIEWS == sv then
     --remove search from position table
@@ -81,15 +88,17 @@ end
 function plugs.goto_searchview()
   --activate/create search view
   --goto the view for search results, split views and create empty buffers if needed
+  if Proj.get_projview(Proj.PRJV_SEARCH) < 1 then return false end --the project is closed
   Proj.goto_projview(Proj.PRJV_SEARCH)
   --goto search results view
   if buffer._type ~= Proj.PRJT_SEARCH then
     for nbuf, sbuf in ipairs(_BUFFERS) do
       if sbuf._type == Proj.PRJT_SEARCH then
         Util.goto_buffer(sbuf)
-        break
+        return true
       end
     end
+    return false --not found
   end
   return true
 end
@@ -108,39 +117,50 @@ function plugs.search_result_start(s_txt, s_filter)
   --a new "search in files" begin
   Proj.stop_update_ui(true)
   --activate/create search view
-  beg_search_add()
-  buffer:append_text('['..s_txt..']\n')
-  if s_filter then buffer:append_text(' search dir '..s_filter..'::::\n') end
-  buffer:goto_pos(buffer.length)
-  buffer.indicator_current = ui.find.INDIC_FIND
+  if beg_search_add() then
+    buffer:append_text('['..s_txt..']\n')
+    if s_filter then buffer:append_text(' search dir '..s_filter..'::::\n') end
+    buffer:goto_pos(buffer.length)
+    buffer.indicator_current = ui.find.INDIC_FIND
+  else
+    Proj.stop_update_ui(false)  --no buffer to show results
+  end
 end
 
 function plugs.search_result_info(s_txt, iserror)
   --report info/error
-  if iserror then buffer:append_text(('(%s)::::\n'):format(s_txt)) else buffer:append_text(' '..s_txt..'\n') end
+  if s_started then
+    if iserror then buffer:append_text(('(%s)::::\n'):format(s_txt)) else buffer:append_text(' '..s_txt..'\n') end
+  end
 end
 
 function plugs.search_result_in_file(shortname, fname, nfiles)
   --set the file currently searched
-  buffer:append_text((' %s::%s::\n'):format(shortname, fname))
-  if nfiles == 1 then buffer:goto_pos(buffer.length) end
+  if s_started then
+    buffer:append_text((' %s::%s::\n'):format(shortname, fname))
+    if nfiles == 1 then buffer:goto_pos(buffer.length) end
+  end
 end
 
 function plugs.search_result_found(fname, nlin, txt, s_start, s_end)
   --set the location of the found
-  local snum= ('%4d'):format(nlin)
-  buffer:append_text(('  @%s:%s\n'):format(snum, txt))
-  local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
-  buffer:indicator_fill_range(pos + s_start - 1, s_end - s_start + 1)
+  if s_started then
+    local snum= ('%4d'):format(nlin)
+    buffer:append_text(('  @%s:%s\n'):format(snum, txt))
+    local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+    buffer:indicator_fill_range(pos + s_start - 1, s_end - s_start + 1)
+  end
 end
 
 function plugs.search_result_end()
   --mark the end of the search
-  buffer:append_text('\n')
-  end_search_add()
-  --set search context menu
-  Proj.set_contextm_search()
-  Proj.stop_update_ui(false)
+  if s_started then
+    buffer:append_text('\n')
+    end_search_add()
+    --set search context menu
+    Proj.set_contextm_search()
+    Proj.stop_update_ui(false)
+  end
 end
 
 --------------- COMPARE FILE RESULTS INTERFACE --------------
@@ -164,36 +184,37 @@ end
 function plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm)
   clear_search_results()
   --activate/create search view
-  plugs.goto_searchview()
-  buffer.read_only= false
-   --delete search content
-  buffer:append_text('[File compare]\n')
-  buffer:goto_pos(buffer.length)
-  local fn1= buffer1.filename and buffer1.filename or 'left buffer'
-  local p,f,e= Util.splitfilename(fn1)
-  if f == '' then f= fn1 end
-  buffer:append_text((' (+)%4d %s::%s::\n'):format(n1, f, fn1))
-  --enum lines that are only in buffer 1
-  dump_changes(n1,buffer1,r1)
+  if plugs.goto_searchview() then
+    buffer.read_only= false
+     --delete search content
+    buffer:append_text('[File compare]\n')
+    buffer:goto_pos(buffer.length)
+    local fn1= buffer1.filename and buffer1.filename or 'left buffer'
+    local p,f,e= Util.splitfilename(fn1)
+    if f == '' then f= fn1 end
+    buffer:append_text((' (+)%4d %s::%s::\n'):format(n1, f, fn1))
+    --enum lines that are only in buffer 1
+    dump_changes(n1,buffer1,r1)
 
-  local fn2= buffer2.filename and buffer2.filename or 'right buffer'
-  p,f,e= Util.splitfilename(fn2)
-  if f == '' then f= fn2 end
-  buffer:append_text((' (-)%4d %s::%s::\n'):format(n2, f, fn2))
-  --enum lines that are only in buffer 2
-  dump_changes(n2,buffer2,r2)
+    local fn2= buffer2.filename and buffer2.filename or 'right buffer'
+    p,f,e= Util.splitfilename(fn2)
+    if f == '' then f= fn2 end
+    buffer:append_text((' (-)%4d %s::%s::\n'):format(n2, f, fn2))
+    --enum lines that are only in buffer 2
+    dump_changes(n2,buffer2,r2)
 
-  buffer:append_text((' (*)%4d edited lines::%s::\n'):format(n3,fn1))
-  --enum modified lines in buffer 1
-  dump_changes(n3,buffer1,rm)
+    buffer:append_text((' (*)%4d edited lines::%s::\n'):format(n3,fn1))
+    --enum modified lines in buffer 1
+    dump_changes(n3,buffer1,rm)
 
-  buffer:append_text('\n')
-  buffer:set_save_point()
-  buffer.read_only= true
-  buffer:set_lexer('myproj')
+    buffer:append_text('\n')
+    buffer:set_save_point()
+    buffer.read_only= true
+    buffer:set_lexer('myproj')
 
-  --return to file #1
-  Proj.goto_projview(Proj.PRJV_FILES)
+    --return to file #1
+    Proj.goto_projview(Proj.PRJV_FILES)
+  end
 end
 -------------------------------------------------------
 
@@ -201,15 +222,39 @@ end
 -- Helper function for printing messages to buffers.
 local function proj_print(buffer_type, ...)
   --add to the search-view buffer
-  beg_search_add()
-  --show buffer_type when changed
-  if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
-  buffer:goto_pos(buffer.length)
-  local args, n = {...}, select('#', ...)
-  for i = 1, n do args[i] = tostring(args[i]) end
-  buffer:append_text(table.concat(args, '\t'))
-  buffer:append_text('\n')
-  end_search_add(buffer_type)
+  if beg_search_add() then
+    --show buffer_type when changed
+    if last_print_buftype ~= buffer_type then buffer:append_text(buffer_type..'\n') end
+    buffer:goto_pos(buffer.length)
+    local args, n = {...}, select('#', ...)
+    for i = 1, n do args[i] = tostring(args[i]) end
+    buffer:append_text(table.concat(args, '\t'))
+    buffer:append_text('\n')
+    end_search_add(buffer_type)
+  else
+    --show in a buffer (use TA default code)
+    local buffer
+    for _, buf in ipairs(_BUFFERS) do
+      if buf._type == buffer_type then buffer = buf break end
+    end
+    if not buffer then
+      --if not ui.tabs then view:split() end
+      buffer= _G.buffer.new()
+      buffer._type = buffer_type
+      events.emit(events.FILE_OPENED)
+    elseif not ui.silent_print then
+      for _, view in ipairs(_VIEWS) do
+        if view.buffer._type == buffer_type then ui.goto_view(view) break end
+      end
+      if view.buffer._type ~= buffer_type then view:goto_buffer(buffer) end
+    end
+    local args, n = {...}, select('#', ...)
+    for i = 1, n do args[i] = tostring(args[i]) end
+    buffer:append_text(table.concat(args, '\t'))
+    buffer:append_text('\n')
+    buffer:goto_pos(buffer.length + 1)
+    buffer:set_save_point()
+  end
 end
 function ui._print(buffer_type, ...) pcall(proj_print, buffer_type, ...) end
 -------------------------------------------------------
