@@ -231,14 +231,36 @@ local function find_line(fmatch,dirf,roff)
   return false
 end
 
--- Ctrl+, = GOTO previous FUNCTION/C-BLOCK BEG
--- Ctrl+. = GOTO next     FUNCTION/C-BLOCK BEG
+local function nav_buf_marks(dirf)
+  --navigate file compare results
+  local curr= buffer:line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
+  local fromln= Util.LINE_BASE
+  local toln= buffer.line_count + Util.LINE_BASE-1
+  if dirf then --forward
+    for i= curr +1, toln, 1 do
+      if buffer._mark_all[i] then Util.goto_line(buffer,i) return end
+    end
+    ui.statusbar_text= 'no more forward differences'
+  else  --backward
+    for i= curr -1, fromln, -1 do
+      if buffer._mark_all[i] then Util.goto_line(buffer,i) return end
+    end
+    ui.statusbar_text= 'no more backward differences'
+  end
+end
+
+-- Ctrl+, = GOTO previous FUNCTION/C-BLOCK BEG/file compare difference
+-- Ctrl+. = GOTO next     FUNCTION/C-BLOCK BEG/file compare difference
 --$nnnnnnnnn  ($=cursor position)
 --{
 --....
 --}
 --LUA version: $[....]function[ mm.www](
 local function find_begin(dirf)
+  if buffer._mark_all then  --navigate file compare results
+    nav_buf_marks(dirf)
+    return
+  end
   local sbeg='^{'
   local roff=-1
   local lexer= get_lexer()
@@ -251,14 +273,18 @@ local function find_begin(dirf)
   end
 end
 
--- Ctrl+; = GOTO previous FUNCTION/C-BLOCK END
--- Ctrl.: = GOTO next     FUNCTION/C-BLOCK END
+-- Ctrl+; = GOTO previous FUNCTION/C-BLOCK END/file compare difference
+-- Ctrl.: = GOTO next     FUNCTION/C-BLOCK END/file compare difference
 --nnnnnnnnn
 --{
 --....
 --$}          ($=cursor position)
 --LUA version: $end
 local function find_end(dirf)
+  if buffer._mark_add then  --navigate file compare results
+    nav_buf_marks(dirf)
+    return
+  end
   local send='^}'
   local lexer= get_lexer()
   if lexer == 'lua' then send='^end' end
@@ -268,10 +294,10 @@ local function find_end(dirf)
 end
 
 if actions then
-  actions.add("prev_block_beg", 'Goto previous block begin', function() find_begin(false) end, "c,")
-  actions.add("next_block_beg", 'Goto next block begin',     function() find_begin(true)  end, "c.")
-  actions.add("prev_block_end", 'Goto previous block end',   function() find_end(false) end,   "c;")
-  actions.add("next_block_end", 'Goto next block end',       function() find_end(true)  end,   "c:")
+  actions.add("prev_block_beg", 'Goto previous block begin/difference', function() find_begin(false) end, "c,")
+  actions.add("next_block_beg", 'Goto next block begin/difference',     function() find_begin(true)  end, "c.")
+  actions.add("prev_block_end", 'Goto previous block end/difference',   function() find_end(false) end,   "c;")
+  actions.add("next_block_end", 'Goto next block end/difference',       function() find_end(true)  end,   "c:")
 
   actions.add("type_cfun_comm", 'Quicktype: C function comment',  qt_cfun_comm,   "a1")
   actions.add("type_c_comm",    'Quicktype: C comment',           qt_c_comm,      "a2")

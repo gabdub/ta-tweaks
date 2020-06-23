@@ -1289,7 +1289,7 @@ if minimap then
       minimap.line_count= totlin
       --show bookmarks
       add_mmap_markers(textadept.bookmarks.MARK_BOOKMARK, 'color.bookmark')
-      if Proj then  --show file compare results
+      if buffer._comparing then  --show file compare results
         add_mmap_changes(buffer._mark_add, 'color.green')
         add_mmap_changes(buffer._mark_del, 'color.red')
         add_mmap_changes(buffer._mark_mod, 'color.yellow')

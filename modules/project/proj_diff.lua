@@ -32,6 +32,7 @@ local function clear_buf_marks(b, clrflags)
       b._mark_add= nil
       b._mark_del= nil
       b._mark_mod= nil
+      b._mark_all= nil
     end
   end
 end
@@ -126,9 +127,11 @@ local function mark_changes(goto_first)
   buffer1._mark_add= {}
   buffer1._mark_del= {}
   buffer1._mark_mod= {}
+  buffer1._mark_all= {}
   buffer2._mark_add= {}
   buffer2._mark_del= {}
   buffer2._mark_mod= {}
+  buffer2._mark_all= {}
 
   local first, n1, n2 = 0, 0, 0
   -- Parse the diff, marking modified lines and changed text.
@@ -143,6 +146,7 @@ local function mark_changes(goto_first)
       buffer1._mark_add[n]= j
       n= n+1
     end
+    buffer1._mark_all[r1[i]]= 1
   end
   --enum lines that are only in buffer2
   local r2= filediff.getdiff( 2, 1 )
@@ -154,6 +158,7 @@ local function mark_changes(goto_first)
       buffer2._mark_del[n]= j
       n= n+1
     end
+    buffer2._mark_all[r2[i]]= -1
   end
   --enum modified lines
   local rm= filediff.getdiff( 1, 2 )
@@ -164,7 +169,9 @@ local function mark_changes(goto_first)
     buffer1:marker_add(rm[i]-1+Util.LINE_BASE, Proj.MARK_MODIFICATION)
     buffer2:marker_add(rm[i+1]-1+Util.LINE_BASE, Proj.MARK_MODIFICATION)
     buffer1._mark_mod[n]= rm[i]
+    buffer1._mark_all[rm[i]]= 0
     buffer2._mark_mod[n]= rm[i+1]
+    buffer2._mark_all[rm[i+1]]= 0
     n= n+1
   end
 
@@ -174,6 +181,7 @@ local function mark_changes(goto_first)
   for i=1,#r,2 do
     buffer1.annotation_text[r[i]-1+Util.LINE_BASE] = string.rep('\n', r[i+1]-1)
     buffer1._mark_del[#buffer1._mark_del+1]= r[i]
+    buffer1._mark_all[r[i]]= -1
   end
 
   --idem buffer #2
@@ -181,6 +189,7 @@ local function mark_changes(goto_first)
   for i=1,#r,2 do
     buffer2.annotation_text[r[i]-1+Util.LINE_BASE] = string.rep('\n', r[i+1]-1)
     buffer2._mark_add[#buffer2._mark_add+1]= r[i]
+    buffer2._mark_all[r[i]]= 1
   end
 
   --mark text changes
