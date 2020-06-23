@@ -147,7 +147,7 @@ local function multiline_typer()
   local button, inputs = ui.dialogs.inputbox{
     title = 'Quick-type',
     informative_text = {'Multiline Typer', 'Before begin:', 'After end:', 'Empty lines:', 'From line:', 'To line:'},
-    text = {"","","",n1+1,n2+1}
+    text = {"","","", n1+1-Util.LINE_BASE, n2+1-Util.LINE_BASE}
   }
   if button == 1 then
     n1= tonumber(inputs[4]) + Util.LINE_BASE-1
