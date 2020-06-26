@@ -1276,7 +1276,7 @@ if minimap then
 
   local function minimap_scroll()
     local nl= buffer.lines_on_screen
-    local first= buffer.first_visible_line+1
+    local first= buffer.first_visible_line + 1 - Util.LINE_BASE
     minimap.scrollpos(nl, first, toolbar.get_rgbcolor_prop('color.linenum_fore'))
     minimap.lines_screen= nl
   end
