@@ -100,7 +100,7 @@ if toolbar then
 --  toolbar.create_popup()
 
   -- minimap/scrollbar (right internal toolbar)
-  if minimap then toolbar.minimap_setup() end
+  toolbar.minimap_setup()
 
   --toolbars are ready to show
   toolbar.ready()

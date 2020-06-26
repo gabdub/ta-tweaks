@@ -3,6 +3,7 @@ if toolbar then
   local Util = Util
   require('toolbar.constants')
   if actions then require('toolbar.actions') end
+  require('toolbar.minimap')
   require('toolbar.controls')
   require('toolbar.configtb') --config panel on toolbar #3
 
