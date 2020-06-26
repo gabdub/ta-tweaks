@@ -304,6 +304,11 @@ if toolbar then
     else
       buffer.v_scroll_bar= true
     end
+    if toolbar and (toolbar.tbreplhscroll ~= nil) then
+      buffer.h_scroll_bar= not toolbar.tbreplhscroll
+    else
+      buffer.h_scroll_bar= true
+    end
   end
 
   function plugs.change_proj_ed_mode()

@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.0.35 (Jan 16 2019)"
+#define TA_TOOLBAR_VERSION_STR "1.1.1 (Jun 26 2020)"
 
 static void free_img_list( void );
 
@@ -1823,6 +1823,11 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
       if( ttb.philight != NULL ){
         fire_tb_clicked_event(p); //scroll buffer while moving with mouse down
       }
+    }else if( p->back_color == BKCOLOR_TBH_SCR_CLICK ){
+      tbh_scroll_ev( p, 0, 1 ); //update tbh scroll click (drag)
+      if( ttb.philight != NULL ){
+        fire_tb_clicked_event(p); //scroll buffer while moving with mouse down
+      }
     }else if( (p->flags & TTBF_SCROLL_BAR) != 0 ){
       vscroll_clickG(p->group); //update scrollbar click (drag)
     }else if( (ttb.phipress->flags & TTBF_IS_TRESIZE) != 0 ){
@@ -1917,6 +1922,11 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         //MINI MAP
         if( t->back_color == BKCOLOR_MINIMAP_CLICK ){
           mini_map_ev( t, dir, 1 );
+          return;
+        }
+        //TBH SCROLL
+        if( t->back_color == BKCOLOR_TBH_SCR_CLICK ){
+          tbh_scroll_ev( t, dir, 1 );
           return;
         }
       }
@@ -2991,6 +3001,13 @@ void init_tatoolbar_vars( void )
 //  ttb.minimap.linesscreen= 0;
 //  ttb.minimap.firstvisible= 0;
 //  ttb.minimap.scrcolor= 0;
+
+  //init TBH_SCROLL vars
+  ttb.tbh_scroll.width= -1;
+//  ttb.tbh_scroll.maxcol= 0;
+//  ttb.tbh_scroll.colsscreen= 0;
+//  ttb.tbh_scroll.firstvisible= 0;
+//  ttb.tbh_scroll.scrcolor= 0;
 }
 
 struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
@@ -3002,17 +3019,18 @@ struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
         memset( T, 0, sizeof(struct toolbar_data));
     }
     T->num=  ntoolbar;
-    //HORIZONTAL TOOLBARS: top - bottom status - bottom results
-    if( (ntoolbar != TOP_TOOLBAR) && (ntoolbar != STAT_TOOLBAR) && (ntoolbar != RESULTS_TOOLBAR) ){
-      T->flags |= TTBF_TB_VERTICAL; //it's vertical
+    //HORIZONTAL TOOLBARS: top - bottom status - bottom results - tbh_scroll
+    if( (ntoolbar == TOP_TOOLBAR)     || (ntoolbar == STAT_TOOLBAR) ||
+        (ntoolbar == RESULTS_TOOLBAR) || (ntoolbar == H_SCROLL_TOOLBAR) ){
+      T->flags &= ~TTBF_TB_VERTICAL;  //horizontal toolbar
     }else{
-      T->flags &= ~TTBF_TB_VERTICAL; //it's horizontal
+      T->flags |= TTBF_TB_VERTICAL;   //vertical toolbar
     }
-    //HORIZONTAL LAYOUTS: top - bottom status
-    if( (ntoolbar != TOP_TOOLBAR) && (ntoolbar != STAT_TOOLBAR) ){
-      T->flags |= TTBF_TB_V_LAYOUT;   //vertical layout
-    }else{
+    //HORIZONTAL LAYOUTS: top - bottom status - tbh_scroll
+    if( (ntoolbar == TOP_TOOLBAR) || (ntoolbar == STAT_TOOLBAR) || (ntoolbar == H_SCROLL_TOOLBAR) ){
       T->flags &= ~TTBF_TB_V_LAYOUT;  //horizontal layout
+    }else{
+      T->flags |= TTBF_TB_V_LAYOUT;   //vertical layout
     }
     T->draw= draw;
   }
@@ -3308,6 +3326,7 @@ void ttb_settext( const char * name, const char * text, const char *tooltip, int
 }
 
 static void minimap_set_lineinc( void );
+static void redraw_tbh_scroll( void );
 
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height)
 {
@@ -3317,6 +3336,9 @@ void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height)
     if( T->num == MINIMAP_TOOLBAR ){
       ttb.minimap.height= height;
       minimap_set_lineinc();
+    }else if( T->num == H_SCROLL_TOOLBAR ){
+      ttb.tbh_scroll.width= width;
+      redraw_tbh_scroll();
     }
     //toolbar size changed, adjust groups layout
     update_layoutT(T);
@@ -3479,4 +3501,49 @@ void minimap_scrollpos(int linesscreen, int firstvisible, int color)
   ttb.minimap.firstvisible= firstvisible;
   ttb.minimap.scrcolor=     color;
   redraw_mini_map();
+}
+
+/* ============================================================================= */
+static void redraw_tbh_scroll( void )
+{
+  redraw_toolbar( &ttb.tbdata[H_SCROLL_TOOLBAR] );
+}
+
+void tbh_scroll_setmaxcol(int maxcol)
+{
+  ttb.tbh_scroll.maxcol= maxcol;
+  redraw_tbh_scroll();
+}
+
+static int MMcolclicked= 0;
+int  tbh_scroll_getclickcol( void )
+{
+  return MMcolclicked;
+}
+
+//TBH_SCROLL: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
+void tbh_scroll_ev( struct toolbar_item *p, int dir, int redraw )
+{
+  if( dir == 0 ){ //CLICK
+    if( ttb.tbh_scroll.width > 0 ){
+      //try to center screen on click position
+      int nbox= (((item_xoff+1) * ttb.tbh_scroll.maxcol) / ttb.tbh_scroll.width) - (ttb.tbh_scroll.colsscreen/2);
+      if( nbox < 1 ){
+        nbox= 1;
+      }else if( nbox > ttb.tbh_scroll.maxcol ){
+        nbox= ttb.tbh_scroll.maxcol;
+      }
+      MMcolclicked= nbox;
+    }
+  }else{
+    fire_tbh_scroll( dir );
+  }
+}
+
+void tbh_scroll_scrollpos(int colsscreen, int firstvisible, int color)
+{
+  ttb.tbh_scroll.colsscreen= colsscreen;
+  ttb.tbh_scroll.firstvisible= firstvisible;
+  ttb.tbh_scroll.scrcolor= color;
+  redraw_tbh_scroll();
 }

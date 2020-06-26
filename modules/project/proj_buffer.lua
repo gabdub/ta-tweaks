@@ -158,8 +158,16 @@ function plugs.projmode_edit()
   --the current line is not always visible
   buff.caret_line_visible_always= false
   --show scrollbars
-  buff.h_scroll_bar= true
-  buff.v_scroll_bar= true
+  if toolbar and (toolbar.tbreplhscroll ~= nil) then
+    buff.h_scroll_bar= not toolbar.tbreplhscroll
+  else
+    buff.h_scroll_bar= true
+  end
+  if toolbar then
+    buff.v_scroll_bar= not toolbar.tbreplvscroll --minimap replace V scrollbar
+  else
+    buff.v_scroll_bar= true
+  end
 
   --edit project as a text file (show control info)
   buff:set_lexer('text')
@@ -186,7 +194,11 @@ function plugs.update_after_switch()
     --the current line is not always visible
     buffer.caret_line_visible_always= false
     --and the scrollbars shown
-    buffer.h_scroll_bar= true
+    if toolbar and (toolbar.tbreplhscroll ~= nil) then
+      buffer.h_scroll_bar= not toolbar.tbreplhscroll
+    else
+      buffer.h_scroll_bar= true
+    end
     if toolbar then
       buffer.v_scroll_bar= not toolbar.tbreplvscroll --minimap replace V scrollbar
     else
@@ -211,8 +223,16 @@ function plugs.update_after_switch()
       --in SELECTION mode the current line is always visible
       buffer.caret_line_visible_always= buffer._project_select
       --and the scrollbars hidden
-      buffer.h_scroll_bar= not buffer._project_select
-      buffer.v_scroll_bar= buffer.h_scroll_bar
+      if toolbar then
+        buffer.v_scroll_bar= (not toolbar.tbreplvscroll) and (not buffer._project_select)
+      else
+        buffer.v_scroll_bar= not buffer._project_select
+      end
+      if toolbar and (toolbar.tbreplhscroll ~= nil) then
+        buffer.h_scroll_bar= (not toolbar.tbreplhscroll) and (not buffer._project_select)
+      else
+        buffer.h_scroll_bar= not buffer._project_select
+      end
     end
   end
 end

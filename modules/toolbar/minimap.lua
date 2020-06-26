@@ -84,17 +84,22 @@ function toolbar.minimap_load()
     minimap.hilight(totlin,color,true)
     minimap_scroll()
   end
+
+--  if tbh_scroll then
+--    tbh_scroll.setmaxcol(2000)
+--    tbh_scroll_scroll()
+--  end
 end
 
 if Proj then
   events_connect(events.UPDATE_UI, function(updated)
   --if we are updating, ignore this event
     if updated and Proj.update_ui == 0 then
-      if (updated & buffer.UPDATE_CONTENT) > 0 then
-        toolbar.minimap_load()
-      elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then
-        minimap_scroll()
+      if (updated & buffer.UPDATE_CONTENT) > 0 then toolbar.minimap_load()
+      elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then minimap_scroll()
       end
+
+      if tbh_scroll_scroll and (updated & buffer.UPDATE_H_SCROLL) > 0 then tbh_scroll_scroll() end
     end
   end)
 end
@@ -103,11 +108,11 @@ end
 local function check_vis_changes()
   if toolbar.tbshowminimap and Proj and Proj.update_ui == 0 and minimap.lines_screen then
     local totlin= lin2vis(buffer.line_count)
-    if minimap.line_count ~= totlin then
-      toolbar.minimap_load()
-    elseif minimap.lines_screen ~= buffer.lines_on_screen then
-      minimap_scroll()
-    end
+    if minimap.line_count ~= totlin then toolbar.minimap_load()
+    elseif minimap.lines_screen ~= buffer.lines_on_screen then minimap_scroll() end
+  end
+  if tbh_scroll then
+    if tbh_scroll.xoff ~= buffer.x_offset then tbh_scroll_scroll() end
   end
   return true
 end
@@ -128,6 +133,27 @@ events_connect("minimap_scroll", function(dir)
   buffer:line_scroll( 0, dir*3)
 end)
 
+if tbh_scroll then
+  function toolbar.show_hide_tbh_scroll()
+    --show/hide the horizontal scrollbar
+    toolbar.sel_toolbar_n(toolbar.H_SCROLL_TOOLBAR)
+    toolbar.show(toolbar.tbreplhscroll)
+  end
+
+  function tbh_scroll_clicked()
+    buffer.x_offset= tbh_scroll.getclickcol()
+  end
+
+  function tbh_scroll_scroll()
+    tbh_scroll.scrollpos(100*tbh_scroll.char_w, buffer.x_offset, toolbar.get_rgbcolor_prop('color.linenum_fore'))
+    tbh_scroll.xoff= buffer.x_offset
+  end
+
+  events_connect("tbh_scroll", function(dir)
+    buffer:line_scroll( dir*12, 0)
+  end)
+end
+
 function toolbar.minimap_setup()
   --set toolbar #4 as a MINIMAP
   toolbar.new(14, 14, 14, toolbar.MINIMAP_TOOLBAR, toolbar.themepath)
@@ -142,4 +168,22 @@ function toolbar.minimap_setup()
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
   toolbar.show(toolbar.tbshowminimap)
+
+  if tbh_scroll then
+    tbh_scroll.char_w= view:text_width(view.STYLE_LINENUMBER, '0')
+    tbh_scroll.setmaxcol(300*tbh_scroll.char_w)
+    --set toolbar #6 as a HORIZONTAL SCROLLBAR
+    toolbar.new(14, 14, 14, toolbar.H_SCROLL_TOOLBAR, toolbar.themepath)
+    --width=expand / height=14
+    toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.ONLYME, 0, 14)
+    toolbar.setbackcolor(toolbar.globalicon, toolbar.get_rgbcolor_prop('color.linenum_back'), false, true)
+    toolbar.setbackcolor(toolbar.groupicon, toolbar.BKCOLOR.TBH_SCR_DRAW, false, true)
+    toolbar.adjust(4096, 14, 1,1,3,3)
+    toolbar.gotopos(0,0)
+    toolbar.cmd("tbh_scroll", tbh_scroll_clicked, "", "")
+    toolbar.setbackcolor("tbh_scroll", toolbar.BKCOLOR.TBH_SCR_CLICK, false, true)
+    toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
+    toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
+    toolbar.show(toolbar.tbreplhscroll)
+  end
 end

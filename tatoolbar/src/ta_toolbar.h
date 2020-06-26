@@ -14,9 +14,10 @@
 #define RIGHT_TOOLBAR     3   //VERTICAL    (right  external: config panel)
 #define MINIMAP_TOOLBAR   4   //VERTICAL    (right  internal: minimap/scrollbar)
 #define RESULTS_TOOLBAR   5   //HORIZONTAL  (bottom internal: results)
+#define H_SCROLL_TOOLBAR  6   //HORIZONTAL  (bottom internal: horizonal scrollbar)
 
-#define POPUP_FIRST       6   //VERTICAL    (POPUPS)
-#define COMBO_POPUP       6   //VERTICAL    (POPUP:combo-list)
+#define POPUP_FIRST       7   //VERTICAL    (POPUPS)
+#define COMBO_POPUP       7   //VERTICAL    (POPUP:combo-list)
 #define NTOOLBARS         10
 
 // toolbar -> group -> items
@@ -160,6 +161,9 @@
 
 #define BKCOLOR_MINIMAP_DRAW  (-7)  //MINI MAP (back draw)
 #define BKCOLOR_MINIMAP_CLICK (-8)  //MINI MAP (click)
+
+#define BKCOLOR_TBH_SCR_DRAW  (-9)  //TBH_SCROLL (back draw)
+#define BKCOLOR_TBH_SCR_CLICK (-10) //TBH_SCROLL (click)
 
 #define VSCROLL_STEP    100   //vertical scroll whell step
 #define VSCROLL_MIN     5     //less than this, scroll to top
@@ -389,6 +393,15 @@ struct minimap_data
   int scrcolor;     //scroll box color
 };
 
+struct tbh_scroll_data
+{
+  int width;        //visible width in pixels = toolbar width
+  int maxcol;       //max number of columns
+  int colsscreen;   //number of completely visible columns
+  int firstvisible; //number of the column at the left
+  int scrcolor;     //scroll box color
+};
+
 struct all_toolbars_data
 {
   struct toolbar_data tbdata[NTOOLBARS];  //horizonal & vertical toolbars
@@ -405,8 +418,9 @@ struct all_toolbars_data
 
   char * img_base;    //global image base path
 
-  struct color_picker_data cpick; //only one global color picker
-  struct minimap_data minimap;    //only one global MINI MAP
+  struct color_picker_data cpick;     //only one global color picker
+  struct minimap_data minimap;        //only one global MINI MAP
+  struct tbh_scroll_data tbh_scroll;  //only one global TBH_SCROLL
 
   int drag_x, drag_y; //initial difference between mouse and item_xoff/yoff position
 };
@@ -546,8 +560,13 @@ void minimap_init(int buffnum, int linecount, int yszbox);
 void minimap_hilight(int linenum, int color, int exclusive);
 int  minimap_getclickline( void );
 void minimap_scrollpos(int linesscreen, int firstvisible, int color);
-
 void fire_minimap_scroll( int dir );
+
+void tbh_scroll_setmaxcol(int maxcol);
+int  tbh_scroll_getclickcol( void );
+void tbh_scroll_scrollpos(int colsscreen, int firstvisible, int color);
+void fire_tbh_scroll( int dir );
+void tbh_scroll_ev( struct toolbar_item *p, int dir, int redraw );
 
 
 #endif

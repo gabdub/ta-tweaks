@@ -2379,6 +2379,8 @@ static void new_window() {
             //==========================================TB#4
             create_tatoolbar(lua, hboxIN, MINIMAP_TOOLBAR); //TOOLBAR: VERTICAL (right internal: minimap/scrollbar)
 
+          //------------------------------------------TB#6
+          create_tatoolbar(lua, vboxIN, H_SCROLL_TOOLBAR);//TOOLBAR: HORIZONTAL (bottom internal: h-scroll)
           //------------------------------------------TB#5
           create_tatoolbar(lua, vboxIN, RESULTS_TOOLBAR); //TOOLBAR: VERTICAL (bottom internal: results)
 

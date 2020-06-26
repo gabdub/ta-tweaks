@@ -9,9 +9,18 @@ toolbar.STAT_TOOLBAR=     2
 toolbar.RIGHT_TOOLBAR=    3
 toolbar.MINIMAP_TOOLBAR=  4
 toolbar.RESULTS_TOOLBAR=  5
-toolbar.FIRST_POPUP=      6
-toolbar.COMBO_POPUP=      6
-toolbar.POPUP_TOOLBAR=    7
+if tbh_scroll then
+  --horizonal scrollbar toolbar IS defined
+  toolbar.H_SCROLL_TOOLBAR= 6
+  toolbar.FIRST_POPUP=      7
+  toolbar.COMBO_POPUP=      7
+  toolbar.POPUP_TOOLBAR=    8
+else
+  --horizonal scrollbar toolbar is NOT defined
+  toolbar.FIRST_POPUP=      6
+  toolbar.COMBO_POPUP=      6
+  toolbar.POPUP_TOOLBAR=    7
+end
 toolbar.NTOOLBARS=        10
 
 toolbar.TTBI_TB = {
@@ -77,7 +86,9 @@ toolbar.BKCOLOR = {
   SEL_COL_G     = -5,
   SEL_COL_B     = -6,
   MINIMAP_DRAW  = -7,
-  MINIMAP_CLICK = -8
+  MINIMAP_CLICK = -8,
+  TBH_SCR_DRAW  = -9, --use only when tbh_scroll is defined
+  TBH_SCR_CLICK = -10 --use only when tbh_scroll is defined
 }
 
 toolbar.TTBF ={

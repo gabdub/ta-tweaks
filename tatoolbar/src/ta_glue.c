@@ -977,7 +977,33 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
         yr += ttb.minimap.yszbox;
       }
     }
-  }else if( color == BKCOLOR_MINIMAP_CLICK ){
+
+  }else if( color == BKCOLOR_TBH_SCR_DRAW ){
+    //=== TBH_SCROLL ===
+    if( (ttb.tbh_scroll.width > 0) && (ttb.tbh_scroll.maxcol > 0) ){
+      if( w > ttb.tbh_scroll.width ){
+        w= ttb.tbh_scroll.width;
+      }
+      //draw scrollbar if set
+      if( ttb.tbh_scroll.colsscreen > 0){
+        n= ttb.tbh_scroll.colsscreen;
+        if( n > ttb.tbh_scroll.maxcol){
+          n= ttb.tbh_scroll.maxcol;
+        }
+        xr= ttb.tbh_scroll.firstvisible-1;
+        if( (xr+n) > ttb.tbh_scroll.maxcol ){
+          xr= ttb.tbh_scroll.maxcol - n;
+        }
+        if( xr < 0 ){
+          xr= 0;
+        }
+        n= (n*ttb.tbh_scroll.width)/ttb.tbh_scroll.maxcol;
+        xr= x + ((xr * ttb.tbh_scroll.width)/ttb.tbh_scroll.maxcol);
+        draw_box( ctx, xr, y, n, h, ttb.tbh_scroll.scrcolor, 0 ); //box border
+      }
+    }
+
+  }else if( (color == BKCOLOR_MINIMAP_CLICK) || (color == BKCOLOR_TBH_SCR_CLICK) ){
     //it's a transparent button
   }else{
     str[0]= 0;
@@ -1379,6 +1405,10 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           mini_map_ev( ttb.phipress, 0, 0 );   //MINI MAP click
           fire_tb_clicked_event(ttb.phipress); //scroll buffer now
           start_drag(event->x, event->y);  //drag the minimap until the mouse button is released
+        }else if( ttb.phipress->back_color == BKCOLOR_TBH_SCR_CLICK ){
+          tbh_scroll_ev( ttb.phipress, 0, 0 );   //TBH SCROLL click
+          fire_tb_clicked_event(ttb.phipress); //scroll buffer now
+          start_drag(event->x, event->y);  //drag the tbh_scroll until the mouse button is released
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
           vscroll_clickG(ttb.phipress->group); //scrollbar click
           start_drag(event->x, event->y);  //drag the scrollbar until the mouse button is released
@@ -1720,6 +1750,31 @@ static int lminimap_scrollpos(lua_State *L)
   return 0;
 }
 
+/* ============================================================================= */
+/** `tbh_scroll.setmaxcol(maxcol)` Lua function. */
+/** set tbh_scroll max column */
+static int ltbh_scroll_setmaxcol(lua_State *L)
+{
+  tbh_scroll_setmaxcol(lua_tointeger(L, 1));
+  return 0;
+}
+
+/** `tbh_scroll.getclickcol()` Lua function. */
+/** return last clicked col number */
+static int ltbh_scroll_getclickcol(lua_State *L)
+{
+  lua_pushinteger( L, tbh_scroll_getclickcol() );
+  return 1;
+}
+
+/** `tbh_scroll.scrollpos(colsscreen, firstvisible, color)` Lua function. */
+/** set scroll bar position and size */
+static int ltbh_scroll_scrollpos(lua_State *L)
+{
+  tbh_scroll_scrollpos(lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3) );
+  return 0;
+}
+
 #define DEF_C_FUNC(lua, funct, name) lua_pushcfunction(lua,funct), lua_setfield(lua, -2, name)
 /* ============================================================================= */
 /*                          FUNCTIONS CALLED FROM TA                             */
@@ -1798,6 +1853,13 @@ void register_toolbar(lua_State *L)
   DEF_C_FUNC(L, lminimap_getclickline,  "getclickline");    //get clicked line number
   DEF_C_FUNC(L, lminimap_scrollpos,     "scrollpos");       //set scroll bar position and size
   lua_setglobal(L, "minimap");
+
+  //register "tbh_scroll" functions
+  lua_newtable(L);
+  DEF_C_FUNC(L, ltbh_scroll_setmaxcol,  "setmaxcol");       //set h_scroll max column
+  DEF_C_FUNC(L, ltbh_scroll_getclickcol,"getclickcol");     //get clicked col number
+  DEF_C_FUNC(L, ltbh_scroll_scrollpos,  "scrollpos");       //set scroll bar position and size
+  lua_setglobal(L, "tbh_scroll");
 }
 
 /* status bar text changed */
@@ -2105,4 +2167,9 @@ void kill_tatoolbar( void )
 void fire_minimap_scroll( int dir )
 {
   emit(lua, "minimap_scroll", LUA_TNUMBER, dir, -1);
+}
+
+void fire_tbh_scroll( int dir )
+{
+  emit(lua, "tbh_scroll", LUA_TNUMBER, dir, -1);
 }

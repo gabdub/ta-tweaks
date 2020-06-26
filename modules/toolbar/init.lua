@@ -720,6 +720,7 @@ if toolbar then
     toolbar.tbshowminimap= toolbar.get_check_val("tbshowminimap")
     toolbar.tbhidemmapcfg= toolbar.get_check_val("tbhidemmapcfg")
     toolbar.tbreplvscroll= toolbar.get_check_val("tbreplvscroll")
+    if tbh_scroll then toolbar.tbreplhscroll= toolbar.get_check_val("tbreplhscroll") end
 
     --create "results" toolbar
     if toolbar.createresultstb then toolbar.createresultstb() end
