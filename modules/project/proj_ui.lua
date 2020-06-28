@@ -597,6 +597,7 @@ function Proj.EVbuffer_new()
     if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
     buffer._type= Util.UNTITLED_TEXT  --prevent TA auto-close
   end
+  Proj.update_after_switch()
 end
 
 -- TA-EVENT BUFFER_DELETED
@@ -634,6 +635,7 @@ function Proj.EVfile_opened()
   if _VIEWS[view] == Proj.get_projview(Proj.PRJV_FILES_2) then buffer._right_side=true end
   --ignore session load / updating ui
   if Proj.update_ui == 0 then Proj.close_untitled() end --close "Untitled" buffers in the same view
+  Proj.update_after_switch()
 end
 
 -- TA-EVENT FILE_AFTER_SAVE

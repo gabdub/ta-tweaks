@@ -478,6 +478,7 @@ function Proj.toggle_showin_rightpanel()
   Util.goto_buffer(buf)
   Proj.close_untitled() --close "Untitled" buffers in the same view
   Proj.stop_update_ui(false)
+  Proj.update_after_switch()
   if actions then actions.updateaction("showin_rightpanel") end
 end
 
