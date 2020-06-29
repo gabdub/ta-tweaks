@@ -440,7 +440,7 @@ void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int graye
 void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
 void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
 void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill );
-void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h );
+void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h, struct toolbar_img * opt_pti );
 int  set_img_size( struct toolbar_img *pti );
 int  set_text_bt_width(struct toolbar_item * p );
 int  get_text_width( const char * text, int fontsz );

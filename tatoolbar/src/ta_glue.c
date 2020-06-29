@@ -794,7 +794,7 @@ void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill 
   }
 }
 
-void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
+void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h, struct toolbar_img * opt_pti )
 {
   struct color3doubles c;
   int i, j, n, xr, yr, dx, dy, a, b, hp, bwcol;
@@ -937,7 +937,12 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
         }
         n= ((n+1) * ttb.minimap.boxesheight +ttb.minimap.linecount-1)/ttb.minimap.linecount;
         yr= y + (yr * ttb.minimap.boxesheight +ttb.minimap.linecount-1)/ttb.minimap.linecount;
-        draw_box( ctx, x, yr, w, n, ttb.minimap.scrcolor, 0 ); //box border
+        //draw the scrollbar box
+        if( opt_pti != NULL ){
+          draw_fill_mp_img(ctx, opt_pti, x, yr, w, n ); //use the provided image
+        }else{
+          draw_box( ctx, x, yr, w, n, ttb.minimap.scrcolor, 0 ); //if not, draw a box
+        }
       }
       //draw boxes
       i= 1 << 4;
@@ -999,7 +1004,12 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h )
         }
         n= (n*ttb.tbh_scroll.width)/ttb.tbh_scroll.maxcol;
         xr= x + ((xr * ttb.tbh_scroll.width)/ttb.tbh_scroll.maxcol);
-        draw_box( ctx, xr, y, n, h, ttb.tbh_scroll.scrcolor, 0 ); //box border
+        //draw the scrollbar box
+        if( opt_pti != NULL ){
+          draw_fill_mp_img(ctx, opt_pti, xr, y, n, h ); //use the provided image
+        }else{
+          draw_box( ctx, xr, y, n, h, ttb.tbh_scroll.scrcolor, 0 ); //if not, draw a box
+        }
       }
     }
 

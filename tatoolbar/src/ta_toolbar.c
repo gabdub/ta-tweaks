@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.1 (Jun 26 2020)"
+#define TA_TOOLBAR_VERSION_STR "1.1.2 (Jun 29 2020)"
 
 static void free_img_list( void );
 
@@ -2722,10 +2722,11 @@ void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * p
 {
   struct toolbar_item *phi;
   struct toolbar_group *g;
+  struct toolbar_img * bimg;
   int x0, y0, wt, ht, x, y, h, base;
 
   //paint toolbar back color if set
-  draw_fill_color(gcontext, T->back_color, 0, 0, T->barwidth, T->barheight );
+  draw_fill_color(gcontext, T->back_color, 0, 0, T->barwidth, T->barheight, NULL );
   //draw toolbar background image (if any)
   draw_fill_mp_img(gcontext, get_toolbar_img(T,TTBI_TB_BACKGROUND), 0, 0, T->barwidth, T->barheight );
   //draw groups back color / background (if any)
@@ -2736,11 +2737,14 @@ void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * p
         y0= g->bary1;
         wt= g->barx2 - g->barx1;
         ht= g->bary2 - g->bary1;
-        //paint back color if set
-        draw_fill_color(gcontext, g->back_color, x0, y0, wt, ht );
-        //draw background image (if any)
-        if(g->img[TTBI_TB_BACKGROUND] != NULL){
-          draw_fill_mp_img(gcontext, get_group_img(g,TTBI_TB_BACKGROUND), x0, y0, wt, ht );
+        //paint back color / image if set
+        bimg= g->img[TTBI_TB_BACKGROUND];
+        //NOTE: the scrollbars use the group's background image to draw the scrollbar box
+        //      draw_fill_color() resize it accordingly
+        draw_fill_color(gcontext, g->back_color, x0, y0, wt, ht, bimg );
+        //draw group background image (if any)
+        if((bimg != NULL) && (g->back_color != BKCOLOR_MINIMAP_DRAW) && (g->back_color != BKCOLOR_TBH_SCR_DRAW)){
+          draw_fill_mp_img(gcontext, bimg, x0, y0, wt, ht );
         }
       }
     }
@@ -2897,7 +2901,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
         //draw a normal button background if the button is selectable
         if( (p->flags & TTBF_SELECTABLE) != 0 ){
           //paint back color if set
-          draw_fill_color(gcontext, p->back_color, x0+p->barx1, y0+p->bary1, wt2, ht2 );
+          draw_fill_color(gcontext, p->back_color, x0+p->barx1, y0+p->bary1, wt2, ht2, NULL );
           //draw highlight
           draw_fill_mp_img(gcontext, get_item_img(p,h,p->imgbase), x0+p->barx1, y0+p->bary1, wt2, ht2 );
         }
@@ -3544,6 +3548,9 @@ void tbh_scroll_scrollpos(int colsscreen, int firstvisible, int color)
 {
   ttb.tbh_scroll.colsscreen= colsscreen;
   ttb.tbh_scroll.firstvisible= firstvisible;
+  if( firstvisible + colsscreen > ttb.tbh_scroll.maxcol){
+    ttb.tbh_scroll.maxcol= firstvisible + colsscreen; //auto expand scrollbar
+  }
   ttb.tbh_scroll.scrcolor= color;
   redraw_tbh_scroll();
 }
