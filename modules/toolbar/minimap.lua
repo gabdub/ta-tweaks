@@ -59,7 +59,7 @@ end
 local function minimap_scroll()
   local nl= buffer.lines_on_screen
   local first= buffer.first_visible_line + 1 - Util.LINE_BASE
-  minimap.scrollpos(nl, first, toolbar.get_rgbcolor_prop('color.linenum_fore'))
+  minimap.scrollpos(nl, first, 0)
   minimap.lines_screen= nl
 end
 
@@ -145,7 +145,7 @@ if tbh_scroll then
   end
 
   function tbh_scroll_scroll()
-    tbh_scroll.scrollpos(100*tbh_scroll.char_w, buffer.x_offset, toolbar.get_rgbcolor_prop('color.linenum_fore'))
+    tbh_scroll.scrollpos(100*tbh_scroll.char_w, buffer.x_offset, 0)
     tbh_scroll.xoff= buffer.x_offset
   end
 
