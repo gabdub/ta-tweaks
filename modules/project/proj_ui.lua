@@ -642,42 +642,11 @@ function Proj.EVafter_save()
   if buffer._type == Util.UNTITLED_TEXT then buffer._type= nil end
 end
 
---open the selected file in the search view
-function Proj.open_search_file()
-  --clear selection
-  buffer.selection_start= buffer.selection_end
-  --get line number, format: " @ nnn:....."
-  local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
-  local file
-  if line_num then
-    --get file name from previous lines
-    local fromln= buffer:line_from_position(buffer.current_pos) + Util.LINE_BASE-1
-    local toln= Util.LINE_BASE
-    for i = fromln, toln, -1 do
-      file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
-      if file then break end
-    end
-  else
-    --just open the file
-    file= buffer:get_cur_line():match('^[^@]-::(.+)::.+$')
-  end
-  if file then
-    textadept.bookmarks.clear()
-    textadept.bookmarks.toggle()
-    -- Store the current position in the jump history if applicable, clearing any
-    -- jump history positions beyond the current one.
-    Proj.store_current_pos(true)
-    Proj.go_file(file, line_num)
-    -- Store the current position at the end of the jump history.
-    Proj.append_current_pos()
-  end
-end
-
 local function open_proj_currrow()
   if buffer._project_select then
     Proj.open_sel_file()
   elseif buffer._type == Proj.PRJT_SEARCH then
-    Proj.open_search_file()
+    plugs.doble_click_searchview()
   end
 end
 

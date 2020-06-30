@@ -138,9 +138,8 @@ end
 
 if Proj then  --Project module?
   -------add function to search for text using the same params/config as goto_nearest----
-  function Proj.ask_search_in_files(ask)
+  function Proj.ask_search_in_files(ask, suggest)
     local buffer = buffer
-    local suggest= ''
     local word = ''
 
     goto_nearest_default()
@@ -151,11 +150,10 @@ if Proj then  --Project module?
         --keep last_search
         word = M.last_search
       else
-        if s == e then
-          --suggest current word
-          s, e = buffer:word_start_position(s), buffer:word_end_position(s)
+        if not suggest then --suggest current word if none is provided
+          if s == e then s=buffer:word_start_position(s) e=buffer:word_end_position(s) end
+          suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
         end
-        suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
         --ask what to search, suggest current word o last-search
         local tit= (M.goto_nearest_whole_word and 'Word:yes | ' or 'Word:no | ') ..
                    (M.goto_nearest_match_case and ' Match case | ' or 'Ignore case | ') ..

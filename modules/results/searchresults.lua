@@ -94,7 +94,13 @@ if toolbar then
     if pos then
       Proj.go_file(file_search[pos[1]], pos[2]) --goto file / linenum
     else
-      buffer:copy_text(full_search[nr]) --copy the tooltip
+      local ln= full_search[nr]
+      local st= ln:match("^Search: (.+)")
+      if st then
+        Proj.search_in_files(0, st)  --search again
+      else
+        buffer:copy_text(ln) --copy the tooltip
+      end
     end
   end
 
@@ -102,7 +108,7 @@ if toolbar then
   --------------- SEARCH RESULTS INTERFACE --------------
   function plugs.search_result_start(s_txt, s_filter)
     --a new "search in files" begin
-    local name= toolbar.search_result("["..s_txt.."]", s_txt, true)
+    local name= toolbar.search_result("["..s_txt.."]", "Search: " .. s_txt, true)
     toolbar.ensurevisible(name)
     select_searchrow(nitems)
     if s_filter then toolbar.search_result(' search dir '..s_filter, nil, false, nil) end
@@ -138,6 +144,9 @@ if toolbar then
     toolbar.list_add_separator()
     yout= toolbar.listtb_y
     ensurevisible()
+  end
+
+  function plugs.doble_click_searchview()  --not used, use search_dclick() instead
   end
 
   --------------- COMPARE FILE RESULTS INTERFACE --------------

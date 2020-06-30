@@ -408,7 +408,7 @@ function Proj.close_project(keepviews)
 end
 
 --ACTION: search_project
-function Proj.search_in_files(where)
+function Proj.search_in_files(where, suggest)
   if not Proj.ask_search_in_files then --goto_nearest module?
     ui.statusbar_text= 'goto_nearest module not found'
     return
@@ -416,7 +416,7 @@ function Proj.search_in_files(where)
   if not Proj.check_is_open() then return end
   local currow= plugs.get_prj_currow() --get the selected project row number
   if currow > 0 then
-    local find, case, word= Proj.ask_search_in_files(true)
+    local find, case, word= Proj.ask_search_in_files(true, suggest)
     if find then Proj.find_in_files(currow, find, case, word, true, where) end
   end
 end

@@ -165,6 +165,37 @@ function plugs.search_result_end()
   end
 end
 
+function plugs.doble_click_searchview()
+  --open the selected file in the search view
+  --clear selection
+  buffer.selection_start= buffer.selection_end
+  --get line number, format: " @ nnn:....."
+  local line_num = buffer:get_cur_line():match('^%s*@%s*(%d+):.+$')
+  local file
+  if line_num then
+    --get file name from previous lines
+    local fromln= buffer:line_from_position(buffer.current_pos) + Util.LINE_BASE-1
+    local toln= Util.LINE_BASE
+    for i = fromln, toln, -1 do
+      file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
+      if file then break end
+    end
+  else
+    --just open the file
+    file= buffer:get_cur_line():match('^[^@]-::(.+)::.+$')
+  end
+  if file then
+    textadept.bookmarks.clear()
+    textadept.bookmarks.toggle()
+    -- Store the current position in the jump history if applicable, clearing any
+    -- jump history positions beyond the current one.
+    Proj.store_current_pos(true)
+    Proj.go_file(file, line_num)
+    -- Store the current position at the end of the jump history.
+    Proj.append_current_pos()
+  end
+end
+
 --------------- COMPARE FILE RESULTS INTERFACE --------------
 local function dump_changes(n, buff, r)
   if n > 0 then
