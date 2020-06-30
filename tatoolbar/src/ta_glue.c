@@ -1367,21 +1367,21 @@ static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, voi
 void fire_tab_clicked_event( struct toolbar_item * p )
 {
   if( p != NULL ){
-    emit(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, p->group->toolbar->num, -1);
+    emit(lua, "toolbar_tabclicked", LUA_TNUMBER, p->num, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, -1);
   }
 }
 
 void fire_tb_clicked_event( struct toolbar_item * p )
 {
   if( (p != NULL) && (p->name != NULL) ){
-    emit(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+    emit(lua, "toolbar_clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, -1);
   }
 }
 
 int fire_tb_Rclicked_event( struct toolbar_item * p )
 {
   if( (p != NULL) && (p->name != NULL) ){
-    return emit(lua, "toolbar_Rclicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+    return emit(lua, "toolbar_Rclicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, -1);
   }
   return 0;
 }
@@ -1389,8 +1389,23 @@ int fire_tb_Rclicked_event( struct toolbar_item * p )
 void fire_tb_2clicked_event( struct toolbar_item * p )
 {
   if( (p != NULL) && (p->name != NULL) ){
-    emit(lua, "toolbar_2clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, -1);
+    emit(lua, "toolbar_2clicked", LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, -1);
   }
+}
+
+void fire_group_clicked_event( struct toolbar_group * g )
+{
+  if( g != NULL ){
+    emit(lua, "toolbar_clicked", LUA_TSTRING, "GROUP", LUA_TNUMBER, g->toolbar->num, LUA_TNUMBER, g->num, -1);
+  }
+}
+
+int fire_group_Rclicked_event( struct toolbar_group * g )
+{
+  if( g != NULL ){
+    return emit(lua, "toolbar_Rclicked", LUA_TSTRING, "GROUP", LUA_TNUMBER, g->toolbar->num, LUA_TNUMBER, g->num, -1);
+  }
+  return 0;
 }
 
 static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
@@ -1405,7 +1420,8 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
     if(event->type == GDK_BUTTON_PRESS){
       set_hilight_off();  //clear previous highlight
       ttb.phipress= item_fromXYT(T, event->x, event->y);
-      if( ttb.phipress != NULL ){
+      if( ttb.phipress != NULL ){ //click over a button
+        ttb.gclick= NULL;
         ensure_item_isvisible(ttb.phipress);
         ttb.philight= ttb.phipress; //highlight as pressed
         ttb.ntbhilight= T->num;
@@ -1432,6 +1448,8 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           clear_tooltip_textT(T);
         }
         redraw_item(ttb.philight);
+      }else{
+        ttb.gclick= group_fromXYT(T, event->x, event->y); //click over a group
       }
       return TRUE;
     }
@@ -1440,7 +1458,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       p= item_fromXYT(T, event->x, event->y);
       if( (p != NULL) && (p == ttb.phipress) && (ttb.ntbhilight == T->num) ){
         //button pressed (mouse press and release over the same button)
-
+        ttb.gclick= NULL;
         //NOTE: this prevents to keep a hilited button when a dialog is open from the event
         //(but also removes the hilite until the mouse is moved)
         set_hilight_off();
@@ -1475,6 +1493,16 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
             fire_tb_clicked_event(ttb.pdrag);         //notify drag end
           }
           set_hilight_off();  //cancel drag highlight
+
+        }else if( (ttb.gclick != NULL) && (ttb.gclick == group_fromXYT(T, event->x, event->y)) ){
+          //release over the same clicked group, generate event
+          if( event->button == 1 ){
+            fire_group_clicked_event(ttb.gclick); //group left click
+          }else if(event->button == 3){
+            if( fire_group_Rclicked_event(ttb.gclick) ){  //group right click
+              show_context_menu(lua, event, "toolbar_context_menu"); //open context menu
+            }
+          }
         }
         redraw_item(p);      //redraw button under mouse (if any)
         if( ttb.ntbhilight == T->num ){
@@ -1483,6 +1511,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       }
       ttb.phipress= NULL;
       ttb.pdrag= NULL;
+      ttb.gclick= NULL;
       return TRUE;
     }
     if(event->type == GDK_2BUTTON_PRESS){ //double click

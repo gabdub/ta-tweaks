@@ -145,7 +145,7 @@ if toolbar then
     end
   end
 
-  events_connect("toolbar_tabclicked", function(ntab,ntoolbar)
+  events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ngroup)
     --ui.statusbar_text= "tab "..ntab.." clicked"
     if ntoolbar == toolbar.TOP_TOOLBAR then
       --tab bar click

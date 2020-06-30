@@ -12,15 +12,23 @@ if toolbar then
   local Proj = Proj
   local data= Proj.data
 
-  --right-click context menu
+  --right-click context menu over a file
   local proj_context_menu = {
     {"open_projlistfile",
      "open_projectdir",SEPARATOR,
      "toggle_editproj","copyfilename",SEPARATOR,
      "adddirfiles_proj",SEPARATOR,
-     --"show_documentation",
      "search_project",
      "search_projlist_dir","search_projlist_file"
+    }
+  }
+
+  --right-click context menu over the back of the list
+  local proj_group_menu = {
+    {"open_projectdir",SEPARATOR,
+     "toggle_editproj","copyfilename",SEPARATOR,
+     "adddirfiles_proj",SEPARATOR,
+     "search_project"
     }
   }
 
@@ -53,7 +61,10 @@ if toolbar then
   local function gofile_rclick(cmd) --right click
     if sel_file(cmd) then
       ui.toolbar_context_menu= create_uimenu_fromactions(proj_context_menu)
-      return true --open context menu
+      return true --open file context menu
+    else
+      ui.toolbar_context_menu= create_uimenu_fromactions(proj_group_menu)
+      return true --open group context menu
     end
   end
 
@@ -241,6 +252,7 @@ if toolbar then
     list_clear()
     toolbar.cmd_rclick("gofile",gofile_rclick)
     toolbar.cmd_dclick("gofile",gofile_dclick)
+    toolbar.cmd_rclick("GROUP"..itemsgrp.."-1",gofile_rclick)  --right click in itemsgroup
   end
 
   local function proj_update_cb(reload)

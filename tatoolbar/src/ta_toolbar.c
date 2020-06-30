@@ -407,6 +407,9 @@ static void free_group_node( struct toolbar_group * g )
 {
   int i;
   free_item_list( g->list );
+  if( g == ttb.gclick ){
+    ttb.gclick= NULL;
+  }
 //disconnect group images
 //  for(i= 0; (i < TTBI_N_TB_IMGS); i++){
 //    g->img[i]= NULL;
@@ -478,6 +481,7 @@ void free_tatoolbar( void )
   ttb.philight= NULL;
   ttb.phipress= NULL;
   ttb.pdrag= NULL;
+  ttb.gclick= NULL;
   ttb.ntbhilight= -1;
   ttb.currentntb= 0;
   ttb.cpick.ppicker= NULL;

@@ -411,6 +411,7 @@ struct all_toolbars_data
   struct toolbar_item * philight;
   struct toolbar_item * phipress;
   struct toolbar_item * pdrag;
+  struct toolbar_group * gclick;
 
   int ntbhilight;     //number of the toolbar with the highlighted button or -1
 
@@ -450,6 +451,8 @@ void fire_tab_clicked_event( struct toolbar_item * p );
 void fire_tb_clicked_event( struct toolbar_item * p );
 int  fire_tb_Rclicked_event( struct toolbar_item * p );
 void fire_tb_2clicked_event( struct toolbar_item * p );
+void fire_group_clicked_event( struct toolbar_group * g );
+int fire_group_Rclicked_event( struct toolbar_group * g );
 void set_hilight_tooltipT( struct toolbar_data *T );
 void set_toolbar_size(struct toolbar_data *T);
 void show_toolbar(struct toolbar_data *T, int show, int newsize);

@@ -138,7 +138,10 @@ function toolbar.set_combo_txt(name, txtval,dontset_toolbar)
   if not dontset_toolbar then toolbar.settext(name, txtval) end
 end
 
-events_connect("toolbar_clicked", function(buttonname,ntoolbar)
+events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
+  if buttonname == "GROUP" then
+    buttonname= "GROUP".. ngroup.. "-"..ntoolbar  --button name="GROUP#-T" (#=group num, T=toolbar num)
+  end
   if toolbar.cmds_n[buttonname] ~= nil then
     toolbar.cmds_n[buttonname](buttonname) --pass the name of the button
   elseif toolbar.cmds[buttonname] ~= nil then
@@ -148,7 +151,7 @@ events_connect("toolbar_clicked", function(buttonname,ntoolbar)
     else
       toolbar.cmds[buttonname]()
     end
---  else ui.statusbar_text= buttonname.." clicked"
+  --else ui.statusbar_text= buttonname.." clicked"
   end
 end)
 
@@ -157,7 +160,7 @@ function toolbar.cmd_dclick(name,func)
   toolbar.cmds_d[ rm_namenum(name) ]= func
 end
 
-events_connect("toolbar_2clicked", function(buttonname,ntoolbar)
+events_connect("toolbar_2clicked", function(buttonname,ntoolbar,ngroup)
   local bfunc= rm_namenum(buttonname) --"name#num" --> "name"
   --pass the complete name of the button ("name#num")
   if toolbar.cmds_d[bfunc] ~= nil then return toolbar.cmds_d[bfunc](buttonname) end
@@ -168,7 +171,10 @@ function toolbar.cmd_rclick(name,func)
   toolbar.cmds_r[ rm_namenum(name) ]= func
 end
 
-events_connect("toolbar_Rclicked", function(buttonname,ntoolbar)
+events_connect("toolbar_Rclicked", function(buttonname,ntoolbar,ngroup)
+  if buttonname == "GROUP" then
+    buttonname= "GROUP".. ngroup.. "-"..ntoolbar  --button name="GROUP#-T" (#=group num, T=toolbar num)
+  end
   local bfunc= rm_namenum(buttonname) --"name#num" --> "name"
   --pass the complete name of the button ("name#num")
   if toolbar.cmds_r[bfunc] ~= nil then return toolbar.cmds_r[bfunc](buttonname) end
