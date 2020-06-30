@@ -149,7 +149,7 @@ function plugs.search_result_found(fname, nlin, txt, s_start, s_end)
   if s_started then
     local snum= ('%4d'):format(nlin)
     buffer:append_text(('  @%s:%s\n'):format(snum, txt))
-    local pos = buffer:position_from_line(buffer.line_count - 2) + #snum + 4
+    local pos = buffer:position_from_line(buffer.line_count -2 + Util.LINE_BASE) + #snum + 4
     buffer:indicator_fill_range(pos + s_start - 1, s_end - s_start + 1)
   end
 end
