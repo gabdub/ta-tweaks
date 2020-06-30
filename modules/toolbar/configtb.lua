@@ -10,6 +10,8 @@ toolbar.cfgpnl_savelst={}
 toolbar.config_saveon=false
 toolbar.config_change=false
 
+local new_theme= false
+
 function toolbar.toggle_showconfig()
   --toggle shown state
   if toolbar.config_toolbar_shown then
@@ -428,7 +430,8 @@ local function reload_theme()
 end
 
 local function change_theme()
-  if Util.confirm("Apply the selected theme", "Set the editor colors too?", "Press [Cancel] if you only want to set the toolbar theme") then
+  --only ask when the theme changes
+  if new_theme and Util.confirm("Apply the selected theme", "Set the editor colors too?", "Press [Cancel] if you only want to set the toolbar theme") then
     toolbar.save_config() --save and set the theme
     toolbar.set_theme_from_config()
     toolbar.config_change= true --force to save the colors in the configuration
@@ -866,9 +869,11 @@ end
 
 --a new theme was chosen in the combo
 local function cbtheme_change(cboname, newidx, newtxt)
+  new_theme= true
 end
 
 local function add_toolbar_cfg_panel()
+  new_theme= false
   toolbar.config_saveon=true --save the config options of this panel
   toolbar.toolbar_panel= add_config_tabgroup("Toolbar", "Toolbar configuration")
 

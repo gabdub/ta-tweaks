@@ -84,7 +84,7 @@ local function combo_clicked(btname)
     local newtxt= combo_data[cname][newidx]
     combo_txt[cname]= newtxt
     toolbar.settext(cname, newtxt)
-    local cback= combo_func[name]
+    local cback= combo_func[cname]
     if cback then cback(cname, newidx, newtxt) end
   end
 end
