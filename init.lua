@@ -12,13 +12,14 @@ plugs= {} --add here functions from interfaces (e.g. project/results lists)
 keys.cf4 = reset
 
 --require('log')
+TA_THEME= 'ggg'
 
 require('util')
 if not CURSES then
   if Util.TA_MAYOR_VER < 11 then
-    for _, buff in ipairs(_BUFFERS) do buff:set_theme('ggg') end
+    for _, buff in ipairs(_BUFFERS) do buff:set_theme(TA_THEME) end
   else
-    for _, vw in ipairs(_VIEWS) do vw:set_theme('ggg') end
+    for _, vw in ipairs(_VIEWS) do vw:set_theme(TA_THEME) end
   end
 end
 

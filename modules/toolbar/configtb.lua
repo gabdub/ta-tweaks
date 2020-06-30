@@ -367,8 +367,9 @@ local function confirm_color_overwrite(title,dontask)
   return dontask or Util.confirm(title, 'All colors will be overwritten', 'Do you want to proceed?')
 end
 
-local function load_colors_from_theme(dontask)
+local function load_colors_from_theme(dontask, apply)
   local rname,rnum
+  if apply == nil then apply= not dontask end
   if confirm_color_overwrite("Get theme's colors", dontask) then
     local f = io.open(toolbar.themepath.."colors.cfg", 'rb')
     if f then
@@ -381,7 +382,7 @@ local function load_colors_from_theme(dontask)
         end
       end
       f:close()
-      if not dontask then toolbar.save_colors_reset() end --apply now
+      if apply then toolbar.save_colors_reset() end --apply now
     end
   end
 end
@@ -409,9 +410,32 @@ local function reload_theme()
   --Reset to apply the changes
   toolbar.save_config()
   buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
+  if Util.TA_MAYOR_VER > 10 then
+    --TA11: apply the theme to all the buffers before reset
+    if Proj and Proj.tab_changeView and #_BUFFERS > 1 then
+      local sbuf= buffer
+      for _, buf in ipairs(_BUFFERS) do
+        Proj.tab_changeView(buf)
+        view:goto_buffer(buf)
+        view:set_theme(TA_THEME)
+      end
+      --keep current buffer selected
+      Proj.tab_changeView(sbuf)
+      view:goto_buffer(sbuf)
+    end
+  end
   reset()
-  --hide the minimap when the config is open
-  toolbar.show_hide_minimap()
+end
+
+local function change_theme()
+  if Util.confirm("Apply the selected theme", "Set the editor colors too?", "Press [Cancel] if you only want to set the toolbar theme") then
+    toolbar.save_config() --save and set the theme
+    toolbar.set_theme_from_config()
+    toolbar.config_change= true --force to save the colors in the configuration
+    load_colors_from_theme(true, true)  --load theme colors, don't ask, save and reset
+  else
+    reload_theme()
+  end
 end
 
 local function save_colors_in_TAtheme()
@@ -576,7 +600,7 @@ function toolbar.load_config(dontset_toolbar)
   end
   toolbar.config_change= false
   if not colors and not dontset_toolbar and toolbar.themepath then --no colors in config, use theme default
-    load_colors_from_theme(true)
+    load_colors_from_theme(true) --don't ask nor apply
   end
 end
 
@@ -663,6 +687,7 @@ events_connect(events.BUFFER_AFTER_SWITCH, update_buffer_cfg)
 events_connect(events.VIEW_AFTER_SWITCH,   update_buffer_cfg)
 events_connect(events.BUFFER_NEW,          update_buffer_cfg)
 events_connect(events.FILE_OPENED,         update_buffer_cfg)
+events_connect(events.RESET_AFTER,         update_buffer_cfg)
 
 local function set_buffer_indent_as_cfg(updateui)
   --indentation width
@@ -902,7 +927,7 @@ local function add_toolbar_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", reload_theme, "Reset to apply the changes", "reload1")
+  toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload1")
   pnly_add(21)
   add_config_separator()
 
@@ -950,9 +975,19 @@ local function add_colors_cfg_panel()
   add_config_color("Errors", "", "error")
   add_config_color("Indent guide", "indentguide", "")
 
-  add_config_label3("Project", "Unfocus", "Focus", true)
-  add_config_color("Selection bar", "prj_sel_bar_nof", "prj_sel_bar")
-  add_config_color("Open file mark", "prj_open_mark")
+  if not USE_LISTS_PANEL then
+    --this colors are only used when the project is shown using buffers
+    add_config_label3("Project", "Unfocus", "Focus", true)
+    add_config_color("Selection bar", "prj_sel_bar_nof", "prj_sel_bar")
+    add_config_color("Open file mark", "prj_open_mark")
+  else
+    if toolbar.config_saveon then --keep the current configuration even if not editable
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";Project"
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]= "color.prj_sel_bar_nof"
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]= "color.prj_sel_bar"
+      toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]= "color.prj_open_mark"
+    end
+  end
 
   add_config_label3("Syntax highlighting", "Fore", "", true)
   add_config_color("Comment", "comment")
