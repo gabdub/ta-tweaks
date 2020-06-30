@@ -10,9 +10,10 @@ local Proj = Proj
 local last_print_buftype
 
 local s_started= false
+
 local function beg_search_add()
   --goto search view and activate text modifications
-  local s_started= plugs.goto_searchview()
+  s_started= plugs.goto_searchview()
   if s_started then buffer.read_only= false end
   return s_started
 end
@@ -122,9 +123,10 @@ function plugs.search_result_start(s_txt, s_filter)
     if s_filter then buffer:append_text(' search dir '..s_filter..'::::\n') end
     buffer:goto_pos(buffer.length)
     buffer.indicator_current = ui.find.INDIC_FIND
-  else
-    Proj.stop_update_ui(false)  --no buffer to show results
+    return true
   end
+  Proj.stop_update_ui(false)  --no buffer to show results
+  return false
 end
 
 function plugs.search_result_info(s_txt, iserror)

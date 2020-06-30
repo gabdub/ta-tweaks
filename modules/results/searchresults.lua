@@ -107,6 +107,7 @@ if toolbar then
     select_searchrow(nitems)
     if s_filter then toolbar.search_result(' search dir '..s_filter, nil, false, nil) end
     curr_file= ""
+    return true
   end
 
   function plugs.search_result_info(s_txt, iserror)

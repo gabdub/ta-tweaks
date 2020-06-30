@@ -362,20 +362,19 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
     fromrow= currow
   end
 
-  if not plugs.search_result_start then
-    ui.statusbar_text= "No search results module found"
+  --start a new search in files
+  if not plugs.search_result_start or not plugs.search_result_start(text, filterpath) then
+    ui.statusbar_text= "Can't open the search results"
     return
   end
-  --a new "search in files" begin
-  plugs.search_result_start(text, filterpath)
-
-  if escapetext then text= Util.escape_match(text) end
-  if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end
 
   local nfiles= 0
   local totfiles= 0
   local nfound= 0
   local filesnf= 0
+  if escapetext then text= Util.escape_match(text) end
+  if whole_word then text = '%f[%w_]'..(match_case and text or text:lower())..'%f[^%w_]' end
+
   local torow= #data.proj_files
   if where == 2 and fromrow < torow then torow= fromrow end
   for row= fromrow, torow do
@@ -414,7 +413,6 @@ function Proj.find_in_files(currow, text, match_case, whole_word, escapetext, wh
       end
     end
   end
-
   if nfound == 0 then
     plugs.search_result_info(_L['No results found'], false)
   end
