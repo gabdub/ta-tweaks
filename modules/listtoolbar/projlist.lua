@@ -16,18 +16,18 @@ if toolbar then
   local proj_context_menu = {
     {"open_projlistfile",
      "open_projectdir",SEPARATOR,
-     "toggle_editproj","copyfilename",SEPARATOR,
-     "adddirfiles_proj",SEPARATOR,
+     "toggle_editproj",SEPARATOR,
+     "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
      "search_project",
      "search_projlist_dir","search_projlist_file"
     }
   }
 
   --right-click context menu over the back of the list
-  local proj_group_menu = {
+  local proj_nofile_menu = {
     {"open_projectdir",SEPARATOR,
-     "toggle_editproj","copyfilename",SEPARATOR,
-     "adddirfiles_proj",SEPARATOR,
+     "toggle_editproj",SEPARATOR,
+     "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
      "search_project"
     }
   }
@@ -58,12 +58,16 @@ if toolbar then
     if linenum > 0 then sel_file("gofile#"..linenum) end
   end
 
-  local function gofile_rclick(cmd) --right click
+  local function gofile_rclick(cmd) --right click on an item
     if sel_file(cmd) then
       ui.toolbar_context_menu= create_uimenu_fromactions(proj_context_menu)
       return true --open file context menu
-    else
-      ui.toolbar_context_menu= create_uimenu_fromactions(proj_group_menu)
+    end
+  end
+
+  local function nofile_rclick(cmd) --right click with no item selected
+    if toolbar.islistshown("projlist") and data.is_open then
+      ui.toolbar_context_menu= create_uimenu_fromactions(proj_nofile_menu)
       return true --open group context menu
     end
   end
@@ -250,9 +254,12 @@ if toolbar then
     toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
 
     list_clear()
-    toolbar.cmd_rclick("gofile",gofile_rclick)
+    --double click on a file
     toolbar.cmd_dclick("gofile",gofile_dclick)
-    toolbar.cmd_rclick("GROUP"..itemsgrp.."-1",gofile_rclick)  --right click in itemsgroup
+    --right click: open context menu
+    toolbar.cmd_rclick("gofile",gofile_rclick) --on a file
+    toolbar.cmd_rclick("GROUP"..itemsgrp.."-"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on itemsgroup
+    toolbar.cmd_rclick("TOOLBAR"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on the toolbar (outside any group)
   end
 
   local function proj_update_cb(reload)

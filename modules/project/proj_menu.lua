@@ -97,7 +97,7 @@ if actions then
   actions.accelerators["_end_editproj"]="f4" --(alias)
 
   actions.add("toggle_viewproj",   'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
-  actions.add("addthisfiles_proj",   '_Add this file',        Proj.add_this_file)
+  actions.add("addcurrentfile_proj", '_Add current file',     Proj.add_current_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)
 
@@ -126,7 +126,7 @@ if actions then
      {"new_project","open_project","recent_project","close_project","toggle_editproj",SEPARATOR,
       "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
       "save_position","next_position","prev_position","clear_position",SEPARATOR,
-      "addthisfiles_proj","addallfiles_proj","adddirfiles_proj"}
+      "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj"}
     })
 
   --add TRIM_TRAILINGSPACES / REMOVE_TABS at the end of the EDIT menu
@@ -178,7 +178,7 @@ if actions then
         },
         {
           title = Util.PROJECTMENU_TEXT,
-          {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
+          {"addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
            "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
            "save_position","next_position","prev_position"}
         },
@@ -209,7 +209,7 @@ if actions then
         },
         {
           title = Util.PROJECTMENU_TEXT,
-          {"addthisfiles_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
+          {"addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
            "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
            "save_position","next_position","prev_position",SEPARATOR,
            "toggle_viewproj"}

@@ -500,9 +500,9 @@ function Proj.toggle_projview()
   Proj.show_hide_projview()
 end
 
---ACTION: addthisfiles_proj
+--ACTION: addcurrentfile_proj
 -- add the current file to the project
-function Proj.add_this_file()
+function Proj.add_current_file()
   if not Proj.check_is_open() then return end
   local file= buffer.filename
   if file ~= nil and buffer._project_select == nil and buffer._type == nil then

@@ -412,6 +412,7 @@ struct all_toolbars_data
   struct toolbar_item * phipress;
   struct toolbar_item * pdrag;
   struct toolbar_group * gclick;
+  struct toolbar_data * tclick;
 
   int ntbhilight;     //number of the toolbar with the highlighted button or -1
 
@@ -447,15 +448,20 @@ int  set_text_bt_width(struct toolbar_item * p );
 int  get_text_width( const char * text, int fontsz );
 int  get_text_height( const char * text, int fontsz );
 void clear_tooltip_textT( struct toolbar_data *T );
-void fire_tab_clicked_event( struct toolbar_item * p );
-void fire_tb_clicked_event( struct toolbar_item * p );
-int  fire_tb_Rclicked_event( struct toolbar_item * p );
-void fire_tb_2clicked_event( struct toolbar_item * p );
-void fire_group_clicked_event( struct toolbar_group * g );
-int fire_group_Rclicked_event( struct toolbar_group * g );
 void set_hilight_tooltipT( struct toolbar_data *T );
 void set_toolbar_size(struct toolbar_data *T);
 void show_toolbar(struct toolbar_data *T, int show, int newsize);
+
+//event types
+#define TEV_CLICK     0
+#define TEV_2CLICK    1
+#define TEV_RCLICK    2
+#define TEV_CLOSE     3
+#define TEV_N_EVS     4
+int fire_tab_event( struct toolbar_item * p, int evtype );
+int fire_item_event( struct toolbar_item * p, int evtype );
+int fire_group_event( struct toolbar_group * g, int evtype );
+int fire_toolbar_event( struct toolbar_data * T, int evtype );
 
 /* ============================================================================= */
 /* ta_toolbar.c */

@@ -145,7 +145,7 @@ if toolbar then
     end
   end
 
-  events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ngroup)
+  events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ntabgroup)
     --ui.statusbar_text= "tab "..ntab.." clicked"
     if ntoolbar == toolbar.TOP_TOOLBAR then
       --tab bar click
@@ -177,14 +177,15 @@ if toolbar then
     end
   end)
 
-  events_connect("toolbar_tabRclicked", function(ntab,ntoolbar)
+  events_connect("toolbar_tabRclicked", function(ntab,ntoolbar,ntabgroup)
+    --ui.statusbar_text= "tab "..ntab.." R clicked"
     if ntoolbar == toolbar.TOP_TOOLBAR then
       toolbar.selecttab(ntab)
       return true --open context menu
     end
   end)
 
-  events_connect("toolbar_tab2clicked", function(ntab,ntoolbar)
+  events_connect("toolbar_tab2clicked", function(ntab,ntoolbar,ntabgroup)
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
     if ntoolbar == 0 and toolbar.cfg.tab2clickclose then
@@ -192,7 +193,7 @@ if toolbar then
     end
   end)
 
-  events_connect("toolbar_tabclose", function(ntab,ntoolbar)
+  events_connect("toolbar_tabclose", function(ntab,ntoolbar,ntabgroup)
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
     if ntoolbar == 0 then

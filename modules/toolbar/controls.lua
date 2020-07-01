@@ -139,7 +139,9 @@ function toolbar.set_combo_txt(name, txtval,dontset_toolbar)
 end
 
 events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
-  if buttonname == "GROUP" then
+  if buttonname == "TOOLBAR" then
+    buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)
+  elseif buttonname == "GROUP" then
     buttonname= "GROUP".. ngroup.. "-"..ntoolbar  --button name="GROUP#-T" (#=group num, T=toolbar num)
   end
   if toolbar.cmds_n[buttonname] ~= nil then
@@ -172,7 +174,9 @@ function toolbar.cmd_rclick(name,func)
 end
 
 events_connect("toolbar_Rclicked", function(buttonname,ntoolbar,ngroup)
-  if buttonname == "GROUP" then
+  if buttonname == "TOOLBAR" then
+    buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)
+  elseif buttonname == "GROUP" then
     buttonname= "GROUP".. ngroup.. "-"..ntoolbar  --button name="GROUP#-T" (#=group num, T=toolbar num)
   end
   local bfunc= rm_namenum(buttonname) --"name#num" --> "name"
