@@ -123,7 +123,7 @@ if toolbar then
       local dir = tag_files[i]:match('^.+[/\\]')
       local f = io.open(tag_files[i])
       for line in f:lines() do
-        local tag, file, linenum, ext_fields = line:match('^([_.%w]-)\t(.-)\t(.-);"\t?(.*)$')
+        local tag, file, linenum, ext_fields = line:match('^([_.%w]-) *\t(.-)\t(.-);"\t?(.*)$')
         if tag and (file == bname) then --only show current file
           if not file:find('^%a?:?[/\\]') then file = dir..file end
           if linenum:find('^/') then linenum = linenum:match('^/^(.+)$/$') end

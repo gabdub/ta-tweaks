@@ -122,14 +122,22 @@ function Proj.goto_tag(ask)
     return
   end
 
-  local word = ''
+  local word= ''
+  local word2= ''
+  local patt2
   local s, e = buffer.selection_start, buffer.selection_end
   if s == e or ask then
     if s == e then
       --suggest current word
       s, e = buffer:word_start_position(s,true), buffer:word_end_position(s,true)
+      --check word.word case
+      local p= buffer:position_before(s)
+      if p and buffer:text_range(p, s) == '.' then
+        local ps = buffer:word_start_position(p,true)
+        word2= buffer:text_range(ps, p)
+      end
     end
-    local suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
+    local suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing spaces
     if suggest == '' or ask then
       --ask what to search, suggest current word o last-search
       r,word= ui.dialogs.inputbox{title = 'Tag search', width = 400, text = suggest}
@@ -138,6 +146,10 @@ function Proj.goto_tag(ask)
       end
     else
       word= suggest
+      if word2 ~= '' then
+        patt2= '^('..word2..'%.'..suggest..'%S*) *\t(%S+)\t(.-);"\t?(.*)$'
+        word2= word2..'.'..suggest
+      end
     end
   else
     --use selection
@@ -146,21 +158,22 @@ function Proj.goto_tag(ask)
   if word == '' then return end
 
   --code from CTAGS Textadept module
-  local tags = {}
-  local patt = '^('..word..'%S*)\t(%S+)\t(.-);"\t?(.*)$'
+  local tags= {}
+  local patt= '^('..word..'%S*) *\t(%S+)\t(.-);"\t?(.*)$'
   local i
   for i = 1, #tag_files do
-    local dir, found = tag_files[i]:match('^.+[/\\]'), false
+    local dir = tag_files[i]:match('^.+[/\\]')
     local f = io.open(tag_files[i])
     for line in f:lines() do
       local tag, file, ex_cmd, ext_fields = line:match(patt)
-      if tag then
+      if not tag or tag ~= word then  --not fount or not the exact match, try with option 2
+        if patt2 then tag, file, ex_cmd, ext_fields = line:match(patt2) end
+        if not tag or tag ~= word2 then file= nil end
+      end
+      if file then
         if not file:find('^%a?:?[/\\]') then file = dir..file end
         if ex_cmd:find('^/') then ex_cmd = ex_cmd:match('^/^(.+)$/$') end
         tags[#tags + 1] = {tag, file, ex_cmd, ext_fields}
-        found = true
-      elseif found then
-        break -- tags are sorted, so no more matches exist in this file
       end
     end
     f:close()
