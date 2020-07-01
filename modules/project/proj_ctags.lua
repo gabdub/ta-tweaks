@@ -127,7 +127,7 @@ function Proj.goto_tag(ask)
   if s == e or ask then
     if s == e then
       --suggest current word
-      s, e = buffer:word_start_position(s), buffer:word_end_position(s)
+      s, e = buffer:word_start_position(s,true), buffer:word_end_position(s,true)
     end
     local suggest= Util.str_trim(buffer:text_range(s, e))  --remove trailing \n
     if suggest == '' or ask then
