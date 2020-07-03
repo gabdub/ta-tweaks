@@ -139,7 +139,8 @@ function Proj.get_filevcinfo(fname)
   local fn= string.match(fname..'::','(.-):HEAD::')
   if fn then fname=fn end
   --get version control params for filename
-  local cmd, post= ""
+  local cmd
+  local post= ""
   local verctrl, cwd, url= Proj.get_versioncontrol_url(fname)
   if verctrl == 1 then
     cmd= "svn info "..url
