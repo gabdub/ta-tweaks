@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.3 (Jul 1 2020)"
+#define TA_TOOLBAR_VERSION_STR "1.1.4 (Jul 6 2020)"
 
 static void free_img_list( void );
 
@@ -1827,12 +1827,12 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
     if( p->back_color == BKCOLOR_PICKER ){
       color_pick_ev( p, 0, 1 ); //update color click
     }else if( p->back_color == BKCOLOR_MINIMAP_CLICK ){
-      mini_map_ev( p, 0, 1 ); //update mini map click (drag)
+      mini_map_ev( 0, 1 ); //update mini map click (drag)
       if( ttb.philight != NULL ){
         fire_item_event(p, TEV_CLICK); //scroll buffer while moving with mouse down
       }
     }else if( p->back_color == BKCOLOR_TBH_SCR_CLICK ){
-      tbh_scroll_ev( p, 0, 1 ); //update tbh scroll click (drag)
+      tbh_scroll_ev( 0, 1 ); //update tbh scroll click (drag)
       if( ttb.philight != NULL ){
         fire_item_event(p, TEV_CLICK); //scroll buffer while moving with mouse down
       }
@@ -1865,7 +1865,7 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
   }
 }
 
-void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
+void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir, int shift )
 { //change the number of tabs not shown at the left (ignore hidden tabs)
   struct toolbar_item *t;
   int n, nt, nh, nhide;
@@ -1929,12 +1929,20 @@ void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir )
         }
         //MINI MAP
         if( t->back_color == BKCOLOR_MINIMAP_CLICK ){
-          mini_map_ev( t, dir, 1 );
+          if( shift ){  //scroll the other scrollbar when shift is pressed
+            tbh_scroll_ev( dir, 1 );
+          }else{
+            mini_map_ev( dir, 1 );
+          }
           return;
         }
         //TBH SCROLL
         if( t->back_color == BKCOLOR_TBH_SCR_CLICK ){
-          tbh_scroll_ev( t, dir, 1 );
+          if( shift ){  //scroll the other scrollbar when shift is pressed
+            mini_map_ev( dir, 1 );
+          }else{
+            tbh_scroll_ev( dir, 1 );
+          }
           return;
         }
       }
@@ -3370,7 +3378,7 @@ int minimap_getclickline( void )
 }
 
 //MINI MAP: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
-void mini_map_ev( struct toolbar_item *p, int dir, int redraw )
+void mini_map_ev( int dir, int redraw )
 {
   struct minimap_line * pml= ttb.minimap.lines;
   if( dir == 0 ){ //CLICK
@@ -3534,7 +3542,7 @@ int  tbh_scroll_getclickcol( void )
 }
 
 //TBH_SCROLL: dir: 0= (item_xoff, item_yoff) click,  +1/-1=mouse wheel
-void tbh_scroll_ev( struct toolbar_item *p, int dir, int redraw )
+void tbh_scroll_ev( int dir, int redraw )
 {
   if( dir == 0 ){ //CLICK
     if( ttb.tbh_scroll.width > 0 ){

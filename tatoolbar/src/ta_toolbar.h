@@ -511,7 +511,7 @@ void calc_popup_sizeT( struct toolbar_data *T);
 
 void mouse_leave_toolbar( struct toolbar_data *T );
 void mouse_move_toolbar( struct toolbar_data *T, int x, int y );
-void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir );
+void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir, int shift );
 void color_pick_ev( struct toolbar_item *p, int dir, int redraw );
 
 void init_tatoolbar_vars( void );
@@ -562,7 +562,7 @@ void ttb_set_resize( const char * name, int t_resize, int min_size );
 
 void toolbar_set_win_title( const char *title );
 
-void mini_map_ev( struct toolbar_item *p, int dir, int redraw );
+void mini_map_ev( int dir, int redraw );
 void vscroll_clickG( struct toolbar_group *g );
 
 void minimap_init(int buffnum, int linecount, int yszbox);
@@ -575,7 +575,7 @@ void tbh_scroll_setmaxcol(int maxcol);
 int  tbh_scroll_getclickcol( void );
 void tbh_scroll_scrollpos(int colsscreen, int firstvisible, int color);
 void fire_tbh_scroll( int dir );
-void tbh_scroll_ev( struct toolbar_item *p, int dir, int redraw );
+void tbh_scroll_ev( int dir, int redraw );
 
 
 #endif

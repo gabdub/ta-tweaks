@@ -1354,10 +1354,14 @@ static gboolean ttb_scrollwheel_ev(GtkWidget *widget, GdkEventScroll* event, voi
   if( T != NULL ){
     //don't scroll if a button is pressed (mouse still down)
     if( ttb.phipress == NULL ){
+      int shift= 0;
+      if( (event->state & GDK_SHIFT_MASK) != 0){
+        shift= 1;
+      }
       if( (event->direction == GDK_SCROLL_UP)||(event->direction == GDK_SCROLL_LEFT) ){
-        scroll_toolbarT(T, event->x, event->y, -1);
+        scroll_toolbarT(T, event->x, event->y, -1, shift);
       }else{
-        scroll_toolbarT(T, event->x, event->y, 1);
+        scroll_toolbarT(T, event->x, event->y, 1, shift);
       }
     }
   }
@@ -1488,11 +1492,11 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         if( ttb.phipress->back_color == BKCOLOR_PICKER ){
           color_pick_ev( ttb.phipress, 0, 0 ); //COLOR PICKER click
         }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
-          mini_map_ev( ttb.phipress, 0, 0 );   //MINI MAP click
+          mini_map_ev( 0, 0 );   //MINI MAP click
           fire_item_event(ttb.phipress, TEV_CLICK); //scroll buffer now
           start_drag(event->x, event->y);  //drag the minimap until the mouse button is released
         }else if( ttb.phipress->back_color == BKCOLOR_TBH_SCR_CLICK ){
-          tbh_scroll_ev( ttb.phipress, 0, 0 );   //TBH SCROLL click
+          tbh_scroll_ev( 0, 0 );   //TBH SCROLL click
           fire_item_event(ttb.phipress, TEV_CLICK); //scroll buffer now
           start_drag(event->x, event->y);  //drag the tbh_scroll until the mouse button is released
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
@@ -1526,7 +1530,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         set_hilight_off();
 
         if( (p->flags & TTBF_SCROLL_BUT) != 0 ){
-          scroll_toolbarT(T, event->x, event->y, p->num);
+          scroll_toolbarT(T, event->x, event->y, p->num, 0);
 
         }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
           fire_tab_event(p, TEV_CLICK);
