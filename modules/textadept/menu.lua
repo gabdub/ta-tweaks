@@ -979,7 +979,7 @@ function actions.select_command(infile)
     end
   else
     local button, i = ui.dialogs.filteredlist{
-      title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Command']},
+      title = _L['Run Command'], columns = {_L['Command'], "Action", _L['Key Binding']},
       items = items, width = CURSES and ui.size[1] - 2 or 800,
       button1 = _L['Run Command'], button2 = Util.CANCEL_TEXT
     }
