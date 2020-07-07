@@ -730,22 +730,28 @@ if toolbar then
   end
 
   --TEST: create a popup toolbar
---  function toolbar.create_popup()
---    toolbar.new(50, 24, 16, toolbar.POPUP_TOOLBAR, toolbar.themepath)
---    toolbar.addgroup(toolbar.GRPC.ITEMSIZE,toolbar.GRPC.ITEMSIZE,0,0)
---    toolbar.adjust(24,24,3,3,4,4)
---    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
---    --toolbar.themed_icon(toolbar.globalicon, "cfg-back", toolbar.TTBI_TB.BACKGROUND)
---    toolbar.setbackcolor(toolbar.globalicon,toolbar.cfg.popup_back,false,true)
---    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
---    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
---    toolbar.cmdtext("New", closepopup, "", "n1")
---    toolbar.cmdtext("Open", closepopup, "", "n2")
---    toolbar.cmdtext("Open recent...", closepopup, "", "n3")
---  end
---  function toolbar.show_popup(btname,relpos)
---    toolbar.popup(toolbar.POPUP_TOOLBAR,true,btname,relpos)
---  end
---
+  local function closepopup()
+    toolbar.close_popup(toolbar.POPUP_TOOLBAR,false)
+  end
+  function toolbar.create_popup()
+    toolbar.new(50, 24, 16, toolbar.POPUP_TOOLBAR, toolbar.themepath)
+    toolbar.addgroup(toolbar.GRPC.ITEMSIZE,toolbar.GRPC.ITEMSIZE,0,0)
+    toolbar.adjust(24,24,3,3,4,4)
+    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
+    --toolbar.setbackcolor(toolbar.globalicon,toolbar.cfg.popup_back,false,true)
+    toolbar.cmd("pop-close", closepopup, "TEST hide popup", "window-close")
+    toolbar.cmd("tog-book2", function() textadept.bookmarks.toggle() closepopup() end, "Toggle bookmark [Ctrl+F2]", "gnome-app-install-star" )
+    toolbar.cmdtext("New", closepopup, "", "n1")
+    toolbar.cmdtext("Open", closepopup, "", "n2")
+    toolbar.cmdtext("Open recent...", closepopup, "", "n3")
+  end
+  function toolbar.show_popup(btname,relpos)
+    toolbar.popup(toolbar.POPUP_TOOLBAR,true,btname,relpos) --open relative to a button
+  end
+  function toolbar.show_popup_center()
+    toolbar.popup(toolbar.POPUP_TOOLBAR,true,250,200,800,600)
+  end
+
   toolbar.set_defaults()
 end

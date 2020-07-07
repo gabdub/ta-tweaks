@@ -67,7 +67,7 @@ local combo_func= {}
 local combo_txt= {}
 local combo_sel_i= 0
 
-local function closepopup(npop)
+function toolbar.close_popup(npop)
   toolbar.popup(npop,false) --hide popup
   if npop == toolbar.COMBO_POPUP and combo_open == 1 then
     end_combo_select()
@@ -75,11 +75,11 @@ local function closepopup(npop)
     timeout(1,end_combo_open)
   end
 end
-events_connect("popup_close", closepopup)
+events_connect("popup_close", toolbar.close_popup)
 
 local function combo_clicked(btname)
   end_combo_select()
-  closepopup(5)
+  toolbar.close_popup(toolbar.COMBO_POPUP)
   local cname, cval= string.match(btname, "(.-)#(.+)$")
   if cname then
     local newidx= tonumber(cval)

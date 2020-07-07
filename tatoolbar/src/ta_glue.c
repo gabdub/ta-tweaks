@@ -21,7 +21,7 @@ int  update_ui= 1; //on by default
 /* ============================================================================= */
 static int intluadef(lua_State *L, int npos, int defval )
 {
-  if( !lua_isnone(L, npos) ){
+  if( lua_isnumber(L, npos) ){
     return lua_tointeger(L, npos);
   }
   return defval;
@@ -1696,7 +1696,7 @@ static int ltoolbar_popup(lua_State *L)
   if( h < T->barheight ){
     h= T->barheight;
   }
-  if( lua_isstring(L,3) ){
+  if( !lua_isnumber(L,3) && lua_isstring(L,3) ){
     struct toolbar_item * p=  NULL;
     int i;
     for( i= 0; i < NTOOLBARS; i++){
