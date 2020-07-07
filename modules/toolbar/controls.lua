@@ -61,6 +61,12 @@ local function end_combo_open()
   return false
 end
 
+local combo_data= {}
+local combo_width= {}
+local combo_func= {}
+local combo_txt= {}
+local combo_sel_i= 0
+
 local function closepopup(npop)
   toolbar.popup(npop,false) --hide popup
   if npop == toolbar.COMBO_POPUP and combo_open == 1 then
@@ -71,10 +77,6 @@ local function closepopup(npop)
 end
 events_connect("popup_close", closepopup)
 
-local combo_data= {}
-local combo_width= {}
-local combo_func= {}
-local combo_txt= {}
 local function combo_clicked(btname)
   end_combo_select()
   closepopup(5)
@@ -88,6 +90,40 @@ local function combo_clicked(btname)
     if cback then cback(cname, newidx, newtxt) end
   end
 end
+
+local function getnum_keycode(keycode)
+  --convert keycode to 0..9
+  if keycode >= toolbar.KEY._0 and keycode <= toolbar.KEY._9 then return keycode-toolbar.KEY._0 end
+  if keycode >= toolbar.KEY.KP0 and keycode <= toolbar.KEY.KP9 then return keycode-toolbar.KEY.KP0 end
+  return -1 --not a number
+end
+
+local function change_comboselection(newsel)
+  if combo_sel_i ~= newsel and newsel >=1 and newsel <= #combo_data[combo_op_name] then
+    toolbar.selected(combo_op_name.."#"..combo_sel_i, false, false)
+    combo_sel_i= newsel
+    toolbar.selected(combo_op_name.."#"..combo_sel_i, false, true)
+    return true
+  end
+  return false
+end
+
+local function popup_key_ev(npop, keycode)
+  if npop == toolbar.COMBO_POPUP and combo_open == 1 then
+    if keycode == toolbar.KEY.RETURN then
+      combo_clicked(combo_op_name.."#"..combo_sel_i)  --select and close
+    elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
+      change_comboselection( combo_sel_i-1 )  --select previous item
+    elseif keycode == toolbar.KEY.DOWN or keycode == toolbar.KEY.RIGHT then
+      change_comboselection( combo_sel_i+1 )  --select next item
+    else
+      change_comboselection( getnum_keycode(keycode) )  --select item # 1..9
+    end
+  end
+  --ui.statusbar_text= "pop key= ".. keycode
+  --return true to cancel default key actions (like close on ESCAPE)
+end
+events_connect("popup_key", popup_key_ev)
 
 function toolbar.get_combo_txt(name)
   return combo_txt[name]
@@ -111,11 +147,12 @@ local function show_combo_list(btname)
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-selected", toolbar.TTBI_TB.BUT_SELECTED)
 
   local currit= combo_txt[btname]
+  combo_sel_i= 0
   for i=1,#combo_data[btname] do
     local itname= btname.."#"..i
     local ittxt= combo_data[btname][i]
     toolbar.addtext(itname,ittxt,"",282,false,true)
-    if ittxt == currit then toolbar.selected(itname, false, true) end
+    if ittxt == currit then combo_sel_i= i toolbar.selected(itname, false, true) end
     toolbar.cmds_n[itname]= combo_clicked
   end
   toolbar.popup(toolbar.COMBO_POPUP,true,btname,35,combo_width[btname]-2)

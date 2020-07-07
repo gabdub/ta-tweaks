@@ -1598,8 +1598,13 @@ static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
 
 static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
   struct toolbar_data *T= toolbar_from_popup(widget);
-  if( (T != NULL) && (event->keyval == GDK_Escape) ){
-    emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
+  if( T != NULL ){
+    if( emit(lua, "popup_key", LUA_TNUMBER, T->num, LUA_TNUMBER, event->keyval, -1) == 0 ){
+      //ESC default action= close pop-up
+      if( event->keyval == GDK_Escape ){
+        emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
+      }
+    }
     return TRUE;
   }
   return FALSE;

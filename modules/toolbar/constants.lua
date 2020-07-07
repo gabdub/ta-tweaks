@@ -142,3 +142,20 @@ toolbar.GRPC ={
   VERT_SCROLL   = 0x00000010,   --scroll items vertically but don't show a scroll bar
   SHOW_V_SCROLL = 0x00000030,   --scroll items vertically and show a scroll bar
 }
+
+toolbar.KEY = {
+  RETURN        = 65293,
+  ESCAPE        = 65307,
+  HOME          = 65360,
+  LEFT          = 65361,
+  UP            = 65362,
+  RIGHT         = 65363,
+  DOWN          = 65364,
+  PG_UP         = 65365,
+  PG_DWN        = 65366,
+  END           = 65367,
+  KP0           = 65456, --key pad 0
+  KP9           = 65465, --key pad 9
+  _0            = 48,    --regular 0
+  _9            = 57,    --regular 9
+}
