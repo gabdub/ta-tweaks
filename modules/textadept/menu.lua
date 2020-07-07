@@ -65,18 +65,18 @@ local sel_enc = textadept.editing.select_enclosed
 local enc = textadept.editing.enclose
 local function set_indentation(i)
   buffer.tab_width = i
-  events.emit(events.UPDATE_UI, 0) -- for updating statusbar
+  events.emit(events.UPDATE_UI) -- for updating statusbar
   if toolbar then toolbar.setcfg_from_tabwidth() end --update config panel
 end
 local function set_eol_mode(mode)
   buffer.eol_mode = mode
   buffer:convert_eols(mode)
-  events.emit(events.UPDATE_UI, 0) -- for updating statusbar
+  events.emit(events.UPDATE_UI) -- for updating statusbar
   if toolbar then toolbar.setcfg_from_eolmode() end --update config panel
 end
 local function set_encoding(encoding)
   buffer:set_encoding(encoding)
-  events.emit(events.UPDATE_UI, 0) -- for updating statusbar
+  events.emit(events.UPDATE_UI) -- for updating statusbar
 end
 local function open_page(url)
   local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
@@ -672,7 +672,7 @@ actions.list = {
   ["set_tab_16"]=           {'Tab width: 1_6',function() set_indentation(16) end}, --radio
   ["toggle_usetabs"]=       {_L['Toggle Use Tabs'], function() --check
       buffer.use_tabs = not buffer.use_tabs
-      events.emit(events.UPDATE_UI, 0) -- for updating statusbar
+      events.emit(events.UPDATE_UI) -- for updating statusbar
       if toolbar then toolbar.setcfg_from_usetabs() end --update config panel
     end},
   ["convert_indentation"]=  {_L['Convert Indentation'], textadept.editing.convert_indentation},

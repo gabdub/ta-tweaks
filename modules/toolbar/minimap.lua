@@ -96,8 +96,7 @@ if Proj then
   --if we are updating, ignore this event
     if updated and Proj.update_ui == 0 then
       if (updated & buffer.UPDATE_CONTENT) > 0 then toolbar.minimap_load()
-      elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then minimap_scroll()
-      end
+      elseif (updated & buffer.UPDATE_V_SCROLL) > 0 then minimap_scroll() end
 
       if tbh_scroll_scroll and (updated & buffer.UPDATE_H_SCROLL) > 0 then tbh_scroll_scroll() end
     end
