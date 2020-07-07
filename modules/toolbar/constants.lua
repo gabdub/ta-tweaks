@@ -154,6 +154,7 @@ toolbar.KEY = {
   PG_UP         = 65365,
   PG_DWN        = 65366,
   END           = 65367,
+  KPRETURN      = 65421, --key pad Return (Linux)
   KP0           = 65456, --key pad 0
   KP9           = 65465, --key pad 9
   _0            = 48,    --regular 0
