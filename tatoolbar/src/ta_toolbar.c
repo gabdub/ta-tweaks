@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.5 (Jul 7 2020)"
+#define TA_TOOLBAR_VERSION_STR "1.1.6 (Jul 8 2020)"
 
 static void free_img_list( void );
 

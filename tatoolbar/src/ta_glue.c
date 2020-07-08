@@ -1665,6 +1665,8 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
 
 /** `toolbar.popup(ntoolbar, show, x, y, width, height)` Lua function. */
 /** `toolbar.popup(ntoolbar, show, button-name, button-corner, width, height)` Lua function. */
+/** width, height >= 0: minimal size + expand if needed */
+/** width, height < 0 : force this size */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
   struct toolbar_data * T;
@@ -1689,12 +1691,20 @@ static int ltoolbar_popup(lua_State *L)
   //set T->barwidth / T->barheight to show all fixed size groups
   calc_popup_sizeT( T );
   w= intluadef(L, 5, 10);
-  if( w < T->barwidth ){
-    w= T->barwidth;
+  if( w < 0 ){
+    w= -w;  //use the given width
+  }else{
+    if( w < T->barwidth ){
+      w= T->barwidth;  //expand width if needed
+    }
   }
   h= intluadef(L, 6, 10);
-  if( h < T->barheight ){
-    h= T->barheight;
+  if( h < 0 ){
+    h= -h;  //use the given height
+  }else{
+    if( h < T->barheight ){
+      h= T->barheight;  //expand height if needed
+    }
   }
   if( !lua_isnumber(L,3) && lua_isstring(L,3) ){
     struct toolbar_item * p=  NULL;

@@ -159,8 +159,22 @@ toolbar.KEY = {
   END           = 65367,
   INSERT        = 65379,
   KPRETURN      = 65421, --key pad Return (Linux)
+
+  KP_MULT       = 65450, --key pad *
+  KP_PLUS       = 65451, --key pad +
+--KP_COMMA      = 65452, --key pad ,
+  KP_MINUS      = 65453, --key pad -
+  KP_POINT      = 65454, --key pad .
+  KP_DIV        = 65455, --key pad /
   KP0           = 65456, --key pad 0
   KP9           = 65465, --key pad 9
+
+  MULT          = 42,    --regular *
+  PLUS          = 43,    --regular +
+  COMMA         = 44,    --regular ,
+  MINUS         = 45,    --regular -
+  POINT         = 46,    --regular .
+  DIV           = 47,    --regular /
   _0            = 48,    --regular 0
   _9            = 57,    --regular 9
   DELETE        = 65535
