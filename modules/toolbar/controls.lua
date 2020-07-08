@@ -67,19 +67,23 @@ local combo_func= {}
 local combo_txt= {}
 local combo_sel_i= 0
 
-function toolbar.close_popup(npop)
-  toolbar.popup(npop,false) --hide popup
-  if npop == toolbar.COMBO_POPUP and combo_open == 1 then
+local function close_combo()
+  toolbar.popup(toolbar.COMBO_POPUP,false) --hide combo popup
+  if combo_open == 1 then
     end_combo_select()
     combo_open= 2 --auto-close
     timeout(1,end_combo_open)
   end
 end
-events_connect("popup_close", toolbar.close_popup)
+
+local function close_combo_ev(npop)
+  if npop == toolbar.COMBO_POPUP then close_combo() end
+end
+events_connect("popup_close", close_combo_ev)
 
 local function combo_clicked(btname)
   end_combo_select()
-  toolbar.close_popup(toolbar.COMBO_POPUP)
+  close_combo()
   local cname, cval= string.match(btname, "(.-)#(.+)$")
   if cname then
     local newidx= tonumber(cval)
@@ -156,6 +160,7 @@ local function show_combo_list(btname)
     toolbar.cmds_n[itname]= combo_clicked
   end
   toolbar.popup(toolbar.COMBO_POPUP,true,btname,35,combo_width[btname]-2)
+  toolbar.sel_combo_popup()
 end
 
 function toolbar.cmd_combo(name,func,tooltip,txtarray,txtval,width,bold)

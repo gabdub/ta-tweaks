@@ -6,6 +6,7 @@ if toolbar then
   require('toolbar.minimap')
   require('toolbar.controls')
   require('toolbar.configtb') --config panel on toolbar #3
+  require('toolbar.dialogs')
 
   local events, events_connect = events, events.connect
   toolbar.tabpos= 0
@@ -37,6 +38,12 @@ if toolbar then
   end
   function toolbar.sel_results_bar(ngrp, emptygrp)
     toolbar.sel_toolbar_n(toolbar.RESULTS_TOOLBAR, ngrp, emptygrp)
+  end
+  function toolbar.sel_combo_popup(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.COMBO_POPUP, ngrp, emptygrp)
+  end
+  function toolbar.sel_dialog_popup(ngrp, emptygrp)
+    toolbar.sel_toolbar_n(toolbar.DIALOG_POPUP, ngrp, emptygrp)
   end
 
   function toolbar.setthemeicon(name,icon,num)
@@ -727,49 +734,6 @@ if toolbar then
     if toolbar.createresultstb then toolbar.createresultstb() end
     --create "lists" toolbar (add buttons to top_bar to select the lists)
     if toolbar.createlisttb then toolbar.createlisttb() end
-  end
-
-  --TEST: create a popup toolbar
-  local function closepopup()
-    toolbar.close_popup(toolbar.POPUP_TOOLBAR,false)
-  end
-  local function create_popup(title)
-    toolbar.new(50, 24, 16, toolbar.POPUP_TOOLBAR, toolbar.themepath)
-    toolbar.addgroup(toolbar.GRPC.ITEMSIZE,toolbar.GRPC.ITEMSIZE,0,0)
-    toolbar.adjust(24,24,3,3,4,4)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND) --cfg-back
-    toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
-    toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
-    toolbar.themed_icon(toolbar.globalicon, "ttb-button-active", toolbar.TTBI_TB.BUT_SELECTED)
-    toolbar.themed_icon(toolbar.globalicon, "group-vscroll-back", toolbar.TTBI_TB.VERTSCR_BACK)
-    toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
-    toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
-    toolbar.themed_icon(toolbar.globalicon, "cfg-separator-h", toolbar.TTBI_TB.HSEPARATOR)
-
-    --title group: align top + fixed height
-    toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-    toolbar.listtb_y= 2
-    toolbar.listtb_x= 3
-    toolbar.listright= 250
-    toolbar.list_addinfo(title, true)
-    toolbar.listtb_y= 2
-    toolbar.listtb_x= 3
-    toolbar.list_cmdright= 2
-    toolbar.list_addbutton("window-close", "Close", closepopup)
-
-    local itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
-
-  end
-  function toolbar.show_popup(btname,anchor)
-    create_popup("Test 1")
-    toolbar.popup(toolbar.POPUP_TOOLBAR,true,btname,anchor,800,600) --anchor to a button (toolbar.ANCHOR)
-  end
-  function toolbar.show_popup_center()
-    create_popup("Test 2")
-    toolbar.popup(toolbar.POPUP_TOOLBAR,true,250,200,800,600)
   end
 
   toolbar.set_defaults()

@@ -14,12 +14,14 @@ if tbh_scroll then
   toolbar.H_SCROLL_TOOLBAR= 6
   toolbar.FIRST_POPUP=      7
   toolbar.COMBO_POPUP=      7
-  toolbar.POPUP_TOOLBAR=    8
+  toolbar.DIALOG_POPUP=     8
+  toolbar.POPUP_TOOLBAR=    9
 else
   --horizonal scrollbar toolbar is NOT defined
   toolbar.FIRST_POPUP=      6
   toolbar.COMBO_POPUP=      6
-  toolbar.POPUP_TOOLBAR=    7
+  toolbar.DIALOG_POPUP=     7
+  toolbar.POPUP_TOOLBAR=    8
 end
 toolbar.NTOOLBARS=        10
 
@@ -144,6 +146,7 @@ toolbar.GRPC ={
 }
 
 toolbar.KEY = {
+  BACKSPACE     = 65288,
   RETURN        = 65293,
   ESCAPE        = 65307,
   HOME          = 65360,
@@ -154,11 +157,13 @@ toolbar.KEY = {
   PG_UP         = 65365,
   PG_DWN        = 65366,
   END           = 65367,
+  INSERT        = 65379,
   KPRETURN      = 65421, --key pad Return (Linux)
   KP0           = 65456, --key pad 0
   KP9           = 65465, --key pad 9
   _0            = 48,    --regular 0
   _9            = 57,    --regular 9
+  DELETE        = 65535
 }
 
 toolbar.ANCHOR = {
