@@ -45,7 +45,7 @@ static int intlua_ntoolbar(lua_State *L, int npos )
 }
 
 //----- TOOLBARS -----
-/** `toolbar.new(barsize,buttonsize,imgsize,toolbarnum/isvertical,imgpath)` Lua function. */
+/** `toolbar.new(barsize,buttonsize,imgsize,toolbarnum/isvertical,imgpath,borderw)` Lua function. */
 /** returns toolbar num */
 static int ltoolbar_new(lua_State *L)
 {
@@ -55,7 +55,7 @@ static int ltoolbar_new(lua_State *L)
     //change global image base
     imgpath= luaL_checkstring(L, 5);
   }
-  ttb_new_toolbar(num, lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3), imgpath );
+  ttb_new_toolbar(num, lua_tointeger(L, 1), lua_tointeger(L, 2), lua_tointeger(L, 3), imgpath, lua_tointeger(L, 6) );
   lua_pushinteger(L, num);  //toolbar num
   return 1;
 }
@@ -1299,8 +1299,8 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
       x0= g->barx1;
       y0= g->bary1;
       y2= g->bary2;
-      if( y2 > T->barheight ){
-        y2= T->barheight;
+      if( y2 > T->barheight - T->borderw ){
+        y2= T->barheight - T->borderw;
       }
       if( (y2 > y0) && need_redraw( &drawarea, x0, y0, g->barx2, y2) ){
         wt= g->barx2 - g->barx1 - g->show_vscroll_w; //don't draw over the scrollbar

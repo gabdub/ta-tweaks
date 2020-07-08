@@ -76,9 +76,7 @@ local function create_dialog(title, width, height)
   dialog_w= width
   dialog_h= height
   filter= ""
-  toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath)
-  toolbar.addgroup(toolbar.GRPC.ITEMSIZE,toolbar.GRPC.ITEMSIZE,0,0)
-  toolbar.adjust(24,24,3,3,4,4)
+  toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
   toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND) --cfg-back
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)

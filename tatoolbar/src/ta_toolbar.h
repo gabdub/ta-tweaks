@@ -342,6 +342,7 @@ struct toolbar_data
 
   int barheight;      //actual toolbar size
   int barwidth;
+  int borderw;        //border width (0:none)
 
   int min_size;      //minimun size when resizing or 0
   int drag_off;
@@ -471,7 +472,7 @@ char * alloc_str( const char *s );
 char * chg_alloc_str( char *sold, const char *snew );
 void free_tatoolbar( void );
 
-void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const char *imgpath);
+void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const char *imgpath, int borderw);
 void group_vscroll_onoff( struct toolbar_group * g, int forceredraw );
 void toolbar_vscroll_onoff( struct toolbar_data *T );
 void ensure_item_isvisible(struct toolbar_item * p);
