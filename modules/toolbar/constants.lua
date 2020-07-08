@@ -160,3 +160,19 @@ toolbar.KEY = {
   _0            = 48,    --regular 0
   _9            = 57,    --regular 9
 }
+
+toolbar.ANCHOR = {
+  --horizontal
+  POP_R_IT_L    = 0,  --popup right at item left
+  POP_L_IT_L    = 1,  --popup left  at item left
+  HCENTER       = 2,  --align centers
+  POP_R_IT_R    = 3,  --popup right at item right
+  POP_L_IT_R    = 4,  --popup left  at item right
+
+  --vertical
+  POP_B_IT_T    = 0,  --popup bottom at item top
+  POP_T_IT_T    = 8,  --popup top    at item top
+  VCENTER       = 16, --align centers
+  POP_B_IT_B    = 24, --popup bottom at item bottom
+  POP_T_IT_B    = 32, --popup top    at item bottom
+}
