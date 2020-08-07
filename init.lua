@@ -1,6 +1,10 @@
 -- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 -- code adjusted for TA 10 and 11
 
+--NOTE: to prevent Kubuntu 20.04.1 from closing at random: comment line 74 in modules/textadept/file_types.lua
+--(buffer:colorize(1, buffer:position_from_line(last_line + 1)) -- refresh)
+--The issue looks like an implementation bug of GTK on plasma
+
 if toolbar then
   USE_LISTS_PANEL= true   --true:show project lists in the left toolbar;   false= use a buffer
   USE_RESULTS_PANEL= true --true:show results lists in the bottom toolbar; false= use a buffer
@@ -8,11 +12,10 @@ end
 
 plugs= {} --add here functions from interfaces (e.g. project/results lists)
 
-
---require('log')
 TA_THEME= 'ggg'
 
 require('util')
+--require('log')
 if not CURSES then
   if Util.TA_MAYOR_VER < 11 then
     for _, buff in ipairs(_BUFFERS) do buff:set_theme(TA_THEME) end
