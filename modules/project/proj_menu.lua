@@ -39,13 +39,13 @@ if actions then
   ls["next_buffer"][2]=         Proj.next_buffer
   ls["prev_buffer"][2]=         Proj.prev_buffer
   ls["switch_buffer"][2]=       Proj.switch_buffer
-  ls["refresh_syntax"][2]=      Proj.refresh_hilight
+--ls["refresh_syntax"][2]=      Proj.refresh_hilight
 
-  actions.free_accelerator({"cpgup","cpgdn","cO","caP"})
-  actions.accelerators["prev_buffer"]="cpgup"
-  actions.accelerators["next_buffer"]="cpgdn"
-  actions.accelerators["open_projectdir"]="cO"
-  actions.accelerators["open_textadepthome"]="caP"
+  actions.free_accelerator({ Util.KEY_CTRL.."pgup", Util.KEY_CTRL.."pgdn", Util.KEY_CTRL.."O", Util.KEY_CTRL..Util.KEY_ALT.."P"})
+  actions.accelerators["prev_buffer"]= Util.KEY_CTRL.."pgup"
+  actions.accelerators["next_buffer"]= Util.KEY_CTRL.."pgdn"
+  actions.accelerators["open_projectdir"]= Util.KEY_CTRL.."O"
+  actions.accelerators["open_textadepthome"]= Util.KEY_CTRL..Util.KEY_ALT.."P"
 
   --"toggle_viewproj" = '_Hide/show project'
   local function tpv_status()
@@ -83,7 +83,7 @@ if actions then
   actions.add("open_project",        _L['_Open'],             Proj.open_project, nil, "document-open", nil, "Open Project")
   actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
   actions.add("close_project",       _L['_Close'],            Proj.close_project, nil, "system-log-out", closeprj_status, "Close project")
-  actions.add("search_project",      'Project _Search',       Proj.search_in_files, "aF")
+  actions.add("search_project",      'Project _Search',       Proj.search_in_files, Util.KEY_ALT.."F")
   actions.add("search_sel_dir",      'Search in selected dir', Proj.search_in_sel_dir)
   actions.add("search_sel_file",     'Search in selected file', Proj.search_in_sel_file)
   actions.add("close_others",        'Close Others',          Proj.close_others)
@@ -96,29 +96,29 @@ if actions then
   actions.add("_end_editproj",       '_End edit',             Proj.toggle_editproj)
   actions.accelerators["_end_editproj"]="f4" --(alias)
 
-  actions.add("toggle_viewproj",   'Sho_w project',         Proj.toggle_projview, "sf4", tpv_icon, tpv_status, tpv_text)
+  actions.add("toggle_viewproj",   'Sho_w project',         Proj.toggle_projview, Util.KEY_SHIFT.."f4", tpv_icon, tpv_status, tpv_text)
   actions.add("addcurrentfile_proj", '_Add current file',     Proj.add_current_file)
   actions.add("addallfiles_proj",    'Add all open _Files',   Proj.add_all_files)
   actions.add("adddirfiles_proj",    'Add files from _Dir',   Proj.add_dir_files)
 
-  actions.add("open_selfile",        '_Open the selected/companion file',Proj.open_selfile,"ao" )
-  actions.add("first_buffer",        'First buffer',          Proj.first_buffer, "apgup")
-  actions.add("last_buffer",         'Last buffer',           Proj.last_buffer,  "apgdn")
-  actions.add("clear_search",        'Clear search results',  Proj.clear_search, "af10")
+  actions.add("open_selfile",        '_Open the selected/companion file',Proj.open_selfile, Util.KEY_ALT.."o" )
+  actions.add("first_buffer",        'First buffer',          Proj.first_buffer, Util.KEY_ALT.."pgup")
+  actions.add("last_buffer",         'Last buffer',           Proj.last_buffer,  Util.KEY_ALT.."pgdn")
+  actions.add("clear_search",        'Clear search results',  Proj.clear_search, Util.KEY_ALT.."f10")
 
   --add actions defined in "proj_ctags"
   actions.add("goto_tag",            'Goto _Tag',             Proj.goto_tag,          "f11" )
-  actions.add("save_position",       'S_ave position',        Proj.store_current_pos, "cf11")
-  actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos,     "sf11", "go-previous", Proj.goprev_status)
-  actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos,     "sf12", "go-next", Proj.gonext_status)
-  actions.add("clear_position",      'C_lear positions',      Proj.clear_pos_table,   "cf12")
+  actions.add("save_position",       'S_ave position',        Proj.store_current_pos, Util.KEY_CTRL.."f11")
+  actions.add("prev_position",       '_Prev position',        Proj.goto_prev_pos,     Util.KEY_SHIFT.."f11", "go-previous", Proj.goprev_status)
+  actions.add("next_position",       'Ne_xt position',        Proj.goto_next_pos,     Util.KEY_SHIFT.."f12", "go-next", Proj.gonext_status)
+  actions.add("clear_position",      'C_lear positions',      Proj.clear_pos_table,   Util.KEY_CTRL.."f12")
 
   --add actions defined in "proj_diff"
   actions.add("toggle_filediff", "Compare panels", Proj.diff_start, "f8", "edit-copy", Proj.compare_status)
 
-  actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, "cf5", "document-properties", Proj.vc_changes_status)
+  actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, Util.KEY_CTRL.."f5", "document-properties", Proj.vc_changes_status)
 
-  actions.add("show_filevcinfo", "SVN/GIT: show file info", Proj.show_filevcinfo, "sf5")
+  actions.add("show_filevcinfo", "SVN/GIT: show file info", Proj.show_filevcinfo, Util.KEY_SHIFT.."f5")
 
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,

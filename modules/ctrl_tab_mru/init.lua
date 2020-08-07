@@ -201,9 +201,9 @@ end
 -- Control+TAB            goto next MRU buffer
 -- Control+Shift+TAB      goto prev MRU buffer
 if actions then
-  actions.add("next_mru_buffer", 'Next MRU buffer', function() mru_ctrl_tab_handler(false) end, "c\t")
-  actions.add("prev_mru_buffer", 'Prev MRU buffer', function() mru_ctrl_tab_handler(true)  end, "cs\t")
+  actions.add("next_mru_buffer", 'Next MRU buffer', function() mru_ctrl_tab_handler(false) end, Util.KEY_CTRL.."\t")
+  actions.add("prev_mru_buffer", 'Prev MRU buffer', function() mru_ctrl_tab_handler(true)  end, Util.KEY_CTRL..Util.KEY_SHIFT.."\t")
 else
-  keys['c\t'] = function() mru_ctrl_tab_handler(false) end
-  keys['cs\t']= function() mru_ctrl_tab_handler(true)  end
+  keys[Util.KEY_CTRL..'\t'] = function() mru_ctrl_tab_handler(false) end
+  keys[Util.KEY_CTRL..Util.KEY_SHIFT..'\t']= function() mru_ctrl_tab_handler(true)  end
 end

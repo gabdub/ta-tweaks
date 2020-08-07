@@ -8,8 +8,6 @@ end
 
 plugs= {} --add here functions from interfaces (e.g. project/results lists)
 
--- Control+F4 = RESET textadept
-keys.cf4 = reset
 
 --require('log')
 TA_THEME= 'ggg'
@@ -22,6 +20,8 @@ if not CURSES then
     for _, vw in ipairs(_VIEWS) do vw:set_theme(TA_THEME) end
   end
 end
+-- Control+F4 = RESET textadept
+keys[Util.KEY_CTRL.."f4"] = reset
 
 require('export')
 require('project')
@@ -29,9 +29,9 @@ require('goto_nearest')
 require('ctrl_tab_mru')
 require('quicktype')
 
---cf5 "List commands in a new buffer"
+--ctrl+f5 "List commands in a new buffer"
 --if actions then
---  actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, "cf5")
+--  actions.add("dump_cmds", "Dump commands", function() actions.select_command(true) end, Util.KEY_CTRL.."f5")
 --end
 
 textadept.file_types.extensions.MAS = 'mas'
@@ -40,6 +40,8 @@ textadept.file_types.extensions.inc = 'mas'
 textadept.file_types.extensions.INC = 'mas'
 textadept.editing.comment_string.ansi_c = '//'
 textadept.editing.comment_string.asm = ';'
+
+textadept.editing.highlight_words= textadept.editing.HIGHLIGHT_SELECTED
 
 keys.KEYSYMS[0xFF8D] = '\n' --keypad Enter = normal Enter
 

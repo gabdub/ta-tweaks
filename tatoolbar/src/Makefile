@@ -382,11 +382,11 @@ else
   gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
 endif
 
-scintilla_zip = 1757848f5635.zip
+scintilla_zip = d1b254905c74.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_7_0_2.zip
-gtdialog_zip = 6edd57eeed93.zip
+gtdialog_zip = 680b3b41e12c.zip
 cdk_tgz = cdk-5.0-20150928.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
 win32gtk_zip = win32gtk-2.24.32.zip

@@ -294,39 +294,39 @@ local function find_end(dirf)
 end
 
 if actions then
-  actions.add("prev_block_beg", 'Goto previous block begin/difference', function() find_begin(false) end, "c,")
-  actions.add("next_block_beg", 'Goto next block begin/difference',     function() find_begin(true)  end, "c.")
-  actions.add("prev_block_end", 'Goto previous block end/difference',   function() find_end(false) end,   "c;")
-  actions.add("next_block_end", 'Goto next block end/difference',       function() find_end(true)  end,   "c:")
+  actions.add("prev_block_beg", 'Goto previous block begin/difference', function() find_begin(false) end, Util.KEY_CTRL..",")
+  actions.add("next_block_beg", 'Goto next block begin/difference',     function() find_begin(true)  end, Util.KEY_CTRL..".")
+  actions.add("prev_block_end", 'Goto previous block end/difference',   function() find_end(false) end,   Util.KEY_CTRL..";")
+  actions.add("next_block_end", 'Goto next block end/difference',       function() find_end(true)  end,   Util.KEY_CTRL..":")
 
-  actions.add("type_cfun_comm", 'Quicktype: C function comment',  qt_cfun_comm,   "a1")
-  actions.add("type_c_comm",    'Quicktype: C comment',           qt_c_comm,      "a2")
-  actions.add("type_c_define",  'Quicktype: C define',            qt_c_define,    "a3")
-  actions.add("type_c_todo",    'Quicktype: C TODO',              qt_c_todo,      "a4")
-  actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,"a5")
-  actions.add("hex_to_ascii",   'Quicktype: convert selected text from hex to ascii', convert_hex_2_ascii, "a6")
-  actions.add("s19_checksum",   'Quicktype: generate S19 checksum', generate_s19_checksum, "a&")
-  actions.add("multiline_comment",'Multiline comment',            multiline_comment,"a7")
-  actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  "a0")
-  actions.add("sel_r_col_down", 'Select rectangular column down', sel_rec_col_down,"a)")
-  actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer,"a8")
-  actions.add("multiline_typer",'Multiline typer',                multiline_typer,"a9")
+  actions.add("type_cfun_comm", 'Quicktype: C function comment',  qt_cfun_comm,   Util.KEY_ALT.."1")
+  actions.add("type_c_comm",    'Quicktype: C comment',           qt_c_comm,      Util.KEY_ALT.."2")
+  actions.add("type_c_define",  'Quicktype: C define',            qt_c_define,    Util.KEY_ALT.."3")
+  actions.add("type_c_todo",    'Quicktype: C TODO',              qt_c_todo,      Util.KEY_ALT.."4")
+  actions.add("type_c_switchcont",'Quicktype: C switch continue', qt_c_switchcont,Util.KEY_ALT.."5")
+  actions.add("hex_to_ascii",   'Quicktype: convert selected text from hex to ascii', convert_hex_2_ascii, Util.KEY_ALT.."6")
+  actions.add("s19_checksum",   'Quicktype: generate S19 checksum', generate_s19_checksum, Util.KEY_ALT.."&")
+  actions.add("multiline_comment",'Multiline comment',            multiline_comment, Util.KEY_ALT.."7")
+  actions.add("type_c_sep_line",'Quicktype: C separator line',    qt_c_sep_line,  Util.KEY_ALT.."0")
+  actions.add("sel_r_col_down", 'Select rectangular column down', sel_rec_col_down, Util.KEY_ALT..")")
+  actions.add("sort_curr_buffer", 'Sort buffer',                  sort_curr_buffer, Util.KEY_ALT.."8")
+  actions.add("multiline_typer",'Multiline typer',                multiline_typer, Util.KEY_ALT.."9")
 else
-  keys["c,"] = function() find_begin(false) end
-  keys["c."] = function() find_begin(true) end
-  keys["c;"] = function() find_end(false) end
-  keys["c:"] = function() find_end(true) end
+  keys[Util.KEY_CTRL..","] = function() find_begin(false) end
+  keys[Util.KEY_CTRL.."."] = function() find_begin(true) end
+  keys[Util.KEY_CTRL..";"] = function() find_end(false) end
+  keys[Util.KEY_CTRL..":"] = function() find_end(true) end
 
-  keys.a1 = qt_cfun_comm
-  keys.a2 = qt_c_comm
-  keys.a3 = qt_c_define
-  keys.a4 = qt_c_todo
-  keys.a5 = qt_c_switchcont
-  keys.a6 = convert_hex_2_ascii
-  keys["a&"] = generate_s19_checksum
-  keys.a7 = multiline_comment
-  keys.a0 = qt_c_sep_line
-  keys["a)"] = sel_rec_col
-  keys.a8 = sort_curr_buffer
-  keys.a9 = multiline_typer
+  keys[Util.KEY_ALT.."1"] = qt_cfun_comm
+  keys[Util.KEY_ALT.."2"] = qt_c_comm
+  keys[Util.KEY_ALT.."3"] = qt_c_define
+  keys[Util.KEY_ALT.."4"] = qt_c_todo
+  keys[Util.KEY_ALT.."5"] = qt_c_switchcont
+  keys[Util.KEY_ALT.."6"] = convert_hex_2_ascii
+  keys[Util.KEY_ALT.."&"] = generate_s19_checksum
+  keys[Util.KEY_ALT.."7"] = multiline_comment
+  keys[Util.KEY_ALT.."0"] = qt_c_sep_line
+  keys[Util.KEY_ALT..")"] = sel_rec_col
+  keys[Util.KEY_ALT.."8"] = sort_curr_buffer
+  keys[Util.KEY_ALT.."9"] = multiline_typer
 end

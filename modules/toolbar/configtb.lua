@@ -1234,7 +1234,7 @@ end
 -- F9            show config panel / next config tab
 -- SHIFT+F9      show config panel / prev config tab
 actions.add("next_cfgpanel", 'Open config panel / goto next tab',     toolbar.next_configtab, "f9")
-actions.add("prev_cfgpanel", 'Open config panel / goto previous tab', toolbar.prev_configtab, "sf9")
+actions.add("prev_cfgpanel", 'Open config panel / goto previous tab', toolbar.prev_configtab, Util.KEY_SHIFT.."f9")
 
 --"toggle_viewcfgpanel" = 'Hide/show Config panel'
 local function tcv_status()
@@ -1252,7 +1252,7 @@ local function tcv_text()
   end
   return "Show configuration panel"
 end
-actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, "cf9", tcv_icon, tcv_status, tcv_text)
+actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, Util.KEY_CTRL.."f9", tcv_icon, tcv_status, tcv_text)
 
 --add VIEWCONFIGPANEL at the end of the VIEW menu
 actions.appendtomenu_fromtitle("toggle_viewcfgpanel", Util.VIEWMENU_TEXT)

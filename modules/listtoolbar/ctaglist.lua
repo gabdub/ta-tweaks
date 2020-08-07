@@ -29,7 +29,7 @@ if toolbar then
 
     list_clear()
 
-    if actions then actions.add("filter_ctaglist", 'Filter Ctag _List', toolbar.list_find_sym, "af6", "edit-find") end
+    if actions then actions.add("filter_ctaglist", 'Filter Ctag _List', toolbar.list_find_sym, Util.KEY_ALT.."f6", "edit-find") end
   end
 
   local function gototag(cmd)

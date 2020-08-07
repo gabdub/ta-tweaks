@@ -9,6 +9,24 @@ end
 Util.PATH_SEP= (WIN32 and '\\' or '/')
 Util.UNTITLED_TEXT= _L['Untitled']
 
+-- Modifier | Linux / Win32 | Mac OSX   | curses    |
+-- ---------|---------------|-----------|-----------|
+-- Control  | `'ctrl'       | `'ctrl'`  | `'ctrl'`  |
+-- Alt      | `'alt'`       | `'alt'`   | `'meta'`  |
+-- Command  | N/A           | `'cmd'`   | N/A       |
+-- Shift    | `'shift'`     | `'shift'` | `'shift'` |
+if Util.TA_MAYOR_VER < 11 then   --TA 10
+  Util.KEY_CTRL= "c"
+  Util.KEY_ALT= CURSES and "m" or "a"
+  Util.KEY_CMD= CURSES and "" or "m"
+  Util.KEY_SHIFT= "s"
+else --TA 11
+  Util.KEY_CTRL= "ctrl+"
+  Util.KEY_ALT= CURSES and "meta+" or "alt+"
+  Util.KEY_CMD= CURSES and "" or "cmd+"
+  Util.KEY_SHIFT= "shift+"
+end
+
 function Util.info(msg,info)
   ui.dialogs.msgbox{
     title = 'Information',
@@ -25,20 +43,12 @@ end
 
 function Util.goto_view(numview)
   if numview > 0 and _VIEWS[view] ~= numview then
---    if Util.TA_MAYOR_VER < 9 then
---      ui.goto_view(numview)
---    else
-      ui.goto_view(_VIEWS[numview])
---    end
+    ui.goto_view(_VIEWS[numview])
   end
 end
 
 function Util.goto_buffer(buf)
---  if Util.TA_MAYOR_VER < 9 then
---    view:goto_buffer(_BUFFERS[buf])
---  else
-    if buf then view:goto_buffer(buf) end
---  end
+  if buf then view:goto_buffer(buf) end
 end
 
 --goto line= 1...

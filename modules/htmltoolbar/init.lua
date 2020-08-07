@@ -126,7 +126,7 @@ if toolbar then
     toolbar.cmdtext("st",                 enc_html_style,       "HTML insert style: OFF", "addstyle", true)
 
     if actions then
-      toolbar.idviewhtmltb= actions.add("toggle_viewhtmltb", 'Show HTML Tool_Bar', toolbar.html_toolbar_onoff, "sf10", nil, function()
+      toolbar.idviewhtmltb= actions.add("toggle_viewhtmltb", 'Show HTML Tool_Bar', toolbar.html_toolbar_onoff, Util.KEY_SHIFT.."f10", nil, function()
         return (buffer.html_toolbar_on and 1 or 2) end) --check
       actions.appendtomenu_fromtitle("toggle_viewhtmltb", Util.VIEWMENU_TEXT)
     end

@@ -175,11 +175,11 @@ if toolbar then
     toolbar.sel_top_bar() --restore current bar
 
     if actions then
-      toolbar.idviewresultstb= actions.add("toggle_viewresults", 'Show _Results toolbar', toolbar.results_onoff, "cf10", "view-list-compact-symbolic", function()
+      toolbar.idviewresultstb= actions.add("toggle_viewresults", 'Show _Results toolbar', toolbar.results_onoff, Util.KEY_CTRL.."f10", "view-list-compact-symbolic", function()
         return (toolbar.results_tb and 1 or 2) end) --check
       actions.appendtomenu_fromtitle("toggle_viewresults", Util.VIEWMENU_TEXT)
-      actions.add("next_results_list", 'Next results list',     toolbar.next_results_list, "sf10")
-      actions.add("prev_results_list", 'Previous results list', toolbar.prev_results_list, "csf10")
+      actions.add("next_results_list", 'Next results list',     toolbar.next_results_list, Util.KEY_SHIFT.."f10")
+      actions.add("prev_results_list", 'Previous results list', toolbar.prev_results_list, Util.KEY_CTRL..Util.KEY_SHIFT.."f10")
     end
   end
 

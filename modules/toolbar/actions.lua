@@ -27,7 +27,6 @@ local default_icons= {
   "selectall",              "edit-select-all",
 --"match_brace",            "",
   "complete_word",          "format-text-direction-ltr",
---"highlight_word",         "",
 --"toggle_comment",         "",
 --"transpose_chars",        "",
 --"join_lines",             "",
@@ -86,7 +85,7 @@ local default_icons= {
 --"open_textadepthome",     "",
 --"open_currentdir",        "",
 --"open_projectdir",        "",
-  "insert_snippet",         "insert-text",
+  "snippet_select",         "insert-text",
 --"expand_snippet",         "",
 --"prev_snipplaceholder",   "",
 --"cancel_snippet",         "",
@@ -114,7 +113,7 @@ local default_icons= {
 --"toggle_view_wrap",       "",
 --"toggle_view_ws",         "",
 --"select_lexer",           "",
-  "refresh_syntax",         "view-refresh",
+--"refresh_syntax",         "view-refresh",
 
 --VIEW
 --"next_view",              "",

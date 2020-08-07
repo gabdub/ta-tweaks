@@ -169,11 +169,11 @@ if toolbar then
     end
 
     if actions then
-      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, "cf6", "view-list-compact-symbolic", function()
+      toolbar.idviewlisttb= actions.add("toggle_viewlist", 'Show _List toolbar', toolbar.list_toolbar_onoff, Util.KEY_CTRL.."f6", "view-list-compact-symbolic", function()
         return (toolbar.list_tb and 1 or 2) end) --check
       actions.appendtomenu_fromtitle("toggle_viewlist", Util.VIEWMENU_TEXT)
       actions.add("next_list", 'Next list',     toolbar.next_list, "f6")
-      actions.add("prev_list", 'Previous list', toolbar.prev_list, "sf6")
+      actions.add("prev_list", 'Previous list', toolbar.prev_list, Util.KEY_SHIFT.."f6")
     end
   end
 

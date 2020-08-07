@@ -272,7 +272,7 @@ function Proj.switch_buffer()
   if button == 1 and i then Proj.goto_buffer(i) end
 end
 
---ACTION: refresh_syntax
+--ex ACTION: refresh_syntax
 -- refresh syntax highlighting + project folding
 function Proj.refresh_hilight()
   plugs.proj_refresh_hilight()

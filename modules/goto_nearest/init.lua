@@ -183,25 +183,25 @@ end
 -- Control+Shift+F3 = goto nearest occurrence TOGGLE SEARCH OPTIONS
 if actions then
   actions.add("match_next", 'Goto nearest match forward',       function() goto_nearest_occurrence(false) end, "f3")
-  actions.add("match_prev", 'Goto nearest match backwards',     function() goto_nearest_occurrence(true) end,  "cf3")
-  actions.add("match_config","Config 'Goto nearest match'",     function() goto_nearest_config(true) end,      "af3")
-  actions.add("match_ask",  'Goto nearest match',               function() goto_nearest_occurrence(false, true) end, {"cf","sf3"})
-  actions.add("match_mode",  "Strict/soft 'Goto nearest match'",function() goto_nearest_config(false) end,     "csf3")
+  actions.add("match_prev", 'Goto nearest match backwards',     function() goto_nearest_occurrence(true) end,  Util.KEY_CTRL.."f3")
+  actions.add("match_config","Config 'Goto nearest match'",     function() goto_nearest_config(true) end,      Util.KEY_ALT.."f3")
+  actions.add("match_ask",  'Goto nearest match',               function() goto_nearest_occurrence(false, true) end, {Util.KEY_CTRL.."f", Util.KEY_SHIFT.."f3"})
+  actions.add("match_mode",  "Strict/soft 'Goto nearest match'",function() goto_nearest_config(false) end,     Util.KEY_CTRL..Util.KEY_SHIFT.."f3")
 
-  actions.add("goto_line_col", "Goto line / column", function() goto_line_col(true) end, "cG")
+  actions.add("goto_line_col", "Goto line / column", function() goto_line_col(true) end, Util.KEY_CTRL.."G")
 
   --use the goto-nearest friendly version of some actions
   actions.list["goto_line"][2]= goto_line_col
-  actions.setkey("goto_line","cg")
+  actions.setkey("goto_line", Util.KEY_CTRL.."g")
 
 else
-  keys.f3 =   function() goto_nearest_occurrence(false) end
-  keys.cf3 =  function() goto_nearest_occurrence(true) end
-  keys.af3 =  function() goto_nearest_config(true) end
-  keys.sf3 =  function() goto_nearest_occurrence(false, true) end
-  keys.csf3 = function() goto_nearest_config(false) end
+  keys["f3"] =   function() goto_nearest_occurrence(false) end
+  keys[Util.KEY_CTRL.."f3"] =  function() goto_nearest_occurrence(true) end
+  keys[Util.KEY_ALT.."f3"] =  function() goto_nearest_config(true) end
+  keys[Util.KEY_SHIFT.."f3"] =  function() goto_nearest_occurrence(false, true) end
+  keys[Util.KEY_CTRL..Util.KEY_SHIFT.."f3"] = function() goto_nearest_config(false) end
   -- Control+G =    goto-line
-  keys.cg = goto_line_col
+  keys[Util.KEY_CTRL.."g"] = goto_line_col
   -- Control+F =    Shift+F3
-  keys.cf = keys.sf3
+  keys[Util.KEY_CTRL.."f"] = keys[Util.KEY_SHIFT.."f3"]
 end

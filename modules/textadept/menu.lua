@@ -84,14 +84,21 @@ local function open_page(url)
 end
 
 local function tab_key()
-  if textadept.snippets._insert() ~= nil then
-    buffer.tab()
+  if Util.TA_MAYOR_VER < 11 then --TA10
+    if textadept.snippets._insert() == nil then return end
+  else --TA11
+    if textadept.snippets.insert() == nil then return end
   end
+  buffer.tab()
 end
+
 local function shift_tab_key()
-  if textadept.snippets._previous() ~= nil then
-    buffer.back_tab()
+  if Util.TA_MAYOR_VER < 11 then --TA10
+    if textadept.snippets._previous() == nil then return end
+  else --TA11
+    if textadept.snippets.previous() == nil then return end
   end
+  buffer.back_tab()
 end
 --action's icon (string or function that returns a string) (index = action)
 actions.icons= {}
@@ -314,7 +321,7 @@ actions.list = {
   ["open_projectdir"]=      {_L['Quickly Open Current _Project'], io.quick_open},
 
 --TOOLS + SNIPPETS
-  ["insert_snippet"]=       {_L['_Insert Snippet...'], textadept.snippets._select },
+  ["snippet_select"]=       {_L['_Insert Snippet...'], textadept.snippets._select },
   ["expand_snippet"]=       {_L['_Expand Snippet/Next Placeholder'], textadept.snippets._insert },
   ["prev_snipplaceholder"]= {_L['_Previous Snippet Placeholder'], textadept.snippets._previous },
   ["cancel_snippet"]=       {_L['_Cancel Snippet'], textadept.snippets._cancel_current },
@@ -342,7 +349,7 @@ actions.list = {
       textadept.file_types.select_lexer()
       if toolbar then toolbar.update_lexerdefaults() end --update config panel
     end},
-  ["refresh_syntax"]=       {_L['_Refresh Syntax Highlighting'], refresh_syntax},
+--["refresh_syntax"]=       {_L['_Refresh Syntax Highlighting'], refresh_syntax},
 
 --BUFFER + INDENTATION
   ["set_tab_2"]=            {_L['Tab width: _2'], function() set_indentation(2) end}, --radio group
@@ -496,7 +503,7 @@ actions.list = {
   ["complete_word"]=        {_L['Complete Word'], function()
       textadept.editing.autocomplete('word')
     end},
-  ["highlight_word"]=       {_L['Highlight Word'], textadept.editing.highlight_word},
+  --["highlight_word"]=       {'Highlight Word', textadept.editing.highlight_word}, --removed from TA11 menu
   ["toggle_comment"]=       {_L['Toggle Block Comment'], textadept.editing.block_comment},
   ["transpose_chars"]=      {_L['Transpose Characters'], textadept.editing.transpose_chars},
   ["join_lines"]=           {_L['Join Lines'], textadept.editing.join_lines},
@@ -632,7 +639,7 @@ actions.list = {
   ["open_projectdir"]=      {_L['Quickly Open Current Project'], io.quick_open},
 
 --TOOLS + SNIPPETS
-  ["insert_snippet"]=       {_L['Insert Snippet...'], textadept.snippets.select},
+  ["snippet_select"]=       {_L['Insert Snippet...'], textadept.snippets.select},
   ["expand_snippet"]=       {_L['Expand Snippet/Next Placeholder'], textadept.snippets.insert},
   ["prev_snipplaceholder"]= {_L['Previous Snippet Placeholder'], textadept.snippets.previous},
   ["cancel_snippet"]=       {_L['Cancel Snippet'], textadept.snippets.cancel_current},
@@ -661,7 +668,7 @@ actions.list = {
       textadept.file_types.select_lexer()
       if toolbar then toolbar.update_lexerdefaults() end --update config panel
     end},
-  ["refresh_syntax"]=       {_L['Refresh Syntax Highlighting'], refresh_syntax},
+--["refresh_syntax"]=       {_L['Refresh Syntax Highlighting'], refresh_syntax},
 
 --BUFFER + INDENTATION
   ["set_tab_2"]=            {_L['Tab width: 2'], function() set_indentation(2) end}, --radio group
@@ -790,7 +797,7 @@ actions.menubar = {
     title = Util.EDITMENU_TEXT,
     {"undo","redo",SEPARATOR,
      "cut","copy","paste","duplicate_line","delete_char","delete_word","delete_line","selectall","copyfilename",SEPARATOR,
-     "match_brace","complete_word","highlight_word","toggle_comment","transpose_chars",
+     "match_brace","complete_word","toggle_comment","transpose_chars",
      "join_lines","filterthrough"},
     {
       title = Util.SELECTMENU_TEXT,
@@ -824,7 +831,7 @@ actions.menubar = {
     },
     {
       title = Util.SNIPPETSMENU_TEXT,
-      {"insert_snippet","expand_snippet","prev_snipplaceholder","cancel_snippet"}
+      {"snippet_select","expand_snippet","prev_snipplaceholder","cancel_snippet"}
     },
     {
       title = Util.MACROMENU_TEXT,
@@ -850,7 +857,7 @@ actions.menubar = {
       {"set_enc_utf8","set_enc_ascii","set_enc_1252","set_enc_8859","set_enc_utf16"}
     },
     {SEPARATOR,"toggle_view_oel","toggle_view_wrap","toggle_view_ws",SEPARATOR,
-     "select_lexer","refresh_syntax"}
+     "select_lexer"}
   },
   {
     title = Util.VIEWMENU_TEXT,
