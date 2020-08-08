@@ -368,8 +368,8 @@ local default_accelerators= {
   "up",                     {'up',   'ctrl+p'}, {'up',   'ctrl+p'},
   "left",                   {'left', 'ctrl+b'}, {'left', 'ctrl+b'},
   "right",                  {'right','ctrl+f'}, {'right','ctrl+f'},
-  "word_left",              {'ctrl+left', 'ctrl+cmd+b'}, "ctrl+left",
-  "word_right",             {'ctrl+right','ctrl+cmd+f'}, "ctrl+right",
+  "word_left",              {'alt+left', 'ctrl+cmd+b'}, "ctrl+left",
+  "word_right",             {'alt+right','ctrl+cmd+f'}, "ctrl+right",
   "home",                   {'cmd+left', 'ctrl+a'}, {'home','ctrl+a'},
   "end",                    {'cmd+right','ctrl+e'}, {'end', 'ctrl+e'},
 --vertical_center_caret
