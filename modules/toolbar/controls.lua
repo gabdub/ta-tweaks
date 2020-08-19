@@ -325,7 +325,7 @@ function toolbar.top_right_resize_handle(rzname, wmin, func)  --add a resize han
   toolbar.gotopos(0, 0)
   toolbar.addbutton(rzname,"Resize panel")
   toolbar.anchor(rzname, 25) --anchor to the right
-  toolbar.setresize(rzname, true, wmin) --horizontal resize button
+  toolbar.setresize(rzname, true, wmin) --is a resize button
   toolbar.cmds[rzname]= func
   toolbar.setthemeicon(rzname, "transparent",       toolbar.TTBI_TB.IT_NORMAL)
   toolbar.setthemeicon(rzname, "resize-tr",         toolbar.TTBI_TB.BACKGROUND)
