@@ -122,7 +122,7 @@ function Proj.snapopen()
     end
   end
   local options = {
-    title = _L['Open'], columns = _L['File'], items = utf8_list,
+    title = _L['Open File'], columns = _L['Filename'], items = utf8_list,
     button1 = Util.OK_TEXT, button2 = Util.CANCEL_TEXT, select_multiple = true,
     string_output = true, width = CURSES and ui.size[1] - 2 or nil
   }
