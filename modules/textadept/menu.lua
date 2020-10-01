@@ -726,8 +726,8 @@ actions.list = {
   ["reset_zoom"]=           {_L['Reset Zoom'], function() buffer.zoom = 0 end},
 
 --HELP
-  ["show_manual"]=          {_L['Show Manual'], function() open_page(_HOME .. '/doc/manual.html') end},
-  ["show_luadoc"]=          {_L['Show LuaDoc'], function() open_page(_HOME .. '/doc/api.html') end},
+  ["show_manual"]=          {_L['Show Manual'], function() open_page(_HOME .. '/docs/manual.html') end},
+  ["show_luadoc"]=          {_L['Show LuaDoc'], function() open_page(_HOME .. '/docs/api.html') end},
   ["about"]=                {_L['About'], function()
       ui.dialogs.msgbox{
         title = 'Textadept', text = _RELEASE, informative_text = _COPYRIGHT,
