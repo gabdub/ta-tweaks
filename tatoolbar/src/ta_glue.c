@@ -14,7 +14,7 @@ static void create_tatoolbar( lua_State *L, GtkWidget *vbox, int ntoolbar );
 static void setmenuitemstatus( int menu_id, int status);
 int toolbar_set_statusbar_text(const char *text, int bar);
 
-int  update_ui= 1; //on by default
+static int _update_ui= 1; //on by default
 
 /* ============================================================================= */
 /*                                 LUA FUNCTIONS                                 */
@@ -504,7 +504,7 @@ void redraw_endG( struct toolbar_group *G )
         if( T->_grp_y2 < G->bary2 ){
           T->_grp_y2= G->bary2;
         }
-        if( update_ui ){
+        if( _update_ui ){
           gtk_widget_queue_draw_area(T->draw, G->barx1 + T->_grp_x1, G->bary1 + T->_grp_y1,
               T->_grp_x2 - T->_grp_x1 +1, T->_grp_y2 - T->_grp_y1 +1);
         }else{
@@ -518,7 +518,7 @@ void redraw_endG( struct toolbar_group *G )
 void redraw_toolbar( struct toolbar_data *T )
 { //redraw the complete toolbar
   if( (T != NULL) && ((T->flags & TTBF_TB_VISIBLE) != 0) ){
-    if( update_ui ){
+    if( _update_ui ){
       gtk_widget_queue_draw(T->draw);
     }else{
       T->flags |= TTBF_TB_REDRAW;
@@ -529,7 +529,7 @@ void redraw_toolbar( struct toolbar_data *T )
 void redraw_group( struct toolbar_group *G )
 {
   if( (G != NULL) && ((G->toolbar->flags & TTBF_TB_VISIBLE) != 0) && ((G->flags & TTBF_GRP_HIDDEN) == 0) ){
-    if( update_ui ){
+    if( _update_ui ){
       gtk_widget_queue_draw_area(G->toolbar->draw, G->barx1, G->bary1,
         G->barx2 - G->barx1 +1, G->bary2 - G->bary1 +1 );
     }else{
@@ -549,7 +549,7 @@ void redraw_item( struct toolbar_item * p )
         //redraw the area of one regular button
         int yoff= item_hiddenH_offset(p); //height of the hidden items above this one or -1 if this item is hidden
         if( yoff >= 0 ){  //the item is visible
-          if( update_ui ){
+          if( _update_ui ){
             gtk_widget_queue_draw_area(g->toolbar->draw,
               g->barx1 + p->barx1,      g->bary1 + p->bary1 - g->yvscroll - yoff,
               p->barx2 - p->barx1 +1,   p->bary2 - p->bary1 +1 );
@@ -1762,8 +1762,8 @@ char saved_title[512];
 char saved_statusbar[512];
 static int ltoolbar_updatebuffinfo(lua_State *L)
 {
-  update_ui= lua_toboolean(L, 1);
-  if( update_ui ){ //update ui on?
+  _update_ui= lua_toboolean(L, 1);
+  if( _update_ui ){ //update ui on?
     if( saved_title[0] != 0 ){  //set the saved title
       toolbar_set_win_title(saved_title);
       saved_title[0]= 0;
@@ -1889,7 +1889,7 @@ static int ltbh_scroll_scrollpos(lua_State *L)
 /* register LUA toolbar object */
 void register_toolbar(lua_State *L)
 {
-  update_ui= 1;  //update buffer UI: on by default
+  _update_ui= 1;  //update buffer UI: on by default
   saved_title[0]= 0;
   saved_statusbar[0]= 0;
   //register "toolbar" functions
@@ -1985,7 +1985,7 @@ int toolbar_set_statusbar_text(const char *text, int bar)
       if( bar == 0 ){
         set_tabtextG(G, 1, text, text, 1 ); //tooltip = text in case it can be shown complete
       }else{
-        if( update_ui ){ //update buffer UI on?
+        if( _update_ui ){ //update buffer UI on?
           //split text in parts (separator= 4 spaces)
           ntab= 2;
           s= text;
@@ -2023,7 +2023,7 @@ int toolbar_set_statusbar_text(const char *text, int bar)
 
 void toolbar_set_win_title( const char *title )
 {
-  if( update_ui ){ //update buffer UI on?
+  if( _update_ui ){ //update buffer UI on?
     //update window title now
     gtk_window_set_title(GTK_WINDOW(window), title);
   }else{

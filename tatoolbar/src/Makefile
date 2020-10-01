@@ -1,9 +1,9 @@
-# Copyright 2007-2020 Mitchell mitchell.att.foicica.com. See LICENSE.
+# Copyright 2007-2020 Mitchell. See LICENSE.
 
 CC = gcc
 CFLAGS = -Os
 CXX = g++
-CXXFLAGS = -Os -std=c++11
+CXXFLAGS = -Os -std=c++17
 MAKE = make
 ifeq (win, $(findstring win, $(MAKECMDGOALS)))
   # Cross-compile for Win32.
@@ -35,10 +35,12 @@ ifeq (win, $(findstring win, $(MAKECMDGOALS)))
     CURSES_LIBS = win32curses/lib/pdcurses.a win32curses/lib/libiconv.a
   endif
 else ifeq (osx, $(findstring osx, $(MAKECMDGOALS)))
-  # Cross-compile for Mac OSX.
-  CROSS = x86_64-apple-darwin9-
+  # Cross-compile for macOS.
+  CC = cc
+  CXX = c++
+  CROSS = x86_64-apple-darwin17-
   CFLAGS += -mdynamic-no-pic
-  CXXFLAGS += -mdynamic-no-pic
+  CXXFLAGS += -mdynamic-no-pic -stdlib=libc++ -Wno-register
   LUA_CFLAGS = -DLUA_USE_MACOSX
   LDFLAGS = -liconv
   ifeq (, $(findstring curses, $(MAKECMDGOALS)))
@@ -89,7 +91,7 @@ else
     install_targets = ../textadept
   else
     plat_flag = -DCURSES
-    CURSES_CFLAGS = $(shell pkg-config --silence-errors --cflags ncursesw  || \
+    CURSES_CFLAGS = $(shell pkg-config --silence-errors --cflags ncursesw || \
                             pkg-config --silence-errors --cflags ncurses || \
                             pkg-config --silence-errors --cflags curses)
     CURSES_LIBS = $(shell pkg-config --silence-errors --libs ncursesw || \
@@ -105,7 +107,7 @@ WGET = wget -O $@
 
 # Scintilla.
 
-sci_flags = -pedantic $(plat_flag) -DSCI_LEXER -DLPEG_LEXER -DNDEBUG \
+sci_flags = -pedantic $(plat_flag) -DSCI_LEXER -DSCI_EMPTYCATALOGUE -DNDEBUG \
             -Iscintilla/include -Iscintilla/src -Iscintilla/lexlib -Wall
 
 sci_objs = AutoComplete.o CallTip.o CaseConvert.o CaseFolder.o Catalogue.o \
@@ -173,8 +175,9 @@ $(sci_objs): %.o: scintilla/src/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $< -o $@
 $(sci_lex_objs): %.o: scintilla/lexlib/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $< -o $@
-$(sci_lexer_objs): scintilla/lexers/LexLPeg.cxx
-	$(CROSS)$(CXX) -c $(CXXFLAGS) $(LUA_CFLAGS) $(sci_flags) $< -o $@
+$(sci_lexer_objs): LexLPeg.cxx
+	$(CROSS)$(CXX) -c $(CXXFLAGS) $(LUA_CFLAGS) $(sci_flags) -DNO_SCITE -DNO_DLL \
+		$< -o $@
 $(sci_gtk_objs): %.o: scintilla/gtk/%.cxx
 	$(CROSS)$(CXX) -c $(CXXFLAGS) $(sci_flags) $(GTK_CFLAGS) $< -o $@
 scintilla-marshal.o: scintilla/gtk/scintilla-marshal.c
@@ -216,7 +219,7 @@ $(textadept_curses_objs): \
   ta_flags += -Iscintilla/curses -Itermkey -Icdk $(CURSES_CFLAGS)
 loslib.o: LUA_CFLAGS += -DGTK $(GLIB_CFLAGS)
 gtdialog.o: gtdialog_flags += $(GTK_CFLAGS)
-gtdialog-curses.o: gtdialog_flags += -Icdk $(CURSES_CFLAGS)
+gtdialog-curses.o: gtdialog_flags += -I. -Icdk $(CURSES_CFLAGS)
 
 # Executables.
 
@@ -242,7 +245,7 @@ textadept-curses.exe: $(sci_objs) $(sci_lex_objs) LexLPeg-curses.o \
 
 # Install/uninstall.
 
-install: $(install_targets) | ../core ../doc ../init.lua ../lexers ../LICENSE \
+install: $(install_targets) | ../core ../docs ../init.lua ../lexers ../LICENSE \
                               ../modules ../themes
 	install -d $(DESTDIR)$(bin_dir) $(DESTDIR)$(data_dir)
 	install $^ $(DESTDIR)$(data_dir)
@@ -271,19 +274,23 @@ clean: ; rm -f *.o ../textadept*
 
 # Documentation.
 
+ifndef ALL_MODULES
+  modules = $(addprefix ../modules/,ansi_c lua textadept)
+else
+  modules = ../modules
+endif
 ta_home = $(shell dirname `pwd`)
 
-doc: manual luadoc
-manual: ../*.md ../doc/manual.md | ../doc/bombay
-	$| -d ../doc -t ../doc --title Textadept $^
-	sed -i -e "s/manual - Textadept/Textadept $(subst _, ,$(version)) Manual/;" \
-		../doc/manual.html
-	sed -i -e "s/Textadept Manual/Textadept $(subst _, ,$(version)) Manual/;" \
-		../doc/manual.html
-luadoc: ../modules ../core ../lexers/lexer.lua | ../modules/lua/lua.luadoc
-	cd ../doc && luadoc -d . -t . --doclet markdowndoc $^
-	sed -i -e "s/Textadept API/Textadept $(subst _, ,$(version)) API/;" \
-		../doc/api.html
+docs: luadoc manual
+manual: ../docs/api.md $(wildcard ../docs/*.md) | ../docs/_layouts/default.html
+	for file in $(basename $^); do \
+		cat $| | ../scripts/fill_layout.lua $$file.md > $$file.html; \
+	done
+	sed -i \
+		"s/\(\# Textadept\).\+\?\(Manual\|API\)/\1 $(subst _, ,$(version)) \2/;" \
+		../docs/*.md
+luadoc: ../core $(modules) ../lexers/lexer.lua | ../modules/lua/lua.luadoc
+	cd ../docs && luadoc --doclet markdowndoc $^ > api.md
 	cd ../modules && luadoc -d lua --doclet lua/tadoc $^ --ta-home=$(ta_home)
 	cd ../modules/lua && mv tags ta_tags && mv api ta_api
 	cd ../modules && luadoc -d lua --doclet lua/tadoc $| --ta-home=$(ta_home)
@@ -293,7 +300,7 @@ luadoc: ../modules ../core ../lexers/lexer.lua | ../modules/lua/lua.luadoc
 ifndef NIGHTLY
   basedir = textadept_$(version)
 else
-  basedir = textadept_NIGHTLY_$(shell date +"%F")
+  basedir = textadept_nightly_$(shell date +"%F")
 endif
 osxapp = Textadept.app
 osxapp_bin = $(osxapp)/Contents/MacOS
@@ -309,30 +316,22 @@ osxapp_libs = libatk-1.0.0.dylib libcairo.2.dylib libexpat.1.dylib \
               libpixman-1.0.dylib libpng16.16.dylib charset.alias \
               gdk-pixbuf-2.0 gtk-2.0
 
-release-all: release release64 win32-release osx-release modules-release
+release-all: release win32-release osx-release #modules-release
 
-$(basedir).i386: ; hg archive $@ -X ".hg*"
-release: $(basedir).i386
-	make deps clean doc sign-deps
-	PKG_CONFIG_PATH=/opt/gtk/lib/pkgconfig make -j4 \
-		LDFLAGS="$(LDFLAGS) -static-libstdc++"
-	make -j4 LDFLAGS="$(LDFLAGS) -static-libstdc++" \
-		CURSES_CFLAGS=-I/opt/ncursesw/include/ncursesw \
-		CURSES_LIBS="-L/opt/ncursesw/lib -lncursesw" curses
-	cp -rL ../doc ../lexers ../textadept* $< && cp *.asc $</src
-	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg --batch -ab /tmp/$<.tgz
-$(basedir).x86_64: ; hg archive $@ -X ".hg*"
-release64: $(basedir).x86_64
-	make clean
-	PKG_CONFIG_PATH=/opt/gtk64/lib/pkgconfig make -j4 CFLAGS="$(CFLAGS) -m64" \
-		CXXFLAGS="$(CXXFLAGS) -m64 -static-libstdc++" || return 0
-	make -j4 CFLAGS="$(CFLAGS) -m64" \
-		CXXFLAGS="$(CXXFLAGS) -m64 -static-libstdc++" \
-		CURSES_CFLAGS=-I/opt/ncursesw64/include/ncursesw \
-		CURSES_LIBS="-L/opt/ncursesw64/lib -lncursesw" curses || return 0
-	cp -rL ../doc ../lexers ../textadept* $< && cp *.asc $</src
-	tar czf /tmp/$<.tgz $< && rm -rf $< && gpg --batch -ab /tmp/$<.tgz
-$(basedir).win32: ; hg archive $@ -X ".hg*"
+ifneq (, $(shell hg summary 2>/dev/null))
+  archive = hg archive -X ".hg*" $(1)
+else
+  archive = cd ../ && git archive HEAD --prefix src/$(1)/ | tar -xf -
+endif
+
+$(basedir).linux: ; $(call archive,$@)
+release: $(basedir).linux
+	make deps clean docs
+	make -j4 CXXFLAGS="$(CXXFLAGS) -static-libstdc++"
+	make -j4 CXXFLAGS="$(CXXFLAGS) -static-libstdc++" curses
+	cp -rL ../docs ../lexers ../textadept* $<
+	tar czf $<.tgz $< && rm -rf $<
+$(basedir).win32: ; $(call archive,$@)
 win32-release: $(basedir).win32
 	make -j4 clean win32-deps
 	cp win32gtk/bin/*.dll $< && cp -r win32gtk/etc \
@@ -340,28 +339,27 @@ win32-release: $(basedir).win32
 	rm -r $</lib/*.a $</lib/glib-2.0 $</lib/gtk-2.0/include $</lib/pkgconfig
 	make -j4 win32
 	make -j4 win32-curses
-	cp -rL ../doc ../lexers ../textadept* $<
-	cp *.asc $</src
-	zip -r /tmp/$<.zip $< && rm -rf $< && gpg --batch -ab /tmp/$<.zip
-$(basedir).osx: ; mkdir $@ && cp ../scripts/osx/ta $@
-osx-release: $(basedir).osx
+	cp -rL ../docs ../lexers ../textadept* $<
+	zip -r $<.zip $< && rm -rf $<
+$(basedir).macOS: ; mkdir $@ && cp ../scripts/osx/ta $@
+osx-release: $(basedir).macOS
 	make clean osx-deps
 	make -j4 osx
 	make -j4 osx-curses
 	make osx-app && mv $(osxapp) $<
-	zip -r /tmp/$<.zip $< && rm -rf $< && gpg --batch -ab /tmp/$<.zip
+	zip -r $<.zip $< && rm -rf $<
 $(basedir).modules:
 	mkdir -p $@/modules
 	hg archive -R /home/mitchell/code/textadept_modules/ -r tip $@/modules
 modules-release: $(basedir).modules
-	zip -r /tmp/$<.zip $< && rm -r $< && gpg --batch -ab /tmp/$<.zip
+	zip -r $<.zip $< && rm -r $<
 
 osx-app: ../textadept ../textadept-curses ../scripts/osx/textadept_osx
 	mkdir -p $(osxapp_bin) $(osxapp_res)
 	cp Info.plist $(osxapp_bin)/../
 	cp $^ $(osxapp_bin)/
-	hg archive $(osxapp_res) -X ".hg*"
-	cp -rL ../doc ../lexers $(osxapp_res) && cp *.asc $(osxapp_res)/src
+	$(call archive,$(osxapp_res))
+	cp -rL ../docs ../lexers $(osxapp_res)
 	mv $(osxapp_res)/core/images/textadept.icns $(osxapp_res)/
 	cp -r gtkosx/etc gtkosx/share $(osxapp_res)/ && mkdir $(osxapp_res)/lib/
 	cp -r $(addprefix gtkosx/lib/, $(osxapp_libs)) $(osxapp_res)/lib/
@@ -370,45 +368,56 @@ osx-app: ../textadept ../textadept-curses ../scripts/osx/textadept_osx
 
 # External dependencies.
 
-base_deps = scintilla ../lexers lua lualibs gtdialog cdk ../doc/bombay
+base_deps = scintilla scinterm scintillua lua lualibs gtdialog cdk
 deps: $(base_deps) termkey
 win32-deps: $(base_deps) win32gtk win32curses
 osx-deps: $(base_deps) gtkosx termkey
 
+root_url = https://github.com/orbitalquark
 ifndef NIGHTLY
-  #gtdialog_url = http://foicica.com/gtdialog/download/$@
-  gtdialog_url = http://foicica.com/hg/gtdialog/archive/$@
+  scinterm_url = $(root_url)/scinterm/archive/$@
+  scintillua_url = $(root_url)/scintillua/archive/$@
+  gtdialog_url = $(root_url)/gtdialog/archive/$@
 else
-  gtdialog_url = http://foicica.com/hg/gtdialog/archive/tip.zip
+  scinterm_url = $(root_url)/scinterm/archive/default.zip
+  scintillua_url = $(root_url)/scintillua/archive/default.zip
+  gtdialog_url = $(root_url)/gtdialog/archive/default.zip
 endif
 
-scintilla_zip = d1b254905c74.zip
+scintilla_tgz = scintilla445.tgz
+scinterm_zip = 9e2ffa159299899c9345aea15c17ba1941953871.zip
+scintillua_zip = scintillua_4.4.5-1.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_7_0_2.zip
-gtdialog_zip = 680b3b41e12c.zip
+gtdialog_zip = 64587546482a1a6324706d75c80b77d2f87118a4.zip
 cdk_tgz = cdk-5.0-20150928.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
 win32gtk_zip = win32gtk-2.24.32.zip
 win32curses_zip = win32curses39.zip
 pdcurses_zip = PDCurses-3.9.zip
 gtkosx_tgz = gtkosx-2.24.31.tar.gz
-bombay_zip = bombay.zip
 cloc = cloc-1.60.pl
 
-$(scintilla_zip): ; $(WGET) http://foicica.com/hg/scintilla/archive/$@
-scintilla: scintilla.patch | $(scintilla_zip)
+$(scintilla_tgz): ; $(WGET) https://www.scintilla.org/$@
+scintilla: scintilla.patch | $(scintilla_tgz)
 	if [ -d $@/.hg ]; then \
-		hg --cwd $@ update -C LongTerm3; \
+		hg --cwd $@ update -C; \
 	else \
 		if [ -d $@ ]; then rm -r $@; fi; \
-		mkdir $@ && unzip -d $@ $| && mv $@/*/* $@; \
+		tar xzf $|; \
 	fi
 	for patch in $^; do echo Applying $$patch; patch -d $@ -N -p1 < $$patch; done
-../lexers: | scintilla ; ln -s src/$|/lexlua $@
-$(lua_tgz): ; $(WGET) http://www.lua.org/ftp/$@
+$(scinterm_zip): ; $(WGET) $(scinterm_url) -O $@
+scinterm: scintilla/curses
+scintilla/curses: | $(scinterm_zip) ; unzip -d $@ -j $| "*/*.cxx" "*/*.h"
+$(scintillua_zip): ; $(WGET) $(scintillua_url) -O $@
+scintillua: ../lexers LexLPeg.cxx
+../lexers: | $(scintillua_zip) ; unzip -d $@ -j $| "*/lexers/*" -x "*/themes/*"
+LexLPeg.cxx: | $(scintillua_zip) ; unzip -j $| "*/*.cxx" "*/*.h"
+$(lua_tgz): ; $(WGET) https://www.lua.org/ftp/$@
 $(lpeg_tgz): ; $(WGET) http://www.inf.puc-rio.br/~roberto/lpeg/$@
-$(lfs_zip): ; $(WGET) http://github.com/keplerproject/luafilesystem/archive/$@
+$(lfs_zip): ; $(WGET) https://github.com/keplerproject/luafilesystem/archive/$@
 lua: lua.patch | $(lua_tgz)
 	if [ -d $@ ]; then rm -rf $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
@@ -419,9 +428,9 @@ lua/src/lib/lpeg: | $(lpeg_tgz)
 lua/src/lib/lfs: | $(lfs_zip)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir -p $@ && unzip -d $(dir $@) -j $| "*/src/*.c" "*/src/*.h"
-$(gtdialog_zip): ; $(WGET) $(gtdialog_url)
-gtdialog: | $(gtdialog_zip) ; unzip -d $@ -j $|
-$(cdk_tgz): ; $(WGET) http://invisible-mirror.net/archives/cdk/$@
+$(gtdialog_zip): ; $(WGET) $(gtdialog_url) -O $@
+gtdialog: | $(gtdialog_zip) ; unzip -d $@ -j $| "*/*.c" "*/*.h"
+$(cdk_tgz): ; $(WGET) https://invisible-mirror.net/archives/cdk/$@
 cdk: cdk.patch | $(cdk_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
@@ -434,9 +443,9 @@ termkey: termkey.patch | $(termkey_tgz)
 	if [ -d $@ ]; then rm -r $@; fi
 	mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@ && chmod +w $@/termkey.h
 	patch -d $@ -N -p1 < $<
-$(win32gtk_zip): ; $(WGET) http://foicica.com/textadept/download/$@
+$(win32gtk_zip): ; $(WGET) $(root_url)/textadept-build/raw/default/$@
 win32gtk: | $(win32gtk_zip) ; unzip $|
-$(win32curses_zip): ; $(WGET) http://foicica.com/textadept/download/$@
+$(win32curses_zip): ; $(WGET) $(root_url)/textadept-build/raw/default/$@
 $(pdcurses_zip): ; $(WGET) http://prdownloads.sourceforge.net/pdcurses/$@
 win32curses: pdcurses.patch | $(win32curses_zip) $(pdcurses_zip)
 	unzip $(win32curses_zip)
@@ -446,24 +455,17 @@ win32curses: pdcurses.patch | $(win32curses_zip) $(pdcurses_zip)
 	cd $@/src/wincon && $(MAKE) CC="$(CROSS)$(CC) $(CFLAGS)" LIBEXE=$(CROSS)ar \
 		LINK="$(CROSS)$(CC) $(CFLAGS)" WIDE=Y UTF8=Y libs
 	cp $@/src/wincon/pdcurses.a $@/lib/
-$(gtkosx_tgz): ; $(WGET) http://foicica.com/textadept/download/$@
+$(gtkosx_tgz): ; $(WGET) $(root_url)/textadept-build/raw/default/$@
 gtkosx: | $(gtkosx_tgz) ; mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
-$(bombay_zip): ; $(WGET) http://foicica.com/hg/bombay/archive/tip.zip
-../doc/bombay: | $(bombay_zip) ; unzip -d $(dir $@) -j $|
 $(cloc): ; $(WGET) http://prdownloads.sourceforge.net/cloc/$@
-sign-deps: | $(scintilla_tgz) $(lua_tgz) $(lpeg_tgz) $(lfs_zip) \
-             $(gtdialog_zip) $(cdk_tgz) $(termkey_tgz) $(win32gtk_zip) \
-             $(win32curses_zip) $(pdcurses_zip) $(gtkosx_tgz)
-	@for file in $|; do gpg --batch -ab $$file; done
-verify-deps: | $(wildcard $(basename $(wildcard *.asc)))
-	@for file in $|; do echo "$$file"; gpg --verify $$file.asc || return 1; done
 
 clean-deps:
-	rm -rf scintilla ../lexers lua gtdialog cdk termkey win32gtk win32curses \
-		gtkosx $(notdir ../doc/bombay)
+	rm -rf scintilla ../lexers LexLPeg.cxx lua gtdialog cdk termkey win32gtk \
+		win32curses gtkosx
 
 # Count lines of code.
 
 sources = ../core ../modules/ansi_c ../modules/lua ../modules/textadept \
           textadept.c Makefile ../init.lua
 count: $(cloc) ; perl $< $(sources) --not-match-f=tadoc.lua
+plots: ; ../scripts/gen_plots.sh
