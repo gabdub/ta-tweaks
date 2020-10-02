@@ -540,7 +540,7 @@ if toolbar then
         --bwidth,bheight,xmargin,ymargin,xoff,yoff
         toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),tbconfig_getadj(3),tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
       end
-      toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+      toolbar.setdefaulttextfont()
     else
       --hide the horizonatal (top) toolbar
       toolbar.sel_top_bar()
@@ -568,7 +568,7 @@ if toolbar then
       else --vertical back x 2cols
         toolbar.themed_icon(toolbar.globalicon, toolbar.get_backimg(4), toolbar.TTBI_TB.BACKGROUND)
       end
-      toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+      toolbar.setdefaulttextfont()
       toolbar.show(true)
     else
       --hide the vertical (left) toolbar
@@ -614,7 +614,7 @@ if toolbar then
     toolbar.themed_icon(toolbar.globalicon, bki, toolbar.TTBI_TB.TAB_DISABLED)
     toolbar.themed_icon(toolbar.globalicon, bki, toolbar.TTBI_TB.TAB_HILIGHT)
     toolbar.themed_icon(toolbar.globalicon, bki, toolbar.TTBI_TB.TAB_ACTIVE)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.setdefaulttextfont()
     toolbar.statbar= 2 --created
   end
 

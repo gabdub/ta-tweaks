@@ -151,7 +151,7 @@ if toolbar then
 
     --title group: align top + fixed height
     titgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.setdefaulttextfont()
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
 
     toolbar.show(false, toolbar.listwidth)  --hide until the project config is loaded

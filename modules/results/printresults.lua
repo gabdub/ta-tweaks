@@ -14,7 +14,7 @@ if toolbar then
   local function print_create()
     itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, true)
     toolbar.sel_results_bar(itemsgrp)
-    toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.setdefaulttextfont()
   end
 
   local function get_rowname(n)

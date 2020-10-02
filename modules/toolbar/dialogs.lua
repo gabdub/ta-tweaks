@@ -77,7 +77,7 @@ local function create_dialog(title, width, height)
   dialog_h= height
   filter= ""
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
-  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+  toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND) --cfg-back
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
@@ -89,7 +89,7 @@ local function create_dialog(title, width, height)
 
   --title group: align top + fixed height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
-  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+  toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
   toolbar.addlabel(title, "", dialog_w-toolbar.cfg.butsize-10, true, true)  --left align, bold
@@ -99,6 +99,7 @@ local function create_dialog(title, width, height)
 
   --filter group: full width + items height
   local filtergrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
+  toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
   toolbar.cmd("edit-find", nil, "")
@@ -108,6 +109,7 @@ local function create_dialog(title, width, height)
 
   --items group: full width + items height w/scroll
   itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, false)
+  toolbar.setdefaulttextfont()
   list_clear()
 
   for i=1, 30 do

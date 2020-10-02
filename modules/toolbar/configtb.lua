@@ -127,6 +127,10 @@ local function add_config_start(startgroup)
   toolbar.add_tabs_here(3,false,0,0)
 end
 
+function toolbar.setdefaulttextfont()
+  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+end
+
 local function add_config_tabgroup(name,title,ngrp)
   local n=#toolbar.cfgpnl_tit+1
   if ngrp == nil then ngrp=n+1 end
@@ -138,7 +142,7 @@ local function add_config_tabgroup(name,title,ngrp)
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND,
     toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL,0,0,hidegrp) --show v-scroll when needed
   toolbar.adjust(48,24,2,1,3,3)
-  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+  toolbar.setdefaulttextfont()
   if n == toolbar.cfgpnl_curgroup then
     toolbar.settext("cfgtit", title, "", true)
     toolbar.activatetab(toolbar.cfgpnl_curgroup)
