@@ -806,10 +806,16 @@ local function view_virtspace_change()
   actions.updateaction("toggle_virtualspace")
 end
 
-local tatoobarweb= "https://github.com/gabdub/ta-tweaks"
-local function open_tatoolbar_web()
+local tatoolbargit= "https://github.com/gabdub/ta-tweaks"
+local function open_tatoolbargit()
   local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  os.spawn(string.format('%s "%s"', cmd, tatoobarweb))
+  os.spawn(string.format('%s "%s"', cmd, tatoolbargit))
+end
+
+local tagithub= "https://github.com/orbitalquark/textadept"
+local function open_tagithub()
+  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
+  os.spawn(string.format('%s "%s"', cmd, tagithub))
 end
 
 local function add_buffer_cfg_panel()
@@ -937,14 +943,21 @@ local function add_toolbar_cfg_panel()
   add_config_separator()
 
   pnly_newrow()
-  add_config_label("About ta-toolbar", true)
+  add_config_separator()
+  add_config_label("About ta-toolbar", false)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addlabel("Version: "..toolbar.getversion(0), "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
   toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
-  toolbar.cmdtext("@ github", open_tatoolbar_web, "Visit "..tatoobarweb, "openttbweb")
+  toolbar.cmdtext("@ github", open_tatoolbargit, "Visit "..tatoolbargit, "openttbgit")
   pnly_add(30)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addlabel("Compiled: "..toolbar.getversion(1).." for TA"..toolbar.getversion(2).." - GTK "..toolbar.getversion(3), "", toolbar.cfgpnl_width,true,false)
+  pnly_newrow()
+  add_config_label("About Textadept", true)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.addlabel("Version: ".._RELEASE, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("@ github", open_tagithub, "Visit "..tagithub, "opentagit")
   pnly_add(21)
   add_config_separator()
 end
