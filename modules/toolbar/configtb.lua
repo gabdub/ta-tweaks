@@ -810,16 +810,17 @@ local function view_virtspace_change()
   actions.updateaction("toggle_virtualspace")
 end
 
+local function open_site(site)
+  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
+  os.spawn(string.format('%s "%s"', cmd, site))
+end
 local tatoolbargit= "https://github.com/gabdub/ta-tweaks"
 local function open_tatoolbargit()
-  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  os.spawn(string.format('%s "%s"', cmd, tatoolbargit))
+  open_site(tatoolbargit)
 end
-
 local tagithub= "https://github.com/orbitalquark/textadept"
 local function open_tagithub()
-  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  os.spawn(string.format('%s "%s"', cmd, tagithub))
+  open_site(tagithub)
 end
 
 local function add_buffer_cfg_panel()
@@ -959,10 +960,14 @@ local function add_toolbar_cfg_panel()
   pnly_newrow()
   add_config_label("About Textadept", true)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.addlabel("Version: ".._RELEASE, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
-  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y)
+  toolbar.addbutton("talogo","")
+  toolbar.enable("talogo",false,false,true)
+  toolbar.seticon("talogo",_HOME..'/core/images/ta_48x48.png',toolbar.TTBI_TB.IT_NORMAL)
+  toolbar.gotopos(toolbar.cfgpnl_xtext+60, toolbar.cfgpnl_y+15)
+  toolbar.addlabel(_RELEASE, "", toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,false)
+  toolbar.gotopos(toolbar.cfgpnl_xcontrol2, toolbar.cfgpnl_y+15)
   toolbar.cmdtext("@ github", open_tagithub, "Visit "..tagithub, "opentagit")
-  pnly_add(21)
+  pnly_add(50)
   add_config_separator()
 end
 
