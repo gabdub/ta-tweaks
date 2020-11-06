@@ -556,6 +556,7 @@ static int focus_command_entry(lua_State *L) {
     gtk_widget_hide(command_entry), gtk_widget_grab_focus(focused_view);
 #elif CURSES
   command_entry_focused = !command_entry_focused;
+  if (!command_entry_focused) SS(command_entry, SCI_SETFOCUS, 0, 0);
   focus_view(command_entry_focused ? command_entry : focused_view);
 #endif
   return 0;
@@ -1342,7 +1343,10 @@ static int buffer_index(lua_State *L) {
 //#elif CURSES
     // TODO: tabs
 #endif
-  } else if (strcmp(lua_tostring(L, 2), "height") == 0 &&
+  } else if (strcmp(lua_tostring(L, 2), "active") == 0 &&
+             lua_todoc(L, 1) == SS(command_entry, SCI_GETDOCPOINTER, 0, 0))
+    lua_pushboolean(L, command_entry_focused);
+  else if (strcmp(lua_tostring(L, 2), "height") == 0 &&
              lua_todoc(L, 1) == SS(command_entry, SCI_GETDOCPOINTER, 0, 0)) {
     // Return the command entry's pixel height.
 #if GTK
@@ -1584,6 +1588,7 @@ static bool init_lua(lua_State *L, int argc, char **argv, bool reinit) {
     while (lua_pushnil(L), lua_next(L, -2))
       lua_pushnil(L), lua_replace(L, -2), lua_rawset(L, -3); // clear
     lua_pop(L, 2); // package.loaded, _G
+    lua_gc(L, LUA_GCCOLLECT, 0);
   }
   lua_pushinteger(L, (intptr_t)L), lua_setglobal(L, "_LUA"); // for LPeg lexer
   luaL_openlibs(L);

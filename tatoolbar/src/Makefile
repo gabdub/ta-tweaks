@@ -290,7 +290,7 @@ manual: ../docs/api.md $(wildcard ../docs/*.md) | ../docs/_layouts/default.html
 		"s/\(\# Textadept\).\+\?\(Manual\|API\)/\1 $(subst _, ,$(version)) \2/;" \
 		../docs/*.md
 luadoc: ../core $(modules) ../lexers/lexer.lua | ../modules/lua/lua.luadoc
-	cd ../docs && luadoc --doclet markdowndoc $^ > api.md
+	cd ../scripts && luadoc --doclet markdowndoc $^ > ../docs/api.md
 	cd ../modules && luadoc -d lua --doclet lua/tadoc $^ --ta-home=$(ta_home)
 	cd ../modules/lua && mv tags ta_tags && mv api ta_api
 	cd ../modules && luadoc -d lua --doclet lua/tadoc $| --ta-home=$(ta_home)
@@ -323,6 +323,8 @@ ifneq (, $(shell hg summary 2>/dev/null))
 else
   archive = cd ../ && git archive HEAD --prefix src/$(1)/ | tar -xf -
 endif
+modules = css ctags debugger export file_diff html lsp lua_repl open_file_mode \
+  python rest ruby spellcheck yaml
 
 $(basedir).linux: ; $(call archive,$@)
 release: $(basedir).linux
@@ -350,9 +352,11 @@ osx-release: $(basedir).macOS
 	zip -r $<.zip $< && rm -rf $<
 $(basedir).modules:
 	mkdir -p $@/modules
-	hg archive -R /home/mitchell/code/textadept_modules/ -r tip $@/modules
-modules-release: $(basedir).modules
-	zip -r $<.zip $< && rm -r $<
+	for module in $(modules); do \
+		make -C ../modules/$$module release; \
+		unzip -d $@/modules ../modules/$$module/$$module.zip; \
+	done
+modules-release: $(basedir).modules ; zip -r $<.zip $< && rm -r $<
 
 osx-app: ../textadept ../textadept-curses ../scripts/osx/textadept_osx
 	mkdir -p $(osxapp_bin) $(osxapp_res)
@@ -385,19 +389,21 @@ else
 endif
 
 scintilla_tgz = scintilla445.tgz
-scinterm_zip = 9e2ffa159299899c9345aea15c17ba1941953871.zip
+scinterm_zip = 6a774158d8a3c7bc7ea120bc01cdb016fa351a7e.zip
 scintillua_zip = scintillua_4.4.5-1.zip
 lua_tgz = lua-5.3.5.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
-lfs_zip = v1_7_0_2.zip
+lfs_zip = v1_8_0.zip
 gtdialog_zip = 64587546482a1a6324706d75c80b77d2f87118a4.zip
-cdk_tgz = cdk-5.0-20150928.tgz
+cdk_tgz = cdk-5.0-20200923.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
 win32gtk_zip = win32gtk-2.24.32.zip
 win32curses_zip = win32curses39.zip
 pdcurses_zip = PDCurses-3.9.zip
 gtkosx_tgz = gtkosx-2.24.31.tar.gz
 cloc = cloc-1.60.pl
+
+LexLPeg = LexLPeg.cxx LexLPeg.h
 
 $(scintilla_tgz): ; $(WGET) https://www.scintilla.org/$@
 scintilla: scintilla.patch | $(scintilla_tgz)
@@ -412,9 +418,9 @@ $(scinterm_zip): ; $(WGET) $(scinterm_url) -O $@
 scinterm: scintilla/curses
 scintilla/curses: | $(scinterm_zip) ; unzip -d $@ -j $| "*/*.cxx" "*/*.h"
 $(scintillua_zip): ; $(WGET) $(scintillua_url) -O $@
-scintillua: ../lexers LexLPeg.cxx
+scintillua: ../lexers $(LexLPeg)
 ../lexers: | $(scintillua_zip) ; unzip -d $@ -j $| "*/lexers/*" -x "*/themes/*"
-LexLPeg.cxx: | $(scintillua_zip) ; unzip -j $| "*/*.cxx" "*/*.h"
+$(LexLPeg): | $(scintillua_zip) ; unzip -j $| "*/*.cxx" "*/*.h"
 $(lua_tgz): ; $(WGET) https://www.lua.org/ftp/$@
 $(lpeg_tgz): ; $(WGET) http://www.inf.puc-rio.br/~roberto/lpeg/$@
 $(lfs_zip): ; $(WGET) https://github.com/keplerproject/luafilesystem/archive/$@
@@ -460,8 +466,8 @@ gtkosx: | $(gtkosx_tgz) ; mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
 $(cloc): ; $(WGET) http://prdownloads.sourceforge.net/cloc/$@
 
 clean-deps:
-	rm -rf scintilla ../lexers LexLPeg.cxx lua gtdialog cdk termkey win32gtk \
-		win32curses gtkosx
+	rm -rf scintilla ../lexers $(LexLPeg) lua gtdialog cdk termkey win32gtk \
+		win32curses gtkosx $(scinterm_zip) $(scintillua_zip) $(gtdialog_zip)
 
 # Count lines of code.
 
