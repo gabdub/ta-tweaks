@@ -233,6 +233,10 @@ actions.list = {
       ui.find.in_files = true
       ui.find.focus()
     end},
+  ["find_replace"]=         {_L['_Replace'], function()
+      ui.find.in_files = false
+      ui.find.focus()
+    end},
   ["next_filefound"]=       {_L['Goto Nex_t File Found'], function()
       ui.find.goto_file_found(false, true)
     end},
@@ -549,6 +553,10 @@ actions.list = {
   ["find_increment"]=       {_L['Find Incremental'], ui.find.find_incremental},
   ["find_infiles"]=         {_L['Find in Files'], function()
       ui.find.in_files = true
+      ui.find.focus()
+    end},
+  ["find_replace"]=         {_L['Replace'], function()
+      ui.find.in_files = false
       ui.find.focus()
     end},
   ["next_filefound"]=       {_L['Goto Next File Found'], function()

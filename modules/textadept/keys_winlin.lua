@@ -102,7 +102,8 @@ default_accelerators= {
 -- Replace is     "ar" when find pane is focused in GUI
 -- Replace All is "aa" when find pane is focused in GUI
   "find_increment",         "caf",          "cmf",
-  "find_infiles",           "cF",           "",
+--"find_infiles",           "cF",           "",
+  "find_replace",           "cF",           "",
   "next_filefound",         "cag",          "",
   "prev_filefound",         "caG",          "",
   "goto_line",              "cj",           "cj",
@@ -286,7 +287,8 @@ default_accelerators= {
 -- Replace is     "ar" when find pane is focused in GUI
 -- Replace All is "aa" when find pane is focused in GUI
   "find_increment",         "ctrl+alt+f",   "ctrl+meta+f",
-  "find_infiles",           "ctrl+F",       "",
+--"find_infiles",           "ctrl+F",       "",
+  "find_replace",           "ctrl+F",       "",
   "next_filefound",         "ctrl+alt+g",   "",
   "prev_filefound",         "ctrl+alt+G",   "",
   "goto_line",              "ctrl+j",       "ctrl+j",
