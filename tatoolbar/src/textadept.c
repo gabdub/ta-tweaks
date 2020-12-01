@@ -1,7 +1,7 @@
 // Copyright 2007-2020 Mitchell. See LICENSE.
 // USE_TA_TOOLBAR changes: Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
-#define TA_VERSION 110  //TA code updated for textadept 11.0 beta
+#define TA_VERSION 110  //TA code updated for textadept 11.0
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -137,7 +137,7 @@ static ListStore *find_history, *repl_history;
 #define set_option_label(o, _, l) gtk_button_set_label(GTK_BUTTON(o), l)
 #define find_active(w) gtk_widget_get_visible(w)
 // GTK command entry.
-#define command_entry_focused gtk_widget_has_focus(command_entry)
+#define command_entry_active gtk_widget_has_focus(command_entry)
 #elif CURSES
 // curses window.
 typedef struct Pane {
@@ -183,7 +183,7 @@ static ListStore find_history[10], repl_history[10];
 } while (false)
 #define find_active(w) (w != NULL)
 // Curses command entry and statusbar.
-static bool command_entry_focused;
+static bool command_entry_active;
 int statusbar_length[2];
 #endif
 
@@ -192,7 +192,7 @@ static lua_State *lua;
 #if CURSES
 static bool quitting;
 #endif
-static bool initing, closing, show_tabs = true, tab_sync;
+static bool initing, closing, show_tabs = true, tab_sync, dialog_active;
 enum {SVOID, SINT, SLEN, SINDEX, SCOLOR, SBOOL, SKEYMOD, SSTRING, SSTRINGRET};
 
 // Forward declarations.
@@ -367,7 +367,7 @@ static void refresh_pane(Pane *pane) {
 /** Refreshes the entire screen. */
 static void refresh_all() {
   refresh_pane(pane);
-  if (command_entry_focused) scintilla_noutrefresh(command_entry);
+  if (command_entry_active) scintilla_noutrefresh(command_entry);
   refresh();
 }
 
@@ -555,9 +555,9 @@ static int focus_command_entry(lua_State *L) {
   else
     gtk_widget_hide(command_entry), gtk_widget_grab_focus(focused_view);
 #elif CURSES
-  command_entry_focused = !command_entry_focused;
-  if (!command_entry_focused) SS(command_entry, SCI_SETFOCUS, 0, 0);
-  focus_view(command_entry_focused ? command_entry : focused_view);
+  command_entry_active = !command_entry_active;
+  if (!command_entry_active) SS(command_entry, SCI_SETFOCUS, 0, 0);
+  focus_view(command_entry_active ? command_entry : focused_view);
 #endif
   return 0;
 }
@@ -597,7 +597,8 @@ static int dialog(lua_State *L) {
       gtdialog_set_progressbar_callback(work, L);
     } else argv[i++] = luaL_checkstring(L, j);
   argv[argc] = NULL;
-  char *out = gtdialog(type, argc, argv);
+  char *out;
+  dialog_active = true, out = gtdialog(type, argc, argv), dialog_active = false;
   return (lua_pushstring(L, out), free(out), 1);
 }
 
@@ -1345,7 +1346,7 @@ static int buffer_index(lua_State *L) {
 #endif
   } else if (strcmp(lua_tostring(L, 2), "active") == 0 &&
              lua_todoc(L, 1) == SS(command_entry, SCI_GETDOCPOINTER, 0, 0))
-    lua_pushboolean(L, command_entry_focused);
+    lua_pushboolean(L, command_entry_active);
   else if (strcmp(lua_tostring(L, 2), "height") == 0 &&
              lua_todoc(L, 1) == SS(command_entry, SCI_GETDOCPOINTER, 0, 0)) {
     // Return the command entry's pixel height.
@@ -1671,10 +1672,8 @@ static bool init_lua(lua_State *L, int argc, char **argv, bool reinit) {
 #if GTK
 /** Signal for a Textadept window focus change. */
 static bool window_focused(GtkWidget *_, GdkEventFocus *__, void *L) {
-  if (command_entry_focused) return false; // keep command entry focused
-  if (focused_view && !gtk_widget_has_focus(focused_view))
-    gtk_widget_grab_focus(focused_view);
-  return (emit(L, "focus", -1), false);
+  if (!command_entry_active) emit(L, "focus", -1);
+  return false;
 }
 
 /** Signal for a Textadept keypress. */
@@ -2308,13 +2307,17 @@ static GtkWidget *new_findbox() {
 }
 
 /**
+ * Signal for window or command entry focus loss.
  * Emit "Escape" key for the command entry on focus lost unless the window is
  * losing focus or the application is quitting.
  */
 static bool focus_lost(GtkWidget *widget, GdkEvent *_, void *L) {
-  if (widget == window && command_entry_focused) return true; // halt
-  if (widget != command_entry || closing) return false;
-  return (emit(L, "keypress", LUA_TNUMBER, GDK_KEY_Escape, -1), false);
+  if (widget == window) {
+    if (!dialog_active) emit(L, "unfocus", -1);
+    if (command_entry_active) return true; // keep focus if window losing focus
+  } else if (!closing)
+    emit(L, "keypress", LUA_TNUMBER, GDK_KEY_Escape, -1);
+  return false;
 }
 #endif // if GTK
 
@@ -2545,7 +2548,7 @@ static TermKeyResult textadept_waitkey(TermKey *tk, TermKeyKey *key) {
   }
 #else
   // TODO: ideally computation of view would not be done twice.
-  Scintilla *view = !command_entry_focused ? focused_view : command_entry;
+  Scintilla *view = !command_entry_active ? focused_view : command_entry;
   termkey_set_fd(ta_tk, scintilla_get_window(view));
   mouse_set(ALL_MOUSE_EVENTS); // _popen() and system() change console mode
   return termkey_getkey(tk, key);
@@ -2730,7 +2733,7 @@ int main(int argc, char **argv) {
       break;
     }
     refresh_all();
-    view = !command_entry_focused ? focused_view : command_entry;
+    view = !command_entry_active ? focused_view : command_entry;
   }
   endwin();
   termkey_destroy(ta_tk);
