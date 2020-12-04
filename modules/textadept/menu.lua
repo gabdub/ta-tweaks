@@ -657,7 +657,7 @@ actions.list = {
   ["next_buffer"]=          {_L['Next Buffer'], function() view:goto_buffer(1) end},
   ["prev_buffer"]=          {_L['Previous Buffer'], function() view:goto_buffer(-1) end},
   ["switch_buffer"]=        {_L['Switch to Buffer...'], ui.switch_buffer},
-  ["toggle_view_oel"]=      {_L['Toggle View EOL'], function() --check
+  ["toggle_view_oel"]=      {'Toggle View EOL', function() --check
       buffer.view_eol = not buffer.view_eol
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
