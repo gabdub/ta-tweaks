@@ -403,7 +403,7 @@ local default_accelerators= {
   "rsel_page_down",         "alt+shift+pgdn", "alt+shift+pgdn",
 --DELETE
 --del-eol 'ctrl+k'
-  "del_word_right",         "cmd+del",      "ctrl+del"
+  "del_word_right",         "cmd+del",      "ctrl+del",
 --del-line-right            'cmd+shift+del' 'ctrl+shift+del'
   "del_back",               "\b",           {'\b', 'ctrl+h'},
   "del_word_left",          "cmd+\b",       "",
