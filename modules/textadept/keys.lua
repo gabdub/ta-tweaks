@@ -288,7 +288,7 @@ local function mrecsave()
     end
   end
 end
-actions.add("save_macrorec", _L['_Save']..' macro', mrecsave, Util.KEY_SHIFT.."f7", "document-export", mrecplay_status)
+actions.add("save_macrorec", _L['Save']..' macro', mrecsave, Util.KEY_SHIFT.."f7", "document-export", mrecplay_status)
 
 local function mrecload_status()
   return ((not actions.recording) and 0 or 8) --8=disabled
@@ -297,7 +297,7 @@ local function mrecload()
   if not actions.recording then
     if not check_dirty() then return end
     local filename = ui.dialogs.fileselect{
-      title = _L['_Open']..' macro', with_directory = actions.MACROHOME,
+      title = _L['Open']..' macro', with_directory = actions.MACROHOME,
       width = CURSES and ui.size[1] - 2 or nil,
       select_multiple = false
     }
@@ -315,7 +315,7 @@ local function mrecload()
     end
   end
 end
-actions.add("load_macrorec", _L['_Open']..' macro', mrecload, nil, "document-import", mrecload_status)
+actions.add("load_macrorec", _L['Open']..' macro', mrecload, nil, "document-import", mrecload_status)
 
 local function key_return()
   buffer.add_text('\n')
