@@ -508,7 +508,7 @@ actions.list = {
       textadept.editing.autocomplete('word')
     end},
   --["highlight_word"]=       {'Highlight Word', textadept.editing.highlight_word}, --removed from TA11 menu
-  ["toggle_comment"]=       {_L['Toggle Block Comment'], textadept.editing.block_comment},
+  ["toggle_comment"]=       {_L['Toggle Block Comment'], textadept.editing.toggle_comment},
   ["transpose_chars"]=      {_L['Transpose Characters'], textadept.editing.transpose_chars},
   ["join_lines"]=           {_L['Join Lines'], textadept.editing.join_lines},
   ["filterthrough"]=        {_L['Filter Through'], function() ui.command_entry.run(textadept.editing.filter_through, 'bash') end},
