@@ -348,7 +348,7 @@ function actions.run(act)
       buffer.add_text(typeact)  --type action
     else
       local action= actions.list[act][2]
-      assert(type(action) == 'function', _L['Unknown command:']..' '..tostring(act))
+      assert(type(action) == 'function', 'Unknown command: '..tostring(act))
       --don't save "run_command", save the choosen action instead
       local saveact=(act ~= 'run_command') and not act:find('macrorec') and actions.recording and (actions.recordlevel == 0)
       if saveact then
