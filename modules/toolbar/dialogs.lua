@@ -112,8 +112,20 @@ local function create_dialog(title, width, height)
   toolbar.setdefaulttextfont()
   list_clear()
 
-  for i=1, 30 do
-    toolbar.list_add_txt_ico("it#"..i, "Item num "..i, "", false, item_clicked, "t_struct", (i%2 ==1),  0, 0, 0, dialog_w-13)
+  local nfonts= tonumber(toolbar.getversion(4)) --number of available fonts
+  if nfonts then
+    local ls= {}
+    for i=1, nfonts do
+      ls[#ls+1]= toolbar.getversion(i+99)
+    end
+    table.sort(ls)
+    for i=1, nfonts do
+      toolbar.list_add_txt_ico("it#"..i, ls[i], "", false, item_clicked, "format-text-italic", (i%2 ==1),  0, 0, 0, dialog_w-13)
+    end
+  else --old version: show test items
+    for i=1, 30 do
+      toolbar.list_add_txt_ico("it#"..i, "Item num "..i, "", false, item_clicked, "t_struct", (i%2 ==1),  0, 0, 0, dialog_w-13)
+    end
   end
 end
 
@@ -123,6 +135,6 @@ end
 --end
 
 function toolbar.show_popup_center()
-  create_dialog("Test 2",600,300)
+  create_dialog("Font chooser",600,300)
   toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
 end
