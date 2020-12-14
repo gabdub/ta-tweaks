@@ -7,6 +7,39 @@
 
 #include "ta_filediff.h"
 
+static PangoFontFamily ** font_families= NULL;
+static int n_font_families= 0;
+
+static void load_fonts( void )
+{ //load font list
+  if( font_families == NULL ){
+    PangoFontMap * fontmap;
+    fontmap = pango_cairo_font_map_get_default();
+    pango_font_map_list_families (fontmap, & font_families, & n_font_families);
+  }
+}
+
+static void get_font_name( char *str, int str_sz, int nfont )
+{ //return the name of the font family "nfont"
+  if( (nfont >= 0) && (nfont < n_font_families) && (str_sz > 1) ){
+    PangoFontFamily * family = font_families[ nfont ];
+    const char * family_name= pango_font_family_get_name( family );
+    strncpy( str, family_name, str_sz-1 );
+    str[str_sz-1]= 0;
+  }else{
+    str[0]= 0;
+  }
+}
+
+static void kill_fonts( void )
+{ //free font list
+  if( font_families != NULL ){
+    g_free (font_families);
+    font_families= NULL;
+  }
+}
+
+
 //from textadept.c
 static void show_context_menu(lua_State *L, GdkEventButton *event, char *k);
 //pre-def
@@ -398,6 +431,10 @@ static int ltoolbar_getversion(lua_State *L)
   int opt= lua_tointeger(L, 1);
   str[0]= 0;
   switch( opt ){
+    case 0:   //0: tatoolbar version
+      strcpy( str, get_toolbar_version() );
+      break;
+
     case 1:   //1: compilation date
       strcpy( str, __DATE__ );
       break;
@@ -410,8 +447,14 @@ static int ltoolbar_getversion(lua_State *L)
       sprintf( str, "%d.%d.%d", GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION );
       break;
 
-    default:    //0: tatoolbar version
-      strcpy( str, get_toolbar_version() );
+    case 4:   //4: get the number of installed fonts
+      sprintf( str, "%d", n_font_families );
+      break;
+
+    default:  //100:... get fonts name
+      //to print all available fonts run:
+      //  for i=100, tonumber(toolbar.getversion(4))+99 do print(i, toolbar.getversion(i)) end
+      get_font_name( str, sizeof(str), opt-100 );
       break;
   }
   lua_pushstring(L,str);
@@ -1967,6 +2010,9 @@ void register_toolbar(lua_State *L)
   DEF_C_FUNC(L, ltbh_scroll_getclickcol,"getclickcol");     //get clicked col number
   DEF_C_FUNC(L, ltbh_scroll_scrollpos,  "scrollpos");       //set scroll bar position and size
   lua_setglobal(L, "tbh_scroll");
+
+  //load font list
+  load_fonts();
 }
 
 /* status bar text changed */
@@ -2269,6 +2315,9 @@ void kill_tatoolbar( void )
 
   //free all filediff memory
   fdiff_killall();
+
+  //free font list
+  kill_fonts();
 }
 
 void fire_minimap_scroll( int dir )
