@@ -3,10 +3,87 @@
 local Util = Util
 local events, events_connect = events, events.connect
 
-local filter= ""
 local dialog_w= 800
 local dialog_h= 600
 local itemsgrp
+
+local data_list= {}
+local data_icon= ""
+local select_it= ""
+
+local filter= ""
+local idx_filtered= {}
+local ensure_it_vis= nil
+local idx_sel_i= 0
+
+local function close_dialog()
+  toolbar.popup(toolbar.DIALOG_POPUP,false) --hide dialog
+end
+
+local function close_dialog_ev(npop)
+  if npop == toolbar.DIALOG_POPUP then close_dialog() end
+end
+events_connect("popup_close", close_dialog_ev)
+
+local function item_clicked(cmd) --click= select
+  local itnum= toolbar.getnum_cmd(cmd)
+  if itnum then
+    select_it= data_list[itnum]
+    ui.statusbar_text= "it selected: " .. select_it
+  end
+  close_dialog()
+end
+
+local function load_data()
+  --remove all items
+  toolbar.listtb_y= 1
+  toolbar.listright= dialog_w-3
+  toolbar.sel_dialog_popup(itemsgrp,true) --empty items group
+  --load data
+  local flt= string.lower(Util.escape_filter(filter))
+  local n= 0
+  idx_sel_i= 0
+  idx_filtered= {}
+  local i
+  for i=1, #data_list do
+    local itname= string.lower(data_list[i])  --ignore case
+    if flt == '' or itname:match(flt) then
+      n= n+1
+      idx_filtered[n]= i
+      toolbar.list_add_txt_ico("it#"..i, data_list[i], "", false, item_clicked, data_icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
+      if select_it == "" then select_it= data_list[i] end --select first when none is provided
+      if select_it == data_list[i] then idx_sel_i= n ensure_it_vis="it#"..i toolbar.selected(ensure_it_vis, false, true) end
+    end
+  end
+  if idx_sel_i == 0 and n > 0 then
+    idx_sel_i= 1
+    i= idx_filtered[idx_sel_i]
+    select_it= data_list[i]
+    ensure_it_vis="it#"..i
+    toolbar.selected(ensure_it_vis, false, true)
+  end
+end
+
+local function ensure_sel_view()
+  if ensure_it_vis then
+    toolbar.ensurevisible(ensure_it_vis, true)
+    ensure_it_vis= nil
+  end
+end
+
+local function change_selection(newsel)
+  if idx_sel_i ~= newsel then
+    if newsel < 1 then newsel=1 end
+    if newsel > #idx_filtered then newsel= #idx_filtered end
+    toolbar.selected("it#"..idx_filtered[idx_sel_i], false, false)
+    idx_sel_i= newsel
+    ensure_it_vis= "it#"..idx_filtered[idx_sel_i]
+    toolbar.selected(ensure_it_vis, false, true)
+    ensure_sel_view()
+    return true
+  end
+  return false
+end
 
 local function update_filter()
   local ena= true
@@ -26,16 +103,8 @@ local function filter_key(keycode)
     filter= ""
   end
   update_filter()
+  load_data()
 end
-
-local function close_dialog()
-  toolbar.popup(toolbar.DIALOG_POPUP,false) --hide dialog
-end
-
-local function close_dialog_ev(npop)
-  if npop == toolbar.DIALOG_POPUP then close_dialog() end
-end
-events_connect("popup_close", close_dialog_ev)
 
 local function translate_keypad_codes(keycode)
   --convert keypad keycodes: *+-./0..9
@@ -48,11 +117,19 @@ local function dialog_key_ev(npop, keycode)
     --ui.statusbar_text= "dialog key= ".. keycode
     keycode= translate_keypad_codes(keycode)
     if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
-      --select and close
+      if idx_sel_i > 0 then item_clicked("it#"..idx_filtered[idx_sel_i]) end --select and close
     elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
-      --select previous item
+      change_selection( idx_sel_i-1 )  --select previous item
     elseif keycode == toolbar.KEY.DOWN or keycode == toolbar.KEY.RIGHT then
-      --select next item
+      change_selection( idx_sel_i+1 )  --select next item
+    elseif keycode == toolbar.KEY.PG_UP then
+      change_selection( idx_sel_i-10 )  --select previous page item
+    elseif keycode == toolbar.KEY.PG_DWN then
+      change_selection( idx_sel_i+10 )  --select next page item
+    elseif keycode == toolbar.KEY.HOME then
+      change_selection( 1 )  --select previous page item
+    elseif keycode == toolbar.KEY.END then
+      change_selection( #idx_filtered )  --select next page item
     else
       filter_key(keycode) --modify filter
     end
@@ -60,17 +137,6 @@ local function dialog_key_ev(npop, keycode)
   end
 end
 events_connect("popup_key", dialog_key_ev)
-
-local function list_clear()
-  --remove all items
-  toolbar.listtb_y= 1
-  toolbar.listright= dialog_w-3
-  toolbar.sel_dialog_popup(itemsgrp,true) --empty items group
-end
-
-local function item_clicked(cmd) --click= select
-  close_dialog()
-end
 
 local function create_dialog(title, width, height)
   dialog_w= width
@@ -110,26 +176,18 @@ local function create_dialog(title, width, height)
   --items group: full width + items height w/scroll
   itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, false)
   toolbar.setdefaulttextfont()
-  list_clear()
-
-  local ls= toolbar.get_font_list() --get available fonts
-  if #ls > 0 then
-    for i=1, #ls do
-      toolbar.list_add_txt_ico("it#"..i, ls[i], "", false, item_clicked, "format-text-italic", (i%2 ==1),  0, 0, 0, dialog_w-13)
-    end
-  else --old version: show test items
-    for i=1, 30 do
-      toolbar.list_add_txt_ico("it#"..i, "Item num "..i, "", false, item_clicked, "t_struct", (i%2 ==1),  0, 0, 0, dialog_w-13)
-    end
-  end
+  load_data()
 end
 
---function toolbar.show_popup(btname,anchor)
---  create_dialog("Test 1",600,300)
---  toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,dialog_w,dialog_h) --anchor to a button (toolbar.ANCHOR)
---end
-
 function toolbar.show_popup_center()
+  data_list= toolbar.get_font_list() --get available fonts
+  data_icon= "format-text-italic"
+  if #data_list < 1 then --old version: show test items
+    for i=1, 30 do data_list[i]= "Item num "..i end
+    data_icon= "t_struct"
+  end
   create_dialog("Font chooser",600,300)
   toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
+--  toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,dialog_w,dialog_h) --anchor to a button (toolbar.ANCHOR)
+  ensure_sel_view()
 end
