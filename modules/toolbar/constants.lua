@@ -195,3 +195,28 @@ toolbar.ANCHOR = {
   POP_B_IT_B    = 24, --popup bottom at item bottom
   POP_T_IT_B    = 32, --popup top    at item bottom
 }
+
+toolbar.GETVER = {    --toolbar.getversion(x)
+  TATOOLBAR     = 0,  --tatoolbar version: "1.1.8 (Dec 14 2020)"
+  COMPILED      = 1,  --compilation date:  "Dec 14 2020"
+  TATARGET      = 2,  --target TA version: "11.0"
+  GTK           = 3,  --GTK version:       "2.24.32"
+  N_FONTS       = 4,  --number of installed fonts: "175"
+  FONT_BASE     = 100 --name of the first font (100 .. 100+N_FONTS-1)
+}
+
+local font_list= {}
+
+function toolbar.get_font_list()
+  if #font_list < 1 then
+    local nfonts= tonumber(toolbar.getversion(toolbar.GETVER.N_FONTS)) --number of available fonts
+    if nfonts then
+      local i --sort by font name
+      for i=1, nfonts do
+        font_list[#font_list+1]= toolbar.getversion(i+toolbar.GETVER.FONT_BASE-1)
+      end
+      table.sort(font_list)
+    end
+  end
+  return font_list
+end

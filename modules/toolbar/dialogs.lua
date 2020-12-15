@@ -112,14 +112,9 @@ local function create_dialog(title, width, height)
   toolbar.setdefaulttextfont()
   list_clear()
 
-  local nfonts= tonumber(toolbar.getversion(4)) --number of available fonts
-  if nfonts then
-    local ls= {}
-    for i=1, nfonts do
-      ls[#ls+1]= toolbar.getversion(i+99)
-    end
-    table.sort(ls)
-    for i=1, nfonts do
+  local ls= toolbar.get_font_list() --get available fonts
+  if #ls > 0 then
+    for i=1, #ls do
       toolbar.list_add_txt_ico("it#"..i, ls[i], "", false, item_clicked, "format-text-italic", (i%2 ==1),  0, 0, 0, dialog_w-13)
     end
   else --old version: show test items
