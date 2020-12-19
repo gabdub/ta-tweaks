@@ -287,6 +287,7 @@ struct toolbar_group
   int ynew;
 
   //text buttons
+  int txtfontnum; //font family (0=default) (1..n_font_families)
   int txtfontsz;  //font size in points (default = 12 points)
   int txttexth;   //font height
   int txttextoff; //font y offset
@@ -300,6 +301,7 @@ struct toolbar_group
   int tabheight;
   int tabwidth;   //total 'fixed' tab width without extra space
   int closeintabs;
+  int tabfontnum; //font family (0=default) (1..n_font_families)
   int tabfontsz;  //font size in points (default = 10 points)
   int tabtexth;   //font height
   int tabtextoff; //font y offset
@@ -432,13 +434,15 @@ extern struct all_toolbars_data ttb;
 
 /* ============================================================================= */
 /* ta_glue.c */
+extern int n_font_families;
+
 char * alloc_img_str( const char *name );
 void redraw_begG( struct toolbar_group *G );
 void redraw_endG( struct toolbar_group *G );
 void redraw_toolbar( struct toolbar_data *T );
 void redraw_group( struct toolbar_group *G );
 void redraw_item( struct toolbar_item * p );
-void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold );
+void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold, int font_num );
 void draw_img( void * gcontext, struct toolbar_img *pti, int x, int y, int grayed );
 void draw_fill_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
 void draw_fill_mp_img( void * gcontext, struct toolbar_img *pti, int x, int y, int w, int h );
@@ -446,8 +450,8 @@ void draw_box( void * gcontext, int x, int y, int w, int h, int color, int fill 
 void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h, struct toolbar_img * opt_pti );
 int  set_img_size( struct toolbar_img *pti );
 int  set_text_bt_width(struct toolbar_item * p );
-int  get_text_width( const char * text, int fontsz );
-int  get_text_height( const char * text, int fontsz );
+int  get_text_width( const char * text, int fontsz, int font_num );
+int  get_text_height( const char * text, int fontsz, int font_num );
 void clear_tooltip_textT( struct toolbar_data *T );
 void set_hilight_tooltipT( struct toolbar_data *T );
 void set_toolbar_size(struct toolbar_data *T);
@@ -477,7 +481,7 @@ void group_vscroll_onoff( struct toolbar_group * g, int forceredraw );
 void toolbar_vscroll_onoff( struct toolbar_data *T );
 void ensure_item_isvisible(struct toolbar_item * p);
 struct toolbar_group *add_groupT_rcoh(struct toolbar_data *T, int xcontrol, int ycontrol, int hidden);
-void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclose, int modshow, int fntsz, int fntyoff, int wdrag, int xcontrol, int height);
+void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclose, int modshow, int fntsz, int fntyoff, int wdrag, int xcontrol, int height, int fontnum);
 void ttb_show_groupG( struct toolbar_group *G, int show );
 struct toolbar_item *add_itemG(struct toolbar_group *G, const char * name, const char * img, const char *tooltip, const char * text, int chwidth, int flags);
 void update_group_sizeG( struct toolbar_group *G, int redraw );
@@ -491,7 +495,7 @@ void set_color_pick_rgb( int color );
 void ttb_set_back_colorT(struct toolbar_data *T, const char *name, int color, int keepback );
 void ttb_change_button_tooltipT(struct toolbar_data *T, const char *name, const char *tooltip );
 void ttb_change_button_textT(struct toolbar_data *T, const char *name, const char *text );
-void ttb_set_text_fontcolG(struct toolbar_group *G, int fntsz, int fntyoff, int ncol, int gcol);
+void ttb_set_text_fontcolG(struct toolbar_group *G, int fntsz, int fntyoff, int ncol, int gcol, int fontnum);
 void ttb_set_tab_colorsG(struct toolbar_group *G, int ncol, int hcol, int acol, int mcol, int gcol);
 void set_tabtextG(struct toolbar_group *G, int ntab, const char * text, const char *tooltip, int redraw);
 int  get_tabtext_widthG(struct toolbar_group *G, const char * text );

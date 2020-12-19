@@ -8,7 +8,7 @@
 #include "ta_filediff.h"
 
 static PangoFontFamily ** font_families= NULL;
-static int n_font_families= 0;
+int n_font_families= 0;
 
 static void load_fonts( void )
 { //load font list
@@ -152,13 +152,13 @@ static int ltoolbar_addgroup(lua_State *L)
   return 1;
 }
 
-/** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-drag],[xcontrol],[height])` Lua function. */
+/** `toolbar.addtabs(xmargin,xsep,withclose,mod-show,fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])` Lua function. */
 /** xcontrol: 0:allow groups before and after 1:no groups at the left 2:no groups at the right
               3:exclusive row  +4:x-expand  +8:use item size for width */
 static int ltoolbar_addtabs(lua_State *L)
 {
   ttb_new_tabs_groupT( current_toolbar(), lua_tointeger(L,1), lua_tointeger(L,2), lua_toboolean(L,3),
-    lua_tointeger(L,4), lua_tointeger(L,5), lua_tointeger(L,6), lua_toboolean(L,7), lua_tointeger(L,8), lua_tointeger(L,9) );
+    lua_tointeger(L,4), lua_tointeger(L,5), lua_tointeger(L,6), lua_toboolean(L,7), lua_tointeger(L,8), lua_tointeger(L,9), lua_tointeger(L,10) );
   return 0;
 }
 
@@ -312,11 +312,11 @@ static int ltoolbar_settext(lua_State *L)
   return 0;
 }
 
-/** `toolbar.textfont(fontsize,fontyoffset,NORMcol,GRAYcol)` Lua function. */
+/** `toolbar.textfont(fontsize,fontyoffset,NORMcol,GRAYcol,font-number)` Lua function. */
 static int ltoolbar_textfont(lua_State *L)
 {
   ttb_set_text_fontcolG( current_buttongrp(), lua_tointeger(L, 1), lua_tointeger(L, 2),
-    intluadef(L, 3, 0x000000), intluadef(L, 4, 0x808080) );
+    intluadef(L, 3, 0x000000), intluadef(L, 4, 0x808080), lua_tointeger(L, 5) );
   return 0;
 }
 
@@ -624,7 +624,21 @@ void redraw_pending_toolbars( void )
   }
 }
 
-void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold )
+static void ctx_set_font( void * ctx, int fontsz, int bold, int font_num )
+{
+  cairo_set_font_size(ctx, fontsz);
+  if( (font_num > 0) || (bold != 0) ){
+    char fname[300];
+    get_font_name( fname, sizeof(fname), font_num );
+    if( bold == 0 ){
+      cairo_select_font_face(ctx, fname, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL );
+    }else{
+      cairo_select_font_face(ctx, fname, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD );
+    }
+  }
+}
+
+void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold, int font_num )
 {
   if( txt != NULL ){
     cairo_t *ctx= (cairo_t *) gcontext;
@@ -633,10 +647,7 @@ void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, in
     cairo_clip(ctx);
     cairo_move_to(ctx, x, y);
     cairo_set_source_rgb(ctx, color->R, color->G, color->B);
-    cairo_set_font_size(ctx, fontsz);
-    if( bold ){
-      cairo_select_font_face(ctx, "", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD );
-    }
+    ctx_set_font( ctx, fontsz, bold, font_num );
     cairo_show_text(ctx, txt);
     cairo_restore(ctx);
   }
@@ -1097,7 +1108,7 @@ void draw_fill_color( void * gcontext, int color, int x, int y, int w, int h, st
 
     if( str[0] != 0 ){
       c.R= tcol;  c.G= tcol;   c.B= tcol;
-      draw_txt(ctx, str, x+4, y+16, y, w-8, h, &c, 10, 0 );
+      draw_txt(ctx, str, x+4, y+16, y, w-8, h, &c, 10, 0, 0 );
     }
   }
 }
@@ -1258,7 +1269,7 @@ int set_text_bt_width(struct toolbar_item * p )
   return diff;
 }
 
-int get_text_width( const char * text, int fontsz )
+int get_text_width( const char * text, int fontsz, int font_num )
 {
   int w;
 // NOTE: using variable width in status-bar fields 2..7 in "WIN32" breaks the UI!!
@@ -1269,20 +1280,20 @@ int get_text_width( const char * text, int fontsz )
   cairo_text_extents_t ext;
   //use toolbar #0 to measure text (pop-ups may not have a window yet)
   cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window); //get_draw_widget(p->group->toolbar)->window);
-  cairo_set_font_size(cr, fontsz );
+  ctx_set_font( cr, fontsz, 0, font_num );
   cairo_text_extents( cr, text, &ext );
   w= (int) ext.width +1; //+1 to see the antialiasing complete
   cairo_destroy(cr);
   return w;
 }
 
-int get_text_height( const char * text, int fontsz )
+int get_text_height( const char * text, int fontsz, int font_num )
 {
   int h;
   cairo_text_extents_t ext;
   //use toolbar #0 to measure text (pop-ups may not have a window yet)
   cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window); //get_draw_widget(p->group->toolbar)->window);
-  cairo_set_font_size(cr, fontsz );
+  ctx_set_font( cr, fontsz, 0, font_num );
   cairo_text_extents( cr, text, &ext );
   h= (int) ext.height;
   cairo_destroy(cr);

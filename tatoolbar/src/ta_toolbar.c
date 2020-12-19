@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.9 (Dec 19 2020)"
+#define TA_TOOLBAR_VERSION_STR "1.1.10 (Dec 19 2020)"
 
 static void free_img_list( void );
 
@@ -1012,7 +1012,7 @@ static void set_tabwidth(struct toolbar_item * p)
       // calling get_text_width() in this context (to get the text extension) freeze the UI for a second
       // and breaks the editor update mecanism (this works fine under LINUX, though)
       // so, fixed width is used for this fields
-          p->textwidth= get_text_width( p->text, G->tabfontsz );
+          p->textwidth= get_text_width( p->text, G->tabfontsz, G->tabfontnum );
         }
         p->barx2= p->prew + p->textwidth + p->postw;
       }else{
@@ -1520,7 +1520,7 @@ int get_tabtext_widthG(struct toolbar_group *G, const char * text )
     if( tn != NULL ){
       wb= tn->width_l + tn->width_r;
     }
-    return get_text_width( text, G->tabfontsz) + wb;
+    return get_text_width( text, G->tabfontsz, G->tabfontnum) + wb;
   }
   return 0;
 }
@@ -2227,12 +2227,15 @@ void ttb_change_button_textT(struct toolbar_data *T, const char *name, const cha
   }
 }
 
-void ttb_set_text_fontcolG(struct toolbar_group *G, int fntsz, int fntyoff, int ncol, int gcol)
+void ttb_set_text_fontcolG(struct toolbar_group *G, int fntsz, int fntyoff, int ncol, int gcol, int fontnum)
 {
   if( G != NULL ){
     G->txtfontsz= fntsz;  //font size in points (default = 12 points)
     if( G->txtfontsz < 2){
       G->txtfontsz= 12;
+    }
+    if( (fontnum >= 0) && (fontnum <= n_font_families) ){
+      G->txtfontnum= fontnum;
     }
     /* TO DO: new font size= check buttons width */
     G->txttextoff= fntyoff;
@@ -2377,7 +2380,7 @@ void ttb_addspaceG(struct toolbar_group * G, int sepsize, int hide)
 /* ==== TABS ==== */
 
 void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclose, int modshow,
-  int fntsz, int fntyoff, int wdrag, int xcontrol, int height)
+  int fntsz, int fntyoff, int wdrag, int xcontrol, int height, int fontnum)
 {
   struct toolbar_group *G;
   int i, rgb, flags;
@@ -2401,7 +2404,10 @@ void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclo
       if( G->tabfontsz < 2){
         G->tabfontsz= 10;
       }
-      G->tabtexth= get_text_height( "H", G->tabfontsz);
+      if( (fontnum >= 0) && (fontnum <= n_font_families) ){
+        G->tabfontnum= fontnum;
+      }
+      G->tabtexth= get_text_height( "H", G->tabfontsz, G->tabfontnum);
 
       G->tabtextoff= fntyoff;
       //center text verticaly + offset
@@ -2819,7 +2825,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
   if( G->closeintabs ){
     draw_img(gcontext, get_group_img(G,hc), x3, y, 0 );
   }
-  draw_txt(gcontext, t->text, x+t->txtx+t->offx, y+t->txty+t->offy, y, x3-x-t->txtx-t->offx, ht, color, G->tabfontsz, 0 );
+  draw_txt(gcontext, t->text, x+t->txtx+t->offx, y+t->txty+t->offy, y, x3-x-t->txtx-t->offx, ht, color, G->tabfontsz, 0, G->tabfontnum );
 }
 
 void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
@@ -2957,7 +2963,7 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
             color= &(g->txttextcolG);
           }
           xa= x0 + p->barx2 - p->postw;
-          draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa-x+1, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD) );
+          draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa-x+1, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD), g->txtfontnum );
           //debug: show text buttons
           //draw_box(gcontext, x0+p->barx1, y0+p->bary1, p->barx2-p->barx1, p->bary2-p->bary1, 0x000080, 0);
         }
