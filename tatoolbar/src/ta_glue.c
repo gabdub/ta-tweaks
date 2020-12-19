@@ -20,9 +20,9 @@ static void load_fonts( void )
 }
 
 static void get_font_name( char *str, int str_sz, int nfont )
-{ //return the name of the font family "nfont"
-  if( (nfont >= 0) && (nfont < n_font_families) && (str_sz > 1) ){
-    PangoFontFamily * family = font_families[ nfont ];
+{ //return the name of the font family "nfont" (1...n_font_families, 0="")
+  if( (nfont > 0) && (nfont <= n_font_families) && (str_sz > 1) ){
+    PangoFontFamily * family = font_families[ nfont-1 ];
     const char * family_name= pango_font_family_get_name( family );
     strncpy( str, family_name, str_sz-1 );
     str[str_sz-1]= 0;
@@ -425,6 +425,10 @@ static int ltoolbar_getpickcolor(lua_State *L)
 }
 
 /** `toolbar.getversion([opt])` Lua function. */
+/** opt:  0:ta-toolbar version: "1.0.13 (Nov 13 2018)", 1: compilation date :"Nov 13 2018", 2:target TA version:"10.2", 3:GTK version: "2.24.32" */
+/** opt:  4:number of font families */
+/** opt:  100: "" (default font) */
+/** opt:  101..100+tonumber(toolbar.getversion(4)): font names */
 static int ltoolbar_getversion(lua_State *L)
 {
   char str[200];
@@ -453,7 +457,7 @@ static int ltoolbar_getversion(lua_State *L)
 
     default:  //100:... get fonts name
       //to print all available fonts run:
-      //  for i=100, tonumber(toolbar.getversion(4))+99 do print(i, toolbar.getversion(i)) end
+      //  for i=101, tonumber(toolbar.getversion(4))+100 do print(i, toolbar.getversion(i)) end
       get_font_name( str, sizeof(str), opt-100 );
       break;
   }

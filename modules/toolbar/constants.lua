@@ -213,7 +213,7 @@ function toolbar.get_font_list()
     if nfonts then
       local i --sort by font name
       for i=1, nfonts do
-        font_list[#font_list+1]= toolbar.getversion(i+toolbar.GETVER.FONT_BASE-1)
+        font_list[#font_list+1]= toolbar.getversion(i+toolbar.GETVER.FONT_BASE)
       end
       table.sort(font_list)
     end
