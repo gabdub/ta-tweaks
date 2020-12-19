@@ -624,11 +624,10 @@ void redraw_pending_toolbars( void )
   }
 }
 
-static void ctx_set_font( void * ctx, int fontsz, int bold, int font_num )
+static void ctx_set_font( cairo_t * ctx, int fontsz, int bold, int font_num )
 {
-  cairo_set_font_size(ctx, fontsz);
+  char fname[300];
   if( (font_num > 0) || (bold != 0) ){
-    char fname[300];
     get_font_name( fname, sizeof(fname), font_num );
     if( bold == 0 ){
       cairo_select_font_face(ctx, fname, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL );
@@ -636,6 +635,7 @@ static void ctx_set_font( void * ctx, int fontsz, int bold, int font_num )
       cairo_select_font_face(ctx, fname, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD );
     }
   }
+  cairo_set_font_size(ctx, fontsz);
 }
 
 void draw_txt( void * gcontext, const char *txt, int x, int y, int y1, int w, int h, struct color3doubles *color, int fontsz, int bold, int font_num )

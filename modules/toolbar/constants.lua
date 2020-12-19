@@ -220,3 +220,11 @@ function toolbar.get_font_list()
   end
   return font_list
 end
+
+function toolbar.get_font_num(fontname)
+  if #font_list < 1 then toolbar.get_font_list() end
+  for i=1, #font_list do
+    if font_list[i] == fontname then return i end
+  end
+  return 0
+end
