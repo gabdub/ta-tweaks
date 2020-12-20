@@ -441,9 +441,9 @@ if toolbar then
     if tabwithclose == nil then tabwithclose= toolbar.cfg.tabwithclose end
     if tabwidthmode == nil then tabwidthmode= toolbar.cfg.tabwidthmode end
     if tabwidthmin  == nil then tabwidthmin=  toolbar.cfg.tabwidthmin  end
-    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
+    --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
     toolbar.addtabs(toolbar.cfg.tabxmargin, toolbar.cfg.tabxsep, tabwithclose, toolbar.cfg.tabmodified,
-        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah) --enable drag support
+        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah) --, toolbar.get_font_num("Ubuntu Condensed")) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
     toolbar.tabfontcolor(toolbar.cfg.tabcolor_normal, toolbar.cfg.tabcolor_hilight, toolbar.cfg.tabcolor_active,
@@ -625,9 +625,9 @@ if toolbar then
     end
     toolbar.sel_stat_bar()
     if toolbar.statbar == 2 then
-      --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height])
+      --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
       toolbar.addtabs(toolbar.cfg.statxmargin, toolbar.cfg.statxsep, false, 0,
-        toolbar.cfg.statfont_sz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize) --x-expanded
+        toolbar.cfg.statfont_sz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize) --, toolbar.get_font_num("Ubuntu Condensed")) --x-expanded
       toolbar.tabfontcolor( toolbar.cfg.statcolor_normal, toolbar.cfg.statcolor_hilight, toolbar.cfg.tabcolor_active,
         toolbar.cfg.tabcolor_modif, toolbar.cfg.statcolor_normal ) --grayed= normal
       --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding

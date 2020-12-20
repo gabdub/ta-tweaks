@@ -206,6 +206,7 @@ toolbar.GETVER = {    --toolbar.getversion(x)
 }
 
 local font_list= {}
+local font_nums= {}
 
 function toolbar.get_font_list()
   if #font_list < 1 then
@@ -213,7 +214,9 @@ function toolbar.get_font_list()
     if nfonts then
       local i --sort by font name
       for i=1, nfonts do
-        font_list[#font_list+1]= toolbar.getversion(i+toolbar.GETVER.FONT_BASE)
+        local fontn= toolbar.getversion(i+toolbar.GETVER.FONT_BASE)
+        font_list[#font_list+1]= fontn
+        font_nums[fontn]= i
       end
       table.sort(font_list)
     end
@@ -223,8 +226,5 @@ end
 
 function toolbar.get_font_num(fontname)
   if #font_list < 1 then toolbar.get_font_list() end
-  for i=1, #font_list do
-    if font_list[i] == fontname then return i end
-  end
-  return 0
+  return font_nums[fontname] or 0
 end

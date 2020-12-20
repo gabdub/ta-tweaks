@@ -128,7 +128,7 @@ local function add_config_start(startgroup)
 end
 
 function toolbar.setdefaulttextfont()
-  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed) --, toolbar.get_font_num("Monospace")) --TEST
 end
 
 local function add_config_tabgroup(name,title,ngrp)
