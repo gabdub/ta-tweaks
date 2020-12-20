@@ -205,11 +205,14 @@ toolbar.GETVER = {    --toolbar.getversion(x)
   FONT_BASE     = 100 --name of the first font (100 .. 100+N_FONTS-1)
 }
 
+toolbar.DEFAULT_FONT= "(default)"
+
 local font_list= {}
 local font_nums= {}
 
 function toolbar.get_font_list()
   if #font_list < 1 then
+    font_list[1]= toolbar.DEFAULT_FONT
     local nfonts= tonumber(toolbar.getversion(toolbar.GETVER.N_FONTS)) --number of available fonts
     if nfonts then
       local i --sort by font name

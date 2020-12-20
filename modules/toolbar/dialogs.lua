@@ -8,8 +8,10 @@ local dialog_h= 600
 local itemsgrp
 local previewgrp
 
-local data_list= {}
-local data_icon= ""
+local dialog_list= {}
+local dialog_data_icon= ""
+local dialog_font_preview= false
+local dialog_single_click= false
 local select_it= ""
 
 local filter= ""
@@ -26,21 +28,47 @@ local function close_dialog_ev(npop)
 end
 events_connect("popup_close", close_dialog_ev)
 
-local function item_clicked(cmd) --click= select
+local function update_preview()
+  if dialog_font_preview and (idx_sel_i > 0) then
+    local font= dialog_list[idx_filtered[idx_sel_i]]
+    toolbar.sel_dialog_popup(previewgrp,false)
+    toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.get_font_num(font))
+  end
+end
+
+local function ensure_sel_view()
+  if ensure_it_vis then
+    toolbar.ensurevisible(ensure_it_vis, true)
+    ensure_it_vis= nil
+  end
+end
+
+local function change_selection(newsel)
+  if newsel and idx_sel_i ~= newsel then
+    if newsel < 1 then newsel=1 end
+    if newsel > #idx_filtered then newsel= #idx_filtered end
+    toolbar.selected("it#"..idx_filtered[idx_sel_i], false, false)
+    idx_sel_i= newsel
+    ensure_it_vis= "it#"..idx_filtered[idx_sel_i]
+    toolbar.selected(ensure_it_vis, false, true)
+    ensure_sel_view()
+    update_preview()
+    return true
+  end
+  return false
+end
+
+local function choose_item(cmd)
   local itnum= toolbar.getnum_cmd(cmd)
   if itnum then
-    select_it= data_list[itnum]
+    select_it= dialog_list[itnum]
     ui.statusbar_text= "it selected: " .. select_it
   end
   close_dialog()
 end
 
-local function update_preview()
-  if idx_sel_i > 0 then
-    local font= data_list[idx_filtered[idx_sel_i]]
-    toolbar.sel_dialog_popup(previewgrp,false)
-    toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.get_font_num(font))
-  end
+local function click_item(cmd)
+  if dialog_single_click then choose_item(cmd) else change_selection(toolbar.getnum_cmd(cmd)) end
 end
 
 local function load_data()
@@ -54,46 +82,26 @@ local function load_data()
   idx_sel_i= 0
   idx_filtered= {}
   local i
-  for i=1, #data_list do
-    local itname= string.lower(data_list[i])  --ignore case
+  for i=1, #dialog_list do
+    local itname= string.lower(dialog_list[i])  --ignore case
     if flt == '' or itname:match(flt) then
       n= n+1
       idx_filtered[n]= i
-      toolbar.list_add_txt_ico("it#"..i, data_list[i], "", false, item_clicked, data_icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
-      if select_it == "" then select_it= data_list[i] end --select first when none is provided
-      if select_it == data_list[i] then idx_sel_i= n ensure_it_vis="it#"..i toolbar.selected(ensure_it_vis, false, true) end
+      local btname= "it#"..i
+      toolbar.list_add_txt_ico(btname, dialog_list[i], "", false, click_item, dialog_data_icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
+      toolbar.cmd_dclick(btname, choose_item)
+      if select_it == "" then select_it= dialog_list[i] end --select first when none is provided
+      if select_it == dialog_list[i] then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
     end
   end
   if idx_sel_i == 0 and n > 0 then
     idx_sel_i= 1
     i= idx_filtered[idx_sel_i]
-    select_it= data_list[i]
+    select_it= dialog_list[i]
     ensure_it_vis="it#"..i
     toolbar.selected(ensure_it_vis, false, true)
   end
   update_preview()
-end
-
-local function ensure_sel_view()
-  if ensure_it_vis then
-    toolbar.ensurevisible(ensure_it_vis, true)
-    ensure_it_vis= nil
-  end
-end
-
-local function change_selection(newsel)
-  if idx_sel_i ~= newsel then
-    if newsel < 1 then newsel=1 end
-    if newsel > #idx_filtered then newsel= #idx_filtered end
-    toolbar.selected("it#"..idx_filtered[idx_sel_i], false, false)
-    idx_sel_i= newsel
-    ensure_it_vis= "it#"..idx_filtered[idx_sel_i]
-    toolbar.selected(ensure_it_vis, false, true)
-    ensure_sel_view()
-    update_preview()
-    return true
-  end
-  return false
 end
 
 local function update_filter()
@@ -128,7 +136,7 @@ local function dialog_key_ev(npop, keycode)
     --ui.statusbar_text= "dialog key= ".. keycode
     keycode= translate_keypad_codes(keycode)
     if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
-      if idx_sel_i > 0 then item_clicked("it#"..idx_filtered[idx_sel_i]) end --select and close
+      if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
     elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
       change_selection( idx_sel_i-1 )  --select previous item
     elseif keycode == toolbar.KEY.DOWN or keycode == toolbar.KEY.RIGHT then
@@ -149,9 +157,14 @@ local function dialog_key_ev(npop, keycode)
 end
 events_connect("popup_key", dialog_key_ev)
 
-local function create_dialog(title, width, height)
+local function create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
   dialog_w= width
   dialog_h= height
+  dialog_list= datalist
+  dialog_data_icon= dataicon
+  dialog_font_preview= show_font_preview
+  dialog_single_click= singleclick
+
   filter= ""
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
   toolbar.setdefaulttextfont()
@@ -174,9 +187,11 @@ local function create_dialog(title, width, height)
   toolbar.list_cmdright= 2
   toolbar.list_addbutton("window-close", "Close", close_dialog)
 
-  previewgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 30, false)
-  toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-  toolbar.addlabel("0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", "", dialog_w-5, true, false, "preview-txt")
+  if dialog_font_preview then
+    previewgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 30, false)
+    toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.addlabel("0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", "", dialog_w-5, true, false, "preview-txt")
+  end
 
   --filter group: full width + items height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
@@ -195,13 +210,7 @@ local function create_dialog(title, width, height)
 end
 
 function toolbar.show_popup_center()
-  data_list= toolbar.get_font_list() --get available fonts
-  data_icon= "format-text-italic"
-  if #data_list < 1 then --old version: show test items
-    for i=1, 30 do data_list[i]= "Item num "..i end
-    data_icon= "t_struct"
-  end
-  create_dialog("Font chooser",600,330)
+  create_dialog("Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
 --  toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,dialog_w,dialog_h) --anchor to a button (toolbar.ANCHOR)
   ensure_sel_view()
