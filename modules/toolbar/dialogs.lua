@@ -6,6 +6,7 @@ local events, events_connect = events, events.connect
 local dialog_w= 800
 local dialog_h= 600
 local itemsgrp
+local previewgrp
 
 local data_list= {}
 local data_icon= ""
@@ -32,6 +33,14 @@ local function item_clicked(cmd) --click= select
     ui.statusbar_text= "it selected: " .. select_it
   end
   close_dialog()
+end
+
+local function update_preview()
+  if idx_sel_i > 0 then
+    local font= data_list[idx_filtered[idx_sel_i]]
+    toolbar.sel_dialog_popup(previewgrp,false)
+    toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.get_font_num(font))
+  end
 end
 
 local function load_data()
@@ -62,6 +71,7 @@ local function load_data()
     ensure_it_vis="it#"..i
     toolbar.selected(ensure_it_vis, false, true)
   end
+  update_preview()
 end
 
 local function ensure_sel_view()
@@ -80,6 +90,7 @@ local function change_selection(newsel)
     ensure_it_vis= "it#"..idx_filtered[idx_sel_i]
     toolbar.selected(ensure_it_vis, false, true)
     ensure_sel_view()
+    update_preview()
     return true
   end
   return false
@@ -163,8 +174,12 @@ local function create_dialog(title, width, height)
   toolbar.list_cmdright= 2
   toolbar.list_addbutton("window-close", "Close", close_dialog)
 
+  previewgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 30, false)
+  toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+  toolbar.addlabel("0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", "", dialog_w-5, true, false, "preview-txt")
+
   --filter group: full width + items height
-  local filtergrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
+  toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
@@ -186,7 +201,7 @@ function toolbar.show_popup_center()
     for i=1, 30 do data_list[i]= "Item num "..i end
     data_icon= "t_struct"
   end
-  create_dialog("Font chooser",600,300)
+  create_dialog("Font chooser",600,330)
   toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
 --  toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,dialog_w,dialog_h) --anchor to a button (toolbar.ANCHOR)
   ensure_sel_view()
