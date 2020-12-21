@@ -231,3 +231,9 @@ function toolbar.get_font_num(fontname)
   if #font_list < 1 then toolbar.get_font_list() end
   return font_nums[fontname] or 0
 end
+
+function toolbar.get_font_name(nfont)
+  if #font_list < 1 then toolbar.get_font_list() end
+  if nfont > 0 and nfont <= #font_list then return toolbar.getversion(nfont+toolbar.GETVER.FONT_BASE) end
+  return toolbar.DEFAULT_FONT
+end

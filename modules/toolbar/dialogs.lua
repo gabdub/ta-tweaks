@@ -13,6 +13,7 @@ local dialog_data_icon= ""
 local dialog_font_preview= false
 local dialog_single_click= false
 local select_it= ""
+local select_ev= nil
 
 local filter= ""
 local idx_filtered= {}
@@ -62,7 +63,8 @@ local function choose_item(cmd)
   local itnum= toolbar.getnum_cmd(cmd)
   if itnum then
     select_it= dialog_list[itnum]
-    ui.statusbar_text= "it selected: " .. select_it
+    --ui.statusbar_text= "it selected: " .. select_it
+    if select_ev then select_ev(select_it) end
   end
   close_dialog()
 end
@@ -209,8 +211,10 @@ local function create_dialog(title, width, height, datalist, dataicon, show_font
   load_data()
 end
 
-function toolbar.show_popup_center()
-  create_dialog("Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
+function toolbar.font_chooser(title, sel_font, font_selected)
+  select_it= sel_font
+  select_ev= font_selected
+  create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
 --  toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,dialog_w,dialog_h) --anchor to a button (toolbar.ANCHOR)
   ensure_sel_view()

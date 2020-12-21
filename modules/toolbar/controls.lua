@@ -180,6 +180,19 @@ function toolbar.set_combo_txt(name, txtval,dontset_toolbar)
   if not dontset_toolbar then toolbar.settext(name, txtval) end
 end
 
+local font_val= {}
+
+function toolbar.set_font_val(name, txtval, dontset_toolbar)
+  font_val[name]= txtval
+  if not dontset_toolbar then toolbar.settext(name, txtval) end
+end
+
+function toolbar.get_font_val(name)
+  local font= font_val[name]
+  if not font then font= toolbar.DEFAULT_FONT end
+  return font
+end
+
 events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
   if buttonname == "TOOLBAR" then
     buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)

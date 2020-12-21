@@ -181,6 +181,30 @@ local function add_config_label(text,extrasep,notbold,name)
   end
 end
 
+local font_lbls= {}
+local font_edit=""
+local function font_selected(newfontname)
+  toolbar.set_font_val(font_edit, newfontname)
+end
+local function changefont_clicked(name)
+  font_edit= name
+  toolbar.font_chooser(font_lbls[font_edit].." font", toolbar.get_font_val(font_edit), font_selected)
+end
+
+local function add_config_font(text, name)
+  font_lbls[name]= text
+  add_config_label(text)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext(toolbar.get_font_val(name), nil, "Change font", name)
+  toolbar.cmds_n[name]= changefont_clicked
+
+  pnly_newrow()
+  if toolbar.config_saveon then --save as a comment in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
+  end
+  add_config_separator()
+end
+
 local function add_config_check(name,text,tooltip,checked,notify)
   if checked == nil then checked=false end
   --text
@@ -549,11 +573,16 @@ function toolbar.save_config()
             if cname then --combo property: cbo.name:item-string
               savedata[n] = optname..":"..toolbar.get_combo_txt(optname)
             else
-              local rname= string.match(optname, "(.-):.+$")
-              if rname then --radio: name:index
-                savedata[n] = rname..":"..toolbar.get_radio_val(rname)
-              else --check: name=true/false
-                savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
+              cname= string.match(optname, "font%.(.+)$")
+              if cname then --font property: font.name:fontname (string)
+                savedata[n] = optname..":"..toolbar.get_font_val(optname)
+              else
+                local rname= string.match(optname, "(.-):.+$")
+                if rname then --radio: name:index
+                  savedata[n] = rname..":"..toolbar.get_radio_val(rname)
+                else --check: name=true/false
+                  savedata[n] = optname..(toolbar.get_check_val(optname) and ':true' or ':false')
+                end
               end
             end
           end
@@ -593,6 +622,8 @@ function toolbar.load_config(dontset_toolbar)
             colors=true
           elseif string.match(rname,'cbo%..*') then --"cbo.xxx" => combo
             toolbar.set_combo_txt(rname,rnum,dontset_toolbar)
+          elseif string.match(rname,'font%..*') then --"font.xxx" => font
+            toolbar.set_font_val(rname,rnum,dontset_toolbar)
           elseif rnum == 'true' then
             toolbar.set_check_val(rname,true,dontset_toolbar)
           elseif rnum == 'false' then
@@ -1225,6 +1256,18 @@ local function add_picker_cfg_panel()
   add_config_separator()
 end
 
+local function add_font_cfg_panel()
+  toolbar.fonts_panel= add_config_tabgroup("Fonts", "Font configuration")
+
+  add_config_font("Editor",  "font.editor")
+  add_config_font("Top bar", "font.top")
+  add_config_font("Tabs", "font.tabs")
+  add_config_font("Vertical bar/panel", "font.vert_panel")
+  add_config_font("Configuration panel", "font.config")
+  add_config_font("Status bar", "font.status")
+  add_config_font("Pop-ups", "font.popups")
+end
+
 function toolbar.add_config_panel()
   --create the "vertical right (config)" panel
   add_config_start( (buffer.reopen_config_panel or 1) ) --start panel
@@ -1233,6 +1276,7 @@ function toolbar.add_config_panel()
   add_toolbar_cfg_panel() --TOOLBAR
   add_colors_cfg_panel()  --COLORS
   add_picker_cfg_panel()  --COLOR PICKER
+  add_font_cfg_panel()    --FONT
 
   --load config settings / set toolbar controls
   toolbar.load_config()

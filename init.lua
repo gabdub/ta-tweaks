@@ -99,9 +99,6 @@ if toolbar then
 
   if Proj then toolbar.addaction("trim_trailingspaces") end
 
-  --popup TEST
-  toolbar.cmd("window-new", toolbar.show_popup_center, "TEST show popup")
-
   -- minimap/scrollbar (right internal toolbar)
   toolbar.minimap_setup()
 
