@@ -193,6 +193,10 @@ function toolbar.get_font_val(name)
   return font
 end
 
+function toolbar.get_cfg_font_num(name)
+  return toolbar.get_font_num(toolbar.get_font_val(name))
+end
+
 events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
   if buttonname == "TOOLBAR" then
     buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)

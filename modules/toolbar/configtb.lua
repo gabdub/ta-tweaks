@@ -1256,16 +1256,36 @@ local function add_picker_cfg_panel()
   add_config_separator()
 end
 
+local function restore_fonts()
+  if Util.confirm('Restore all fonts to default','All fonts will be reset to default', 'Do you want to proceed?') then
+    toolbar.set_font_val("font.editor", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.top", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.tabs", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.vert_panel", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.config", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.status", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.popups", toolbar.DEFAULT_FONT)
+    change_theme()
+  end
+end
+
 local function add_font_cfg_panel()
   toolbar.fonts_panel= add_config_tabgroup("Fonts", "Font configuration")
 
-  add_config_font("Editor",  "font.editor")
+  add_config_font("Editor", "font.editor")
   add_config_font("Top bar", "font.top")
   add_config_font("Tabs", "font.tabs")
   add_config_font("Vertical bar/panel", "font.vert_panel")
   add_config_font("Configuration panel", "font.config")
   add_config_font("Status bar", "font.status")
   add_config_font("Pop-ups", "font.popups")
+
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Apply changes", change_theme, "Accept the changes", "reload3")
+  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+  toolbar.cmdtext("Default fonts", restore_fonts, "Restore all fonts to default", "restore")
+  pnly_add(21)
+  add_config_separator()
 end
 
 function toolbar.add_config_panel()

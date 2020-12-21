@@ -443,7 +443,7 @@ if toolbar then
     if tabwidthmin  == nil then tabwidthmin=  toolbar.cfg.tabwidthmin  end
     --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
     toolbar.addtabs(toolbar.cfg.tabxmargin, toolbar.cfg.tabxsep, tabwithclose, toolbar.cfg.tabmodified,
-        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah) --, toolbar.get_font_num("Ubuntu Condensed")) --enable drag support
+        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah, toolbar.get_cfg_font_num("font.tabs")) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
     toolbar.tabfontcolor(toolbar.cfg.tabcolor_normal, toolbar.cfg.tabcolor_hilight, toolbar.cfg.tabcolor_active,
