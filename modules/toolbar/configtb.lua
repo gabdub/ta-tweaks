@@ -112,7 +112,7 @@ local function add_config_start(startgroup)
   --config title: width=expand / height=27
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 27)
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-  toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed) --, toolbar.get_font_num("Monospace")) --TEST
+  toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.font_toolbars)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
   toolbar.set_img(toolbar.TTBI_TB.HSEPARATOR, "cfg-separator-h")
@@ -128,7 +128,7 @@ local function add_config_start(startgroup)
 end
 
 function toolbar.setdefaulttextfont()
-  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed) --, toolbar.get_font_num("Monospace")) --TEST
+  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.font_toolbars)
 end
 
 local function add_config_tabgroup(name,title,ngrp)
@@ -1071,9 +1071,9 @@ local function add_colors_cfg_panel()
 
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", toolbar.save_colors_reset, "Accept the changes", "reload2")
+  toolbar.cmdtext("Apply changes", toolbar.save_colors_reset, "Reset to apply the changes", "reload2")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Discard changes", reload_colors, "Reload current colors", "reload3")
+  toolbar.cmdtext("Discard changes", reload_colors, "Reload current colors", "reloadcolors")
   pnly_add(21)
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
@@ -1258,13 +1258,10 @@ end
 
 local function restore_fonts()
   if Util.confirm('Restore all fonts to default','All fonts will be reset to default', 'Do you want to proceed?') then
-    toolbar.set_font_val("font.editor", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.top", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.tabs", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.vert_panel", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.config", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.status", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.popups", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.editor",   toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.toolbars", toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.tabs",     toolbar.DEFAULT_FONT)
+    toolbar.set_font_val("font.status",   toolbar.DEFAULT_FONT)
     change_theme()
   end
 end
@@ -1272,16 +1269,13 @@ end
 local function add_font_cfg_panel()
   toolbar.fonts_panel= add_config_tabgroup("Fonts", "Font configuration")
 
-  add_config_font("Editor", "font.editor")
-  add_config_font("Top bar", "font.top")
-  add_config_font("Tabs", "font.tabs")
-  add_config_font("Vertical bar/panel", "font.vert_panel")
-  add_config_font("Configuration panel", "font.config")
+  add_config_font("Editor",     "font.editor")
+  add_config_font("Toolbars",   "font.toolbars")
+  add_config_font("Tabs",       "font.tabs")
   add_config_font("Status bar", "font.status")
-  add_config_font("Pop-ups", "font.popups")
 
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", change_theme, "Accept the changes", "reload3")
+  toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload3")
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
   toolbar.cmdtext("Default fonts", restore_fonts, "Restore all fonts to default", "restore")
   pnly_add(21)

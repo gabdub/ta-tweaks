@@ -5,7 +5,7 @@ cbo.theme:bar-sm-light
 ;Tabs position
 tbtabs:2
 ;Show close button
-tbtabclose:1
+tbtabclose:3
 ;Close with double click
 tbtab2clickclose:2
 ;STATUS BAR
@@ -16,6 +16,7 @@ tblist_hideprj:true
 tbshowminimap:true
 tbhidemmapcfg:true
 tbreplvscroll:true
+tbreplhscroll:true
 ;===[ Color ]===
 ;Editor
 color.text_fore:0x101000
@@ -67,8 +68,18 @@ ctypeorder:1
 ;Format
 ctypeformat:1
 ;IMPORT
+;===[ Fonts ]===
+;Editor
+font.editor:(default)
+;Toolbars
+font.toolbars:(default)
+;Tabs
+font.tabs:(default)
+;Status bar
+font.status:(default)
 ;===========
 LEXER:INDENT
-lua:s2
 cpp:s2
 ansi_c:s2
+lua:s2
+asm:s2

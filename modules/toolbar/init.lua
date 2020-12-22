@@ -443,7 +443,7 @@ if toolbar then
     if tabwidthmin  == nil then tabwidthmin=  toolbar.cfg.tabwidthmin  end
     --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
     toolbar.addtabs(toolbar.cfg.tabxmargin, toolbar.cfg.tabxsep, tabwithclose, toolbar.cfg.tabmodified,
-        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah, toolbar.get_cfg_font_num("font.tabs")) --enable drag support
+        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah,toolbar.font_tabs) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
     toolbar.tabfontcolor(toolbar.cfg.tabcolor_normal, toolbar.cfg.tabcolor_hilight, toolbar.cfg.tabcolor_active,
@@ -627,7 +627,7 @@ if toolbar then
     if toolbar.statbar == 2 then
       --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
       toolbar.addtabs(toolbar.cfg.statxmargin, toolbar.cfg.statxsep, false, 0,
-        toolbar.cfg.statfont_sz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize) --, toolbar.get_font_num("Ubuntu Condensed")) --x-expanded
+        toolbar.cfg.statfont_sz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize, toolbar.font_status) --x-expanded
       toolbar.tabfontcolor( toolbar.cfg.statcolor_normal, toolbar.cfg.statcolor_hilight, toolbar.cfg.tabcolor_active,
         toolbar.cfg.tabcolor_modif, toolbar.cfg.statcolor_normal ) --grayed= normal
       --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
@@ -694,6 +694,16 @@ if toolbar then
     toolbar.load_config(true)
     local theme= toolbar.get_combo_txt("cbo.theme") or "bar-sm-light"
     toolbar.set_theme(theme)
+    --change editor font
+    local nfont= toolbar.get_cfg_font_num("font.editor")
+    if nfont > 0 then
+      local font= toolbar.get_font_name(nfont)
+      for _, buff in ipairs(_BUFFERS) do buff.property['font']= font end
+    end
+    --load toolbar fonts
+    toolbar.font_toolbars= toolbar.get_cfg_font_num("font.toolbars")
+    toolbar.font_tabs= toolbar.get_cfg_font_num("font.tabs")
+    toolbar.font_status= toolbar.get_cfg_font_num("font.status")
   end
 
   --create the configured toolbars
