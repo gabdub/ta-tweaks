@@ -211,11 +211,14 @@ local function create_dialog(title, width, height, datalist, dataicon, show_font
   load_data()
 end
 
-function toolbar.font_chooser(title, sel_font, font_selected)
+function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
   select_it= sel_font
   select_ev= font_selected
   create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
-  toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
---  toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,dialog_w,dialog_h) --anchor to a button (toolbar.ANCHOR)
+  if btname then
+    toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
+  else
+    toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
+  end
   ensure_sel_view()
 end

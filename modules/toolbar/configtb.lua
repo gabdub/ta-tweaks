@@ -188,14 +188,14 @@ local function font_selected(newfontname)
 end
 local function changefont_clicked(name)
   font_edit= name
-  toolbar.font_chooser(font_lbls[font_edit].." font", toolbar.get_font_val(font_edit), font_selected)
+  toolbar.font_chooser(font_lbls[font_edit].." font", toolbar.get_font_val(font_edit), font_selected, name, toolbar.ANCHOR.POP_R_IT_R|toolbar.ANCHOR.POP_T_IT_B)
 end
 
 local function add_config_font(text, name)
   font_lbls[name]= text
   add_config_label(text)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext(toolbar.get_font_val(name), nil, "Change font", name)
+  toolbar.addtext(name,toolbar.get_font_val(name),"Change font",toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,true,false)
   toolbar.cmds_n[name]= changefont_clicked
 
   pnly_newrow()
