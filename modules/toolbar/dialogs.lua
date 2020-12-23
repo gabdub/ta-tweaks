@@ -70,7 +70,17 @@ local function choose_item(cmd)
 end
 
 local function click_item(cmd)
-  if dialog_single_click then choose_item(cmd) else change_selection(toolbar.getnum_cmd(cmd)) end
+  if dialog_single_click then
+    choose_item(cmd) --choose and close
+  else
+    --select item
+    local id= toolbar.getnum_cmd(cmd)
+    local n= 0
+    for i=1, #idx_filtered do
+      if idx_filtered[i]==id then n=i break end
+    end
+    change_selection(n)
+  end
 end
 
 local function load_data()
