@@ -1269,10 +1269,6 @@ end
 local function add_font_cfg_panel()
   toolbar.fonts_panel= add_config_tabgroup("Fonts", "Font configuration")
 
-  --TO DO: remove this 2 lines (workaround for a bug in the first button redraw)
-  add_config_label("FONTS")
-  add_config_separator()
-
   add_config_font("Editor",     "font.editor")
   add_config_font("Toolbars",   "font.toolbars")
   add_config_font("Tabs",       "font.tabs")
