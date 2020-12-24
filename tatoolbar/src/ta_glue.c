@@ -1226,7 +1226,11 @@ int set_text_bt_width(struct toolbar_item * p )
     }
     //use toolbar #0 to measure text (pop-ups may not have a window yet)
     cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window);
-    cairo_set_font_size(cr, G->txtfontsz);
+    if( (p->flags & TTBF_TAB) == 0 ){
+      ctx_set_font( cr, G->txtfontsz, 0, G->txtfontnum );
+    }else{
+      ctx_set_font( cr, G->tabfontsz, 0, G->tabfontnum );
+    }
     cairo_text_extents( cr, p->text, &ext );
     p->textwidth= (int) ext.width;
     if( G->txttexty < 0 ){
