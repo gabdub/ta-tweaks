@@ -6,7 +6,8 @@ local events, events_connect = events, events.connect
 local dialog_w= 800
 local dialog_h= 600
 local itemsgrp
-local previewgrp
+local previewgrp1
+local previewgrp2
 
 local dialog_list= {}
 local dialog_data_icon= ""
@@ -32,8 +33,10 @@ events_connect("popup_close", close_dialog_ev)
 local function update_preview()
   if dialog_font_preview and (idx_sel_i > 0) then
     local font= dialog_list[idx_filtered[idx_sel_i]]
-    toolbar.sel_dialog_popup(previewgrp,false)
+    toolbar.sel_dialog_popup(previewgrp1,false)
     toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.get_font_num(font))
+    toolbar.sel_dialog_popup(previewgrp2,false)
+    toolbar.textfont(12, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.get_font_num(font))
   end
 end
 
@@ -200,9 +203,13 @@ local function create_dialog(title, width, height, datalist, dataicon, show_font
   toolbar.list_addbutton("window-close", "Close", close_dialog)
 
   if dialog_font_preview then
-    previewgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 30, false)
+    local prevtxt= "0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz~{}[]"
+    previewgrp1= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 25, false)
     toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
-    toolbar.addlabel("0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", "", dialog_w-5, true, false, "preview-txt")
+    toolbar.addlabel(prevtxt, "", dialog_w-5, true)
+    previewgrp2= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 25, false)
+    toolbar.textfont(12, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed)
+    toolbar.addlabel(prevtxt, "", dialog_w-5, true)
   end
 
   --filter group: full width + items height
