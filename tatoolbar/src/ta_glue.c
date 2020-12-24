@@ -552,7 +552,7 @@ void redraw_endG( struct toolbar_group *G )
           T->_grp_y2= G->bary2;
         }
         if( _update_ui ){
-          gtk_widget_queue_draw_area(T->draw, G->barx1 + T->_grp_x1, G->bary1 + T->_grp_y1,
+          gtk_widget_queue_draw_area(T->draw, T->_grp_x1, T->_grp_y1,
               T->_grp_x2 - T->_grp_x1 +1, T->_grp_y2 - T->_grp_y1 +1);
         }else{
           T->flags |= TTBF_TB_REDRAW;
