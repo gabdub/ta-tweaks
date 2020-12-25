@@ -443,7 +443,7 @@ if toolbar then
     if tabwidthmin  == nil then tabwidthmin=  toolbar.cfg.tabwidthmin  end
     --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
     toolbar.addtabs(toolbar.cfg.tabxmargin, toolbar.cfg.tabxsep, tabwithclose, toolbar.cfg.tabmodified,
-        toolbar.cfg.tabfont_sz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah,toolbar.font_tabs) --enable drag support
+        toolbar.cfg.tabfont_sz+toolbar.font_tabs_extrasz, toolbar.cfg.tabfont_yoffset,true,xcontrol,toolbar.cfg.barsize+extrah,toolbar.font_tabs) --enable drag support
 
     --toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)
     toolbar.tabfontcolor(toolbar.cfg.tabcolor_normal, toolbar.cfg.tabcolor_hilight, toolbar.cfg.tabcolor_active,
@@ -627,7 +627,7 @@ if toolbar then
     if toolbar.statbar == 2 then
       --toolbar.addtabs(xmargin,xsep,withclose,modified(1=img,2=color),fontsz,fontyoffset,[tab-drag],[xcontrol],[height],[font-num])
       toolbar.addtabs(toolbar.cfg.statxmargin, toolbar.cfg.statxsep, false, 0,
-        toolbar.cfg.statfont_sz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize, toolbar.font_status) --x-expanded
+        toolbar.cfg.statfont_sz+toolbar.font_status_extrasz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize, toolbar.font_status) --x-expanded
       toolbar.tabfontcolor( toolbar.cfg.statcolor_normal, toolbar.cfg.statcolor_hilight, toolbar.cfg.tabcolor_active,
         toolbar.cfg.tabcolor_modif, toolbar.cfg.statcolor_normal ) --grayed= normal
       --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
@@ -696,14 +696,22 @@ if toolbar then
     toolbar.set_theme(theme)
     --change editor font
     local nfont= toolbar.get_cfg_font_num("font.editor")
+    local extrasz= toolbar.get_cfg_font_extrasize("font.editor")
     if nfont > 0 then
       local font= toolbar.get_font_name(nfont)
       for _, buff in ipairs(_BUFFERS) do buff.property['font']= font end
     end
+    if extrasz ~= 0 then
+      extrasz= extrasz + buffer.property['fontsize']
+      for _, buff in ipairs(_BUFFERS) do buff.property['fontsize']=extrasz end
+    end
     --load toolbar fonts
     toolbar.font_toolbars= toolbar.get_cfg_font_num("font.toolbars")
+    toolbar.font_toolbars_extrasz= toolbar.get_cfg_font_extrasize("font.toolbars")
     toolbar.font_tabs= toolbar.get_cfg_font_num("font.tabs")
+    toolbar.font_tabs_extrasz= toolbar.get_cfg_font_extrasize("font.tabs")
     toolbar.font_status= toolbar.get_cfg_font_num("font.status")
+    toolbar.font_status_extrasz= toolbar.get_cfg_font_extrasize("font.status")
   end
 
   --create the configured toolbars

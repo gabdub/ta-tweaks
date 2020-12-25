@@ -112,7 +112,7 @@ local function add_config_start(startgroup)
   --config title: width=expand / height=27
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, 27)
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-  toolbar.textfont(toolbar.cfg.textfont_sz+4, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.font_toolbars)
+  toolbar.textfont(toolbar.cfg.textfont_sz+4+toolbar.font_toolbars_extrasz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.font_toolbars)
   toolbar.addlabel("", "", toolbar.cfgpnl_width, false, false, "cfgtit")  --group title (set later)
 
   toolbar.set_img(toolbar.TTBI_TB.HSEPARATOR, "cfg-separator-h")
@@ -128,7 +128,7 @@ local function add_config_start(startgroup)
 end
 
 function toolbar.setdefaulttextfont()
-  toolbar.textfont(toolbar.cfg.textfont_sz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.font_toolbars)
+  toolbar.textfont(toolbar.cfg.textfont_sz+toolbar.font_toolbars_extrasz, toolbar.cfg.textfont_yoffset, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.font_toolbars)
 end
 
 local function add_config_tabgroup(name,title,ngrp)
@@ -179,30 +179,6 @@ local function add_config_label(text,extrasep,notbold,name)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=";"..text
   end
-end
-
-local font_lbls= {}
-local font_edit=""
-local function font_selected(newfontname)
-  toolbar.set_font_val(font_edit, newfontname)
-end
-local function changefont_clicked(name)
-  font_edit= name
-  toolbar.font_chooser(font_lbls[font_edit].." font", toolbar.get_font_val(font_edit), font_selected, name, toolbar.ANCHOR.POP_R_IT_R|toolbar.ANCHOR.POP_T_IT_B)
-end
-
-local function add_config_font(text, name)
-  font_lbls[name]= text
-  add_config_label(text)
-  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.addtext(name,toolbar.get_font_val(name),"Change font",toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,true,false)
-  toolbar.cmds_n[name]= changefont_clicked
-
-  pnly_newrow()
-  if toolbar.config_saveon then --save as a comment in the config file
-    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
-  end
-  add_config_separator()
 end
 
 local function add_config_check(name,text,tooltip,checked,notify)
@@ -391,6 +367,30 @@ local function add_config_combo(name,func,tooltip,txtarray,idx,bold)
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
   end
   pnly_newrow()
+end
+
+local font_lbls= {}
+local font_edit=""
+local function font_selected(newfontname)
+  toolbar.set_font_val(font_edit, newfontname)
+end
+local function changefont_clicked(name)
+  font_edit= name
+  toolbar.font_chooser(font_lbls[font_edit].." font", toolbar.get_font_val(font_edit), font_selected, name, toolbar.ANCHOR.POP_R_IT_R|toolbar.ANCHOR.POP_T_IT_B)
+end
+
+local function add_config_font(text, name)
+  font_lbls[name]= text
+  add_config_label(text)
+  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  toolbar.addtext(name,toolbar.get_font_val(name),"Change font",toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,true,false)
+  toolbar.cmds_n[name]= changefont_clicked
+  pnly_newrow()
+  add_config_combo("cbo."..name:gsub("%.","size_"),nil,"Change font size",{"default size","+1 pt","+2 pts","+3 pts","+4 pts","+5 pts","+6 pts","-1 pt","-2 pts","-3 pts","-4 pts","-5 pts","-6 pts"},nil,false)
+  if toolbar.config_saveon then --save as a comment in the config file
+    toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
+  end
+  add_config_separator()
 end
 
 local function confirm_color_overwrite(title,dontask)
@@ -1256,12 +1256,17 @@ local function add_picker_cfg_panel()
   add_config_separator()
 end
 
+local function restore_font(name)
+  toolbar.set_font_val(name,   toolbar.DEFAULT_FONT)
+  toolbar.set_combo_txt("cbo."..name:gsub("%.","size_"),"default size",false)
+end
+
 local function restore_fonts()
-  if Util.confirm('Restore all fonts to default','All fonts will be reset to default', 'Do you want to proceed?') then
-    toolbar.set_font_val("font.editor",   toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.toolbars", toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.tabs",     toolbar.DEFAULT_FONT)
-    toolbar.set_font_val("font.status",   toolbar.DEFAULT_FONT)
+  if Util.confirm('Restore all fonts to default','All fonts and sizes will be reset to default', 'Do you want to proceed?') then
+    restore_font("font.editor")
+    restore_font("font.toolbars")
+    restore_font("font.tabs")
+    restore_font("font.status")
     change_theme()
   end
 end

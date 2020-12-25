@@ -197,6 +197,12 @@ function toolbar.get_cfg_font_num(name)
   return toolbar.get_font_num(toolbar.get_font_val(name))
 end
 
+function toolbar.get_cfg_font_extrasize(name)
+  local extrasz= toolbar.get_combo_txt("cbo."..name:gsub("%.","size_")) or ""
+  local esz= string.match(extrasz, "(.-)%s.+$")
+  return tonumber(esz) or 0
+end
+
 events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
   if buttonname == "TOOLBAR" then
     buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)
