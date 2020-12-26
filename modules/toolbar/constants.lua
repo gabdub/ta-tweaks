@@ -210,11 +210,16 @@ toolbar.DEFAULT_FONT= "(default)"
 local font_list= {}
 local font_nums= {}
 
+function toolbar.font_support()
+  --check if tatoolbar was compiled with font support functions
+  return (toolbar.getversion(toolbar.GETVER.N_FONTS) ~= toolbar.getversion(toolbar.GETVER.TATOOLBAR)) and ((tonumber(toolbar.getversion(toolbar.GETVER.N_FONTS)) or 0) > 0)
+end
+
 function toolbar.get_font_list()
-  if #font_list < 1 then
+  if #font_list < 1 and toolbar.font_support() then
     font_list[1]= toolbar.DEFAULT_FONT
-    local nfonts= tonumber(toolbar.getversion(toolbar.GETVER.N_FONTS)) --number of available fonts
-    if nfonts then
+    local nfonts= tonumber(toolbar.getversion(toolbar.GETVER.N_FONTS)) or 0 --number of available fonts
+    if nfonts > 0 then
       local i --sort by font name
       for i=1, nfonts do
         local fontn= toolbar.getversion(i+toolbar.GETVER.FONT_BASE)

@@ -1272,19 +1272,21 @@ local function restore_fonts()
 end
 
 local function add_font_cfg_panel()
-  toolbar.fonts_panel= add_config_tabgroup("Fonts", "Font configuration")
+  if toolbar.font_support() then
+    toolbar.fonts_panel= add_config_tabgroup("Fonts", "Font configuration")
 
-  add_config_font("Editor",     "font.editor")
-  add_config_font("Toolbars",   "font.toolbars")
-  add_config_font("Tabs",       "font.tabs")
-  add_config_font("Status bar", "font.status")
+    add_config_font("Editor",     "font.editor")
+    add_config_font("Toolbars",   "font.toolbars")
+    add_config_font("Tabs",       "font.tabs")
+    add_config_font("Status bar", "font.status")
 
-  toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload3")
-  toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Default fonts", restore_fonts, "Restore all fonts to default", "restore")
-  pnly_add(21)
-  add_config_separator()
+    toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+    toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload3")
+    toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
+    toolbar.cmdtext("Default fonts", restore_fonts, "Restore all fonts to default", "restore")
+    pnly_add(21)
+    add_config_separator()
+  end
 end
 
 function toolbar.add_config_panel()
