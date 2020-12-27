@@ -694,24 +694,34 @@ if toolbar then
     toolbar.load_config(true)
     local theme= toolbar.get_combo_txt("cbo.theme") or "bar-sm-light"
     toolbar.set_theme(theme)
-    --change editor font
-    local nfont= toolbar.get_cfg_font_num("font.editor")
-    local extrasz= toolbar.get_cfg_font_extrasize("font.editor")
-    if nfont > 0 then
-      local font= toolbar.get_font_name(nfont)
-      for _, buff in ipairs(_BUFFERS) do buff.property['font']= font end
+
+    if toolbar.font_support() then
+      --change editor font
+      local nfont= toolbar.get_cfg_font_num("font.editor")
+      local extrasz= toolbar.get_cfg_font_extrasize("font.editor")
+      if nfont > 0 then
+        local font= toolbar.get_font_name(nfont)
+        for _, buff in ipairs(_BUFFERS) do buff.property['font']= font end
+      end
+      if extrasz ~= 0 then
+        extrasz= extrasz + buffer.property['fontsize']
+        for _, buff in ipairs(_BUFFERS) do buff.property['fontsize']=extrasz end
+      end
+      --load toolbar fonts
+      toolbar.font_toolbars= toolbar.get_cfg_font_num("font.toolbars")
+      toolbar.font_toolbars_extrasz= toolbar.get_cfg_font_extrasize("font.toolbars")
+      toolbar.font_tabs= toolbar.get_cfg_font_num("font.tabs")
+      toolbar.font_tabs_extrasz= toolbar.get_cfg_font_extrasize("font.tabs")
+      toolbar.font_status= toolbar.get_cfg_font_num("font.status")
+      toolbar.font_status_extrasz= toolbar.get_cfg_font_extrasize("font.status")
+    else
+      toolbar.font_toolbars= 0
+      toolbar.font_toolbars_extrasz= 0
+      toolbar.font_tabs= 0
+      toolbar.font_tabs_extrasz= 0
+      toolbar.font_status= 0
+      toolbar.font_status_extrasz= 0
     end
-    if extrasz ~= 0 then
-      extrasz= extrasz + buffer.property['fontsize']
-      for _, buff in ipairs(_BUFFERS) do buff.property['fontsize']=extrasz end
-    end
-    --load toolbar fonts
-    toolbar.font_toolbars= toolbar.get_cfg_font_num("font.toolbars")
-    toolbar.font_toolbars_extrasz= toolbar.get_cfg_font_extrasize("font.toolbars")
-    toolbar.font_tabs= toolbar.get_cfg_font_num("font.tabs")
-    toolbar.font_tabs_extrasz= toolbar.get_cfg_font_extrasize("font.tabs")
-    toolbar.font_status= toolbar.get_cfg_font_num("font.status")
-    toolbar.font_status_extrasz= toolbar.get_cfg_font_extrasize("font.status")
   end
 
   --create the configured toolbars
