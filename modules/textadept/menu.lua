@@ -543,17 +543,17 @@ actions.list = {
 
 --SEARCH
   ["find"]=                 {_L['Find'], function()
-      ui.find.in_files = false
-      ui.find.focus()
+      ui.find.focus{in_files = false, incremental = false}
     end},
   ["find_next"]=            {_L['Find Next'], ui.find.find_next},
   ["find_prev"]=            {_L['Find Previous'], ui.find.find_prev},
   ["replace"]=              {_L['Replace'], ui.find.replace},
   ["replaceall"]=           {_L['Replace All'], ui.find.replace_all},
-  ["find_increment"]=       {_L['Find Incremental'], ui.find.find_incremental},
+  ["find_increment"]=       {_L['Find Incremental'], function()
+      ui.find.focus{in_files = false, incremental = true}
+    end},
   ["find_infiles"]=         {_L['Find in Files'], function()
-      ui.find.in_files = true
-      ui.find.focus()
+      ui.find.focus{in_files = true, incremental = false}
     end},
   ["find_replace"]=         {_L['Replace'], function()
       ui.find.in_files = false
