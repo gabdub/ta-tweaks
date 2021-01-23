@@ -360,6 +360,7 @@ function toolbar.set_expand_icon(cmd,icon)
   toolbar.setthemeicon(cmd, icon, toolbar.TTBI_TB.IT_NORMAL)
   toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HILIGHT)
   toolbar.setthemeicon(cmd, icon.."-hilight", toolbar.TTBI_TB.IT_HIPRESSED)
+  toolbar.setthemeicon(cmd, "transparent", toolbar.TTBI_TB.IT_SELECTED)
 end
 
 ---- LIST ---

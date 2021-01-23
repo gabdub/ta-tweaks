@@ -59,6 +59,7 @@ if toolbar then
       require('listtoolbar.recentprojlist')
       require('listtoolbar.projlist')
       require('listtoolbar.ctaglist')
+      require('listtoolbar.filebrowser')
     end
     if USE_RESULTS_PANEL then --show results lists in the bottom toolbar
       require('results')

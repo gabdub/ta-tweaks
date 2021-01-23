@@ -221,11 +221,7 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
           local ph=path
           --remove default proyect base
           if defdir and string.sub(ph,1,string.len(defdir)) == defdir then
-            ph= string.sub(ph,string.len(defdir)+1)
-            if ph ~= "" then
-              local lastch= string.sub(ph,-1) --remove "\" or "/" end
-              if lastch == "\\" or lastch == "/" then ph= string.sub(ph,1,string.len(ph)-1) end
-            end
+            ph= Util.remove_pathsep_end( string.sub(ph,string.len(defdir)+1) )
           end
           fo:write( '\n (' .. ph .. ')::' .. path .. '::')
         end

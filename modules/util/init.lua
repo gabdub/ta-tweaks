@@ -102,6 +102,21 @@ function Util.str_one_line(s)
   return (s:gsub("^%s*(.-)%s*\n.*$", "%1"))
 end
 
+--check string beginning
+function Util.str_starts(s, start)
+  return (string.sub(s, 1, string.len(start)) == start)
+end
+
+--remove trailing path separator
+function Util.remove_pathsep_end(path)
+  if path == nil then path= "" end
+  if path ~= "" then
+    local lastch= string.sub(path,-1) --remove "\" or "/" from the end
+    if lastch == "\\" or lastch == "/" then path= string.sub(path,1,string.len(path)-1) end
+  end
+  return path
+end
+
 function Util.file_exists(fn)
   if fn:match('[^\\/]+$') then
     local f, err = io.open(fn, 'rb')
