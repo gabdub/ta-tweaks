@@ -44,6 +44,7 @@ if toolbar then
     if rmexp then cmd=rmexp end
     local linenum= toolbar.getnum_cmd(cmd)
     if linenum then
+      expand_prj_parents(cmd)
       clear_selected()
       itselected= cmd
       toolbar.selected(cmd,false,true)
@@ -84,7 +85,7 @@ if toolbar then
       else
         local name= "exp-"..cmd
         local r= collarow[name]
-        if r ~= nil then if r then expand_list(name) else collapse_list(name) end end
+        if r ~= nil then if r then expand_prj_list(name) else collapse_prj_list(name) end end
       end
     end
   end
@@ -124,20 +125,33 @@ if toolbar then
     collarow= {}
   end
 
-  function expand_list(cmd)
+  function expand_prj_list(cmd)
     sel_file(cmd)
     toolbar.set_expand_icon(cmd,"list-colapse2")
-    toolbar.cmds_n[cmd]= collapse_list
+    toolbar.cmds_n[cmd]= collapse_prj_list
     toolbar.collapse(cmd, false)
     collarow[cmd]= false
   end
 
-  function collapse_list(cmd)
+  function collapse_prj_list(cmd)
     sel_file(cmd)
     toolbar.set_expand_icon(cmd,"list-expand2")
-    toolbar.cmds_n[cmd]= expand_list
+    toolbar.cmds_n[cmd]= expand_prj_list
     toolbar.collapse(cmd, true)
     collarow[cmd]= true
+  end
+
+  function expand_prj_parents(cmd)
+    local id= toolbar.getnum_cmd(cmd)
+    if id and id > 1 then
+      for i=1, id-1 do
+        local idlen= data.proj_rowinfo[i][3] --indent-len
+        if idlen and i+idlen >= id then --expand all parents
+          local ecmd= "exp-gofile#"..i
+          if collarow[ecmd] then expand_prj_list(ecmd) end
+        end
+      end
+    end
   end
 
   function toolbar.load_proj_list()
@@ -200,13 +214,13 @@ if toolbar then
           end
           local name= "gofile#"..i
           if toolbar.list_add_txt_ico(name, fname, tip, (bicon==nil), sel_file, bicon, (i%2==1), ind, idlen, 2, w) then
-            toolbar.list_add_collapse(name, collapse_list, ind, idlen, collarow)
+            toolbar.list_add_collapse(name, collapse_prj_list, ind, idlen, collarow)
           end
         end
       end
       --set project's default collapse items
       for i= #data.proj_fold_row, 1, -1 do
-        collapse_list("exp-gofile#"..data.proj_fold_row[i] )
+        collapse_prj_list("exp-gofile#"..data.proj_fold_row[i] )
       end
       sel_file_num(linenum)
     end

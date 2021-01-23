@@ -9,6 +9,7 @@ if toolbar then
   local flist= {}
   local openfs= {}
   local collarow= {}
+  local collalen= {}
   local openfolders= {}
 
   local browse_dir= _USERHOME
@@ -28,6 +29,7 @@ if toolbar then
   local function sel_brwfile(cmd) --click= select
     local linenum= toolbar.getnum_cmd(cmd)
     if linenum then
+      expand_brw_parents(cmd)
       clear_selected()
       itselected= cmd
       toolbar.selected(cmd,false,true)
@@ -57,7 +59,7 @@ if toolbar then
       if r == nil then --open file
         Proj.go_file(flist[linenum])
       else --open/close folder
-        if r then expand_list(name) else collapse_list(name) end
+        if r then expand_brw_list(name) else collapse_brw_list(name) end
       end
     end
   end
@@ -73,12 +75,13 @@ if toolbar then
     toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     collarow= {}
+    collalen= {}
   end
 
-  function expand_list(cmd)
+  function expand_brw_list(cmd)
     sel_brwfile(cmd)
     toolbar.set_expand_icon(cmd,"list-colapse2")
-    toolbar.cmds_n[cmd]= collapse_list
+    toolbar.cmds_n[cmd]= collapse_brw_list
     toolbar.collapse(cmd, false)
     collarow[cmd]= false
     local id= toolbar.getnum_cmd(cmd)
@@ -88,16 +91,28 @@ if toolbar then
     end
   end
 
-  function collapse_list(cmd)
+  function collapse_brw_list(cmd)
     sel_brwfile(cmd)
     toolbar.set_expand_icon(cmd,"list-expand2")
-    toolbar.cmds_n[cmd]= expand_list
+    toolbar.cmds_n[cmd]= expand_brw_list
     toolbar.collapse(cmd, true)
     collarow[cmd]= true
     local id= toolbar.getnum_cmd(cmd)
     if id then
       local folder= flist[id]
       if folder then openfolders[folder]= nil end
+    end
+  end
+
+  function expand_brw_parents(cmd)
+    local id= toolbar.getnum_cmd(cmd)
+    if id and id > 1 then
+      for i=1, id-1 do
+        if collalen[i] and i+collalen[i] >= id then --expand all parents
+          local ecmd= "exp-brwfile#"..i
+          if collarow[ecmd] then expand_brw_list(ecmd) end
+        end
+      end
     end
   end
 
@@ -215,13 +230,14 @@ if toolbar then
       end
       local name= "brwfile#"..i
       if toolbar.list_add_txt_ico(name, fname, flist[i], (bicon==nil), sel_brwfile, bicon, (i%2==1), ind, idlen, 2, w) then
-        toolbar.list_add_collapse(name, collapse_list, ind, idlen, collarow)
+        toolbar.list_add_collapse(name, collapse_brw_list, ind, idlen, collarow)
         fold_row[#fold_row+1]= i --initially fold all folders
       end
+      collalen[i]= idlen
     end
     for i= #fold_row, 1, -1 do
       local r= fold_row[i]
-      if openfolders[flist[r]] == nil then collapse_list("exp-brwfile#"..r ) end
+      if openfolders[flist[r]] == nil then collapse_brw_list("exp-brwfile#"..r ) end
     end
     sel_brwfile_num(linenum)
     track_file()
