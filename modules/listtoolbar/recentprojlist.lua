@@ -81,7 +81,7 @@ if toolbar then
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.list_init_title() --add a resize handle
-    toolbar.list_addaction("open_project")
+    --toolbar.list_addaction("open_project")
     toolbar.list_addaction("new_project")
     toolbar.list_addinfo('Projects', true)
 

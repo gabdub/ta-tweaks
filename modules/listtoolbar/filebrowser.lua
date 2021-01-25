@@ -13,6 +13,7 @@ if toolbar then
   local openfolders= {}
 
   local browse_dir= _USERHOME
+  local browse_loadlevel= 4 --nil= no limit  --TODO: set to 0 and load folder content only when needed
 
   --right-click context menu
   local filebrowser_context_menu = {
@@ -189,9 +190,9 @@ if toolbar then
         flist[ #flist+1 ]= file
         --ext= file:match('[^%.\\/]+$')
         --if ext then extlist[ext]= true end
-        end, lfs.FILTER, nil, true)
+        end, lfs.FILTER, browse_loadlevel, true)
     else
-      for file in lfs.walk(browse_dir, lfs.default_filter, nil, true) do
+      for file in lfs.walk(browse_dir, lfs.default_filter, browse_loadlevel, true) do
         flist[ #flist+1 ]= file
         --ext= file:match('[^%.\\/]+$')
         --if ext then extlist[ext]= true end
@@ -200,15 +201,38 @@ if toolbar then
     table.sort(flist, file_sort)
   end
 
-  local function load_filebrowser()
+  local function brw_userhome()
+    browse_dir= _USERHOME
+    load_filebrowser()
+  end
+
+--  local function brw_projfolder()
+--    if Proj and Proj.data.is_open then
+--      browse_dir= Proj.data.proj_grp_path[1]
+--      load_filebrowser()
+--    end
+--  end
+
+  local function brw_folder()
+    local folder = ui.dialogs.fileselect{ title = 'Select folder', select_only_directories = true, with_directory = browse_dir }
+    if folder then
+      browse_dir= folder
+      load_filebrowser()
+    end
+  end
+
+  function load_filebrowser()
     load_files()
 
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.list_init_title() --add a resize handle
-    toolbar.list_addbutton("view-refresh", "Reload", load_filebrowser)
+    toolbar.list_addbutton("brw-refresh", "Reload", load_filebrowser, "view-refresh")
+    --toolbar.list_addbutton("brw-proj", "Project", brw_projfolder, "document-properties")
+    toolbar.list_addbutton("brw-home", "User home", brw_userhome, "go-home")
+    toolbar.list_addbutton("brw-folder", "Change folder", brw_folder, "document-open")
 
-    toolbar.list_addinfo('Files', true)
+    toolbar.list_addinfo(Util.getfilename(browse_dir,true), true, browse_dir)
 
     local base_level= get_file_level(browse_dir) + 1
     toolbar.listtb_y= 3
@@ -224,7 +248,7 @@ if toolbar then
         bicon= toolbar.icon_fname(flist[i])
       else  --folder
         fname= Util.remove_pathsep_end( flist[i] ) --remove "\" or "/" from the end
-        fname= Util.getfilename(fname,false)
+        fname= Util.getfilename(fname,true)
         idlen= get_idlen_folder(i)
         if ind >= 12 then ind= ind -12 end
       end
@@ -256,10 +280,13 @@ if toolbar then
     toolbar.cmd_dclick("brwfile",brwfile_dclick)
   end
 
+  local loaded= false
+
   local function filebrowser_update_cb(reload)
     --LSTSEL_UPDATE_CB: update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
-    if reload then
-      load_filebrowser()
+    if not loaded then
+      loaded= true
+      load_filebrowser()  --load only once
     else
       track_file()
       mark_open_files()

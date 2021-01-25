@@ -369,9 +369,9 @@ toolbar.listtb_x= 3
 toolbar.list_cmdright= 18
 toolbar.listright= 250
 
-function toolbar.list_addbutton(name, tooltip, funct)
+function toolbar.list_addbutton(name, tooltip, funct, icon)
   toolbar.gotopos( 0, toolbar.listtb_y)
-  toolbar.cmd(name, funct, tooltip or "", name, true)
+  toolbar.cmd(name, funct, tooltip or "", icon, true)
   toolbar.list_cmdright= toolbar.list_cmdright + toolbar.cfg.butsize
   toolbar.anchor(name, toolbar.list_cmdright) --anchor to the right
 end
