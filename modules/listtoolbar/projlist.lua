@@ -14,8 +14,7 @@ if toolbar then
 
   --right-click context menu over a file
   local proj_context_menu = {
-    {"open_projlistfile",
-     "open_projectdir",SEPARATOR,
+    {"open_projlistfile", "open_projectdir", "browse_projfile", SEPARATOR,
      "toggle_editproj",SEPARATOR,
      "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
      "search_project",
@@ -95,6 +94,22 @@ if toolbar then
     gofile_dclick(itselected)
   end
 
+  --ACTION: open selected file
+  local function act_browse_prjselfile()
+    if toolbar.filebrowser_browse ~= nil then
+      local linenum= sel_file(itselected)
+      if linenum then
+        local fn= data.proj_files[linenum]
+        local ft= data.proj_filestype[linenum]
+        if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then toolbar.filebrowser_browse(fn)
+        elseif ft == Proj.PRJF_PATH then toolbar.filebrowser_browse(data.proj_grp_path[linenum]) end
+      end
+    end
+  end
+  local function brw_prjselfile_status()
+    return toolbar.filebrowser_browse == nil and 8 or 0 --0=normal 8=disabled
+  end
+
   local function search_prjlist(where)
     if Proj.ask_search_in_files then --goto_nearest module?
       local linenum= sel_file(itselected)
@@ -115,6 +130,7 @@ if toolbar then
     search_prjlist(2)
   end
   actions.add("open_projlistfile",    'Open', act_open_prjselfile)
+  actions.add("browse_projfile",      'Browse this folder', act_browse_prjselfile, nil, "document-open", brw_prjselfile_status)
   actions.add("search_projlist_dir",  'Search in selected dir',  act_search_in_sel_dir)
   actions.add("search_projlist_file", 'Search in selected file', act_search_in_sel_file)
 

@@ -17,10 +17,10 @@ if toolbar then
 
   --right-click context menu
   local filebrowser_context_menu = {
-    {"open_filebrowser", SEPARATOR, "browse_folder", SEPARATOR, "browse_up_folder"}
+    {"open_filebrowser", SEPARATOR, "browse_folder", "browse_up_folder", "browse_proj_folder"}
   }
   local nofile_filebrowser_cmenu = {
-    {"browse_up_folder"}
+    {"browse_up_folder", "browse_proj_folder"}
   }
 
   local function clear_selected()
@@ -91,35 +91,47 @@ if toolbar then
   end
   actions.add("open_filebrowser", 'Open', act_open_filebrowser)
 
+  local function set_filepath_as_brwdir(fname)
+    local pa,fa,ea = Util.splitfilename(fname)
+    if not Util.is_fsroot(pa) then browse_dir=Util.remove_pathsep_end(pa) else browse_dir=pa end
+  end
+
   --ACTION: browse from the selected file/folder
   local function act_browse_folder()
     local linenum= sel_brwfile(itselected)
     if linenum then
       local fname= flist[linenum]
       browse_dir= Util.remove_pathsep_end(fname)
-      if browse_dir == fname then
-        local pa,fa,ea = Util.splitfilename(fname)
-        if pa ~= "/" then browse_dir=Util.remove_pathsep_end(pa) else browse_dir=pa end
-      end
+      if browse_dir == fname then set_filepath_as_brwdir(fname) end
       load_filebrowser()
     end
   end
-
   actions.add("browse_folder", 'Browse this folder', act_browse_folder)
 
   --ACTION: browse one folder up
   local function act_browse_up_folder()
-    if browse_dir ~= "/" then
+    if not Util.is_fsroot( browse_dir ) then
       openfolders[ browse_dir .. Util.PATH_SEP ]= true
-      local pa,fa,ea = Util.splitfilename(browse_dir)
-      if pa ~= "/" then browse_dir=Util.remove_pathsep_end(pa) else browse_dir=pa end
+      set_filepath_as_brwdir(browse_dir)
       brw_reload_all() --keep open folders
     end
   end
   local function browse_up_folder_status()
-    return (browse_dir == "/") and 8 or 0 --0=normal 8=disabled
+    return Util.is_fsroot(browse_dir) and 8 or 0 --0=normal 8=disabled
   end
   actions.add("browse_up_folder", 'Browse one folder up', act_browse_up_folder, nil, "go-up", browse_up_folder_status)
+
+  --ACTION: browse project base folder
+  local function brw_projfolder()
+    if Proj and Proj.data.is_open then
+      browse_dir= Util.remove_pathsep_end( Proj.data.proj_grp_path[1] )
+      load_filebrowser()
+    end
+  end
+  local function brw_projfolder_status()
+    return (Proj and Proj.data.is_open) and 0 or 8 --0=normal 8=disabled
+  end
+  actions.add("browse_proj_folder", 'Browse project base folder', brw_projfolder, nil, "document-properties", brw_projfolder_status)
 
   local function list_clear()
     --remove all items
@@ -229,8 +241,6 @@ if toolbar then
         openfs[k]= nil
       end
     end
-
-    toolbar.enable("brw-proj", Proj and Proj.data.is_open) --enable browse project base folder
   end
 
   local function load_files(brwdir, brwlevel)
@@ -254,13 +264,6 @@ if toolbar then
   local function brw_userhome()
     browse_dir= _USERHOME
     load_filebrowser()
-  end
-
-  local function brw_projfolder()
-    if Proj and Proj.data.is_open then
-      browse_dir= Util.remove_pathsep_end( Proj.data.proj_grp_path[1] )
-      load_filebrowser()
-    end
   end
 
   local function brw_folder()
@@ -297,11 +300,10 @@ if toolbar then
     toolbar.list_init_title() --add a resize handle
     toolbar.list_addbutton("brw-refresh", "Reload", brw_reload_all, "view-refresh")
     toolbar.list_addbutton("brw-folder", "Change folder", brw_folder, "document-open")
-    toolbar.list_addbutton("brw-proj", "Project base folder", brw_projfolder, "document-properties")
     toolbar.list_addbutton("brw-home", "User home", brw_userhome, "go-home")
 
     local base_level= 1
-    if browse_dir == "/" then
+    if Util.is_fsroot( browse_dir ) then
       toolbar.list_addinfo(browse_dir, true)
     else
       toolbar.list_addinfo(Util.getfilename(browse_dir,true), true)
@@ -380,6 +382,16 @@ if toolbar then
     --LSTSEL_SHOW_CB: the list has been shown/hidden (parameter: show)
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
+  end
+
+  function toolbar.filebrowser_browse(folder)
+    --global: show the content of this folder in the file browser
+    if folder and folder ~= "" then
+      toolbar.select_list("filebrowser", true) --force visible / activate
+      browse_dir= Util.remove_pathsep_end(folder)
+      if browse_dir == folder then set_filepath_as_brwdir(folder) end
+      load_filebrowser()
+    end
   end
 
   toolbar.registerlisttb("filebrowser", "File browser", "document-open", filebrowser_create_cb, filebrowser_update_cb, filebrowser_showlist_cb)

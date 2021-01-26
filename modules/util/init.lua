@@ -87,6 +87,13 @@ function Util.getfilename(strfilename, addext)
   return f:sub(1,-(#e+2))
 end
 
+-- Returns true if the string is the root of the filesystem ("/") or disc ("x:\")
+function Util.is_fsroot(strfilename)
+  if not strfilename then return false end
+  if strfilename == "/" or strfilename == "\\" then return true end
+  return (string.match(strfilename,"^.:\\$") ~= nil)
+end
+
 --remove blanks and CR/LF (begin and end)
 function Util.str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
