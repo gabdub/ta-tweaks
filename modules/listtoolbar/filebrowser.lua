@@ -11,13 +11,16 @@ if toolbar then
   local collarow= {}
   local collalen= {}
   local openfolders= {}
+  local rowfolders= {}
 
   local browse_dir= _USERHOME
-  local browse_loadlevel= 4 --nil= no limit  --TODO: set to 0 and load folder content only when needed
 
   --right-click context menu
   local filebrowser_context_menu = {
-    {"open_filebrowser"}
+    {"open_filebrowser", SEPARATOR, "browse_folder", SEPARATOR, "browse_up_folder"}
+  }
+  local nofile_filebrowser_cmenu = {
+    {"browse_up_folder"}
   }
 
   local function clear_selected()
@@ -29,14 +32,15 @@ if toolbar then
 
   local function sel_brwfile(cmd) --click= select
     local linenum= toolbar.getnum_cmd(cmd)
-    if linenum then
+    if linenum and linenum > 0 then
       expand_brw_parents(cmd)
       clear_selected()
-      itselected= cmd
-      toolbar.selected(cmd,false,true)
-      toolbar.ensurevisible(cmd)
+      itselected= "brwfile#"..linenum
+      toolbar.selected(itselected,false,true)
+      toolbar.ensurevisible(itselected)
+      return linenum
     end
-    return linenum
+    return nil
   end
 
   local function sel_brwfile_num(linenum)
@@ -48,8 +52,15 @@ if toolbar then
   local function brwfile_rclick(cmd) --right click
     if sel_brwfile(cmd) then
       ui.toolbar_context_menu= create_uimenu_fromactions(filebrowser_context_menu)
-      return true --open context menu
+    else
+      ui.toolbar_context_menu= create_uimenu_fromactions(nofile_filebrowser_cmenu)
     end
+    return true --open context menu
+  end
+
+  local function nofile_rclick(cmd) --right click
+    ui.toolbar_context_menu= create_uimenu_fromactions(nofile_filebrowser_cmenu)
+    return true --open context menu
   end
 
   local function brwfile_dclick(cmd) --double click
@@ -58,25 +69,61 @@ if toolbar then
       local name= "exp-"..cmd
       local r= collarow[name]
       if r == nil then --open file
-        Proj.go_file(flist[linenum])
+        if rowfolders[linenum] then
+          add_filesfromfolder(flist[linenum])
+          expand_brw_list(name)
+        else
+          Proj.go_file(flist[linenum])
+        end
       else --open/close folder
         if r then expand_brw_list(name) else collapse_brw_list(name) end
       end
     end
   end
 
-  --ACTION: open selected project from the recent list
+  --ACTION: open selected file/folder
   local function act_open_filebrowser()
     brwfile_dclick(itselected)
   end
-
   actions.add("open_filebrowser", 'Open', act_open_filebrowser)
+
+  --ACTION: browse from the selected file/folder
+  local function act_browse_folder()
+    local linenum= sel_brwfile(itselected)
+    if linenum then
+      local fname= flist[linenum]
+      browse_dir= Util.remove_pathsep_end(fname)
+      if browse_dir == fname then
+        local pa,fa,ea = Util.splitfilename(fname)
+        if pa ~= "/" then browse_dir=Util.remove_pathsep_end(pa) else browse_dir=pa end
+      end
+      load_filebrowser()
+    end
+  end
+
+  actions.add("browse_folder", 'Browse this folder', act_browse_folder)
+
+  --ACTION: browse one folder up
+  local function act_browse_up_folder()
+    if browse_dir ~= "/" then
+      openfolders[ browse_dir .. Util.PATH_SEP ]= true
+      local pa,fa,ea = Util.splitfilename(browse_dir)
+      if pa ~= "/" then browse_dir=Util.remove_pathsep_end(pa) else browse_dir=pa end
+      brw_reload_all() --keep open folders
+    end
+  end
+  local function browse_up_folder_status()
+    return (browse_dir == "/") and 8 or 0 --0=normal 8=disabled
+  end
+  actions.add("browse_up_folder", 'Browse one folder up', act_browse_up_folder, nil, "go-up", browse_up_folder_status)
+
   local function list_clear()
     --remove all items
     toolbar.listright= toolbar.listwidth-3
     toolbar.sel_left_bar(itemsgrp,true) --empty items group
     collarow= {}
     collalen= {}
+    rowfolders= {}
   end
 
   function expand_brw_list(cmd)
@@ -178,27 +225,26 @@ if toolbar then
         openfs[k]= nil
       end
     end
+
+    toolbar.enable("brw-proj", Proj and Proj.data.is_open) --enable browse project base folder
   end
 
-  local function load_files()
-    flist= {}
-    --local extlist= {}
-    --local ext
-
+  local function load_files(brwdir, brwlevel)
+    local flistsz= #flist
     if Util.TA_MAYOR_VER < 11 then
-      lfs.dir_foreach(browse_dir, function(file)
+      lfs.dir_foreach(brwdir, function(file)
         flist[ #flist+1 ]= file
-        --ext= file:match('[^%.\\/]+$')
-        --if ext then extlist[ext]= true end
-        end, lfs.FILTER, browse_loadlevel, true)
+        end, lfs.FILTER, brwlevel, true)
     else
-      for file in lfs.walk(browse_dir, lfs.default_filter, browse_loadlevel, true) do
+      for file in lfs.walk(brwdir, lfs.default_filter, brwlevel, true) do
         flist[ #flist+1 ]= file
-        --ext= file:match('[^%.\\/]+$')
-        --if ext then extlist[ext]= true end
       end
     end
-    table.sort(flist, file_sort)
+    if flistsz < #flist then  --some files were added
+      table.sort(flist, file_sort)
+      return true
+    end
+    return false
   end
 
   local function brw_userhome()
@@ -206,12 +252,12 @@ if toolbar then
     load_filebrowser()
   end
 
---  local function brw_projfolder()
---    if Proj and Proj.data.is_open then
---      browse_dir= Proj.data.proj_grp_path[1]
---      load_filebrowser()
---    end
---  end
+  local function brw_projfolder()
+    if Proj and Proj.data.is_open then
+      browse_dir= Util.remove_pathsep_end( Proj.data.proj_grp_path[1] )
+      load_filebrowser()
+    end
+  end
 
   local function brw_folder()
     local folder = ui.dialogs.fileselect{ title = 'Select folder', select_only_directories = true, with_directory = browse_dir }
@@ -221,23 +267,51 @@ if toolbar then
     end
   end
 
-  function load_filebrowser()
-    load_files()
+  function add_filesfromfolder(folder)
+    if load_files(folder, 0) then load_brw_tree() else ui.statusbar_text= "folder "..folder.." is empty" end
+  end
 
+  function load_filebrowser()
+    flist= {}
+    openfolders= {}
+    load_files(browse_dir, 0)
+    load_brw_tree()
+  end
+
+  function brw_reload_all()
+    flist= {}
+    load_files(browse_dir, 0)
+    for folder,_ in pairs(openfolders) do
+      load_files(folder, 0)
+    end
+    load_brw_tree()
+  end
+
+  function load_brw_tree()
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.list_init_title() --add a resize handle
-    toolbar.list_addbutton("brw-refresh", "Reload", load_filebrowser, "view-refresh")
-    --toolbar.list_addbutton("brw-proj", "Project", brw_projfolder, "document-properties")
-    toolbar.list_addbutton("brw-home", "User home", brw_userhome, "go-home")
+    toolbar.list_addbutton("brw-refresh", "Reload", brw_reload_all, "view-refresh")
     toolbar.list_addbutton("brw-folder", "Change folder", brw_folder, "document-open")
+    toolbar.list_addbutton("brw-proj", "Project base folder", brw_projfolder, "document-properties")
+    toolbar.list_addbutton("brw-home", "User home", brw_userhome, "go-home")
 
-    toolbar.list_addinfo(Util.getfilename(browse_dir,true), true, browse_dir)
+    local base_level= 1
+    if browse_dir == "/" then
+      toolbar.list_addinfo(browse_dir, true)
+    else
+      toolbar.list_addinfo(Util.getfilename(browse_dir,true), true)
+      base_level= get_file_level(browse_dir) + 1
+    end
 
-    local base_level= get_file_level(browse_dir) + 1
     toolbar.listtb_y= 3
     local w= toolbar.listwidth-13
     toolbar.sel_left_bar(itemsgrp)
+    if #flist == 0 then
+      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty", browse_dir, false, nil, "gtk-no", false, 0, 0, 0, w)
+      return
+    end
+
     local fold_row= {}
     for i=1, #flist do
       local fname= Util.getfilename(flist[i],true)
@@ -251,6 +325,7 @@ if toolbar then
         fname= Util.getfilename(fname,true)
         idlen= get_idlen_folder(i)
         if ind >= 12 then ind= ind -12 end
+        rowfolders[i]= true
       end
       local name= "brwfile#"..i
       if toolbar.list_add_txt_ico(name, fname, flist[i], (bicon==nil), sel_brwfile, bicon, (i%2==1), ind, idlen, 2, w) then
@@ -278,6 +353,8 @@ if toolbar then
     list_clear()
     toolbar.cmd_rclick("brwfile",brwfile_rclick)
     toolbar.cmd_dclick("brwfile",brwfile_dclick)
+    toolbar.cmd_rclick("GROUP"..itemsgrp.."-"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on itemsgroup
+    toolbar.cmd_rclick("TOOLBAR"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on the toolbar (outside any group)
   end
 
   local loaded= false
@@ -287,6 +364,8 @@ if toolbar then
     if not loaded then
       loaded= true
       load_filebrowser()  --load only once
+    elseif reload then
+      load_brw_tree()
     else
       track_file()
       mark_open_files()
@@ -298,10 +377,6 @@ if toolbar then
     toolbar.sel_left_bar(itemsgrp)
     toolbar.showgroup(show)
   end
-
---  function toolbar.filebrowser_update() --reload list
---    if toolbar.islistshown("filebrowser") then load_filebrowser() end
---  end
 
   toolbar.registerlisttb("filebrowser", "File browser", "document-open", filebrowser_create_cb, filebrowser_update_cb, filebrowser_showlist_cb)
 end
