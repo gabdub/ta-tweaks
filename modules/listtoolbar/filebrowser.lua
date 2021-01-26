@@ -50,17 +50,21 @@ if toolbar then
   end
 
   local function brwfile_rclick(cmd) --right click
-    if sel_brwfile(cmd) then
-      ui.toolbar_context_menu= create_uimenu_fromactions(filebrowser_context_menu)
-    else
-      ui.toolbar_context_menu= create_uimenu_fromactions(nofile_filebrowser_cmenu)
+    if toolbar.islistshown("filebrowser") then
+      if sel_brwfile(cmd) then
+        ui.toolbar_context_menu= create_uimenu_fromactions(filebrowser_context_menu)
+      else
+        ui.toolbar_context_menu= create_uimenu_fromactions(nofile_filebrowser_cmenu)
+      end
+      return true --open context menu
     end
-    return true --open context menu
   end
 
   local function nofile_rclick(cmd) --right click
-    ui.toolbar_context_menu= create_uimenu_fromactions(nofile_filebrowser_cmenu)
-    return true --open context menu
+    if toolbar.islistshown("filebrowser") then
+      ui.toolbar_context_menu= create_uimenu_fromactions(nofile_filebrowser_cmenu)
+      return true --open context menu
+    end
   end
 
   local function brwfile_dclick(cmd) --double click
