@@ -314,7 +314,8 @@ if toolbar then
     local w= toolbar.listwidth-13
     toolbar.sel_left_bar(itemsgrp)
     if #flist == 0 then
-      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty", browse_dir, false, nil, "gtk-no", false, 0, 0, 0, w)
+      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty", browse_dir, false, nil, "help-about", false, 0, 0, 0, w)
+      toolbar.enable("brwfile#0",false,false)
       return
     end
 
