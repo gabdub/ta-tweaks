@@ -14,13 +14,17 @@ if toolbar then
   local rowfolders= {}
 
   local browse_dir= _USERHOME
+  local browse_history= {}
+  local browse_hist_next= {}
+  local MAX_BROWSE_HIST= 10
 
   --right-click context menu
   local filebrowser_context_menu = {
-    {"open_filebrowser", SEPARATOR, "browse_folder", "browse_up_folder", "browse_proj_folder"}
+    {"open_filebrowser", "browse_folder", SEPARATOR,
+     "browse_home", "browse_selectfolder", "browse_proj_folder", "browse_refresh", SEPARATOR, "browse_up_folder", "browse_prev_folder", "browse_next_folder"}
   }
   local nofile_filebrowser_cmenu = {
-    {"browse_up_folder", "browse_proj_folder"}
+    {"browse_home", "browse_selectfolder", "browse_proj_folder", "browse_refresh", SEPARATOR, "browse_up_folder", "browse_prev_folder", "browse_next_folder"}
   }
 
   local function clear_selected()
@@ -106,20 +110,65 @@ if toolbar then
       load_filebrowser()
     end
   end
-  actions.add("browse_folder", 'Browse this folder', act_browse_folder)
+  actions.add("browse_folder", 'Browse: open selected folder', act_browse_folder)
+
+  --ACTION: browse user home folder
+  local function act_browse_home()
+    browse_dir= _USERHOME
+    load_filebrowser()
+  end
+  actions.add("browse_home", 'Browse: user home', act_browse_home, nil, "go-home", nil, "User home")
+
+  --ACTION: browse select folder
+  local function act_browse_changefolder()
+    local folder = ui.dialogs.fileselect{ title = 'Select folder', select_only_directories = true, with_directory = browse_dir }
+    if folder then
+      browse_dir= folder
+      load_filebrowser()
+    end
+  end
+  actions.add("browse_selectfolder", 'Browse: select folder', act_browse_changefolder, nil, "document-open", nil, "Select folder")
 
   --ACTION: browse one folder up
   local function act_browse_up_folder()
     if not Util.is_fsroot( browse_dir ) then
       openfolders[ browse_dir .. Util.PATH_SEP ]= true
       set_filepath_as_brwdir(browse_dir)
-      brw_reload_all() --keep open folders
+      act_browse_refresh() --keep open folders
     end
   end
   local function browse_up_folder_status()
     return Util.is_fsroot(browse_dir) and 8 or 0 --0=normal 8=disabled
   end
-  actions.add("browse_up_folder", 'Browse one folder up', act_browse_up_folder, nil, "go-up", browse_up_folder_status)
+  actions.add("browse_up_folder", 'Browse: folder up', act_browse_up_folder, nil, "go-up", browse_up_folder_status)
+
+  --ACTION: browse back
+  local function act_browse_prev_folder()
+    if #browse_history > 1 then
+      table.insert(browse_hist_next, 1, table.remove(browse_history, 1)) --move current folder to next list
+      if #browse_hist_next >= MAX_BROWSE_HIST then
+        table.remove(browse_hist_next) --remove oldest
+      end
+      browse_dir= browse_history[1] --go back one folder
+      load_filebrowser()
+    end
+  end
+  local function browse_prev_folder_status()
+    return (#browse_history > 1) and 0 or 8 --0=normal 8=disabled
+  end
+  actions.add("browse_prev_folder", 'Browse: previous folder', act_browse_prev_folder, nil, "go-previous", browse_prev_folder_status)
+
+  --ACTION: browse next
+  local function act_browse_next_folder()
+    if #browse_hist_next > 0 then
+      browse_dir= table.remove(browse_hist_next, 1)
+      load_filebrowser()
+    end
+  end
+  local function browse_next_folder_status()
+    return (#browse_hist_next > 0) and 0 or 8 --0=normal 8=disabled
+  end
+  actions.add("browse_next_folder", 'Browse: next folder', act_browse_next_folder, nil, "go-next", browse_next_folder_status)
 
   --ACTION: browse project base folder
   local function brw_projfolder()
@@ -131,7 +180,7 @@ if toolbar then
   local function brw_projfolder_status()
     return (Proj and Proj.data.is_open) and 0 or 8 --0=normal 8=disabled
   end
-  actions.add("browse_proj_folder", 'Browse project base folder', brw_projfolder, nil, "document-properties", brw_projfolder_status)
+  actions.add("browse_proj_folder", 'Browse: open project base folder', brw_projfolder, nil, "document-properties", brw_projfolder_status)
 
   local function list_clear()
     --remove all items
@@ -261,19 +310,6 @@ if toolbar then
     return false
   end
 
-  local function brw_userhome()
-    browse_dir= _USERHOME
-    load_filebrowser()
-  end
-
-  local function brw_folder()
-    local folder = ui.dialogs.fileselect{ title = 'Select folder', select_only_directories = true, with_directory = browse_dir }
-    if folder then
-      browse_dir= folder
-      load_filebrowser()
-    end
-  end
-
   function add_filesfromfolder(folder)
     if load_files(folder, 0) then load_brw_tree() else ui.statusbar_text= "folder "..folder.." is empty" end
   end
@@ -285,22 +321,36 @@ if toolbar then
     load_brw_tree()
   end
 
-  function brw_reload_all()
+  --ACTION: browse refresh folder content
+  function act_browse_refresh()
     flist= {}
+    --reload browse dir
     load_files(browse_dir, 0)
-    for folder,_ in pairs(openfolders) do
-      load_files(folder, 0)
-    end
+    --reload opened folders
+    for folder,_ in pairs(openfolders) do load_files(folder, 0) end
     load_brw_tree()
+  end
+  actions.add("browse_refresh", 'Browse: refresh', act_browse_refresh, nil, "view-refresh", nil, "Refresh")
+
+  local function save_browse_history()
+    -- Add browse dir to history, eliminating duplicates
+    for i, folder in ipairs(browse_history) do
+      if folder == browse_dir then table.remove(browse_history, i) break end
+    end
+    table.insert(browse_history, 1, browse_dir)
+    if #browse_history >= MAX_BROWSE_HIST then
+      table.remove(browse_history) --remove oldest
+    end
   end
 
   function load_brw_tree()
     local linenum= toolbar.getnum_cmd(itselected)
     list_clear()
     toolbar.list_init_title() --add a resize handle
-    toolbar.list_addbutton("brw-refresh", "Reload", brw_reload_all, "view-refresh")
-    toolbar.list_addbutton("brw-folder", "Change folder", brw_folder, "document-open")
-    toolbar.list_addbutton("brw-home", "User home", brw_userhome, "go-home")
+    toolbar.list_addaction("browse_refresh")
+    toolbar.list_addaction("browse_selectfolder")
+    toolbar.list_addaction("browse_home")
+    save_browse_history()
 
     local base_level= 1
     if Util.is_fsroot( browse_dir ) then

@@ -130,7 +130,7 @@ if toolbar then
     search_prjlist(2)
   end
   actions.add("open_projlistfile",    'Open', act_open_prjselfile)
-  actions.add("browse_projfile",      'Browse this folder', act_browse_prjselfile, nil, "document-open", brw_prjselfile_status)
+  actions.add("browse_projfile",      'Browse: open selected folder in project', act_browse_prjselfile, nil, "document-open", brw_prjselfile_status)
   actions.add("search_projlist_dir",  'Search in selected dir',  act_search_in_sel_dir)
   actions.add("search_projlist_file", 'Search in selected file', act_search_in_sel_file)
 
