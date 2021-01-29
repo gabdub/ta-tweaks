@@ -96,29 +96,29 @@ if toolbar then
   end
   actions.add("open_filebrowser", 'Open', act_open_filebrowser)
 
-  local function set_filepath_as_brwdir(fname)
+  local function set_browsedir(folder, dontrefesh)
+    browse_dir= folder
+    openfolders= browse_hist_folders[browse_dir]  --keep previously opened subfolders
+    if not openfolders then openfolders= {} end
+    if dontrefesh == nil or dontrefesh == false then act_browse_refresh() end
+  end
+
+  local function set_filepath_as_brwdir(fname, dontrefesh)
     local pa,fa,ea = Util.splitfilename(fname)
-    if not Util.is_fsroot(pa) then browse_dir=Util.remove_pathsep_end(pa) else browse_dir=pa end
+    if not Util.is_fsroot(pa) then set_browsedir(Util.remove_pathsep_end(pa), dontrefesh) else set_browsedir(pa, dontrefesh) end
+  end
+
+  local function set_file_or_folder_as_brwdir(file_or_folder, dontrefesh)
+    local pa= Util.remove_pathsep_end(file_or_folder)
+    if pa == file_or_folder then set_filepath_as_brwdir(file_or_folder, dontrefesh) else set_browsedir(pa, dontrefesh) end
   end
 
   --ACTION: browse from the selected file/folder
   local function act_browse_folder()
     local linenum= sel_brwfile(itselected)
-    if linenum then
-      local fname= flist[linenum]
-      browse_dir= Util.remove_pathsep_end(fname)
-      if browse_dir == fname then set_filepath_as_brwdir(fname) end
-      load_filebrowser()
-    end
+    if linenum then set_file_or_folder_as_brwdir(flist[linenum]) end
   end
   actions.add("browse_folder", 'Browse: open selected folder', act_browse_folder)
-
-  local function set_browsedir(folder)
-    browse_dir= folder
-    openfolders= browse_hist_folders[browse_dir]  --keep previously opened subfolders
-    if not openfolders then openfolders= {} end
-    act_browse_refresh()
-  end
 
   --ACTION: browse user home folder
   local function act_browse_home()
@@ -136,9 +136,10 @@ if toolbar then
   --ACTION: browse one folder up
   local function act_browse_up_folder()
     if not Util.is_fsroot( browse_dir ) then
-      openfolders[ browse_dir .. Util.PATH_SEP ]= true --add browse_dir to the list of opened folders
-      set_filepath_as_brwdir(browse_dir)
-      act_browse_refresh() --keep open folders
+      local actf= browse_dir .. Util.PATH_SEP
+      set_filepath_as_brwdir(browse_dir, true) --don't refresh yet
+      openfolders[ actf ]= true --add original browse_dir to the list of opened folders
+      act_browse_refresh() --refresh now
     end
   end
   local function browse_up_folder_status()
@@ -437,13 +438,11 @@ if toolbar then
     toolbar.showgroup(show)
   end
 
-  function toolbar.filebrowser_browse(folder)
+  function toolbar.filebrowser_browse(file_or_folder)
     --global: show the content of this folder in the file browser
-    if folder and folder ~= "" then
+    if file_or_folder and file_or_folder ~= "" then
       toolbar.select_list("filebrowser", true) --force visible / activate
-      browse_dir= Util.remove_pathsep_end(folder)
-      if browse_dir == folder then set_filepath_as_brwdir(folder) end
-      load_filebrowser()
+      set_file_or_folder_as_brwdir(file_or_folder)
     end
   end
 
