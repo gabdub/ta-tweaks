@@ -34,7 +34,7 @@ if actions then
   ls["open_userhome"][2]=       Proj.qopen_user
   ls["open_textadepthome"][2]=  Proj.qopen_home
   ls["open_currentdir"][2]=     Proj.qopen_curdir
-  ls["open_projectdir"][2]=     Proj.snapopen
+  ls["quick_open_projectdir"][2]= Proj.quick_open
   ls["show_documentation"][2]=  Proj.show_doc
   ls["next_buffer"][2]=         Proj.next_buffer
   ls["prev_buffer"][2]=         Proj.prev_buffer
@@ -44,7 +44,7 @@ if actions then
   actions.free_accelerator({ Util.KEY_CTRL.."pgup", Util.KEY_CTRL.."pgdn", Util.KEY_CTRL.."O", Util.KEY_CTRL..Util.KEY_ALT.."P"})
   actions.accelerators["prev_buffer"]= Util.KEY_CTRL.."pgup"
   actions.accelerators["next_buffer"]= Util.KEY_CTRL.."pgdn"
-  actions.accelerators["open_projectdir"]= Util.KEY_CTRL.."O"
+  actions.accelerators["quick_open_projectdir"]= Util.KEY_CTRL.."O"
   actions.accelerators["open_textadepthome"]= Util.KEY_CTRL..Util.KEY_ALT.."P"
 
   --"toggle_viewproj" = '_Hide/show project'
@@ -191,7 +191,7 @@ if actions then
   else  --project in BUFFER
     proj_context_menu = {
       { --#1 project in SELECTION mode
-        {"open_projsel","open_projectdir",SEPARATOR,
+        {"open_projsel","quick_open_projectdir",SEPARATOR,
            "toggle_editproj","toggle_viewproj","copyfilename",SEPARATOR,
            "adddirfiles_proj",SEPARATOR,
            "show_documentation", "search_project","search_sel_dir","search_sel_file"}

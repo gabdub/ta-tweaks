@@ -126,7 +126,7 @@ default_accelerators= {
   "open_userhome",          "cu",           "cu",
 --"open_textadepthome",     "",             "",
   "open_currentdir",        "caO",          "mO",
-  "open_projectdir",        "caP",          "cmp",
+  "quick_open_projectdir",  "caP",          "cmp",
   "snippet_select",         "cK",           "mK",
   "complete_trigger",       "ck",           "mk",
   "tab_key",                "\t",           "\t",
@@ -311,7 +311,7 @@ default_accelerators= {
   "open_userhome",          "ctrl+u",       "ctrl+u",
 --"open_textadepthome",     "",             "",
   "open_currentdir",        "ctrl+alt+O",   "meta+O",
-  "open_projectdir",        "ctrl+alt+P",   "ctrl+meta+p",
+  "quick_open_projectdir",  "ctrl+alt+P",   "ctrl+meta+p",
   "snippet_select",         "ctrl+K",       "meta+K",
   "tab_key",                "\t",           "\t",        --textadept.snippets.insert or TAB
   "shift_tab_key",          "shift+\t",     "shift+\t",  --textadept.snippets.previous or shift+TAB

@@ -17,7 +17,7 @@ if toolbar then
     {"open_projlistfile", "browse_projfile", "proj_folder_in_filemanager", SEPARATOR,
      "toggle_editproj",
      "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-     "open_projectdir", "search_project",
+     "quick_open_projectdir", "search_project",
      "search_projlist_dir","search_projlist_file"
     }
   }
@@ -26,7 +26,7 @@ if toolbar then
   local proj_nofile_menu = {
     {"toggle_editproj",
      "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-     "open_projectdir", "search_project"
+     "quick_open_projectdir", "search_project"
     }
   }
 

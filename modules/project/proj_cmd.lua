@@ -105,9 +105,9 @@ function Proj.qopen_curdir()
   end
 end
 
---ACTION: open_projectdir
---snapopen project files based on io.quick_open/snapopen @ file_io.lua
-function Proj.snapopen()
+--ACTION: quick_open_projectdir
+--quick open project files based on io.quick_open/snapopen @ file_io.lua
+function Proj.quick_open()
   if not Proj.check_is_open() then return end
 
   --if the current view is a project view, goto files view

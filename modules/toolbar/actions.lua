@@ -84,7 +84,7 @@ local default_icons= {
 --"open_userhome",          "",
 --"open_textadepthome",     "",
 --"open_currentdir",        "",
---"open_projectdir",        "",
+--"quick_open_projectdir",  "",
   "snippet_select",         "insert-text",
 --"expand_snippet",         "",
 --"prev_snipplaceholder",   "",

@@ -322,7 +322,7 @@ actions.list = {
           io.quick_open(buffer.filename:match('^(.+)[/\\]'))
         end
       end},
-  ["open_projectdir"]=      {_L['Quickly Open Current _Project'], io.quick_open},
+  ["quick_open_projectdir"]= {_L['Quickly Open Current _Project'], io.quick_open},
 
 --TOOLS + SNIPPETS
   ["snippet_select"]=       {_L['_Insert Snippet...'], textadept.snippets._select },
@@ -644,7 +644,7 @@ actions.list = {
           io.quick_open(buffer.filename:match('^(.+)[/\\]'))
         end
       end},
-  ["open_projectdir"]=      {_L['Quickly Open Current Project'], io.quick_open},
+  ["quick_open_projectdir"]= {_L['Quickly Open Current Project'], io.quick_open},
 
 --TOOLS + SNIPPETS
   ["snippet_select"]=       {_L['Insert Snippet...'], textadept.snippets.select},
@@ -835,7 +835,7 @@ actions.menubar = {
     },
     {
       title = Util.QUICKOPENMENU_TEXT,
-      {"open_userhome","open_textadepthome","open_currentdir","open_projectdir"}
+      {"open_userhome","open_textadepthome","open_currentdir","quick_open_projectdir"}
     },
     {
       title = Util.SNIPPETSMENU_TEXT,
