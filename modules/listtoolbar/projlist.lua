@@ -152,8 +152,7 @@ if toolbar then
           local pa2,fa,ea = Util.splitfilename(file_or_folder)
           if not Util.is_fsroot(pa2) then pa= Util.remove_pathsep_end(pa2) end
         end
-        local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-        os.spawn(string.format('%s "%s"', cmd, pa))
+        Util.os_open_file(pa)
       end
     end
   end

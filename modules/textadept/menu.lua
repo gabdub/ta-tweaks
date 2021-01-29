@@ -78,10 +78,6 @@ local function set_encoding(encoding)
   buffer:set_encoding(encoding)
   events.emit(events.UPDATE_UI,0) -- for updating statusbar
 end
-local function open_page(url)
-  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  os.spawn(string.format('%s "%s"', cmd, not OSX and url or 'file://'..url))
-end
 
 local function tab_key()
   if Util.TA_MAYOR_VER < 11 then --TA10
@@ -411,8 +407,8 @@ actions.list = {
   ["reset_zoom"]=           {_L['_Reset Zoom'], function() buffer.zoom = 0 end},
 
 --HELP
-  ["show_manual"]=          {_L['Show _Manual'], function() open_page(_HOME..'/doc/manual.html') end},
-  ["show_luadoc"]=          {_L['Show _LuaDoc'], function() open_page(_HOME..'/doc/api.html') end},
+  ["show_manual"]=          {_L['Show _Manual'], function() Util.os_open_page(_HOME..'/doc/manual.html') end},
+  ["show_luadoc"]=          {_L['Show _LuaDoc'], function() Util.os_open_page(_HOME..'/doc/api.html') end},
   ["about"]=                {_L['_About'], function()
       ui.dialogs.msgbox({
         title = 'Textadept', text = _RELEASE, informative_text = _COPYRIGHT,
@@ -734,8 +730,8 @@ actions.list = {
   ["reset_zoom"]=           {_L['Reset Zoom'], function() buffer.zoom = 0 end},
 
 --HELP
-  ["show_manual"]=          {_L['Show Manual'], function() open_page(_HOME .. '/docs/manual.html') end},
-  ["show_luadoc"]=          {_L['Show LuaDoc'], function() open_page(_HOME .. '/docs/api.html') end},
+  ["show_manual"]=          {_L['Show Manual'], function() Util.os_open_page(_HOME .. '/docs/manual.html') end},
+  ["show_luadoc"]=          {_L['Show LuaDoc'], function() Util.os_open_page(_HOME .. '/docs/api.html') end},
   ["about"]=                {_L['About'], function()
       ui.dialogs.msgbox{
         title = 'Textadept', text = _RELEASE, informative_text = _COPYRIGHT,

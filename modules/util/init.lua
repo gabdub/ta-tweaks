@@ -135,6 +135,15 @@ function Util.file_exists(fn)
   return false
 end
 
+function Util.os_open_file(fname)
+  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
+  os.spawn(string.format('%s "%s"', cmd, fname))
+end
+
+function Util.os_open_page(url)
+  Util.os_open_file( not OSX and url or 'file://'..url)
+end
+
 function Util.type_before_after(before,after)
   if (buffer.selections > 1) or (buffer.selection_n_start[ Util.LINE_BASE ] ~= buffer.selection_n_end[ Util.LINE_BASE ]) then
     --if something is selected use enclose (left the cursor at the end)

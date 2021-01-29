@@ -841,17 +841,13 @@ local function view_virtspace_change()
   actions.updateaction("toggle_virtualspace")
 end
 
-local function open_site(site)
-  local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  os.spawn(string.format('%s "%s"', cmd, site))
-end
 local tatoolbargit= "https://github.com/gabdub/ta-tweaks"
 local function open_tatoolbargit()
-  open_site(tatoolbargit)
+  Util.os_open_file(tatoolbargit)
 end
 local tagithub= "https://github.com/orbitalquark/textadept"
 local function open_tagithub()
-  open_site(tagithub)
+  Util.os_open_file(tagithub)
 end
 
 local function add_buffer_cfg_panel()

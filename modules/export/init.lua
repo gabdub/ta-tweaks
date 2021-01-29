@@ -19,7 +19,7 @@ local M = {}
 --   The default value is `true`.
 module('export')]]
 
-M.browser = 'firefox'
+--M.browser = 'firefox'
 M.line_numbers = true
 
 -- Localizations.
@@ -177,7 +177,8 @@ function M.to_html(filename, out_filename)
 
   -- Done. Export to the file and show it.
   io.open(out_filename, 'wb'):write(table.concat(html)):close()
-  os.spawn(format('%s "%s"', M.browser, out_filename))
+  --os.spawn(format('%s "%s"', M.browser, out_filename))
+  Util.os_open_page(out_filename)
 end
 
 -- Add a sub-menu.
