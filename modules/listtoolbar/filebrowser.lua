@@ -21,7 +21,7 @@ if toolbar then
 
   --right-click context menu
   local filebrowser_context_menu = {
-    {"open_filebrowser", "browse_folder", SEPARATOR,
+    {"open_filebrowser", "browse_folder", "browse_folder_in_filemanager", SEPARATOR,
      "browse_home", "browse_selectfolder", "browse_proj_folder", "browse_refresh", SEPARATOR, "browse_up_folder", "browse_prev_folder", "browse_next_folder"}
   }
   local nofile_filebrowser_cmenu = {
@@ -112,6 +112,22 @@ if toolbar then
     local pa= Util.remove_pathsep_end(file_or_folder)
     if pa == file_or_folder then set_filepath_as_brwdir(file_or_folder, dontrefesh) else set_browsedir(pa, dontrefesh) end
   end
+
+  --ACTION: browse from the selected file/folder
+  local function act_browse_folder_fileman()
+    local linenum= sel_brwfile(itselected)
+    if linenum then
+      local file_or_folder= flist[linenum]
+      local pa= Util.remove_pathsep_end(file_or_folder)
+      if pa == file_or_folder then --file
+        local pa2,fa,ea = Util.splitfilename(file_or_folder)
+        if not Util.is_fsroot(pa2) then pa= Util.remove_pathsep_end(pa2) end
+      end
+      local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
+      os.spawn(string.format('%s "%s"', cmd, pa))
+    end
+  end
+  actions.add("browse_folder_in_filemanager", 'Browse: open folder in system file manager', act_browse_folder_fileman)
 
   --ACTION: browse from the selected file/folder
   local function act_browse_folder()

@@ -14,20 +14,19 @@ if toolbar then
 
   --right-click context menu over a file
   local proj_context_menu = {
-    {"open_projlistfile", "open_projectdir", "browse_projfile", SEPARATOR,
-     "toggle_editproj",SEPARATOR,
+    {"open_projlistfile", "browse_projfile", "proj_folder_in_filemanager", SEPARATOR,
+     "toggle_editproj",
      "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-     "search_project",
+     "open_projectdir", "search_project",
      "search_projlist_dir","search_projlist_file"
     }
   }
 
   --right-click context menu over the back of the list
   local proj_nofile_menu = {
-    {"open_projectdir",SEPARATOR,
-     "toggle_editproj",SEPARATOR,
+    {"toggle_editproj",
      "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-     "search_project"
+     "open_projectdir", "search_project"
     }
   }
 
@@ -107,7 +106,12 @@ if toolbar then
     end
   end
   local function brw_prjselfile_status()
-    return toolbar.filebrowser_browse == nil and 8 or 0 --0=normal 8=disabled
+    local ft
+    if toolbar.filebrowser_browse ~= nil then
+      local linenum= sel_file(itselected)
+      if linenum then ft= data.proj_filestype[linenum] end
+    end
+    return (ft == Proj.PRJF_PATH or ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG) and 0 or 8 --0=normal 8=disabled
   end
 
   local function search_prjlist(where)
@@ -130,9 +134,36 @@ if toolbar then
     search_prjlist(2)
   end
   actions.add("open_projlistfile",    'Open', act_open_prjselfile)
-  actions.add("browse_projfile",      'Browse: open selected folder in project', act_browse_prjselfile, nil, "document-open", brw_prjselfile_status)
+  actions.add("browse_projfile",      'Browse: open selected project folder', act_browse_prjselfile, nil, "document-open", brw_prjselfile_status)
   actions.add("search_projlist_dir",  'Search in selected dir',  act_search_in_sel_dir)
   actions.add("search_projlist_file", 'Search in selected file', act_search_in_sel_file)
+
+  --ACTION: browse from the selected file/folder
+  local function act_project_folder_fileman()
+    local linenum= sel_file(itselected)
+    if linenum then
+      local file_or_folder
+      local ft= data.proj_filestype[linenum]
+      if ft == Proj.PRJF_PATH then file_or_folder= data.proj_grp_path[linenum]
+      elseif ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then file_or_folder= data.proj_files[linenum] end
+      if file_or_folder then
+        local pa= Util.remove_pathsep_end(file_or_folder)
+        if pa == file_or_folder then --file
+          local pa2,fa,ea = Util.splitfilename(file_or_folder)
+          if not Util.is_fsroot(pa2) then pa= Util.remove_pathsep_end(pa2) end
+        end
+        local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
+        os.spawn(string.format('%s "%s"', cmd, pa))
+      end
+    end
+  end
+  local function prj_folder_sfm_status()
+    local ft
+    local linenum= sel_file(itselected)
+    if linenum then ft= data.proj_filestype[linenum] end
+    return (ft == Proj.PRJF_PATH or ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG) and 0 or 8 --0=normal 8=disabled
+  end
+  actions.add("proj_folder_in_filemanager", 'Open project folder in system file manager', act_project_folder_fileman, nil, "document-open", prj_folder_sfm_status)
 
   local function list_clear()
     --remove all items
