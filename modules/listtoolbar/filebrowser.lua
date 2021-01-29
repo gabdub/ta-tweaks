@@ -16,6 +16,7 @@ if toolbar then
   local browse_dir= _USERHOME
   local browse_history= {}
   local browse_hist_next= {}
+  local browse_hist_folders= {}
   local MAX_BROWSE_HIST= 10
 
   --right-click context menu
@@ -112,27 +113,30 @@ if toolbar then
   end
   actions.add("browse_folder", 'Browse: open selected folder', act_browse_folder)
 
+  local function set_browsedir(folder)
+    browse_dir= folder
+    openfolders= browse_hist_folders[browse_dir]  --keep previously opened subfolders
+    if not openfolders then openfolders= {} end
+    act_browse_refresh()
+  end
+
   --ACTION: browse user home folder
   local function act_browse_home()
-    browse_dir= _USERHOME
-    load_filebrowser()
+    set_browsedir(_USERHOME)
   end
   actions.add("browse_home", 'Browse: user home', act_browse_home, nil, "go-home", nil, "User home")
 
   --ACTION: browse select folder
   local function act_browse_changefolder()
     local folder = ui.dialogs.fileselect{ title = 'Select folder', select_only_directories = true, with_directory = browse_dir }
-    if folder then
-      browse_dir= folder
-      load_filebrowser()
-    end
+    if folder then set_browsedir(folder) end
   end
   actions.add("browse_selectfolder", 'Browse: select folder', act_browse_changefolder, nil, "document-open", nil, "Select folder")
 
   --ACTION: browse one folder up
   local function act_browse_up_folder()
     if not Util.is_fsroot( browse_dir ) then
-      openfolders[ browse_dir .. Util.PATH_SEP ]= true
+      openfolders[ browse_dir .. Util.PATH_SEP ]= true --add browse_dir to the list of opened folders
       set_filepath_as_brwdir(browse_dir)
       act_browse_refresh() --keep open folders
     end
@@ -149,8 +153,7 @@ if toolbar then
       if #browse_hist_next >= MAX_BROWSE_HIST then
         table.remove(browse_hist_next) --remove oldest
       end
-      browse_dir= browse_history[1] --go back one folder
-      load_filebrowser()
+      set_browsedir(browse_history[1]) --go back one folder
     end
   end
   local function browse_prev_folder_status()
@@ -160,10 +163,7 @@ if toolbar then
 
   --ACTION: browse next
   local function act_browse_next_folder()
-    if #browse_hist_next > 0 then
-      browse_dir= table.remove(browse_hist_next, 1)
-      load_filebrowser()
-    end
+    if #browse_hist_next > 0 then set_browsedir(table.remove(browse_hist_next, 1)) end
   end
   local function browse_next_folder_status()
     return (#browse_hist_next > 0) and 0 or 8 --0=normal 8=disabled
@@ -172,10 +172,7 @@ if toolbar then
 
   --ACTION: browse project base folder
   local function brw_projfolder()
-    if Proj and Proj.data.is_open then
-      browse_dir= Util.remove_pathsep_end( Proj.data.proj_grp_path[1] )
-      load_filebrowser()
-    end
+    if Proj and Proj.data.is_open then set_browsedir(Util.remove_pathsep_end(Proj.data.proj_grp_path[1])) end
   end
   local function brw_projfolder_status()
     return (Proj and Proj.data.is_open) and 0 or 8 --0=normal 8=disabled
@@ -337,10 +334,15 @@ if toolbar then
     for i, folder in ipairs(browse_history) do
       if folder == browse_dir then table.remove(browse_history, i) break end
     end
+    for i, folder in ipairs(browse_hist_next) do
+      if folder == browse_dir then table.remove(browse_hist_next, i) break end
+    end
     table.insert(browse_history, 1, browse_dir)
     if #browse_history >= MAX_BROWSE_HIST then
-      table.remove(browse_history) --remove oldest
+      local oldp= table.remove(browse_history) --remove oldest
+      browse_hist_folders[oldp]= nil
     end
+    browse_hist_folders[browse_dir]= openfolders
   end
 
   function load_brw_tree()
