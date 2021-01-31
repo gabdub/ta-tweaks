@@ -313,7 +313,7 @@ if toolbar then
         end, lfs.FILTER, brwlevel, true)
     else
       for file in lfs.walk(brwdir, lfs.default_filter, brwlevel, true) do
-        flist[ #flist+1 ]= file:iconv('UTF-8', _CHARSET)
+        flist[ #flist+1 ]= file
       end
     end
     if flistsz < #flist then  --some files were added
@@ -389,21 +389,22 @@ if toolbar then
 
     local fold_row= {}
     for i=1, #flist do
-      local fname= Util.getfilename(flist[i],true)
+      local fli= flist[i]:iconv('UTF-8', _CHARSET)
+      local fname= Util.getfilename(fli,true)
       local bicon
       local idlen= 0
-      local ind= (get_file_level(flist[i]) - base_level) * 12
+      local ind= (get_file_level(fli) - base_level) * 12
       if fname ~= "" then --file
-        bicon= toolbar.icon_fname(flist[i])
+        bicon= toolbar.icon_fname(fli)
       else  --folder
-        fname= Util.remove_pathsep_end( flist[i] ) --remove "\" or "/" from the end
+        fname= Util.remove_pathsep_end( fli ) --remove "\" or "/" from the end
         fname= Util.getfilename(fname,true)
         idlen= get_idlen_folder(i)
         if ind >= 12 then ind= ind -12 end
         rowfolders[i]= true
       end
       local name= "brwfile#"..i
-      if toolbar.list_add_txt_ico(name, fname, flist[i], (bicon==nil), sel_brwfile, bicon, (i%2==1), ind, idlen, 2, w) then
+      if toolbar.list_add_txt_ico(name, fname, fli, (bicon==nil), sel_brwfile, bicon, (i%2==1), ind, idlen, 2, w) then
         toolbar.list_add_collapse(name, collapse_brw_list, ind, idlen, collarow)
         fold_row[#fold_row+1]= i --initially fold all folders
       end
