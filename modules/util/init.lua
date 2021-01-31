@@ -137,7 +137,7 @@ end
 
 function Util.os_open_file(fname)
   local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
-  os.spawn(string.format('%s "%s"', cmd, fname))
+  os.spawn(string.format('%s "%s"', cmd, fname:iconv(_CHARSET, 'UTF-8')))
 end
 
 function Util.os_open_page(url)
