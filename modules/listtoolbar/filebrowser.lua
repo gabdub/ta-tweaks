@@ -371,18 +371,19 @@ if toolbar then
     save_browse_history()
 
     local base_level= 1
-    if Util.is_fsroot( browse_dir ) then
-      toolbar.list_addinfo(browse_dir, true)
+    local bdir= browse_dir:iconv('UTF-8', _CHARSET)
+    if Util.is_fsroot( bdir ) then
+      toolbar.list_addinfo(bdir, true)
     else
-      toolbar.list_addinfo(Util.getfilename(browse_dir,true), true)
-      base_level= get_file_level(browse_dir) + 1
+      toolbar.list_addinfo(Util.getfilename(bdir,true), true)
+      base_level= get_file_level(bdir) + 1
     end
 
     toolbar.listtb_y= 3
     local w= toolbar.listwidth-13
     toolbar.sel_left_bar(itemsgrp)
     if #flist == 0 then
-      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty", browse_dir, false, nil, "help-about", false, 0, 0, 0, w)
+      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty", bdir, false, nil, "help-about", false, 0, 0, 0, w)
       toolbar.enable("brwfile#0",false,false)
       return
     end
