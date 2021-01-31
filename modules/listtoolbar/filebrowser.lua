@@ -324,7 +324,7 @@ if toolbar then
   end
 
   function add_filesfromfolder(folder)
-    if load_files(folder, 0) then load_brw_tree() else ui.statusbar_text= "folder "..folder.." is empty" end
+    if load_files(folder, 0) then load_brw_tree() else ui.statusbar_text= "folder "..folder:iconv('UTF-8', _CHARSET).." is empty" end
   end
 
   function load_filebrowser()
