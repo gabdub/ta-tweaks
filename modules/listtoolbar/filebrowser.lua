@@ -313,7 +313,7 @@ if toolbar then
         end, lfs.FILTER, brwlevel, true)
     else
       for file in lfs.walk(brwdir, lfs.default_filter, brwlevel, true) do
-        flist[ #flist+1 ]= file
+        flist[ #flist+1 ]= file:iconv('UTF-8', _CHARSET)
       end
     end
     if flistsz < #flist then  --some files were added
