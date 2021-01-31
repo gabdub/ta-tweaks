@@ -324,7 +324,7 @@ if toolbar then
   end
 
   function add_filesfromfolder(folder)
-    if load_files(folder, 0) then load_brw_tree() else ui.statusbar_text= "folder "..folder:iconv('UTF-8', _CHARSET).." is empty" end
+    if load_files(folder, 0) then load_brw_tree() else ui.statusbar_text= "folder "..folder:iconv('UTF-8', _CHARSET).." is empty or protected" end
   end
 
   function load_filebrowser()
@@ -383,7 +383,7 @@ if toolbar then
     local w= toolbar.listwidth-13
     toolbar.sel_left_bar(itemsgrp)
     if #flist == 0 then
-      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty", bdir, false, nil, "help-about", false, 0, 0, 0, w)
+      toolbar.list_add_txt_ico("brwfile#0", "The folder is empty or protected", bdir, false, nil, "help-about", false, 0, 0, 0, w)
       toolbar.enable("brwfile#0",false,false)
       return
     end
