@@ -36,7 +36,7 @@ if toolbar then
     Proj.goto_filesview()
     local linenum= toolbar.getnum_cmd(cmd)
     Util.goto_line(buffer, linenum)
-    buffer:vertical_centre_caret()
+    buffer:vertical_center_caret()
   end
 
   local function list_addtag(tagtext, line, ext_fields)

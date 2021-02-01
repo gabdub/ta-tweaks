@@ -124,7 +124,7 @@ local function minimap_clicked()
     nl= buffer:doc_line_from_visible(nl-1+Util.LINE_BASE)
     if nl >= buffer.line_count then nl= buffer.line_count-1 end
     textadept.editing.goto_line(nl)
-    buffer:vertical_centre_caret()
+    buffer:vertical_center_caret()
   end
 end
 
