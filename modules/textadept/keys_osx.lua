@@ -463,7 +463,7 @@ else --TA 11
     buffer:line_end_extend()
     if not buffer.selection_empty then buffer:cut() else buffer:clear() end
   end
-  keys['ctrl+l'] = view.vertical_centre_caret
+  keys['ctrl+l'] = view.vertical_center_caret
 
   keys[ CURSES and 'meta+u' or 'cmd+U'] = function()
     ui.command_entry.run(function(code)
