@@ -1,7 +1,7 @@
 // Copyright 2007-2021 Mitchell. See LICENSE.
 // USE_TA_TOOLBAR changes: Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
-#define TA_VERSION 110  //TA code updated for textadept 11.0
+#define TA_VERSION 111  //TA code updated for textadept 11.1
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
