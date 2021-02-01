@@ -1,4 +1,4 @@
-// Copyright 2007-2020 Mitchell. See LICENSE.
+// Copyright 2007-2021 Mitchell. See LICENSE.
 // USE_TA_TOOLBAR changes: Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
 #define TA_VERSION 110  //TA code updated for textadept 11.0
