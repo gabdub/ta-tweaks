@@ -320,7 +320,7 @@ function Proj.remove_tabs()
   pos= buffer:search_next(0, "\t")
   while pos ~= -1 do
     buffer:set_target_range(pos, pos+1)
-    local col= buffer.column[pos]
+    local col= buffer.column[pos] -Util.LINE_BASE
     local spaces = tw - math.fmod(col, tw)
     buffer:replace_target(string.rep(' ', spaces))
     nt=nt+1
