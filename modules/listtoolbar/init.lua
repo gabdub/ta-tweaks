@@ -18,9 +18,10 @@ if toolbar then
   local LSTSEL_CREATE_CB= 4  --create callback
   local LSTSEL_UPDATE_CB= 5  --update callback (parameter: reload == FALSE for VIEW/BUFFER_AFTER_SWITCH)
   local LSTSEL_SHOW_CB=   6  --the list has been shown/hidden (parameter: show)
+  local LSTSEL_RCLICK_CB= 7  --right click over toolbar or title group (parameter: cmd= item-name)
 
-  function toolbar.registerlisttb(name, tooltip, icon, createfun_cb, notify_cb, showlist_cb)
-    toolbar.listselections[#toolbar.listselections+1]= {name, tooltip, icon, createfun_cb, notify_cb, showlist_cb}
+  function toolbar.registerlisttb(name, tooltip, icon, createfun_cb, notify_cb, showlist_cb, rclick_cb)
+    toolbar.listselections[#toolbar.listselections+1]= {name, tooltip, icon, createfun_cb, notify_cb, showlist_cb, rclick_cb}
   end
 
   local function listtb_update(reload)
@@ -132,6 +133,14 @@ if toolbar then
 
   Proj.add_config_hook(beforeload_ltb, afterload_ltb, beforesave_ltb, projloaded_ltb)
 
+  local function list_rclick(cmd) --right click on title group or toolbar
+    if currlistidx > 0 then
+      local func= toolbar.listselections[currlistidx][LSTSEL_RCLICK_CB]
+      if func ~= nil then return func(cmd) end --pass right click to the current list
+    end
+    return false --don't open context menu
+  end
+
   function toolbar.createlisttb()
     currlist=""
     currlistidx=0
@@ -155,6 +164,9 @@ if toolbar then
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
 
     toolbar.show(false, toolbar.listwidth)  --hide until the project config is loaded
+
+    toolbar.cmd_rclick("GROUP"..titgrp.."-"..toolbar.LEFT_TOOLBAR, list_rclick)  --rclick on title group
+    toolbar.cmd_rclick("TOOLBAR"..toolbar.LEFT_TOOLBAR, list_rclick)  --rclick on the toolbar (outside any group)
 
     --create lists
     for i=1,#toolbar.listselections do toolbar.listselections[i][LSTSEL_CREATE_CB]() end

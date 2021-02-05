@@ -431,7 +431,6 @@ if toolbar then
     toolbar.cmd_rclick("brwfile",brwfile_rclick)
     toolbar.cmd_dclick("brwfile",brwfile_dclick)
     toolbar.cmd_rclick("GROUP"..itemsgrp.."-"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on itemsgroup
-    toolbar.cmd_rclick("TOOLBAR"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on the toolbar (outside any group)
   end
 
   local loaded= false
@@ -463,5 +462,5 @@ if toolbar then
     end
   end
 
-  toolbar.registerlisttb("filebrowser", "File browser", "document-open", filebrowser_create_cb, filebrowser_update_cb, filebrowser_showlist_cb)
+  toolbar.registerlisttb("filebrowser", "File browser", "document-open", filebrowser_create_cb, filebrowser_update_cb, filebrowser_showlist_cb, nofile_rclick)
 end

@@ -140,6 +140,6 @@ if toolbar then
     toolbar.select_list("recentprojlist",true) --activate this list
   end
 
-  toolbar.registerlisttb("recentprojlist", "Recent Projects", "go-home", recentproj_create_cb, recentproj_update_cb, recentproj_showlist_cb)
+  toolbar.registerlisttb("recentprojlist", "Recent Projects", "go-home", recentproj_create_cb, recentproj_update_cb, recentproj_showlist_cb, nil)
 end
 

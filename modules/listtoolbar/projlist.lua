@@ -38,6 +38,7 @@ if toolbar then
   end
 
   local function sel_file(cmd) --click= select
+    if not cmd then return 0 end
     local rmexp= string.match(cmd,"exp%-(.*)")
     if rmexp then cmd=rmexp end
     local linenum= toolbar.getnum_cmd(cmd)
@@ -58,14 +59,14 @@ if toolbar then
   end
 
   local function gofile_rclick(cmd) --right click on an item
-    if sel_file(cmd) then
+    if sel_file(cmd) and data.is_open then
       ui.toolbar_context_menu= create_uimenu_fromactions(proj_context_menu)
       return true --open file context menu
     end
   end
 
   local function nofile_rclick(cmd) --right click with no item selected
-    if toolbar.islistshown("projlist") and data.is_open then
+    if toolbar.islistshown("projlist") then
       ui.toolbar_context_menu= create_uimenu_fromactions(proj_nofile_menu)
       return true --open group context menu
     end
@@ -191,6 +192,7 @@ if toolbar then
     local id= toolbar.getnum_cmd(cmd)
     if id and id > 1 then
       for i=1, id-1 do
+        if i > #data.proj_rowinfo then break end
         local idlen= data.proj_rowinfo[i][3] --indent-len
         if idlen and i+idlen >= id then --expand all parents
           local ecmd= "exp-gofile#"..i
@@ -319,7 +321,6 @@ if toolbar then
     --right click: open context menu
     toolbar.cmd_rclick("gofile",gofile_rclick) --on a file
     toolbar.cmd_rclick("GROUP"..itemsgrp.."-"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on itemsgroup
-    toolbar.cmd_rclick("TOOLBAR"..toolbar.LEFT_TOOLBAR, nofile_rclick)  --on the toolbar (outside any group)
   end
 
   local function proj_update_cb(reload)
@@ -335,7 +336,7 @@ if toolbar then
     toolbar.showgroup(show)
   end
 
-  toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create_cb, proj_update_cb, proj_showlist_cb)
+  toolbar.registerlisttb("projlist", "Project", "document-properties", proj_create_cb, proj_update_cb, proj_showlist_cb, nofile_rclick)
 
   --------------- LISTS INTERFACE --------------
   function plugs.init_projectview()

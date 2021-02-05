@@ -185,5 +185,5 @@ if toolbar then
     if toolbar.islistshown("ctaglist") then load_ctags() end
   end
 
-  toolbar.registerlisttb("ctaglist", "Ctag List", "t_struct", ctags_create_cb, ctags_update_cb, ctags_showlist_cb)
+  toolbar.registerlisttb("ctaglist", "Ctag List", "t_struct", ctags_create_cb, ctags_update_cb, ctags_showlist_cb, nil)
 end
