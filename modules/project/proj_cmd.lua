@@ -357,9 +357,38 @@ function Proj.new_project()
     title = 'Select project root (Cancel = relative to project file)',
     select_only_directories = true, with_directory = path
   }
-  if not rootdir then rootdir='' else rootdir= rootdir .. Util.PATH_SEP end
+  local vc_dir, vc_workdir, vc_param
+  if not rootdir then
+    rootdir=''  --relative to project file
+    vc_dir= path --with file separator
+    vc_workdir= Util.remove_pathsep_end(vc_dir) --without file separator
+  else
+    vc_workdir= rootdir --without file separator
+    rootdir= rootdir .. Util.PATH_SEP
+    vc_dir= rootdir --with file separator
+  end
+  --check for ".git"/".svn" folders
+  if Util.dir_exists(vc_dir..".git") then
+    if Util.confirm("GIT support", "The project folder contains a GIT repository", "Do you want to add it to the project?") then
+      --[git]::C:\Users\desa1\test\::G,C:\Users\desa1\test
+      vc_param= {"[git]", vc_dir, "G,"..vc_workdir}
+    end
+  elseif Util.dir_exists(vc_dir..".svn") then
+    if Util.confirm("SVN support", "The project folder contains an SVN repository", "Do you want to add it to the project?") then
+      local r,vc_pref= ui.dialogs.inputbox{title = 'SVN Server', informative_text = 'Input the full SVN server path\n(e.g. https://192.168.0.11:8443/svn/repo-name/\n or http://192.168.0.60/svn/repo-name/)', width = 400, text = ""}
+      if type(vc_pref) == 'table' then
+        vc_pref= table.concat(vc_pref, ' ')
+      end
+      --[svn]::/home/user/::Shttps://192.168.0.11:8443/svn/
+      --[svn]::/home/user/repo-name/::Shttp://192.168.0.60/svn/repo-name/
+      if vc_pref ~= "" then vc_param= {"[svn]", vc_dir, "S"..vc_pref} end
+    end
+  end
   --create the project file and open it
-  if Proj.create_empty_project(filename, fn, rootdir) then Proj.open_project(filename) end
+  if Proj.create_empty_project(filename, fn, rootdir, vc_param) then
+    Proj.open_project(filename)
+    Proj.add_dir_files(vc_workdir)
+  end
 end
 
 --ACTION: open_project
@@ -570,7 +599,7 @@ function Proj.add_dir_files(dir)
         allext= allext..","..e
       end
     end
-    r,word= ui.dialogs.inputbox{title = 'Extension list', informative_text = 'Choose the extensions to add (empty= all)', width = 400, text = allext}
+    r,word= ui.dialogs.inputbox{title = 'Add files by extension', informative_text = 'Choose the extensions of the files to add (empty= all)', width = 400, text = allext}
     if type(word) == 'table' then
       word= table.concat(word, ',')
     end

@@ -135,6 +135,14 @@ function Util.file_exists(fn)
   return false
 end
 
+function Util.dir_exists(name)
+  if type(name)~="string" then return false end
+  local cd= lfs.currentdir()
+  local is= lfs.chdir(name) and true or false
+  lfs.chdir(cd)
+  return is
+end
+
 function Util.os_open_file(fname)
   local cmd = (WIN32 and 'start ""') or (OSX and 'open') or 'xdg-open'
   os.spawn(string.format('%s "%s"', cmd, fname))

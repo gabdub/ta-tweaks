@@ -29,6 +29,10 @@
 --          e.g. [svn]::/home/user/mw/::Shttps://192.168.0.11:8443/svn/
 --                /home/user/mw/MGWdrv/trunk/v.c ==> svn cat https://192.168.0.11:8443/svn/MGWdrv/trunk/v.c
 --                working dir= no need to set
+--
+--          e.g. [svn]::/home/user/mw/MGWdrv/::Shttp://192.168.0.60/svn/MGWdrv/
+--                /home/user/mw/MGWdrv/trunk/v.c ==> svn cat http://192.168.0.60/svn/MGWdrv/trunk/v.c
+--                working dir= no need to set
 ----------
 --        'Gxxx[,ccc]' GIT folder and repository base (xxx=URL prefix, ccc=working directory)
 --          e.g. [git]::C:\Users\desa1\.textadept\::G,C:\Users\desa1\.textadept\ta-tweaks
@@ -188,7 +192,7 @@ function Proj.add_recentproject()
   if toolbar and toolbar.recentprojlist_update then toolbar.recentprojlist_update() end
 end
 
-function Proj.create_empty_project(filename, projname, rootdir)
+function Proj.create_empty_project(filename, projname, rootdir, vc_param)
   local fo, err= io.open(filename, 'wb')
   if not fo then
     Util.info("ERROR: Can't create the project file", err)
@@ -196,6 +200,9 @@ function Proj.create_empty_project(filename, projname, rootdir)
     return false
   end
   fo:write('[' .. projname .. ']::' .. rootdir .. '::')
+  if vc_param ~= nil then --add version control to the project
+    fo:write('\n'..vc_param[1]..'::'..vc_param[2]..'::'..vc_param[3]..'\n')
+  end
   fo:close()
   return true
 end
@@ -223,12 +230,12 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
           if defdir and string.sub(ph,1,string.len(defdir)) == defdir then
             ph= Util.remove_pathsep_end( string.sub(ph,string.len(defdir)+1) )
           end
-          fo:write( '\n (' .. ph .. ')::' .. path .. '::')
+          fo:write( '\n(' .. ph .. ')::' .. path .. '::')
         end
-        fo:write( '\n  ' .. fn)
+        fo:write( '\n ' .. fn)
       else
         --add files with absolute path
-        fo:write( '\n ' .. fn .. '::' .. file .. '::')
+        fo:write( '\n' .. fn .. '::' .. file .. '::')
       end
       --add the new line to the proj. file list
       if not row then row= #data.proj_files+1 end
