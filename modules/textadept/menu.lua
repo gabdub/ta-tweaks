@@ -632,8 +632,8 @@ actions.list = {
   ["set_tab_3"]=            {_L['Tab width: 3'], function() set_indentation(3) end}, --radio
   ["set_tab_4"]=            {_L['Tab width: 4'], function() set_indentation(4) end}, --radio
   ["set_tab_8"]=            {_L['Tab width: 8'], function() set_indentation(8) end}, --radio
-  ["set_tab_12"]=           {'Tab width: _12',function() set_indentation(12) end}, --radio
-  ["set_tab_16"]=           {'Tab width: 1_6',function() set_indentation(16) end}, --radio
+  ["set_tab_12"]=           {_L['Tab width: 2']:gsub('_2','_12'),function() set_indentation(12) end}, --radio
+  ["set_tab_16"]=           {_L['Tab width: 2']:gsub('_2','1_6'),function() set_indentation(16) end}, --radio
   ["toggle_usetabs"]=       {_L['Toggle Use Tabs'], function() --check
       buffer.use_tabs = not buffer.use_tabs
       events.emit(events.UPDATE_UI,1) -- for updating statusbar
