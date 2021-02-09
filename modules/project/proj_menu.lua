@@ -79,17 +79,17 @@ if actions then
   actions.add("trim_trailingspaces", 'Trim trailing spaces',  Proj.trim_trailing_spaces, nil, "dialog-ok")
   actions.add("remove_tabs",         'Convert all tabs into spaces', Proj.remove_tabs)
 
-  actions.add("new_project",         _L['_New'],              Proj.new_project, nil, "list-add", nil, "New Project")
-  actions.add("open_project",        _L['_Open'],             Proj.open_project, nil, "document-open", nil, "Open Project")
-  actions.add("recent_project",      _L['Open _Recent...'],   Proj.open_recent_project)
-  actions.add("close_project",       _L['_Close'],            Proj.close_project, nil, "system-log-out", closeprj_status, "Close project")
+  actions.add("new_project",         _L['New'],              Proj.new_project, nil, "list-add", nil, "New Project")
+  actions.add("open_project",        _L['Open'],             Proj.open_project, nil, "document-open", nil, "Open Project")
+  actions.add("recent_project",      _L['Open Recent...'],   Proj.open_recent_project)
+  actions.add("close_project",       _L['Close'],            Proj.close_project, nil, "system-log-out", closeprj_status, "Close project")
   actions.add("search_project",      'Project _Search',       Proj.search_in_files, Util.KEY_ALT.."F")
   actions.add("search_sel_dir",      'Search in selected dir', Proj.search_in_sel_dir)
   actions.add("search_sel_file",     'Search in selected file', Proj.search_in_sel_file)
   actions.add("close_others",        'Close Others',          Proj.close_others)
   actions.add("dont_close",          "Mark as don't close",   Proj.toggle_keep_thisbuffer, nil, nil, Proj.keepthisbuff_status) --check
   actions.add("showin_rightpanel",   "Show file in the right panel", Proj.toggle_showin_rightpanel, nil, nil, Proj.showin_rightpanel_status) --check
-  actions.add("open_projsel",        _L['_Open'] .. ' file  [Return]', Proj.open_sel_file)
+  actions.add("open_projsel",        _L['Open'] .. ' file  [Return]', Proj.open_sel_file)
 
   actions.add("toggle_editproj",     Util.EDITMENU_TEXT .. ' project', Proj.toggle_editproj, "f4", "ttb-proj-e", edp_status)
   --"_end_editproj" = "toggle_editproj" with different text menu
