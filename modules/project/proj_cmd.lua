@@ -153,10 +153,15 @@ function Proj.get_filevcinfo(fname)
     elseif verctrl == Proj.VCS_FOLDER then
       local dm1= lfs.attributes(fname, 'modification')
       local sz1= lfs.attributes(fname, 'size')
-      local dm2= lfs.attributes(url, 'modification')
-      local sz2= lfs.attributes(url, 'size')
+      local dm2= 0
+      local sz2= 0
+      local fm2= "FILE NOT FOUND"
+      if Util.file_exists(url) then
+        dm2= lfs.attributes(url, 'modification')
+        sz2= lfs.attributes(url, 'size')
+        fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
+      end
       local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
-      local fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
       info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2
     else
       break
