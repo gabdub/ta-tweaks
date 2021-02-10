@@ -156,13 +156,28 @@ function Proj.get_filevcinfo(fname)
       local dm2= 0
       local sz2= 0
       local fm2= "FILE NOT FOUND"
+      local same= false
       if Util.file_exists(url) then
         dm2= lfs.attributes(url, 'modification')
         sz2= lfs.attributes(url, 'size')
         fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
+        if sz1 == sz2 then
+          --same size (ignore dates): check the file content
+          local f = io.open(fname, 'rb')
+          if f then
+            local fcontent= f:read('*all')
+            f:close()
+            f = io.open(url, 'rb')
+            if f then
+              local fcontent2= f:read('*all')
+              f:close()
+              same= (fcontent == fcontent2)
+            end
+          end
+        end
       end
       local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
-      info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2
+      info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2..(same and '\nSAME CONTENT' or '\nMODIFIED')
     else
       break
     end
