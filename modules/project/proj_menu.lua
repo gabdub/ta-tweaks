@@ -116,9 +116,9 @@ if actions then
   --add actions defined in "proj_diff"
   actions.add("toggle_filediff", "Compare panels", Proj.diff_start, "f8", "edit-copy", Proj.compare_status)
 
-  actions.add("vc_changes", "SVN/GIT: compare to HEAD", Proj.vc_changes, Util.KEY_CTRL.."f5", "document-properties", Proj.vc_changes_status)
+  actions.add("vc_changes", "VC: compare to HEAD", Proj.vc_changes, Util.KEY_CTRL.."f5", "document-properties", Proj.vc_changes_status)
 
-  actions.add("show_filevcinfo", "SVN/GIT: show file info", Proj.show_filevcinfo, Util.KEY_SHIFT.."f5")
+  actions.add("show_filevcinfo", "VC: show file info", Proj.show_filevcinfo, Util.KEY_SHIFT.."f5")
 
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,

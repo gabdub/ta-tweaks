@@ -24,7 +24,8 @@
 --        'R'     RUN a command, %{projfiles} is replaced with a temporary files with the list of project files
 --                               %{projfiles.ext1.ext2...} only project files with this extensions are included
 --          e.g. [Update CTAGS]::C:\GNU\ctags.exe -n -L %{projfiles.lua.c} -f C:\textadept\ctags-ta.ctag::R
-----------
+--
+---------- VERSION CONTROL: SVN / GIT / FOLDER
 --        'Sxxx[,ccc]' SVN folder and repository base (xxx=URL prefix, ccc=working directory)
 --          e.g. [svn]::/home/user/mw/::Shttps://192.168.0.11:8443/svn/
 --                /home/user/mw/MGWdrv/trunk/v.c ==> svn cat https://192.168.0.11:8443/svn/MGWdrv/trunk/v.c
@@ -42,6 +43,10 @@
 --          e.g. [git]::C:\textadept\ta9\src\::Gtatoolbar/src/,C:\Users\desa1\.textadept\ta-tweaks
 --                C:\textadept\ta9\src\textadept.c ==> git show HEAD:tatoolbar/src/textadept.c
 --                working dir= C:\Users\desa1\.textadept\ta-tweaks
+----------
+--        'Fxxx' COMPARE FOLDER (xxx=destination folder)
+--          e.g. [dest folder]::C:\Users\desa1\.textadept\modules\::FC:\repo\tatoolbar\modules\
+--                C:\Users\desa1\.textadept\modules\init.lua ==> C:\repo\tatoolbar\modules\init.lua
 ----------
 -- (P= 'first' previous 'P'/'p' or project path)
 --  The first project line MUST BE an "option 1)"
@@ -63,7 +68,7 @@
 --   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
 --   proj_fold_row[]    = array with the row numbers to fold on open
 --   proj_grp_path[]    = array with the path of each group or nil
---   proj_vcontrol[]    = array with the SVN/GIT version control rows
+--   proj_vcontrol[]    = array with the SVN/GIT/FOLDER version control rows
 --   proj_rowinfo[]     = array {row-text, indent, indent-len}
 --   config_hooks[]     = objects/toolbars that use the project configuration
 --                          {beforeload, afterload, beforesave, projloaded}
@@ -330,11 +335,11 @@ function Proj.parse_project_file()
       elseif o == 'R' then
         --  'R': RUN a command
         if ftype == Proj.PRJF_FILE then ftype=Proj.PRJF_RUN else ftype=Proj.PRJF_EMPTY end
-      elseif o == 'S' or o == 'G' then
-        --  'S': SVN repository base (1)
-        --  'G': GIT repository base (2)
+      elseif o == 'S' or o == 'G' or o == 'F' then
+        --  'S': SVN repository base / 'G': GIT repository base / 'F': FOLDER
+        local vctype= o=='S' and Proj.VCS_SVN or (o=='G' and Proj.VCS_GIT or Proj.VCS_FOLDER)
         ftype= Proj.PRJF_VCS
-        data.proj_vcontrol[ #data.proj_vcontrol+1 ]= { path, p, (o == 'S') and 1 or 2, r }
+        data.proj_vcontrol[ #data.proj_vcontrol+1 ]= { path, p, vctype, r }
       end
     end
     --set the filename/type asigned to each row
@@ -453,38 +458,41 @@ function Proj.run_command(cmd)
 end
 
 --get "version control number, path, url" for filename
-function Proj.get_versioncontrol_url(filename)
+--skip_first= false (return the 1st VC found)
+--skip_first= true  (return the 2nd VC found)
+function Proj.get_versioncontrol_url(filename, skip_first)
   if not Proj.check_is_open() then return end
 
   if data.proj_vcontrol == nil or #data.proj_vcontrol == 0 then
-    ui.statusbar_text= 'No SVN/GIT repository set in project'
+    ui.statusbar_text= 'No SVN/GIT/FOLDER repository set in project'
     return
   end
   filename=string.gsub(filename, '%\\', '/')
   local url= ""
   local nvc= 1
+  local skip= skip_first
   while nvc <= #data.proj_vcontrol do
-    local base= data.proj_vcontrol[nvc][1]
+    local base= data.proj_vcontrol[nvc][1]  --project PATH
     if base and base ~= '' then
       base= string.gsub(base, '%\\', '/')
       --remove base dir
       local fmt= '^'..Util.escape_match(base)..'(.*)'
       url= string.match(filename,fmt)
       if url and url ~= '' then
-        break
+        if skip then skip= false else break end
       end
     end
     nvc=nvc+1
   end
   if nvc > #data.proj_vcontrol then
-    ui.statusbar_text= 'The file is outside project base directory'
+    if not skip_first then ui.statusbar_text= 'The file is outside project base directory' end
     return
   end
   local param= data.proj_vcontrol[nvc][2] --add prefix to url [,currentdir]
   local pref, cwd= string.match(param, '(.-),(.*)')
   if not pref then pref= param end
   url= pref..url
-  local verctrl= data.proj_vcontrol[nvc][3]
-  ui.statusbar_text= (verctrl == 1 and 'SVN: ' or 'GIT: ')..url
+  local verctrl= data.proj_vcontrol[nvc][3] --VC type
+  if not skip_first then ui.statusbar_text= Proj.VCS_LIST[verctrl]..': '..url end
   return verctrl, cwd, url
 end

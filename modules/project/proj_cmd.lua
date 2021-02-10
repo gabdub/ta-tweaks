@@ -135,29 +135,43 @@ end
 
 function Proj.get_filevcinfo(fname)
   --show filename
-  local info= fname
+  local infotot= ""
   local fn= string.match(fname..'::','(.-):HEAD::')
   if fn then fname=fn end
   --get version control params for filename
-  local cmd
+  local cmd, info
   local post= ""
-  local verctrl, cwd, url= Proj.get_versioncontrol_url(fname)
-  if verctrl == 1 then
-    cmd= "svn info "..url
-    post= "SVN"
-  elseif verctrl == 2 then
-    info= info..'\nGIT: '..url
-    cmd= "git status -sb "..url
-  end
-  if cmd then
-    local p = assert(os.spawn(cmd,cwd))
-    p:close()
-    local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
-    if einfo and einfo ~= '' then
-      info= info..'\n'..einfo..post
+  for i=1, 2 do
+    local verctrl, cwd, url= Proj.get_versioncontrol_url(fname, (i==2))
+    if verctrl == Proj.VCS_SVN then
+      info= fname
+      cmd= "svn info "..url
+      post= "SVN"
+    elseif verctrl == Proj.VCS_GIT then
+      info= fname..'\nGIT: '..url
+      cmd= "git status -sb "..url
+    elseif verctrl == Proj.VCS_FOLDER then
+      local dm1= lfs.attributes(fname, 'modification')
+      local sz1= lfs.attributes(fname, 'size')
+      local dm2= lfs.attributes(url, 'modification')
+      local sz2= lfs.attributes(url, 'size')
+      local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
+      local fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
+      info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2
+    else
+      break
     end
+    if cmd then
+      local p = assert(os.spawn(cmd,cwd))
+      p:close()
+      local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
+      if einfo and einfo ~= '' then
+        info= info..'\n'..einfo..post
+      end
+    end
+    if infotot == "" then infotot= info else infotot=infotot..'\n-----------------------\n'..info end
   end
-  return info
+  return infotot
 end
 
 --ACTION: show_filevcinfo
@@ -175,10 +189,9 @@ end
 function Proj.get_vcs_info(row, sep)
   local info= ""
   if data.proj_vcontrol then
-    for i=1, #data.proj_vcontrol do  --{path, p, 1/2, row}
+    for i=1, #data.proj_vcontrol do  --{path, p, vc_type, row}
       if data.proj_vcontrol[i][4] == row then
-        if data.proj_vcontrol[i][3] == 1 then info="SVN: " else info="GIT: " end
-        info= info..data.proj_vcontrol[i][1]..(sep or " | ")..data.proj_vcontrol[i][2]
+        info= Proj.VCS_LIST[data.proj_vcontrol[i][3]] ..": "..data.proj_vcontrol[i][1]..(sep or " | ")..data.proj_vcontrol[i][2]
         break
       end
     end

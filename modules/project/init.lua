@@ -81,6 +81,11 @@ Proj.PRJF_CTAG  =       3   -- a CTAGS file (could be opened but searched only u
 Proj.PRJF_RUN   =       4   -- a run command
 Proj.PRJF_VCS   =       5   -- version control entry
 
+Proj.VCS_SVN    =       1   -- version control: SVN
+Proj.VCS_GIT    =       2   -- version control: GIT
+Proj.VCS_FOLDER =       3   -- version control: FOLDER
+Proj.VCS_LIST= {"SVN", "GIT", "FOLDER"}
+
 --buffer "_type" constants
 Proj.PRJT_SEARCH= '[Project search]'  --search results
 

@@ -316,7 +316,7 @@ function Proj.diff_start(silent)
 end
 
 --ACTION: vc_changes
---Version control SVN/GIT changes
+--Version control SVN/GIT/FOLDER changes
 function Proj.vc_changes_status()
   return (Proj.is_svn_on and 1 or 2) --check
 end
@@ -348,17 +348,19 @@ function Proj.vc_changes()
       local eol= buffer.eol_mode     --keep EOL
       --new buffer
       if actions then actions.run("new") else Proj.new_file() end
-      buffer.filename= orgfile..":HEAD"
       local cmd
-      if verctrl == 1 then
-        cmd= "svn cat "..url
-        path=nil
-      else
-        cmd= "git show HEAD:"..url
+      if verctrl == Proj.VCS_SVN then        cmd= "svn cat "..url
+      elseif verctrl == Proj.VCS_GIT then    cmd= "git show HEAD:"..url
+      elseif verctrl == Proj.VCS_FOLDER then
+        buffer.filename= url
+        buffer.reload()
       end
-      local p = assert(os.spawn(cmd,cwd))
-      p:close()
-      buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
+      if cmd then
+        buffer.filename= orgfile..":HEAD"
+        local p = assert(os.spawn(cmd,cwd))
+        p:close()
+        buffer:set_text((p:read('*a') or ''):iconv('UTF-8', enc))
+      end
       if enc ~= 'UTF-8' then buffer:set_encoding(enc) end
       --force the same EOL (git changes EOL when needed)
       buffer.eol_mode= eol
