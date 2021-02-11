@@ -13,8 +13,9 @@ local dialog_list= {}
 local dialog_data_icon= ""
 local dialog_font_preview= false
 local dialog_single_click= false
-local select_it= ""
-local select_ev= nil
+
+toolbar.dlg_select_it= ""
+toolbar.dlg_select_ev= nil
 
 local filter= ""
 local idx_filtered= {}
@@ -65,9 +66,12 @@ end
 local function choose_item(cmd)
   local itnum= toolbar.getnum_cmd(cmd)
   if itnum then
-    select_it= dialog_list[itnum]
-    --ui.statusbar_text= "it selected: " .. select_it
-    if select_ev then select_ev(select_it) end
+    toolbar.dlg_select_it= dialog_list[itnum]
+    --ui.statusbar_text= "it selected: " .. toolbar.dlg_select_it
+    if toolbar.dlg_select_ev then
+      local keepopen= toolbar.dlg_select_ev(toolbar.dlg_select_it)
+      if keepopen then return end --return true to keep the dialog open
+    end
   end
   close_dialog()
 end
@@ -108,14 +112,14 @@ local function load_data()
       if isMime then icon= toolbar.icon_fname(dialog_list[i]) end
       toolbar.list_add_txt_ico(btname, dialog_list[i], "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
       toolbar.cmd_dclick(btname, choose_item)
-      if select_it == "" then select_it= dialog_list[i] end --select first when none is provided
-      if select_it == dialog_list[i] then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
+      if toolbar.dlg_select_it == "" then toolbar.dlg_select_it= dialog_list[i] end --select first when none is provided
+      if toolbar.dlg_select_it == dialog_list[i] then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
     end
   end
   if idx_sel_i == 0 and n > 0 then
     idx_sel_i= 1
     i= idx_filtered[idx_sel_i]
-    select_it= dialog_list[i]
+    toolbar.dlg_select_it= dialog_list[i]
     ensure_it_vis="it#"..i
     toolbar.selected(ensure_it_vis, false, true)
   end
@@ -176,8 +180,8 @@ end
 events_connect("popup_key", dialog_key_ev)
 
 function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
-  select_it= ""
-  select_ev= nil
+  toolbar.dlg_select_it= ""
+  toolbar.dlg_select_ev= nil
 
   dialog_w= width
   dialog_h= height
@@ -236,8 +240,8 @@ end
 
 function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
   toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
-  select_it= sel_font
-  select_ev= font_selected
+  toolbar.dlg_select_it= sel_font
+  toolbar.dlg_select_ev= font_selected
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else

@@ -228,13 +228,20 @@ function Proj.get_vcs_info(row, sep)
   return ""
 end
 
+local vcs_item_base= ""
+local function vcs_item_selected(fname)
+  Proj.go_file( vcs_item_base..fname )
+  return true --keepopen
+end
+
 function Proj.exec_vcs_cmd(row)
   local idx= Proj.get_vcs_index(row)
   if idx then
     local vc_item_name= data.proj_rowinfo[row][1]
     ui.statusbar_text= Proj.VCS_LIST[data.proj_vcontrol[idx][3]] ..": "..vc_item_name
     local vctrl= data.proj_vcontrol[idx] --{path, p, vc_type, row}
-    local fmt= '^'..Util.escape_match(string.gsub(vctrl[1], '%\\', '/'))..'(.*)'
+    vcs_item_base= string.gsub(vctrl[1], '%\\', '/')
+    local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
 
     --get a list of project files
     local flist= {}
@@ -247,6 +254,7 @@ function Proj.exec_vcs_cmd(row)
     end
     --show folder files
     toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
+    toolbar.dlg_select_ev= vcs_item_selected
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
 end
