@@ -488,11 +488,12 @@ function Proj.get_versioncontrol_url(filename, skip_first)
     if not skip_first then ui.statusbar_text= 'The file is outside project base directory' end
     return
   end
+  local verctrl= data.proj_vcontrol[nvc][3] --VC type
   local param= data.proj_vcontrol[nvc][2] --add prefix to url [,currentdir]
+  if param == "" then return verctrl, "", "" end
   local pref, cwd= string.match(param, '(.-),(.*)')
   if not pref then pref= param end
   url= pref..url
-  local verctrl= data.proj_vcontrol[nvc][3] --VC type
   if not skip_first then ui.statusbar_text= Proj.VCS_LIST[verctrl]..': '..url end
   return verctrl, cwd, url
 end

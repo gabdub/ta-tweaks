@@ -143,41 +143,45 @@ function Proj.get_filevcinfo(fname)
   local post= ""
   for i=1, 2 do
     local verctrl, cwd, url= Proj.get_versioncontrol_url(fname, (i==2))
-    if verctrl == Proj.VCS_SVN then
+    if verctrl == Proj.VCS_SVN and url ~= "" then
       info= fname
       cmd= "svn info "..url
       post= "SVN"
-    elseif verctrl == Proj.VCS_GIT then
+    elseif verctrl == Proj.VCS_GIT and url ~= "" then
       info= fname..'\nGIT: '..url
       cmd= "git status -sb "..url
     elseif verctrl == Proj.VCS_FOLDER then
       local dm1= lfs.attributes(fname, 'modification')
       local sz1= lfs.attributes(fname, 'size')
-      local dm2= 0
-      local sz2= 0
-      local fm2= "FILE NOT FOUND"
-      local same= false
-      if Util.file_exists(url) then
-        dm2= lfs.attributes(url, 'modification')
-        sz2= lfs.attributes(url, 'size')
-        fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
-        if sz1 == sz2 then
-          --same size (ignore dates): check the file content
-          local f = io.open(fname, 'rb')
-          if f then
-            local fcontent= f:read('*all')
-            f:close()
-            f = io.open(url, 'rb')
+      if url == "" then
+        info= 'LOCAL: '..fname..'\n'..os.date('%c',dm1)..'\n'..sz1..' bytes\n\nFOLDER: NOT DEFINED'
+      else
+        local dm2= 0
+        local sz2= 0
+        local fm2= "FILE NOT FOUND"
+        local same= false
+        if Util.file_exists(url) then
+          dm2= lfs.attributes(url, 'modification')
+          sz2= lfs.attributes(url, 'size')
+          fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
+          if sz1 == sz2 then
+            --same size (ignore dates): check the file content
+            local f = io.open(fname, 'rb')
             if f then
-              local fcontent2= f:read('*all')
+              local fcontent= f:read('*all')
               f:close()
-              same= (fcontent == fcontent2)
+              f = io.open(url, 'rb')
+              if f then
+                local fcontent2= f:read('*all')
+                f:close()
+                same= (fcontent == fcontent2)
+              end
             end
           end
         end
+        local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
+        info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2..(same and '\nSAME CONTENT' or '\nMODIFIED')
       end
-      local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
-      info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2..(same and '\nSAME CONTENT' or '\nMODIFIED')
     else
       break
     end
@@ -230,22 +234,20 @@ function Proj.exec_vcs_cmd(row)
     local vc_item_name= data.proj_rowinfo[row][1]
     ui.statusbar_text= Proj.VCS_LIST[data.proj_vcontrol[idx][3]] ..": "..vc_item_name
     local vctrl= data.proj_vcontrol[idx] --{path, p, vc_type, row}
-    if vctrl[3] == Proj.VCS_FOLDER then
-      local fmt= '^'..Util.escape_match(string.gsub(vctrl[1], '%\\', '/'))..'(.*)'
+    local fmt= '^'..Util.escape_match(string.gsub(vctrl[1], '%\\', '/'))..'(.*)'
 
-      --get a list of project files
-      local flist= {}
-      for row= 1, #data.proj_files do
-        if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
-          local projfile= string.gsub(data.proj_files[row], '%\\', '/')
-          local fname= string.match(projfile,fmt)
-          if fname and fname ~= '' then flist[ #flist+1 ]= fname end
-        end
+    --get a list of project files
+    local flist= {}
+    for row= 1, #data.proj_files do
+      if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
+        local projfile= string.gsub(data.proj_files[row], '%\\', '/')
+        local fname= string.match(projfile,fmt)
+        if fname and fname ~= '' then flist[ #flist+1 ]= fname end
       end
-      --show folder files
-      toolbar.create_dialog("Folder: "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
-      toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
     end
+    --show folder files
+    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
+    toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
 end
 
