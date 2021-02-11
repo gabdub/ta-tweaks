@@ -81,6 +81,8 @@ if toolbar then
         Proj.go_file(fn)
       elseif ft == Proj.PRJF_RUN then
         Proj.run_command(fn)
+      elseif ft == Proj.PRJF_VCS then
+        Proj.exec_vcs_cmd(linenum)
       else
         local name= "exp-"..cmd
         local r= collarow[name]

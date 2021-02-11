@@ -206,17 +206,47 @@ function Proj.show_filevcinfo()
   end
 end
 
-function Proj.get_vcs_info(row, sep)
-  local info= ""
+function Proj.get_vcs_index(row)
   if data.proj_vcontrol then
     for i=1, #data.proj_vcontrol do  --{path, p, vc_type, row}
       if data.proj_vcontrol[i][4] == row then
-        info= Proj.VCS_LIST[data.proj_vcontrol[i][3]] ..": "..data.proj_vcontrol[i][1]..(sep or " | ")..data.proj_vcontrol[i][2]
-        break
+        return i
       end
     end
   end
-  return info
+  return nil
+end
+
+function Proj.get_vcs_info(row, sep)
+  local idx= Proj.get_vcs_index(row)
+  --{path, p, vc_type, row}
+  if idx then return Proj.VCS_LIST[data.proj_vcontrol[idx][3]] ..": "..data.proj_vcontrol[idx][1]..(sep or " | ")..data.proj_vcontrol[idx][2] end
+  return ""
+end
+
+function Proj.exec_vcs_cmd(row)
+  local idx= Proj.get_vcs_index(row)
+  if idx then
+    local vc_item_name= data.proj_rowinfo[row][1]
+    ui.statusbar_text= Proj.VCS_LIST[data.proj_vcontrol[idx][3]] ..": "..vc_item_name
+    local vctrl= data.proj_vcontrol[idx] --{path, p, vc_type, row}
+    if vctrl[3] == Proj.VCS_FOLDER then
+      local fmt= '^'..Util.escape_match(string.gsub(vctrl[1], '%\\', '/'))..'(.*)'
+
+      --get a list of project files
+      local flist= {}
+      for row= 1, #data.proj_files do
+        if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
+          local projfile= string.gsub(data.proj_files[row], '%\\', '/')
+          local fname= string.match(projfile,fmt)
+          if fname and fname ~= '' then flist[ #flist+1 ]= fname end
+        end
+      end
+      --show folder files
+      toolbar.create_dialog("Folder: "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
+      toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
+    end
+  end
 end
 
 --ACTION: show_documentation

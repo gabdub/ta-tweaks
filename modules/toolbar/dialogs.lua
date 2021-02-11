@@ -97,13 +97,16 @@ local function load_data()
   idx_sel_i= 0
   idx_filtered= {}
   local i
+  local icon= dialog_data_icon
+  local isMime= (dialog_data_icon == "MIME")
   for i=1, #dialog_list do
     local itname= string.lower(dialog_list[i])  --ignore case
     if flt == '' or itname:match(flt) then
       n= n+1
       idx_filtered[n]= i
       local btname= "it#"..i
-      toolbar.list_add_txt_ico(btname, dialog_list[i], "", false, click_item, dialog_data_icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
+      if isMime then icon= toolbar.icon_fname(dialog_list[i]) end
+      toolbar.list_add_txt_ico(btname, dialog_list[i], "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
       toolbar.cmd_dclick(btname, choose_item)
       if select_it == "" then select_it= dialog_list[i] end --select first when none is provided
       if select_it == dialog_list[i] then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
@@ -172,7 +175,10 @@ local function dialog_key_ev(npop, keycode)
 end
 events_connect("popup_key", dialog_key_ev)
 
-local function create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
+function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
+  select_it= ""
+  select_ev= nil
+
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
@@ -229,9 +235,9 @@ local function create_dialog(title, width, height, datalist, dataicon, show_font
 end
 
 function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
+  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   select_it= sel_font
   select_ev= font_selected
-  create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else
