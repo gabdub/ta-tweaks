@@ -231,7 +231,7 @@ end
 local vcs_item_base= ""
 local function vcs_item_selected(fname)
   Proj.go_file( vcs_item_base..fname )
-  return true --keepopen
+  return true --keep dialog open
 end
 
 function Proj.exec_vcs_cmd(row)
@@ -253,8 +253,9 @@ function Proj.exec_vcs_cmd(row)
       end
     end
     --show folder files
-    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
+    toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
+    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
 end

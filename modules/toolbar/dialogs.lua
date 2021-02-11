@@ -180,9 +180,6 @@ end
 events_connect("popup_key", dialog_key_ev)
 
 function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
-  toolbar.dlg_select_it= ""
-  toolbar.dlg_select_ev= nil
-
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
@@ -239,9 +236,9 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
 end
 
 function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
-  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   toolbar.dlg_select_it= sel_font
   toolbar.dlg_select_ev= font_selected
+  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else
