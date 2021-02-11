@@ -10,6 +10,7 @@ local previewgrp1
 local previewgrp2
 
 local dialog_list= {}
+local dialog_cols= {}
 local dialog_data_icon= ""
 local dialog_font_preview= false
 local dialog_single_click= false
@@ -22,6 +23,12 @@ local idx_filtered= {}
 local ensure_it_vis= nil
 local idx_sel_i= 0
 
+local function get_list_itemstr(idx)
+  local name= dialog_list[idx] --string list
+  if type(name) == "table" then name= name[1] end --multi column list: use first column
+  return name
+end
+
 local function close_dialog()
   toolbar.popup(toolbar.DIALOG_POPUP,false) --hide dialog
 end
@@ -33,7 +40,7 @@ events_connect("popup_close", close_dialog_ev)
 
 local function update_preview()
   if dialog_font_preview and (idx_sel_i > 0) then
-    local font= dialog_list[idx_filtered[idx_sel_i]]
+    local font= get_list_itemstr(idx_filtered[idx_sel_i])
     toolbar.sel_dialog_popup(previewgrp1,false)
     toolbar.textfont(24, 0, toolbar.cfg.textcolor_normal, toolbar.cfg.textcolor_grayed, toolbar.get_font_num(font))
     toolbar.sel_dialog_popup(previewgrp2,false)
@@ -66,7 +73,7 @@ end
 local function choose_item(cmd)
   local itnum= toolbar.getnum_cmd(cmd)
   if itnum then
-    toolbar.dlg_select_it= dialog_list[itnum]
+    toolbar.dlg_select_it= get_list_itemstr(itnum)
     --ui.statusbar_text= "it selected: " .. toolbar.dlg_select_it
     if toolbar.dlg_select_ev then
       local keepopen= toolbar.dlg_select_ev(toolbar.dlg_select_it)
@@ -104,22 +111,23 @@ local function load_data()
   local icon= dialog_data_icon
   local isMime= (dialog_data_icon == "MIME")
   for i=1, #dialog_list do
-    local itname= string.lower(dialog_list[i])  --ignore case
+    local itstr= get_list_itemstr(i)
+    local itname= string.lower(itstr)  --ignore case
     if flt == '' or itname:match(flt) then
       n= n+1
       idx_filtered[n]= i
       local btname= "it#"..i
-      if isMime then icon= toolbar.icon_fname(dialog_list[i]) end
-      toolbar.list_add_txt_ico(btname, dialog_list[i], "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
+      if isMime then icon= toolbar.icon_fname(itstr) end
+      toolbar.list_add_txt_ico(btname, itstr, "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
       toolbar.cmd_dclick(btname, choose_item)
-      if toolbar.dlg_select_it == "" then toolbar.dlg_select_it= dialog_list[i] end --select first when none is provided
-      if toolbar.dlg_select_it == dialog_list[i] then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
+      if toolbar.dlg_select_it == "" then toolbar.dlg_select_it= itstr end --select first when none is provided
+      if toolbar.dlg_select_it == itstr then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
     end
   end
   if idx_sel_i == 0 and n > 0 then
     idx_sel_i= 1
     i= idx_filtered[idx_sel_i]
-    toolbar.dlg_select_it= dialog_list[i]
+    toolbar.dlg_select_it= get_list_itemstr(i)
     ensure_it_vis="it#"..i
     toolbar.selected(ensure_it_vis, false, true)
   end
@@ -183,6 +191,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
+  dialog_cols= dialog_list["columns"]
   dialog_data_icon= dataicon
   dialog_font_preview= show_font_preview
   dialog_single_click= singleclick

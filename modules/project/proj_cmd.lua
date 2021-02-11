@@ -245,11 +245,12 @@ function Proj.exec_vcs_cmd(row)
 
     --get a list of project files
     local flist= {}
+    flist["columns"]= {500, 50}
     for row= 1, #data.proj_files do
       if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
         local projfile= string.gsub(data.proj_files[row], '%\\', '/')
         local fname= string.match(projfile,fmt)
-        if fname and fname ~= '' then flist[ #flist+1 ]= fname end
+        if fname and fname ~= '' then flist[ #flist+1 ]= {fname, "M"} end
       end
     end
     --show folder files
