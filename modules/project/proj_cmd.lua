@@ -317,7 +317,7 @@ function Proj.open_vcs_dialog(row)
       if cwd == nil or cwd == "" then
         if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
       end
-      ui.statusbar_text= stcmd.."|" ..(cwd or "")
+      --ui.statusbar_text= stcmd.." | " ..(cwd or "")
       local rstat= string.gsub(Proj.get_cmd_output(stcmd, cwd, ""), '%\\', '/')
       for line in rstat:gmatch('[^\n]+') do
         --split "letter filename"
