@@ -133,16 +133,35 @@ function Proj.quick_open()
   Proj.update_after_switch()
 end
 
+function Proj.get_cmd_output(cmd, cwd, info)
+  if cmd then
+    local p = assert(os.spawn(cmd,cwd))
+    p:close()
+    local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
+    if einfo and einfo ~= '' then
+      if info and info ~= '' then return info..'\n'..einfo end
+      return einfo
+    end
+  end
+  return info
+end
+
 function Proj.get_filevcinfo(fname)
-  --show filename
+  --show file VCS info (up to 2 different types. e.g.: GIT + FOLDER)
   local infotot= ""
   local fn= string.match(fname..'::','(.-):HEAD::')
   if fn then fname=fn end
-  --get version control params for filename
-  local cmd, info
-  local post= ""
+  local cmd, pre2, cmd2, info, post
+  local lastverctrl= 0
   for i=1, 2 do
+    --get version control params for filename
     local verctrl, cwd, url= Proj.get_versioncontrol_url(fname, (i==2))
+    if verctrl == lastverctrl then break end  --don't show the same VCS type twice
+    lastverctrl= verctrl
+    post= ""
+    cmd= ""
+    pre2= ""
+    cmd2= ""
     if verctrl == Proj.VCS_SVN and url ~= "" then
       info= fname
       cmd= "svn info "..url
@@ -150,6 +169,8 @@ function Proj.get_filevcinfo(fname)
     elseif verctrl == Proj.VCS_GIT and url ~= "" then
       info= fname..'\nGIT: '..url
       cmd= "git status -sb "..url
+      pre2= "\n--- Last 2 commits ----"
+      cmd2= "git log -n2 "..url
     elseif verctrl == Proj.VCS_FOLDER then
       local dm1= lfs.attributes(fname, 'modification')
       local sz1= lfs.attributes(fname, 'size')
@@ -186,12 +207,7 @@ function Proj.get_filevcinfo(fname)
       break
     end
     if cmd then
-      local p = assert(os.spawn(cmd,cwd))
-      p:close()
-      local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
-      if einfo and einfo ~= '' then
-        info= info..'\n'..einfo..post
-      end
+      info= Proj.get_cmd_output(cmd, cwd, info)..Proj.get_cmd_output(cmd2, cwd, pre2)..post
     end
     if infotot == "" then infotot= info else infotot=infotot..'\n-----------------------\n'..info end
   end
