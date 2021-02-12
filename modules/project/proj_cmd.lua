@@ -270,7 +270,7 @@ local function get_vcs_file_status(file1, fname, vctrl)
     local file2= pref..fname
 
     local vctype= vctrl[3]
-    if vctype == Proj.VCS_GIT then --check parsed "git status"
+    if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then --check parsed "git/svn status"
       return repo_changes[fname] or ""
     end
     if vctype == Proj.VCS_FOLDER then
@@ -307,17 +307,22 @@ function Proj.open_vcs_dialog(row)
     vcs_item_base= string.gsub(vctrl[1], '%\\', '/')
     local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
 
-    if vctype == Proj.VCS_GIT then
-      --parse GIT changes
+    if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
+      --parse GIT/SVN changes
       repo_changes= {}
       local pref, cwd
       local param= data.proj_vcontrol[idx][2] --param
       if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') end
-      local gitstat= Proj.get_cmd_output("git status -s", cwd, "")
-      for line in gitstat:gmatch('[^\n]+') do
+      local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status -q"
+      if cwd == nil or cwd == "" then
+        if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
+      end
+      ui.statusbar_text= stcmd.."|" ..(cwd or "")
+      local rstat= string.gsub(Proj.get_cmd_output(stcmd, cwd, ""), '%\\', '/')
+      for line in rstat:gmatch('[^\n]+') do
         --split "letter filename"
-        local lett, fn= string.match(line, '%s+(.-)%s(.*)')
-        if fn then repo_changes[fn]= lett end
+        local lett, fn= string.match(line, '%s*(.-)%s(.*)')
+        if fn then repo_changes[ Util.str_trim(fn) ]= lett end
       end
     end
 
