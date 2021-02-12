@@ -29,6 +29,12 @@ local function get_list_itemstr(idx)
   return name
 end
 
+local function get_list_col(idx, ncol)
+  local item= dialog_list[idx]
+  if type(item) == "table" and #item >= ncol then return item[ncol] end
+  return ""
+end
+
 local function close_dialog()
   toolbar.popup(toolbar.DIALOG_POPUP,false) --hide dialog
 end
@@ -110,6 +116,12 @@ local function load_data()
   local i
   local icon= dialog_data_icon
   local isMime= (dialog_data_icon == "MIME")
+  local x2= 0
+  local w2= 0
+  if dialog_cols and #dialog_cols > 1 then
+    x2= dialog_cols[1]
+    w2= dialog_cols[2]
+  end
   for i=1, #dialog_list do
     local itstr= get_list_itemstr(i)
     local itname= string.lower(itstr)  --ignore case
@@ -119,6 +131,13 @@ local function load_data()
       local btname= "it#"..i
       if isMime then icon= toolbar.icon_fname(itstr) end
       toolbar.list_add_txt_ico(btname, itstr, "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
+      if w2 > 0 then
+        txt2= get_list_col(i,2)
+        if txt2 ~= "" then
+          toolbar.gotopos(x2, toolbar.listtb_y - toolbar.cfg.butsize)
+          toolbar.addlabel(txt2, "", w2, true) --left-align
+        end
+      end
       toolbar.cmd_dclick(btname, choose_item)
       if toolbar.dlg_select_it == "" then toolbar.dlg_select_it= itstr end --select first when none is provided
       if toolbar.dlg_select_it == itstr then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end

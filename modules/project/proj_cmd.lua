@@ -146,6 +146,21 @@ function Proj.get_cmd_output(cmd, cwd, info)
   return info
 end
 
+local function compare_file_content(file1, file2)
+  local f = io.open(file1, 'rb')
+  if f then
+    local fcontent= f:read('*all')
+    f:close()
+    f = io.open(file2, 'rb')
+    if f then
+      local fcontent2= f:read('*all')
+      f:close()
+      return (fcontent == fcontent2)  --return true if the content is the same
+    end
+  end
+  return false
+end
+
 function Proj.get_filevcinfo(fname)
   --show file VCS info (up to 2 different types. e.g.: GIT + FOLDER)
   local infotot= ""
@@ -185,20 +200,8 @@ function Proj.get_filevcinfo(fname)
           dm2= lfs.attributes(url, 'modification')
           sz2= lfs.attributes(url, 'size')
           fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
-          if sz1 == sz2 then
-            --same size (ignore dates): check the file content
-            local f = io.open(fname, 'rb')
-            if f then
-              local fcontent= f:read('*all')
-              f:close()
-              f = io.open(url, 'rb')
-              if f then
-                local fcontent2= f:read('*all')
-                f:close()
-                same= (fcontent == fcontent2)
-              end
-            end
-          end
+          --same size (ignore dates): check the file content
+          if sz1 == sz2 then same= compare_file_content(fname, url) end
         end
         local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
         info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2..(same and '\nSAME CONTENT' or '\nMODIFIED')
@@ -250,7 +253,47 @@ local function vcs_item_selected(fname)
   return true --keep dialog open
 end
 
-function Proj.exec_vcs_cmd(row)
+local function get_vcs_file_status(file1, fname, vctrl)
+  --compare files and return a status character:
+  -- "M" = different files (local is NEWER)
+  -- "O" = different files (local is OLDER)
+  -- "A" = new local file
+  -- "D" = local file not present
+  -- "-" = no files found
+
+  --vctrl= {path, param, vc_type, row}
+  local param= vctrl[2] --add prefix to url [,currentdir]
+  if param ~= "" then
+    local pref, cwd= string.match(param, '(.-),(.*)')
+    if not pref then pref= param end
+    local file2= pref..fname
+
+    local vctype= vctrl[3]
+    if vctype == Proj.VCS_FOLDER then
+      --test file1/2 existence
+      local ex1= Util.file_exists(file1)
+      local ex2= Util.file_exists(file2)
+      if (not ex1) and (not ex2) then return "-" end  --no file found on both sides
+      if not ex2 then return "A" end  --new local file
+      if not ex1 then return "D" end  --local file deleted
+      --compare file1/2 (quick test)
+      local sz1= lfs.attributes(file1, 'size')
+      local sz2= lfs.attributes(file2, 'size')
+      local modif= false --different size/content
+      if sz1 ~= sz2 then modif=true else modif= not compare_file_content(file1, file2) end
+      if modif then
+        local dm1= lfs.attributes(file1, 'modification')
+        local dm2= lfs.attributes(file2, 'modification')
+        if dm1 >= dm2 then return "M" end --modified and NEWER
+        return "O" --modified but OLDER
+      end
+    end
+  end
+  return "" --same
+end
+
+function Proj.open_vcs_dialog(row)
+  --open a dialog with the project files that are in this VCS item folder/subfolders
   local idx= Proj.get_vcs_index(row)
   if idx then
     local vc_item_name= data.proj_rowinfo[row][1]
@@ -259,14 +302,14 @@ function Proj.exec_vcs_cmd(row)
     vcs_item_base= string.gsub(vctrl[1], '%\\', '/')
     local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
 
-    --get a list of project files
+    --list files in this VCS folder/subfolders
     local flist= {}
-    flist["columns"]= {500, 50}
+    flist["columns"]= {550, 50}
     for row= 1, #data.proj_files do
       if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
         local projfile= string.gsub(data.proj_files[row], '%\\', '/')
-        local fname= string.match(projfile,fmt)
-        if fname and fname ~= '' then flist[ #flist+1 ]= {fname, "M"} end
+        local fname= string.match(projfile, fmt)
+        if fname and fname ~= '' then flist[ #flist+1 ]= {fname, get_vcs_file_status(projfile, fname, vctrl)} end
       end
     end
     --show folder files
