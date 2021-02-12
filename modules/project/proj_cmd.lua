@@ -134,7 +134,7 @@ function Proj.quick_open()
 end
 
 function Proj.get_cmd_output(cmd, cwd, info)
-  if cmd then
+  if cmd and cmd ~= "" then
     local p = assert(os.spawn(cmd,cwd))
     p:close()
     local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
