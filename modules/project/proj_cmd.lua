@@ -253,6 +253,7 @@ local function vcs_item_selected(fname)
   return true --keep dialog open
 end
 
+repo_changes= {}
 local function get_vcs_file_status(file1, fname, vctrl)
   --compare files and return a status character:
   -- "M" = different files (local is NEWER)
@@ -269,6 +270,9 @@ local function get_vcs_file_status(file1, fname, vctrl)
     local file2= pref..fname
 
     local vctype= vctrl[3]
+    if vctype == Proj.VCS_GIT then --check parsed "git status"
+      return repo_changes[fname] or ""
+    end
     if vctype == Proj.VCS_FOLDER then
       --test file1/2 existence
       local ex1= Util.file_exists(file1)
@@ -297,10 +301,25 @@ function Proj.open_vcs_dialog(row)
   local idx= Proj.get_vcs_index(row)
   if idx then
     local vc_item_name= data.proj_rowinfo[row][1]
-    ui.statusbar_text= Proj.VCS_LIST[data.proj_vcontrol[idx][3]] ..": "..vc_item_name
-    local vctrl= data.proj_vcontrol[idx] --{path, p, vc_type, row}
+    local vctype= data.proj_vcontrol[idx][3]
+    ui.statusbar_text= Proj.VCS_LIST[vctype] ..": "..vc_item_name
+    local vctrl= data.proj_vcontrol[idx] --{path, param, vc_type, row}
     vcs_item_base= string.gsub(vctrl[1], '%\\', '/')
     local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
+
+    if vctype == Proj.VCS_GIT then
+      --parse GIT changes
+      repo_changes= {}
+      local pref, cwd
+      local param= data.proj_vcontrol[idx][2] --param
+      if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') end
+      local gitstat= Proj.get_cmd_output("git status -s", cwd, "")
+      for line in gitstat:gmatch('[^\n]+') do
+        --split "letter filename"
+        local lett, fn= string.match(line, '%s+(.-)%s(.*)')
+        if fn then repo_changes[fn]= lett end
+      end
+    end
 
     --list files in this VCS folder/subfolders
     local flist= {}
