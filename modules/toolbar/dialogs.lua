@@ -11,12 +11,14 @@ local previewgrp2
 
 local dialog_list= {}
 local dialog_cols= {}
+local dialog_buttons= {}
 local dialog_data_icon= ""
 local dialog_font_preview= false
 local dialog_single_click= false
 
 toolbar.dlg_select_it= ""
 toolbar.dlg_select_ev= nil
+toolbar.dlg_filter_col2= false
 
 local filter= ""
 local idx_filtered= {}
@@ -125,7 +127,7 @@ local function load_data()
   for i=1, #dialog_list do
     local itstr= get_list_itemstr(i)
     local itname= string.lower(itstr)  --ignore case
-    if flt == '' or itname:match(flt) then
+    if (flt == '' or itname:match(flt)) and ((not toolbar.dlg_filter_col2) or (get_list_col(i,2) ~= '')) then --filter by name and col2
       n= n+1
       idx_filtered[n]= i
       local btname= "it#"..i
@@ -206,11 +208,23 @@ local function dialog_key_ev(npop, keycode)
 end
 events_connect("popup_key", dialog_key_ev)
 
+local function db_pressed(bname)
+  for i=1, #dialog_buttons do
+    local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:close_dialog, 9:reload-list
+    if bt[1] == bname then
+      if bt[8] then close_dialog() end  --close dialog
+      if bt[7] ~= nil then bt[7](bname) end --callback
+      if bt[9] and not bt[8] then load_data() end --reload-list
+    end
+  end
+end
+
 function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
   dialog_cols= dialog_list["columns"]
+  dialog_buttons= dialog_list["buttons"]
   dialog_data_icon= dataicon
   dialog_font_preview= show_font_preview
   dialog_single_click= singleclick
@@ -257,6 +271,27 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
   toolbar.addlabel("...", "", dialog_w-toolbar.cfg.butsize-10, true, false, "filter-txt")  --left align
   update_filter()
 
+  if dialog_buttons and #dialog_buttons > 0 then
+    local nrows= 1
+    for i=1, #dialog_buttons do
+      local nr= dialog_buttons[i][6]
+      if nr > nrows then nrows= nr end
+    end
+    local buttons= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize * nrows +1, false)
+    toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BUT_NORMAL)
+    toolbar.setdefaulttextfont()
+    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
+    local sw= toolbar.cfg.butsize
+    for i=1, #dialog_buttons do
+      local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:close_dialog, 9:reload-list
+      toolbar.gotopos(bt[4], (bt[6]-1)*toolbar.cfg.barsize+2)
+      toolbar.cfg.butsize= bt[5]
+      --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
+      toolbar.cmdtext(bt[2], db_pressed, bt[3], bt[1], true, false, false, false)
+    end
+    toolbar.cfg.butsize= sw
+  end
+
   --items group: full width + items height w/scroll
   itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, false)
   toolbar.setdefaulttextfont()
@@ -266,6 +301,7 @@ end
 function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
   toolbar.dlg_select_it= sel_font
   toolbar.dlg_select_ev= font_selected
+  toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)

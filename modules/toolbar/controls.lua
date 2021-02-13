@@ -216,7 +216,7 @@ events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
     if toolbar.cfgpnl_chkval ~= nil and toolbar.cfgpnl_chkval[buttonname] ~= nil then
       toolbar.cmds[buttonname](buttonname) --pass the name of the checkbox
     else
-      toolbar.cmds[buttonname]()
+      toolbar.cmds[buttonname](buttonname)
     end
   --else ui.statusbar_text= buttonname.." clicked"
   end

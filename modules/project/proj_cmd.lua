@@ -296,6 +296,16 @@ local function get_vcs_file_status(file1, fname, vctrl)
   return "" --same
 end
 
+local function b_pressed(bname)
+  ui.statusbar_text= bname.." pressed"
+end
+
+local function b_show_all(bname)
+  --toggle show all
+  toolbar.selected("dlg-show-all", false, toolbar.dlg_filter_col2)
+  toolbar.dlg_filter_col2= not toolbar.dlg_filter_col2
+end
+
 function Proj.open_vcs_dialog(row)
   --open a dialog with the project files that are in this VCS item folder/subfolders
   local idx= Proj.get_vcs_index(row)
@@ -328,18 +338,29 @@ function Proj.open_vcs_dialog(row)
 
     --list files in this VCS folder/subfolders
     local flist= {}
-    flist["columns"]= {550, 50}
+    flist["columns"]= {550, 50} --icon+filename | status-letter
+    flist["buttons"]= {
+      --bname, text, tooltip, x, width, row, close_dialog, callback, reload-list
+      --{"ttt1", "Do Test", "Run a test...", 400, 95, 1, b_pressed, true, false},
+      {"dlg-show-all", "Show All", "Show all files", 500, 95, 1, b_show_all, false, true}
+    }
+    toolbar.dlg_filter_col2= false --show all items
     for row= 1, #data.proj_files do
       if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
         local projfile= string.gsub(data.proj_files[row], '%\\', '/')
         local fname= string.match(projfile, fmt)
-        if fname and fname ~= '' then flist[ #flist+1 ]= {fname, get_vcs_file_status(projfile, fname, vctrl)} end
+        if fname and fname ~= '' then
+          local col2= get_vcs_file_status(projfile, fname, vctrl)
+          flist[ #flist+1 ]= {fname, col2}
+          if col2 ~= "" then toolbar.dlg_filter_col2= true end --only show items with something in col2
+        end
       end
     end
     --show folder files
     toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
     toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
+    toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
 end
