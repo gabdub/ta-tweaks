@@ -215,6 +215,7 @@ local function db_pressed(bname)
       if bt[8] then close_dialog() end  --close dialog
       if bt[7] ~= nil then bt[7](bname) end --callback
       if bt[9] and not bt[8] then load_data() end --reload-list
+      break
     end
   end
 end
