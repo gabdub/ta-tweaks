@@ -319,9 +319,9 @@ local function b_publish(bname)
       end
     end
     if numok == (numM+numA) then
-      Util.info("Publish to folder", ""..numok.. " files copied succesfully")
+      Util.info("Publish to folder", ""..numok.. " files copied successfully")
     else
-      Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..(numM+numA).. " files were copied succesfully")
+      Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..(numM+numA).. " files were copied successfully")
     end
   end
 end
