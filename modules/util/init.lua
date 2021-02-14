@@ -94,6 +94,43 @@ function Util.is_fsroot(strfilename)
   return (string.match(strfilename,"^.:\\$") ~= nil)
 end
 
+--return true if the content of the 2 files is the same
+function Util.compare_file_content(file1, file2)
+  local f = io.open(file1, 'rb')
+  if f then
+    local fcontent= f:read('*all')
+    f:close()
+    f = io.open(file2, 'rb')
+    if f then
+      local fcontent2= f:read('*all')
+      f:close()
+      return (fcontent == fcontent2) --true is the content is the same
+    end
+  end
+  return false
+end
+
+--copy a fila
+function Util.copy_file(file_org, file_dest)
+  local f = io.open(file_org, 'rb')
+  if f then
+    local fcontent= f:read('*all')
+    f:close()
+    f = io.open(file_dest, 'wb')
+    if f then
+      f:write(fcontent)
+      f:close()
+      f = io.open(file_dest, 'rb')  --check that the copied content is the same
+      if f then
+        local fcontent2= f:read('*all')
+        f:close()
+        return (fcontent == fcontent2) --true is the content is the same
+      end
+    end
+  end
+  return false
+end
+
 --remove blanks and CR/LF (begin and end)
 function Util.str_trim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))

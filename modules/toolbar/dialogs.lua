@@ -220,12 +220,17 @@ local function db_pressed(bname)
   end
 end
 
-function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick)
+function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick, config)
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
-  dialog_cols= dialog_list["columns"]
-  dialog_buttons= dialog_list["buttons"]
+  if config then
+    dialog_cols= config["columns"]
+    dialog_buttons= config["buttons"]
+  else
+    dialog_cols= {}
+    dialog_buttons= {}
+  end
   dialog_data_icon= dataicon
   dialog_font_preview= show_font_preview
   dialog_single_click= singleclick
@@ -303,7 +308,7 @@ function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
   toolbar.dlg_select_it= sel_font
   toolbar.dlg_select_ev= font_selected
   toolbar.dlg_filter_col2= false
-  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false) --show available fonts / font-preview / double-click= select and close
+  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false, nil) --show available fonts / font-preview / double-click= select and close
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else

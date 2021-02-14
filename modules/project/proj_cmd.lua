@@ -146,21 +146,6 @@ function Proj.get_cmd_output(cmd, cwd, info)
   return info
 end
 
-local function compare_file_content(file1, file2)
-  local f = io.open(file1, 'rb')
-  if f then
-    local fcontent= f:read('*all')
-    f:close()
-    f = io.open(file2, 'rb')
-    if f then
-      local fcontent2= f:read('*all')
-      f:close()
-      return (fcontent == fcontent2)  --return true if the content is the same
-    end
-  end
-  return false
-end
-
 function Proj.get_filevcinfo(fname)
   --show file VCS info (up to 2 different types. e.g.: GIT + FOLDER)
   local infotot= ""
@@ -201,7 +186,7 @@ function Proj.get_filevcinfo(fname)
           sz2= lfs.attributes(url, 'size')
           fm2= os.date('%c',dm2)..((dm2 > dm1) and " * NEW *" or "")..'\n'..sz2..' bytes'
           --same size (ignore dates): check the file content
-          if sz1 == sz2 then same= compare_file_content(fname, url) end
+          if sz1 == sz2 then same= Util.compare_file_content(fname, url) end
         end
         local fm1= os.date('%c',dm1)..((dm1 > dm2) and " * NEW *" or "")..'\n'..sz1..' bytes'
         info= 'LOCAL: '..fname..'\n'..fm1..'\n\nFOLDER: '..url..'\n'..fm2..(same and '\nSAME CONTENT' or '\nMODIFIED')
@@ -253,7 +238,7 @@ local function vcs_item_selected(fname)
   return true --keep dialog open
 end
 
-repo_changes= {}
+local repo_changes= {}
 local function get_vcs_file_status(file1, fname, vctrl)
   --compare files and return a status character:
   -- "M" = different files (local is NEWER)
@@ -284,7 +269,7 @@ local function get_vcs_file_status(file1, fname, vctrl)
       local sz1= lfs.attributes(file1, 'size')
       local sz2= lfs.attributes(file2, 'size')
       local modif= false --different size/content
-      if sz1 ~= sz2 then modif=true else modif= not compare_file_content(file1, file2) end
+      if sz1 ~= sz2 then modif=true else modif= not Util.compare_file_content(file1, file2) end
       if modif then
         local dm1= lfs.attributes(file1, 'modification')
         local dm2= lfs.attributes(file2, 'modification')
@@ -296,12 +281,53 @@ local function get_vcs_file_status(file1, fname, vctrl)
   return "" --same
 end
 
-local function b_pressed(bname)
-  ui.statusbar_text= bname.." pressed"
+--list files in this VCS folder/subfolders
+local flist= {}
+local publish_folder= ""
+
+local function b_publish(bname)
+  --Copy changes (M/A) to the destination folder
+  local numM= 0
+  local numA= 0
+  local fnames= ""
+  for i=1, #flist do
+    local le= flist[i][2]
+    if le == "M" then numM= numM+1 end
+    if le == "A" then numA= numA+1 end
+    if (le == "M" or le == "A") and (#fnames < 300) then
+      fnames= fnames..(#fnames == 0 and "" or "\n")..flist[i][1]
+      if #fnames >= 300 then fnames= fnames.."\n..." end
+    end
+  end
+  local txt
+  if numM == 0 then
+    if numA == 0 then Util.info("Nothing to publish", "No files marked as 'M' or 'A' found") return end
+    txt= ""..numA.. " new file"..(numA > 1 and "s" or "")
+  else
+    txt= ""..numM.. " modified file"..(numM > 1 and "s" or "")
+    if numA > 0 then
+      txt= txt.." and "..numA.. " new file"..(numA > 1 and "s" or "")
+    end
+  end
+  if Util.confirm("Publish to folder", "Copy "..txt.." to "..publish_folder.. " ?", fnames) then
+    local numok= 0
+    for i=1, #flist do
+      local le= flist[i][2]
+      if le == "M" or le == "A" then
+        local fname= flist[i][1]
+        if Util.copy_file( vcs_item_base..fname,  publish_folder..fname) then numok= numok+1 end --ORG => DEST
+      end
+    end
+    if numok == (numM+numA) then
+      Util.info("Publish to folder", ""..numok.. " files copied succesfully")
+    else
+      Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..(numM+numA).. " files were copied succesfully")
+    end
+  end
 end
 
 local function b_show_all(bname)
-  --toggle show all
+  --toggle show all/changed files
   toolbar.selected("dlg-show-all", false, toolbar.dlg_filter_col2)
   toolbar.dlg_filter_col2= not toolbar.dlg_filter_col2
 end
@@ -311,18 +337,19 @@ function Proj.open_vcs_dialog(row)
   local idx= Proj.get_vcs_index(row)
   if idx then
     local vc_item_name= data.proj_rowinfo[row][1]
-    local vctype= data.proj_vcontrol[idx][3]
-    ui.statusbar_text= Proj.VCS_LIST[vctype] ..": "..vc_item_name
     local vctrl= data.proj_vcontrol[idx] --{path, param, vc_type, row}
+    local vctype= vctrl[3]
+    ui.statusbar_text= Proj.VCS_LIST[vctype] ..": "..vc_item_name
     vcs_item_base= string.gsub(vctrl[1], '%\\', '/')
     local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
 
+    publish_folder= ""
+    local pref, cwd
+    local param= vctrl[2] --param
+    if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
     if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
       --parse GIT/SVN changes
       repo_changes= {}
-      local pref, cwd
-      local param= data.proj_vcontrol[idx][2] --param
-      if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') end
       local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status -q"
       if cwd == nil or cwd == "" then
         if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
@@ -334,15 +361,19 @@ function Proj.open_vcs_dialog(row)
         local lett, fn= string.match(line, '%s*(.-)%s(.*)')
         if fn then repo_changes[ Util.str_trim(fn) ]= lett end
       end
+
+    elseif vctype == Proj.VCS_FOLDER then
+      publish_folder= pref or "" --folder??
     end
 
-    --list files in this VCS folder/subfolders
-    local flist= {}
-    flist["columns"]= {550, 50} --icon+filename | status-letter
-    flist["buttons"]= {
-      --bname, text, tooltip, x, width, row, close_dialog, callback, reload-list
-      --{"ttt1", "Do Test", "Run a test...", 400, 95, 1, b_pressed, true, false},
-      {"dlg-show-all", "Show All", "Show all files", 500, 95, 1, b_show_all, false, true}
+    flist= {}
+    local dconfig= {}
+    local enpub= false
+    dconfig["columns"]= {550, 50} --icon+filename | status-letter
+    dconfig["buttons"]= {
+      --bname, text, tooltip, x, width, row, callback, close_dialog, reload-list
+      {"dlg-publish",  "Publish",  "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, true, false},
+      {"dlg-show-all", "Show All", "Show all/changed files", 500, 95, 1, b_show_all, false, true}
     }
     toolbar.dlg_filter_col2= false --show all items
     for row= 1, #data.proj_files do
@@ -352,15 +383,19 @@ function Proj.open_vcs_dialog(row)
         if fname and fname ~= '' then
           local col2= get_vcs_file_status(projfile, fname, vctrl)
           flist[ #flist+1 ]= {fname, col2}
-          if col2 ~= "" then toolbar.dlg_filter_col2= true end --only show items with something in col2
+          if col2 ~= "" then
+            toolbar.dlg_filter_col2= true --only show items with something in col2
+            enpub= ((col2=='M') or (col2=='A')) and (vctype == Proj.VCS_FOLDER)
+          end
         end
       end
     end
     --show folder files
     toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
-    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false) --double-click= select and close
+    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false, dconfig) --double-click= select and close
     toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
+    toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
 end
