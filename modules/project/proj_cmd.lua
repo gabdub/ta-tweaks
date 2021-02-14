@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 ---- PROJECT ACTIONS ----
 local Proj = Proj
 local Util = Util
@@ -285,6 +285,47 @@ end
 local flist= {}
 local publish_folder= ""
 
+local function b_update(bname)
+  --Copy changes (O/D) to the destination folder
+  local numO= 0
+  local numD= 0
+  local fnames= ""
+  for i=1, #flist do
+    local le= flist[i][2]
+    if le == "O" then numO= numO+1 end
+    if le == "D" then numD= numD+1 end
+    if (le == "O" or le == "D") and (#fnames < 300) then
+      fnames= fnames..(#fnames == 0 and "" or "\n")..flist[i][1]
+      if #fnames >= 300 then fnames= fnames.."\n..." end
+    end
+  end
+  local txt
+  if numO == 0 then
+    if numD == 0 then Util.info("Nothing to update", "No files marked as 'O' or 'D' found") return end
+    txt= ""..numD.. " new file"..(numD > 1 and "s" or "")
+  else
+    txt= ""..numO.. " modified file"..(numO > 1 and "s" or "")
+    if numD > 0 then
+      txt= txt.." and "..numD.. " new file"..(numD > 1 and "s" or "")
+    end
+  end
+  if Util.confirm("Update local folder", "Copy "..txt.." to "..vcs_item_base.. " ?", fnames) then
+    local numok= 0
+    for i=1, #flist do
+      local le= flist[i][2]
+      if le == "O" or le == "D" then
+        local fname= flist[i][1]
+        if Util.copy_file(publish_folder..fname, vcs_item_base..fname) then numok= numok+1 end --ORG => DEST
+      end
+    end
+    if numok == (numO+numD) then
+      Util.info("Update local folder", ""..numok.. " files copied successfully")
+    else
+      Util.info("Update local folder", "Warning:\nOnly "..numok.." of the "..(numO+numD).. " files were copied successfully")
+    end
+  end
+end
+
 local function b_publish(bname)
   --Copy changes (M/A) to the destination folder
   local numM= 0
@@ -368,11 +409,13 @@ function Proj.open_vcs_dialog(row)
 
     flist= {}
     local dconfig= {}
+    local enupd= false
     local enpub= false
     dconfig["columns"]= {550, 50} --icon+filename | status-letter
     dconfig["buttons"]= {
       --bname, text, tooltip, x, width, row, callback, close_dialog, reload-list
-      {"dlg-publish",  "Publish",  "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, true, false},
+      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, true, false},
+      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, true, false},
       {"dlg-show-all", "Show All", "Show all/changed files", 500, 95, 1, b_show_all, false, true}
     }
     toolbar.dlg_filter_col2= false --show all items
@@ -385,7 +428,10 @@ function Proj.open_vcs_dialog(row)
           flist[ #flist+1 ]= {fname, col2}
           if col2 ~= "" then
             toolbar.dlg_filter_col2= true --only show items with something in col2
-            enpub= ((col2=='M') or (col2=='A')) and (vctype == Proj.VCS_FOLDER)
+            if vctype == Proj.VCS_FOLDER then
+              enupd= ((col2=='O') or (col2=='D'))
+              enpub= ((col2=='M') or (col2=='A'))
+            end
           end
         end
       end
@@ -395,6 +441,7 @@ function Proj.open_vcs_dialog(row)
     toolbar.dlg_select_ev= vcs_item_selected
     toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false, dconfig) --double-click= select and close
     toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
+    toolbar.enable("dlg-update",  enupd and (publish_folder ~= ""))
     toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
