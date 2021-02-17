@@ -146,6 +146,11 @@ function Proj.get_cmd_output(cmd, cwd, info)
   return info
 end
 
+function debug_cmd(cmd, cwd) --run a command from the "Command entry"; output in one line
+  --e.g.: debug_cmd("git status -sb", "C:\\Users\\gabriel\\.textadept\\ta-tweaks\\")
+  return string.gsub(Proj.get_cmd_output(cmd, cwd, ""), "\n", " ")
+end
+
 function Proj.get_filevcinfo(fname)
   --show file VCS info (up to 2 different types. e.g.: GIT + FOLDER)
   local infotot= ""
@@ -284,6 +289,7 @@ end
 --list files in this VCS folder/subfolders
 local flist= {}
 local publish_folder= ""
+local gitbranch= ""
 
 local function b_update(bname)
   --Copy changes (O/D) to the destination folder
@@ -385,22 +391,29 @@ function Proj.open_vcs_dialog(row)
     local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
 
     publish_folder= ""
+    gitbranch= ""
     local pref, cwd
     local param= vctrl[2] --param
     if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
     if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
       --parse GIT/SVN changes
       repo_changes= {}
-      local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status -q"
+      local stcmd= (vctype == Proj.VCS_GIT) and "git status -sb" or "svn status -q"
       if cwd == nil or cwd == "" then
         if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
       end
       --ui.statusbar_text= stcmd.." | " ..(cwd or "")
       local rstat= string.gsub(Proj.get_cmd_output(stcmd, cwd, ""), '%\\', '/')
+      local readbranch= (vctype == Proj.VCS_GIT)
       for line in rstat:gmatch('[^\n]+') do
-        --split "letter filename"
-        local lett, fn= string.match(line, '%s*(.-)%s(.*)')
-        if fn then repo_changes[ Util.str_trim(fn) ]= lett end
+        if readbranch then
+          readbranch= false
+          gitbranch= string.match(line, '##%s*(.*)')
+        else
+          --split "letter filename"
+          local lett, fn= string.match(line, '%s*(.-)%s(.*)')
+          if fn then repo_changes[ Util.str_trim(fn) ]= lett end
+        end
       end
 
     elseif vctype == Proj.VCS_FOLDER then
@@ -412,12 +425,16 @@ function Proj.open_vcs_dialog(row)
     local enupd= false
     local enpub= false
     dconfig["columns"]= {550, 50} --icon+filename | status-letter
-    dconfig["buttons"]= {
+    local buttons= {
       --bname, text, tooltip, x, width, row, callback, close_dialog, reload-list
       {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, true, false},
       {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, true, false},
       {"dlg-show-all", "Show All", "Show all/changed files", 500, 95, 1, b_show_all, false, true}
     }
+    if gitbranch ~= "" then
+      buttons[#buttons+1]= {"dlg-branch", "On: "..gitbranch, "Git branch", 4, 0, 1, nil, true, false}
+    end
+    dconfig["buttons"]= buttons
     toolbar.dlg_filter_col2= false --show all items
     for row= 1, #data.proj_files do
       if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
@@ -443,6 +460,7 @@ function Proj.open_vcs_dialog(row)
     toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
     toolbar.enable("dlg-update",  enupd and (publish_folder ~= ""))
     toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
+    toolbar.enable("dlg-branch", false)
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
   end
 end
