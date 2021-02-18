@@ -205,6 +205,15 @@ toolbar.GETVER = {    --toolbar.getversion(x)
   FONT_BASE     = 100 --name of the first font (100 .. 100+N_FONTS-1)
 }
 
+toolbar.DLGBUT ={
+--dialog buttons flags
+  CLOSE         = 0x00000001,   --close the dialog before calling the callback
+  RELOAD        = 0x00000002,   --reload the list after calling the callback
+  LEFT          = 0x00000004,   --left align text
+  BOLD          = 0x00000008,   --bold text
+  DROPDOWN      = 0x00000010    --show a drop down arrow
+}
+
 toolbar.DEFAULT_FONT= "(default)"
 
 local font_list= {}

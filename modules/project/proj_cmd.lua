@@ -426,13 +426,13 @@ function Proj.open_vcs_dialog(row)
     local enpub= false
     dconfig["columns"]= {550, 50} --icon+filename | status-letter
     local buttons= {
-      --bname, text, tooltip, x, width, row, callback, close_dialog, reload-list
-      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, true, false},
-      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, true, false},
-      {"dlg-show-all", "Show All", "Show all/changed files", 500, 95, 1, b_show_all, false, true}
+      --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, toolbar.DLGBUT.CLOSE},
+      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, toolbar.DLGBUT.CLOSE},
+      {"dlg-show-all", "Show All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD}
     }
     if gitbranch ~= "" then
-      buttons[#buttons+1]= {"dlg-branch", "On: "..gitbranch, "Git branch", 4, 0, 1, nil, true, false}
+      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.BOLD}
     end
     dconfig["buttons"]= buttons
     toolbar.dlg_filter_col2= false --show all items

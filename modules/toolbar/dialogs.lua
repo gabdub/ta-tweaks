@@ -210,11 +210,12 @@ events_connect("popup_key", dialog_key_ev)
 
 local function db_pressed(bname)
   for i=1, #dialog_buttons do
-    local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:close_dialog, 9:reload-list
+    local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
     if bt[1] == bname then
-      if bt[8] then close_dialog() end  --close dialog
+      local flg= bt[8]
+      if (flg & toolbar.DLGBUT.CLOSE) ~= 0 then close_dialog() end  --close dialog
       if bt[7] ~= nil then bt[7](bname) end --callback
-      if bt[9] and not bt[8] then load_data() end --reload-list
+      if (flg & (toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.RELOAD)) == toolbar.DLGBUT.RELOAD then load_data() end --reload-list
       break
     end
   end
@@ -242,6 +243,10 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-press", toolbar.TTBI_TB.BUT_HIPRESSED)
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-active", toolbar.TTBI_TB.BUT_SELECTED)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-button-normal-drop", toolbar.TTBI_TB.DDBUT_NORMAL)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight-drop", toolbar.TTBI_TB.DDBUT_HILIGHT)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-button-press-drop", toolbar.TTBI_TB.DDBUT_HIPRESSED)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-button-active-drop", toolbar.TTBI_TB.DDBUT_SELECTED)
   toolbar.themed_icon(toolbar.globalicon, "group-vscroll-back", toolbar.TTBI_TB.VERTSCR_BACK)
   toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
   toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
@@ -289,11 +294,15 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
     for i=1, #dialog_buttons do
-      local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:close_dialog, 9:reload-list
+      local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       toolbar.gotopos(bt[4], (bt[6]-1)*toolbar.cfg.barsize+2)
       toolbar.cfg.butsize= bt[5]
+      local flg= bt[8]
+      local leftalign= ((flg & toolbar.DLGBUT.LEFT) ~= 0)
+      local boldtxt= ((flg & toolbar.DLGBUT.BOLD) ~= 0)
+      local dropdown= ((flg & toolbar.DLGBUT.DROPDOWN) ~= 0)
       --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-      toolbar.cmdtext(bt[2], db_pressed, bt[3], bt[1], true, false, false, false)
+      toolbar.cmdtext(bt[2], db_pressed, bt[3], bt[1], true, dropdown, leftalign, boldtxt)
     end
     toolbar.cfg.butsize= sw
   end
