@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.11 (Dec 24 2020)"
+#define TA_TOOLBAR_VERSION_STR "1.1.12 (Feb 18 2021)"
 
 static void free_img_list( void );
 
@@ -1871,7 +1871,15 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
         }
       }
     }else if( (ttb.phipress->flags & TTBF_IS_TMOVE) != 0 ){
-      ttb_move_popup(T, item_xoff, item_yoff );
+      //move window to new position
+      int newx= item_xoff+ttb.drag_win_x;
+      int newy= item_yoff+ttb.drag_win_y;
+      ttb_move_popup(T, newx, newy );
+      //reset drag offset
+      ttb.drag_x= item_xoff -x;
+      ttb.drag_y= item_yoff -y;
+      ttb.drag_win_x= newx;
+      ttb.drag_win_y= newy;
     }
   }
 }

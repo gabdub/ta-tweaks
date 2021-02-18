@@ -1543,7 +1543,6 @@ static void proc_toolbar_click( struct toolbar_data * T, GdkEventButton *event )
 
 static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 {
-  int rx, ry;
   struct toolbar_item * p;
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T == NULL ){
@@ -1583,9 +1582,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           clear_tooltip_textT(T);
         }else if( (ttb.phipress->flags & TTBF_IS_TMOVE) != 0 ){
           start_drag(event->x, event->y);  //drag the pop up toolbar until the mouse button is released
-          gtk_window_get_position(GTK_WINDOW(T->win), &rx, &ry );
-          ttb.drag_x += rx; //add current pop up position
-          ttb.drag_y += ry;
+          gtk_window_get_position(GTK_WINDOW(T->win), &ttb.drag_win_x, &ttb.drag_win_y );
+          ttb.drag_x= 0 - event->x;  //initial mouse position
+          ttb.drag_y= 0 - event->y;
         }
         redraw_item(ttb.philight);
       }else{

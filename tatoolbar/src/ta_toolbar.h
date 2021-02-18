@@ -347,8 +347,8 @@ struct toolbar_data
   int barwidth;
   int borderw;        //border width (0:none)
 
-  int min_size;      //minimun size when resizing or 0
-  int drag_off;
+  int min_size;       //minimun size when resizing or 0
+  int drag_off;       //drag: change toolbar size
 
   //defaults
   int buttonsize;
@@ -429,6 +429,7 @@ struct all_toolbars_data
   struct tbh_scroll_data tbh_scroll;  //only one global TBH_SCROLL
 
   int drag_x, drag_y; //initial difference between mouse and item_xoff/yoff position
+  int drag_win_x, drag_win_y; //initial popup position
 };
 extern struct all_toolbars_data ttb;
 
