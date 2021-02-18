@@ -254,6 +254,12 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
 
   --title group: align top + fixed height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
+  if toolbar.setmovepopup ~= nil then
+    toolbar.gotopos(0, 0) --title bar
+    toolbar.addbutton("dlg-caption", "")
+    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_NORMAL)
+    toolbar.setmovepopup("dlg-caption", true)
+  end
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)

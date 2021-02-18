@@ -39,6 +39,7 @@
 #define TTBF_HIDE_BLOCK     0x00002000  //hide a block of items under this item (tree/list expand-collapse)
 #define TTBF_IS_TRESIZE     0x00004000  //the button resize the toolbar
 #define TTBF_ANCHOR_END     0x00008000  //anchor the item's right (x2) instead of it's left (x1)
+#define TTBF_IS_TMOVE       0x00010000  //the button move the toolbar (window title)
 //iternal use item flags
 #define TTBF_CLOSETAB_BUT   0x01000000  //highlighted xbutton is a close tab button (internal use)
 #define TTBF_SCROLL_BUT     0x02000000  //highlighted xbutton is a scroll button (internal use)
@@ -468,6 +469,8 @@ int fire_item_event( struct toolbar_item * p, int evtype );
 int fire_group_event( struct toolbar_group * g, int evtype );
 int fire_toolbar_event( struct toolbar_data * T, int evtype );
 
+void ttb_move_popup(struct toolbar_data *T, int x, int y );
+
 /* ============================================================================= */
 /* ta_toolbar.c */
 const char * get_toolbar_version( void );
@@ -564,6 +567,7 @@ void ttb_settext( const char * name, const char * text, const char *tooltip, int
 void ttb_set_toolbarsize( struct toolbar_data *T, int width, int height);
 void ttb_set_anchor( const char * name, int xright, int anchor_end );
 void ttb_set_resize( const char * name, int t_resize, int min_size );
+void ttb_set_move_popup( const char * name, int t_move );
 
 void toolbar_set_win_title( const char *title );
 

@@ -337,6 +337,14 @@ static int ltoolbar_setresize(lua_State *L)
   return 0;
 }
 
+/** `toolbar.setmovepopup(name,t_move)` Lua function.
+*/
+static int ltoolbar_setmovepopup(lua_State *L)
+{ //the button resize the toolbar
+  ttb_set_move_popup( luaL_checkstring(L, 1), lua_toboolean(L, 2) );
+  return 0;
+}
+
 //----- TABS -----
 /** `toolbar.tabfontcolor(NORMcol,HIcol,ACTIVEcol,MODIFcol,GRAYcol)` Lua function. */
 static int ltoolbar_tabfontcolor(lua_State *L)
@@ -1535,6 +1543,7 @@ static void proc_toolbar_click( struct toolbar_data * T, GdkEventButton *event )
 
 static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 {
+  int rx, ry;
   struct toolbar_item * p;
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T == NULL ){
@@ -1572,6 +1581,11 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
             T->drag_off= T->barheight + item_yoff; //resize toolbar vertically   (Y-)
           }
           clear_tooltip_textT(T);
+        }else if( (ttb.phipress->flags & TTBF_IS_TMOVE) != 0 ){
+          start_drag(event->x, event->y);  //drag the pop up toolbar until the mouse button is released
+          gtk_window_get_position(GTK_WINDOW(T->win), &rx, &ry );
+          ttb.drag_x += rx; //add current pop up position
+          ttb.drag_y += ry;
         }
         redraw_item(ttb.philight);
       }else{
@@ -1722,6 +1736,13 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
       T->win= NULL;
       T->draw= NULL;
     }
+  }
+}
+
+void ttb_move_popup(struct toolbar_data *T, int x, int y )
+{
+  if( T->num >= POPUP_FIRST ){  //check it's a pop-up toolbar before moving it
+    gtk_window_move(GTK_WINDOW(T->win), x, y );
   }
 }
 
@@ -1982,6 +2003,7 @@ void register_toolbar(lua_State *L)
   DEF_C_FUNC(L, ltoolbar_textfont,      "textfont");        //set text buttons font size and colors
   DEF_C_FUNC(L, ltoolbar_anchor,        "anchor");          //anchor a buttons x position to the right
   DEF_C_FUNC(L, ltoolbar_setresize,     "setresize");       //the button resize the toolbar
+  DEF_C_FUNC(L, ltoolbar_setmovepopup,  "setmovepopup");    //the button move the toolbar (only for pop ups)
   //tabs
   DEF_C_FUNC(L, ltoolbar_tabfontcolor,  "tabfontcolor");    //change default tab font color
   DEF_C_FUNC(L, ltoolbar_settab,        "settab");          //set tab num

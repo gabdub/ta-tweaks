@@ -111,6 +111,7 @@ toolbar.TTBF ={
   HIDE_BLOCK    = 0x00002000,   --hide a block of items under this item (tree/list expand-collapse)
   IS_TRESIZE    = 0x00004000,   --the button resize the toolbar
   ANCHOR_END    = 0x00008000,   --anchor the item's right (x2) instead of it's left (x1)
+  IS_TMOVE      = 0x00010000,   --the button move the toolbar (window title)
 --group flags
   GRP_SELECTABLE= 0x00000001,   --accepts click
   GRP_HIDDEN    = 0x00000002,   --it's hidden

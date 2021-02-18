@@ -1870,6 +1870,8 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
           //update_layoutT(T); called from the resize event
         }
       }
+    }else if( (ttb.phipress->flags & TTBF_IS_TMOVE) != 0 ){
+      ttb_move_popup(T, item_xoff, item_yoff );
     }
   }
 }
@@ -3339,6 +3341,20 @@ void ttb_set_resize( const char * name, int t_resize, int min_size )
       p->flags &= ~TTBF_IS_TRESIZE;
     }
     p->group->toolbar->min_size= min_size;  //minimun toolbar width or 0
+  }
+}
+
+void ttb_set_move_popup( const char * name, int t_move )
+{ //the button move the toolbar (only for pop ups)
+  struct toolbar_item * p= item_from_nameT(current_toolbar(), name);
+  if( p != NULL ){
+    if( p->group->toolbar->num >= POPUP_FIRST ){
+      if( t_move ){
+        p->flags |= TTBF_IS_TMOVE;
+      }else{
+        p->flags &= ~TTBF_IS_TMOVE;
+      }
+    }
   }
 }
 
