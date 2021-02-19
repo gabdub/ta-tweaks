@@ -146,9 +146,9 @@ function Proj.get_cmd_output(cmd, cwd, info)
   return info
 end
 
-function debug_cmd(cmd, cwd) --run a command from the "Command entry"; output in one line
+function debug_cmd(cmd, cwd) --run a command from the "Command entry"
   --e.g.: debug_cmd("git status -sb", "C:\\Users\\gabriel\\.textadept\\ta-tweaks\\")
-  return string.gsub(Proj.get_cmd_output(cmd, cwd, ""), "\n", " ")
+  return Proj.get_cmd_output(cmd, cwd, "")
 end
 
 function Proj.get_filevcinfo(fname)

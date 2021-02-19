@@ -64,20 +64,25 @@ if toolbar then
     buffer:copy_text(fullprint[toolbar.getnum_cmd(name)])
   end
 
-  function toolbar.print_result(txt)
-    nitems= nitems+1
+  function toolbar.print_result(ml_txt)
     toolbar.sel_results_bar(itemsgrp)
-    local name= get_rowname(nitems)
-    toolbar.listtb_y= yout
-    fullprint[#fullprint+1]= txt
-    if #txt > 2000 then txt= txt:sub(1,2000).."..." end
-    local oneline= Util.str_one_line(txt)
-    if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
-    toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0, 250)
-    yout= yout + toolbar.cfg.butsize
+    local name, firstname
+    local firstitem= nitems+1
+    for txt in ml_txt:gmatch("[^\r\n]+") do --split lines
+      nitems= nitems+1
+      name= get_rowname(nitems)
+      if firstname == nil then firstname= name end
+      toolbar.listtb_y= yout
+      fullprint[#fullprint+1]= txt
+      if #txt > 2000 then txt= txt:sub(1,2000).."..." end
+      local oneline= Util.str_one_line(txt)
+      if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
+      toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0, 250)
+      yout= yout + toolbar.cfg.butsize
+    end
     toolbar.showresults("printresults")
-    toolbar.ensurevisible(name)
-    select_printrow(nitems)
+    toolbar.ensurevisible(firstname)
+    select_printrow(firstitem)
   end
 
   -------- overwrite default ui._print function -----
