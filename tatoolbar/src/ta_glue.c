@@ -463,6 +463,10 @@ static int ltoolbar_getversion(lua_State *L)
       sprintf( str, "%d", n_font_families );
       break;
 
+    case 5:   //5: get pop up last position
+      sprintf( str, "%d,%d", ttb.drag_win_x, ttb.drag_win_y );
+      break;
+
     default:  //100:... get fonts name
       //to print all available fonts run:
       //  for i=101, tonumber(toolbar.getversion(4))+100 do print(i, toolbar.getversion(i)) end

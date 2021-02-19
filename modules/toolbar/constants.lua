@@ -203,6 +203,7 @@ toolbar.GETVER = {    --toolbar.getversion(x)
   TATARGET      = 2,  --target TA version: "11.0"
   GTK           = 3,  --GTK version:       "2.24.32"
   N_FONTS       = 4,  --number of installed fonts: "175"
+  POPUP_POS     = 5,  --get pop up last position "x,y"
   FONT_BASE     = 100 --name of the first font (100 .. 100+N_FONTS-1)
 }
 

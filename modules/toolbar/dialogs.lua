@@ -221,18 +221,61 @@ local function db_pressed(bname)
   end
 end
 
+local dlg_can_move= false
+local dlg_start_x= 300
+local dlg_start_y= 300
+local function beforeload_dlg(cfg)
+  --CFGHOOK_BEFORE_LOAD: add hooked fields to config
+  Util.add_config_field(cfg, "dlg_x", Util.cfg_int, 300)
+  Util.add_config_field(cfg, "dlg_y", Util.cfg_int, 300)
+end
+
+local function afterload_dlg(cfg)
+  --CFGHOOK_CONFIG_LOADED: notify config loaded
+  dlg_start_x= cfg.dlg_x
+  dlg_start_y= cfg.dlg_y
+end
+
+local function beforesave_dlg(cfg)
+  --CFGHOOK_BEFORE_SAVE: get hooked fields value
+  local changed= false
+  if cfg.dlg_x ~= dlg_start_x then cfg.dlg_x=dlg_start_x changed=true end
+  if cfg.dlg_y ~= dlg_start_y then cfg.dlg_y=dlg_start_y changed=true end
+  return changed
+end
+
+local function projloaded_dlg(cfg)
+  --CFGHOOK_PROJ_LOADED: the project parsing is complete
+end
+
+Proj.add_config_hook(beforeload_dlg, afterload_dlg, beforesave_dlg, projloaded_dlg)
+
+local function end_dlg_drag(cmd)
+  if dlg_can_move then
+    local lastpos= toolbar.getversion(toolbar.GETVER.POPUP_POS)
+    if lastpos ~= nil and lastpos ~= "" then
+      --integer,integer
+      local a,b = lastpos:match('^(.-),(.+)$')
+      if a and b then
+        dlg_start_x= tonumber(a)
+        dlg_start_y= tonumber(b)
+      end
+    end
+  end
+end
+
 function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick, config)
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
-  local can_move= false
   if config then
     dialog_cols= config["columns"]
     dialog_buttons= config["buttons"]
-    can_move= config.can_move
+    dlg_can_move= config.can_move
   else
     dialog_cols= {}
     dialog_buttons= {}
+    dlg_can_move= false
   end
   dialog_data_icon= dataicon
   dialog_font_preview= show_font_preview
@@ -258,13 +301,13 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-  if can_move and toolbar.setmovepopup ~= nil then
+  if dlg_can_move and toolbar.setmovepopup ~= nil then
     toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
     toolbar.cfg.butsize= dialog_w-toolbar.cfg.butsize-5
     toolbar.gotopos(1, 2) --title bar
     --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-    toolbar.cmdtext(title, nil, "", "dlg-caption", true, false, true, true)
+    toolbar.cmdtext(title, end_dlg_drag, "", "dlg-caption", true, false, true, true)
     toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_NORMAL)
     toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HILIGHT)
     toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HIPRESSED)
@@ -340,4 +383,8 @@ function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
     toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
   end
   ensure_sel_view()
+end
+
+function toolbar.show_dialog()
+  toolbar.popup(toolbar.DIALOG_POPUP,true,dlg_start_x,dlg_start_y,-dialog_w,-dialog_h) --open at a fixed position
 end

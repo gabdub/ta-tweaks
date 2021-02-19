@@ -462,7 +462,7 @@ function Proj.open_vcs_dialog(row)
     toolbar.enable("dlg-update",  enupd and (publish_folder ~= ""))
     toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
     toolbar.enable("dlg-branch", false)
-    toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-600,-400) --open at a fixed position
+    toolbar.show_dialog()
   end
 end
 
