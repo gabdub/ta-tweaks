@@ -106,7 +106,7 @@ if toolbar then
     toolbar.list_cmdright= 24
     toolbar.sel_results_bar(titgrp,true) --empty title group
     toolbar.top_right_resize_handle("resizeResult", 50, new_tb_size) --add a resize handle
-    toolbar.list_addbutton("window-close", "Close", toolbar.results_onoff)
+    toolbar.list_addbutton("close_results", "Close", toolbar.results_onoff, "window-close")
     if show_but then
       toolbar.list_addbutton("edit-clear", "Clear all", results_act)
       toolbar.list_addbutton("edit-select-all", "Copy all", results_act)

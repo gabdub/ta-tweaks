@@ -256,14 +256,16 @@ local function get_vcs_file_status(file1, fname, vctrl)
   local param= vctrl[2] --add prefix to url [,currentdir]
   if param ~= "" then
     local pref, cwd= string.match(param, '(.-),(.*)')
-    if not pref then pref= param end
-    local file2= pref..fname
 
     local vctype= vctrl[3]
     if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then --check parsed "git/svn status"
-      return repo_changes[fname] or ""
+      if not pref then pref= "" end
+      local file2= pref..fname
+      return repo_changes[file2] or ""
     end
     if vctype == Proj.VCS_FOLDER then
+      if not pref then pref= param end
+      local file2= pref..fname
       --test file1/2 existence
       local ex1= Util.file_exists(file1)
       local ex2= Util.file_exists(file2)
@@ -290,6 +292,12 @@ end
 local flist= {}
 local publish_folder= ""
 local gitbranch= ""
+local repo_folder= ""
+
+local function b_gitstatus(bname)
+  --print git status
+  if repo_folder ~= "" then ui.print(Proj.get_cmd_output("git status -sb", repo_folder, repo_folder.."> git status -sb\n")) end
+end
 
 local function b_update(bname)
   --Copy changes (O/D) to the destination folder
@@ -392,6 +400,7 @@ function Proj.open_vcs_dialog(row)
 
     publish_folder= ""
     gitbranch= ""
+    repo_folder= ""
     local pref, cwd
     local param= vctrl[2] --param
     if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
@@ -402,8 +411,8 @@ function Proj.open_vcs_dialog(row)
       if cwd == nil or cwd == "" then
         if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
       end
-      --ui.statusbar_text= stcmd.." | " ..(cwd or "")
-      local rstat= string.gsub(Proj.get_cmd_output(stcmd, cwd, ""), '%\\', '/')
+      repo_folder= cwd
+      local rstat= string.gsub(Proj.get_cmd_output(stcmd, repo_folder, ""), '%\\', '/')
       local readbranch= (vctype == Proj.VCS_GIT)
       for line in rstat:gmatch('[^\n]+') do
         if readbranch then
@@ -434,6 +443,7 @@ function Proj.open_vcs_dialog(row)
     }
     if gitbranch ~= "" then
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.BOLD}
+      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 200, 95, 1, b_gitstatus, toolbar.DLGBUT.CLOSE}
     end
     dconfig["buttons"]= buttons
     toolbar.dlg_filter_col2= false --show all items

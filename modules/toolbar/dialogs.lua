@@ -319,7 +319,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
   end
   toolbar.listtb_y= 2
   toolbar.list_cmdright= 2
-  toolbar.list_addbutton("window-close", "Close", close_dialog)
+  toolbar.list_addbutton("close_dlg", "Close", close_dialog, "window-close")
 
   if dialog_font_preview then
     local prevtxt= "0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz~{}[]"

@@ -75,7 +75,8 @@ if toolbar then
       toolbar.listtb_y= yout
       fullprint[#fullprint+1]= txt
       if #txt > 2000 then txt= txt:sub(1,2000).."..." end
-      local oneline= Util.str_one_line(txt)
+      txt= string.gsub(txt, '\t', ' ') --replace tabs with spaces
+      local oneline= txt --Util.str_one_line(txt)
       if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
       toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0, 250)
       yout= yout + toolbar.cfg.butsize
