@@ -424,6 +424,7 @@ function Proj.open_vcs_dialog(row)
     local dconfig= {}
     local enupd= false
     local enpub= false
+    dconfig.can_move= true  --allow to move
     dconfig["columns"]= {550, 50} --icon+filename | status-letter
     local buttons= {
       --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...

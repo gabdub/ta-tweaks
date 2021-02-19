@@ -225,9 +225,11 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
+  local can_move= false
   if config then
     dialog_cols= config["columns"]
     dialog_buttons= config["buttons"]
+    can_move= config.can_move
   else
     dialog_cols= {}
     dialog_buttons= {}
@@ -254,16 +256,23 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, show_fo
 
   --title group: align top + fixed height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
-  if toolbar.setmovepopup ~= nil then
-    toolbar.gotopos(0, 0) --title bar
-    toolbar.addbutton("dlg-caption", "")
-    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_NORMAL)
-    toolbar.setmovepopup("dlg-caption", true)
-  end
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-  toolbar.gotopos(2, 3)
-  toolbar.addlabel(title, "", dialog_w-toolbar.cfg.butsize-10, true, true)  --left align, bold
+  if can_move and toolbar.setmovepopup ~= nil then
+    local sw= toolbar.cfg.butsize
+    toolbar.cfg.butsize= dialog_w-toolbar.cfg.butsize-5
+    toolbar.gotopos(1, 2) --title bar
+    --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
+    toolbar.cmdtext(title, nil, "", "dlg-caption", true, false, true, true)
+    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_NORMAL)
+    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HILIGHT)
+    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HIPRESSED)
+    toolbar.setmovepopup("dlg-caption", true)
+    toolbar.cfg.butsize= sw
+  else
+    toolbar.gotopos(2, 3)
+    toolbar.addlabel(title, "", dialog_w-toolbar.cfg.butsize-10, true, true)  --left align, bold
+  end
   toolbar.listtb_y= 2
   toolbar.list_cmdright= 2
   toolbar.list_addbutton("window-close", "Close", close_dialog)
