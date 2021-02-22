@@ -196,9 +196,13 @@ local publish_folder= ""
 local gitbranch= ""
 local repo_folder= ""
 
-local function b_gitstatus(bname)
+local function run_gitcmd(cmd)
   --print git status
-  if repo_folder ~= "" then ui.print(Proj.get_cmd_output("git status -sb", repo_folder, repo_folder.."> git status -sb\n")) end
+  if repo_folder ~= "" then ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n")) end
+end
+
+local function b_gitstatus(bname)
+  run_gitcmd("git status -sb")
 end
 
 local function b_update(bname)
