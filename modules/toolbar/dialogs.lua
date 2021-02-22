@@ -107,13 +107,9 @@ end
 
 local check_val= {}
 
-local function get_check_img(val)
-  return val and "package-install" or "package-available"  --check-box
-end
-
 local function chg_check(cmd) --check-box clicked
   check_val[cmd]= not check_val[cmd]
-  toolbar.setthemeicon(cmd, get_check_img(check_val[cmd]), toolbar.TTBI_TB.IT_NORMAL)
+  toolbar.selected(cmd, check_val[cmd], false, true)
 end
 
 local function show_col_data(nrow, ncol, xcol, wcol)
@@ -121,8 +117,7 @@ local function show_col_data(nrow, ncol, xcol, wcol)
   if type(txt) == "boolean" then
     toolbar.gotopos(xcol, toolbar.listtb_y - toolbar.cfg.butsize)
     local name= "dlg-check#"..nrow
-    toolbar.cmd(name, chg_check, "", get_check_img(txt))
-    toolbar.setthemeicon(name, "transparent", toolbar.TTBI_TB.IT_HILIGHT)
+    toolbar.cmd(name, chg_check, "", "", "", toolbar.TTBI_TB.CHECK_BASE)
     check_val[name]= txt
   elseif txt ~= "" then
     toolbar.gotopos(xcol, toolbar.listtb_y - toolbar.cfg.butsize)
@@ -324,6 +319,10 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar", toolbar.TTBI_TB.VERTSCR_NORM)
   toolbar.themed_icon(toolbar.globalicon, "group-vscroll-bar-hilight", toolbar.TTBI_TB.VERTSCR_HILIGHT)
   toolbar.themed_icon(toolbar.globalicon, "cfg-separator-h", toolbar.TTBI_TB.HSEPARATOR)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-normal", toolbar.TTBI_TB.CHECK_OFF)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-selected", toolbar.TTBI_TB.CHECK_ON)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-hilight", toolbar.TTBI_TB.CHECK_HILIGHT)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-press", toolbar.TTBI_TB.CHECK_HIPRESS)
 
   --title group: align top + fixed height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
