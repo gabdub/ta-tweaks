@@ -105,6 +105,31 @@ local function click_item(cmd)
   end
 end
 
+local check_val= {}
+
+local function get_check_img(val)
+  return val and "package-install" or "package-available"  --check-box
+end
+
+local function chg_check(cmd) --check-box clicked
+  check_val[cmd]= not check_val[cmd]
+  toolbar.setthemeicon(cmd, get_check_img(check_val[cmd]), toolbar.TTBI_TB.IT_NORMAL)
+end
+
+local function show_col_data(nrow, ncol, xcol, wcol)
+  local txt= get_list_col(nrow, ncol)
+  if type(txt) == "boolean" then
+    toolbar.gotopos(xcol, toolbar.listtb_y - toolbar.cfg.butsize)
+    local name= "dlg-check#"..nrow
+    toolbar.cmd(name, chg_check, "", get_check_img(txt))
+    toolbar.setthemeicon(name, "transparent", toolbar.TTBI_TB.IT_HILIGHT)
+    check_val[name]= txt
+  elseif txt ~= "" then
+    toolbar.gotopos(xcol, toolbar.listtb_y - toolbar.cfg.butsize)
+    toolbar.addlabel(txt, "", wcol, true) --left-align
+  end
+end
+
 local function load_data()
   --remove all items
   toolbar.listtb_y= 1
@@ -120,9 +145,15 @@ local function load_data()
   local isMime= (dialog_data_icon == "MIME")
   local x2= 0
   local w2= 0
+  local x3= 0
+  local w3= 0
   if dialog_cols and #dialog_cols > 1 then
     x2= dialog_cols[1]
     w2= dialog_cols[2]
+    if #dialog_cols > 2 then
+      x3= x2+w2
+      w3= dialog_cols[3]
+    end
   end
   for i=1, #dialog_list do
     local itstr= get_list_itemstr(i)
@@ -133,13 +164,8 @@ local function load_data()
       local btname= "it#"..i
       if isMime then icon= toolbar.icon_fname(itstr) end
       toolbar.list_add_txt_ico(btname, itstr, "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
-      if w2 > 0 then
-        txt2= get_list_col(i,2)
-        if txt2 ~= "" then
-          toolbar.gotopos(x2, toolbar.listtb_y - toolbar.cfg.butsize)
-          toolbar.addlabel(txt2, "", w2, true) --left-align
-        end
-      end
+      if w2 > 0 then show_col_data(i, 2, x2, w2) end --col #2
+      if w3 > 0 then show_col_data(i, 3, x3, w3) end --col #3
       toolbar.cmd_dclick(btname, choose_item)
       if toolbar.dlg_select_it == "" then toolbar.dlg_select_it= itstr end --select first when none is provided
       if toolbar.dlg_select_it == itstr then idx_sel_i= n ensure_it_vis=btname toolbar.selected(ensure_it_vis, false, true) end
@@ -269,7 +295,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   dialog_h= height
   dialog_list= datalist
   if config then
-    dialog_cols= config["columns"]  --columns width (only 2 for now...)
+    dialog_cols= config["columns"]  --columns width (up to 3 for now...)
     dialog_buttons= config["buttons"] --add this buttons to the dialog
     dlg_can_move= config.can_move or false --the dialog can be moved
     dialog_single_click= config.singleclick or false --choose and close on single click (combo style)

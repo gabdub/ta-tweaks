@@ -340,7 +340,7 @@ function Proj.open_vcs_dialog(row)
     local enupd= false
     local enpub= false
     dconfig.can_move= true  --allow to move
-    dconfig.columns= {550, 50} --icon+filename | status-letter
+    dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
     local buttons= {
       --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, toolbar.DLGBUT.CLOSE},
@@ -359,7 +359,7 @@ function Proj.open_vcs_dialog(row)
         local fname= string.match(projfile, fmt)
         if fname and fname ~= '' then
           local col2= get_vcs_file_status(projfile, fname, vctrl)
-          flist[ #flist+1 ]= {fname, col2}
+          flist[ #flist+1 ]= {fname, col2, false}
           if col2 ~= "" then
             toolbar.dlg_filter_col2= true --only show items with something in col2
             if vctype == Proj.VCS_FOLDER then
