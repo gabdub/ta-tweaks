@@ -91,6 +91,7 @@ Proj.PRJT_SEARCH= '[Project search]'  --search results
 
 require('project.proj_data')
 require('project.proj_ui')
+require('project.proj_vcs')
 require('project.proj_cmd')
 require('project.proj_ctags')
 require('project.proj_diff')
