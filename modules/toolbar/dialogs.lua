@@ -374,19 +374,19 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   load_data()
 end
 
-function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
+function toolbar.show_dialog()
+  toolbar.popup(toolbar.DIALOG_POPUP,true,dlg_start_x,dlg_start_y,-dialog_w,-dialog_h) --open at a fixed position
+end
+
+function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
   toolbar.dlg_select_it= sel_font
   toolbar.dlg_select_ev= font_selected
   toolbar.dlg_filter_col2= false
-  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", {fontpreview=true})
+  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", {fontpreview=true, can_move=(btname==nil)})
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else
-    toolbar.popup(toolbar.DIALOG_POPUP,true,300,300,-dialog_w,-dialog_h) --open at a fixed position
+    toolbar.show_dialog() --open at a fixed position
   end
   ensure_sel_view()
-end
-
-function toolbar.show_dialog()
-  toolbar.popup(toolbar.DIALOG_POPUP,true,dlg_start_x,dlg_start_y,-dialog_w,-dialog_h) --open at a fixed position
 end
