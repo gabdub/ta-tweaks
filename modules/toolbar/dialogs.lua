@@ -264,22 +264,24 @@ local function end_dlg_drag(cmd)
   end
 end
 
-function toolbar.create_dialog(title, width, height, datalist, dataicon, show_font_preview, singleclick, config)
+function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
   if config then
-    dialog_cols= config["columns"]
-    dialog_buttons= config["buttons"]
-    dlg_can_move= config.can_move
+    dialog_cols= config["columns"]  --columns width (only 2 for now...)
+    dialog_buttons= config["buttons"] --add this buttons to the dialog
+    dlg_can_move= config.can_move or false --the dialog can be moved
+    dialog_single_click= config.singleclick or false --choose and close on single click (combo style)
+    dialog_font_preview= config.fontpreview or false --show a font preview of the selected item (items are font names)
   else
     dialog_cols= {}
     dialog_buttons= {}
     dlg_can_move= false
+    dialog_single_click= false
+    dialog_font_preview= false
   end
   dialog_data_icon= dataicon
-  dialog_font_preview= show_font_preview
-  dialog_single_click= singleclick
 
   filter= ""
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
@@ -376,7 +378,7 @@ function toolbar.font_chooser(title, sel_font, font_selected,btname,anchor)
   toolbar.dlg_select_it= sel_font
   toolbar.dlg_select_ev= font_selected
   toolbar.dlg_filter_col2= false
-  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", true, false, nil) --show available fonts / font-preview / double-click= select and close
+  toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", {fontpreview=true})
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else

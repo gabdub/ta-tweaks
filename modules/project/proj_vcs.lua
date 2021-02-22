@@ -373,7 +373,7 @@ function Proj.open_vcs_dialog(row)
     --show folder files
     toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
-    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", false, false, dconfig) --double-click= select and close
+    toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", dconfig)
     toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
     toolbar.enable("dlg-update",  enupd and (publish_folder ~= ""))
     toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
