@@ -340,7 +340,7 @@ function Proj.open_vcs_dialog(row)
     local enupd= false
     local enpub= false
     dconfig.can_move= true  --allow to move
-    dconfig["columns"]= {550, 50} --icon+filename | status-letter
+    dconfig.columns= {550, 50} --icon+filename | status-letter
     local buttons= {
       --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, toolbar.DLGBUT.CLOSE},
@@ -351,7 +351,7 @@ function Proj.open_vcs_dialog(row)
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.BOLD}
       buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 200, 95, 1, b_gitstatus, toolbar.DLGBUT.CLOSE}
     end
-    dconfig["buttons"]= buttons
+    dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items
     for row= 1, #data.proj_files do
       if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
