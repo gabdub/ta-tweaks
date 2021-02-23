@@ -113,7 +113,6 @@ function toolbar.dialog_tog_check_all()
   for k,v in pairs(check_val) do
     if not v then setchk=true break end --at least one is unchecked
   end
-  ui.statusbar_text= "setchk="..(setchk and "si" or "no")
   for k,v in pairs(check_val) do
     check_val[k]= setchk
     toolbar.selected(k, setchk, false, true)
