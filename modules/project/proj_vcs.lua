@@ -287,10 +287,15 @@ local function b_publish(bname)
   end
 end
 
+local function set_show_all_tit()
+  toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files", false)
+end
+
 local function b_show_all(bname)
   --toggle show all/changed files
   toolbar.selected("dlg-show-all", false, toolbar.dlg_filter_col2)
   toolbar.dlg_filter_col2= not toolbar.dlg_filter_col2
+  set_show_all_tit()
 end
 
 function Proj.open_vcs_dialog(row)
@@ -343,13 +348,14 @@ function Proj.open_vcs_dialog(row)
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
     local buttons= {
       --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
-      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 300, 95, 1, b_update, toolbar.DLGBUT.CLOSE},
-      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 400, 95, 1, b_publish, toolbar.DLGBUT.CLOSE},
-      {"dlg-show-all", "Show All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD}
+      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 250, 95, 1, b_update, toolbar.DLGBUT.CLOSE},
+      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 350, 95, 1, b_publish, toolbar.DLGBUT.CLOSE},
+      {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD},
+      {"dlg-mark-all", "Mark", "Mark/unmark all", 500, 95, 2, toolbar.dialog_tog_check_all, 0}
     }
     if gitbranch ~= "" then
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.BOLD}
-      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 200, 95, 1, b_gitstatus, toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 150, 95, 1, b_gitstatus, toolbar.DLGBUT.CLOSE}
     end
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items
@@ -375,6 +381,7 @@ function Proj.open_vcs_dialog(row)
     toolbar.dlg_select_ev= vcs_item_selected
     toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", dconfig)
     toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
+    set_show_all_tit()
     toolbar.enable("dlg-update",  enupd and (publish_folder ~= ""))
     toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
     toolbar.enable("dlg-branch", false)

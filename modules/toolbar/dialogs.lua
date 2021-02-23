@@ -107,6 +107,19 @@ end
 
 local check_val= {}
 
+function toolbar.dialog_tog_check_all()
+  --toggle un/check all
+  local setchk= false
+  for k,v in pairs(check_val) do
+    if not v then setchk=true break end --at least one is unchecked
+  end
+  ui.statusbar_text= "setchk="..(setchk and "si" or "no")
+  for k,v in pairs(check_val) do
+    check_val[k]= setchk
+    toolbar.selected(k, setchk, false, true)
+  end
+end
+
 local function chg_check(cmd) --check-box clicked
   check_val[cmd]= not check_val[cmd]
   toolbar.selected(cmd, check_val[cmd], false, true)
