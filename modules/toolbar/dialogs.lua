@@ -107,6 +107,24 @@ end
 
 local check_val= {}
 
+local function enable_buttons()
+  for i=1, #dialog_buttons do
+    local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+    local flg= bt[8]
+    if (flg & toolbar.DLGBUT.EN_OFF) ~= 0 then
+      toolbar.enable(bt[1], false)  --disabled
+    elseif (flg & toolbar.DLGBUT.EN_ITEMS) ~= 0 then
+      toolbar.enable(bt[1], (#idx_filtered > 0)) --enable when there is at least one item
+    elseif (flg & toolbar.DLGBUT.EN_MARK) ~= 0 then
+      local ena= false
+      for k,v in pairs(check_val) do
+        if v then ena=true break end --enable when something is checked
+      end
+      toolbar.enable(bt[1], ena)
+    end
+  end
+end
+
 function toolbar.dialog_tog_check_all()
   --toggle un/check all
   local setchk= false
@@ -115,13 +133,15 @@ function toolbar.dialog_tog_check_all()
   end
   for k,v in pairs(check_val) do
     check_val[k]= setchk
-    toolbar.selected(k, setchk, false, true)
+    toolbar.selected(k, setchk, false)
   end
+  enable_buttons()
 end
 
 local function chg_check(cmd) --check-box clicked
   check_val[cmd]= not check_val[cmd]
-  toolbar.selected(cmd, check_val[cmd], false, true)
+  toolbar.selected(cmd, check_val[cmd], false)
+  enable_buttons()
 end
 
 local function show_col_data(nrow, ncol, xcol, wcol)
@@ -186,6 +206,7 @@ local function load_data()
     toolbar.selected(ensure_it_vis, false, true)
   end
   update_preview()
+  enable_buttons()
 end
 
 local function update_filter()
@@ -245,9 +266,16 @@ local function db_pressed(bname)
   for i=1, #dialog_buttons do
     local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
     if bt[1] == bname then
+      local chkflist= {}  --list of checked items
+      for k,v in pairs(check_val) do
+        if v then
+          local itnum= toolbar.getnum_cmd(k)
+          chkflist[#chkflist+1]= dialog_list[itnum]
+        end
+      end
       local flg= bt[8]
       if (flg & toolbar.DLGBUT.CLOSE) ~= 0 then close_dialog() end  --close dialog
-      if bt[7] ~= nil then bt[7](bname) end --callback
+      if bt[7] ~= nil then bt[7](bname, chkflist) end --callback
       if (flg & (toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.RELOAD)) == toolbar.DLGBUT.RELOAD then load_data() end --reload-list
       break
     end

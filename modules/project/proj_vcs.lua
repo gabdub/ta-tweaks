@@ -201,88 +201,92 @@ local function run_gitcmd(cmd)
   if repo_folder ~= "" then ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n")) end
 end
 
-local function b_gitstatus(bname)
+local function b_gitstatus(bname, chkflist)
   run_gitcmd("git status -sb")
 end
 
-local function b_update(bname)
-  --Copy changes (O/D) to the destination folder
+local function conv_num(num, txt)
+  return ""..num.." "..txt..(num > 1 and "s" or "")
+end
+
+local function b_update(bname, chkflist)
+  --Copy changes (O/D) to the destination folder (only checked items)
   local numO= 0
   local numD= 0
   local fnames= ""
-  for i=1, #flist do
-    local le= flist[i][2]
+  for i=1, #chkflist do
+    local le= chkflist[i][2]
     if le == "O" then numO= numO+1 end
     if le == "D" then numD= numD+1 end
     if (le == "O" or le == "D") and (#fnames < 300) then
-      fnames= fnames..(#fnames == 0 and "" or "\n")..flist[i][1]
+      fnames= fnames..(#fnames == 0 and "" or "\n")..chkflist[i][1]
       if #fnames >= 300 then fnames= fnames.."\n..." end
     end
   end
   local txt
   if numO == 0 then
     if numD == 0 then Util.info("Nothing to update", "No files marked as 'O' or 'D' found") return end
-    txt= ""..numD.. " new file"..(numD > 1 and "s" or "")
+    txt= conv_num(numD, "new file")
   else
-    txt= ""..numO.. " modified file"..(numO > 1 and "s" or "")
+    txt= conv_num(numO, "modified file")
     if numD > 0 then
-      txt= txt.." and "..numD.. " new file"..(numD > 1 and "s" or "")
+      txt= txt.." and "..conv_num(numD, "new file")
     end
   end
   if Util.confirm("Update local folder", "Copy "..txt.." to "..vcs_item_base.. " ?", fnames) then
     local numok= 0
-    for i=1, #flist do
-      local le= flist[i][2]
+    for i=1, #chkflist do
+      local le= chkflist[i][2]
       if le == "O" or le == "D" then
-        local fname= flist[i][1]
+        local fname= chkflist[i][1]
         if Util.copy_file(publish_folder..fname, vcs_item_base..fname) then numok= numok+1 end --ORG => DEST
       end
     end
     if numok == (numO+numD) then
-      Util.info("Update local folder", ""..numok.. " files copied successfully")
+      Util.info("Update local folder", conv_num(numok, "file").." copied successfully")
     else
-      Util.info("Update local folder", "Warning:\nOnly "..numok.." of the "..(numO+numD).. " files were copied successfully")
+      Util.info("Update local folder", "Warning:\nOnly "..numok.." of the "..conv_num(numO+numD, "file").." were copied successfully")
     end
   end
 end
 
-local function b_publish(bname)
-  --Copy changes (M/A) to the destination folder
+local function b_publish(bname, chkflist)
+  --Copy changes (M/A) to the destination folder (only checked items)
   local numM= 0
   local numA= 0
   local fnames= ""
-  for i=1, #flist do
-    local le= flist[i][2]
+  for i=1, #chkflist do
+    local le= chkflist[i][2]
     if le == "M" then numM= numM+1 end
     if le == "A" then numA= numA+1 end
     if (le == "M" or le == "A") and (#fnames < 300) then
-      fnames= fnames..(#fnames == 0 and "" or "\n")..flist[i][1]
+      fnames= fnames..(#fnames == 0 and "" or "\n")..chkflist[i][1]
       if #fnames >= 300 then fnames= fnames.."\n..." end
     end
   end
   local txt
   if numM == 0 then
     if numA == 0 then Util.info("Nothing to publish", "No files marked as 'M' or 'A' found") return end
-    txt= ""..numA.. " new file"..(numA > 1 and "s" or "")
+    txt= conv_num(numA, "new file")
   else
-    txt= ""..numM.. " modified file"..(numM > 1 and "s" or "")
+    txt= conv_num(numM, "modified file")
     if numA > 0 then
-      txt= txt.." and "..numA.. " new file"..(numA > 1 and "s" or "")
+      txt= txt.." and "..conv_num(numA, "new file")
     end
   end
   if Util.confirm("Publish to folder", "Copy "..txt.." to "..publish_folder.. " ?", fnames) then
     local numok= 0
-    for i=1, #flist do
-      local le= flist[i][2]
+    for i=1, #chkflist do
+      local le= chkflist[i][2]
       if le == "M" or le == "A" then
-        local fname= flist[i][1]
+        local fname= chkflist[i][1]
         if Util.copy_file( vcs_item_base..fname,  publish_folder..fname) then numok= numok+1 end --ORG => DEST
       end
     end
     if numok == (numM+numA) then
-      Util.info("Publish to folder", ""..numok.. " files copied successfully")
+      ui.statusbar_text= conv_num(numok, "file").." copied successfully"
     else
-      Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..(numM+numA).. " files were copied successfully")
+      Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..conv_num(numM+numA, "file").." were copied successfully")
     end
   end
 end
@@ -291,11 +295,23 @@ local function set_show_all_tit()
   toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files", false)
 end
 
-local function b_show_all(bname)
+local function b_show_all(bname, chkflist)
   --toggle show all/changed files
   toolbar.selected("dlg-show-all", false, toolbar.dlg_filter_col2)
   toolbar.dlg_filter_col2= not toolbar.dlg_filter_col2
   set_show_all_tit()
+end
+
+local function cond_enable_button(buttons, bname, cond)
+  if not cond then
+    for i=1, #buttons do
+      local bt= buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      if bt[1] == bname then
+        bt[8]= bt[8] | toolbar.DLGBUT.EN_OFF
+        break
+      end
+    end
+  end
 end
 
 function Proj.open_vcs_dialog(row)
@@ -348,14 +364,15 @@ function Proj.open_vcs_dialog(row)
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
     local buttons= {
       --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
-      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 250, 95, 1, b_update, toolbar.DLGBUT.CLOSE},
-      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 350, 95, 1, b_publish, toolbar.DLGBUT.CLOSE},
+      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 250, 95, 1, b_update, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE},
+      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 350, 95, 1, b_publish, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE},
       {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD},
-      {"dlg-mark-all", "Mark", "Mark/unmark all", 500, 95, 2, toolbar.dialog_tog_check_all, 0}
+      {"dlg-mark-all", "Mark all", "Mark/unmark all", 500, 95, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.EN_ITEMS}
     }
     if gitbranch ~= "" then
-      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.BOLD}
-      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 150, 95, 1, b_gitstatus, toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF}
+      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 55, 0, 2, nil, 0}
+      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 150, 95, 1, b_gitstatus, 0}
     end
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items
@@ -376,15 +393,15 @@ function Proj.open_vcs_dialog(row)
         end
       end
     end
+    cond_enable_button(buttons, "dlg-update",  enupd and (publish_folder ~= ""))
+    cond_enable_button(buttons, "dlg-publish", enpub and (publish_folder ~= ""))
     --show folder files
     toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
     toolbar.create_dialog(Proj.VCS_LIST[vctrl[3]]..": "..vctrl[1], 600, 400, flist, "MIME", dconfig)
     toolbar.selected("dlg-show-all", false, not toolbar.dlg_filter_col2)
     set_show_all_tit()
-    toolbar.enable("dlg-update",  enupd and (publish_folder ~= ""))
-    toolbar.enable("dlg-publish", enpub and (publish_folder ~= ""))
-    toolbar.enable("dlg-branch", false)
     toolbar.show_dialog()
+    if toolbar.dlg_filter_col2 then toolbar.dialog_tog_check_all() end --mark all
   end
 end

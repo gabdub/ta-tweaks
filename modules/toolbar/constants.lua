@@ -211,9 +211,12 @@ toolbar.DLGBUT ={
 --dialog buttons flags
   CLOSE         = 0x00000001,   --close the dialog before calling the callback
   RELOAD        = 0x00000002,   --reload the list after calling the callback
-  LEFT          = 0x00000004,   --left align text
-  BOLD          = 0x00000008,   --bold text
-  DROPDOWN      = 0x00000010    --show a drop down arrow
+  LEFT          = 0x00000004,   --button: left align text
+  BOLD          = 0x00000008,   --button: bold text
+  DROPDOWN      = 0x00000010,   --button: show a drop down arrow
+  EN_OFF        = 0x00000020,   --button: disabled
+  EN_ITEMS      = 0x00000040,   --button: enable when there is at least one item
+  EN_MARK       = 0x00000080    --button: enable when something is checked
 }
 
 toolbar.DEFAULT_FONT= "(default)"
