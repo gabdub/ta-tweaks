@@ -3,6 +3,7 @@
 local Proj = Proj
 local Util = Util
 local data = Proj.data
+local last_open_row= 0
 
 function Proj.get_cmd_output(cmd, cwd, info)
   if cmd and cmd ~= "" then
@@ -190,6 +191,10 @@ local function get_vcs_file_status(file1, fname, vctrl)
   return "" --same
 end
 
+local function conv_num(num, txt)
+  return ""..num.." "..txt..(num > 1 and "s" or "")
+end
+
 --list files in this VCS folder/subfolders
 local flist= {}
 local publish_folder= ""
@@ -202,11 +207,17 @@ local function run_gitcmd(cmd)
 end
 
 local function b_gitstatus(bname, chkflist)
-  run_gitcmd("git status -sb")
+  run_gitcmd("git status -sb")  --Show git status
 end
 
-local function conv_num(num, txt)
-  return ""..num.." "..txt..(num > 1 and "s" or "")
+local function b_gitadd(bname, chkflist)
+  --Add files to index
+  if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(#chkflist, "file") .. " to the repository index?" ) then
+    for i=1, #chkflist do
+      run_gitcmd("git add ".. chkflist[i][1])  --add one file at the time
+    end
+  end
+  Proj.open_vcs_dialog(last_open_row) --reopen dialog
 end
 
 local function b_update(bname, chkflist)
@@ -295,6 +306,12 @@ local function set_show_all_tit()
   toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files", false)
 end
 
+local status_info= ""
+
+local function b_status_info(bname, chkflist)
+  ui.print(status_info)
+end
+
 local function b_show_all(bname, chkflist)
   --toggle show all/changed files
   toolbar.selected("dlg-show-all", false, toolbar.dlg_filter_col2)
@@ -305,7 +322,7 @@ end
 local function cond_enable_button(buttons, bname, cond)
   if not cond then
     for i=1, #buttons do
-      local bt= buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      local bt= buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       if bt[1] == bname then
         bt[8]= bt[8] | toolbar.DLGBUT.EN_OFF
         break
@@ -314,8 +331,18 @@ local function cond_enable_button(buttons, bname, cond)
   end
 end
 
+local function remove_trailing_(txt)
+  while #txt > 0 do
+    local lastch= string.sub(txt,-1) --remove "_" from the end
+    if lastch ~= "_" then break end
+    txt= string.sub(txt,1,string.len(txt)-1)
+  end
+  return txt
+end
+
 function Proj.open_vcs_dialog(row)
   --open a dialog with the project files that are in this VCS item folder/subfolders
+  last_open_row= row
   local idx= Proj.get_vcs_index(row)
   if idx then
     local vc_item_name= data.proj_rowinfo[row][1]
@@ -333,6 +360,73 @@ function Proj.open_vcs_dialog(row)
     if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
     if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
       --parse GIT/SVN changes
+      if vctype == Proj.VCS_GIT then
+        status_info= "GIT status options XY (X=index Y=working tree):\nM = modified\nA = added\nD = deleted\nR = renamed\nC = copied\nU = updated but unmerged\n? = untracked\n! = ignored"
+--GIT 2 letters status XY (X=index Y=working tree)
+--X          Y     Meaning
+------------------------------------------------
+--         [AMD]   not updated
+--M        [ MD]   updated in index
+--A        [ MD]   added to index
+--D                deleted from index
+--R        [ MD]   renamed in index
+--C        [ MD]   copied in index
+--[MARC]           index and work tree matches
+--[ MARC]     M    work tree changed since index
+--[ MARC]     D    deleted in work tree
+--[ D]        R    renamed in work tree
+--[ D]        C    copied in work tree
+--D           D    unmerged, both deleted
+--A           U    unmerged, added by us
+--U           D    unmerged, deleted by them
+--U           A    unmerged, added by them
+--D           U    unmerged, deleted by us
+--A           A    unmerged, both added
+--U           U    unmerged, both modified
+--?           ?    untracked
+--!           !    ignored
+------------------------------------------------
+      else
+        status_info= "SVN status options (1234567):\n1) ITEM: A = added, D = deleted, M =  modified, R = replaced\nC = conflict, X=external definition, I = ignored\n? = not in VC, ! = missing, ~ = different kind\n"..
+        "2) PROPERTIES: M = modified, C = conflict\n"..
+        "3) L = the working copy is LOCKED\n4) + = HISTORY scheduled\n5) S = parent switched\n6) K/O/T/B = file locked\n7) C = TREE CONFLICT"
+------------------------------------------------
+--1) The first column indicates that an item was added, deleted, or otherwise changed:
+-- ' ' No modifications.
+-- 'A' Item is scheduled for addition.
+-- 'D' Item is scheduled for deletion.
+-- 'M' Item has been modified.
+-- 'R' Item has been replaced in your working copy. This means the file was scheduled for deletion, and then a new file with the same name was scheduled for addition in its place.
+-- 'C' The contents (as opposed to the properties) of the item conflict with updates received from the repository.
+-- 'X' Item is present because of an externals definition.
+-- 'I' Item is being ignored (e.g., with the svn:ignore property).
+-- '?' Item is not under version control.
+-- '!' Item is missing (e.g., you moved or deleted it without using svn). This also indicates that a directory is incomplete (a checkout or update was interrupted).
+-- '~' Item is versioned as one kind of object (file, directory, link), but has been replaced by a different kind of object.
+--2) The second column tells the status of a file's or directory's properties:
+-- ' ' No modifications.
+-- 'M' Properties for this item have been modified.
+-- 'C' Properties for this item are in conflict with property updates received from the repository.
+--3) The third column is populated only if the working copy directory is locked (see the section called “Sometimes You Just Need to Clean Up”):
+-- ' ' Item is not locked.
+-- 'L' Item is locked.
+--4) The fourth column is populated only if the item is scheduled for addition-with-history:
+-- ' ' No history scheduled with commit.
+-- '+' History scheduled with commit.
+--5) The fifth column is populated only if the item is switched relative to its parent (see the section called “Traversing Branches”):
+-- ' ' Item is a child of its parent directory.
+-- 'S' Item is switched.
+--6) The sixth column is populated with lock information:
+-- ' ' When --show-updates (-u) is used, this means the file is not locked. If --show-updates (-u) is not used, this merely means that the file is not locked in this working copy.
+-- 'K' File is locked in this working copy.
+-- 'O' File is locked either by another user or in another working copy. This appears only when --show-updates (-u) is used.
+-- 'T' File was locked in this working copy, but the lock has been “stolen” and is invalid. The file is currently locked in the repository. This appears only when --show-updates (-u) is used.
+-- 'B' File was locked in this working copy, but the lock has been “broken” and is invalid. The file is no longer locked. This appears only when --show-updates (-u) is used.
+--7) The seventh column is populated only if the item is the victim of a tree conflict:
+-- ' ' Item is not the victim of a tree conflict.
+-- 'C' Item is the victim of a tree conflict.
+------------------------------------------------
+      end
       repo_changes= {}
       local stcmd= (vctype == Proj.VCS_GIT) and "git status -sb" or "svn status -q"
       if cwd == nil or cwd == "" then
@@ -340,20 +434,27 @@ function Proj.open_vcs_dialog(row)
       end
       repo_folder= cwd
       local rstat= string.gsub(Proj.get_cmd_output(stcmd, repo_folder, ""), '%\\', '/')
+      --GIT uses a 2 letter status / SVN uses a 7 letter status
+      local pattern= (vctype == Proj.VCS_GIT) and "(..)%s(.*)" or "(.......)%s(.*)"
       local readbranch= (vctype == Proj.VCS_GIT)
       for line in rstat:gmatch('[^\n]+') do
         if readbranch then
           readbranch= false
           gitbranch= string.match(line, '##%s*(.*)')
         else
-          --split "letter filename"
-          local lett, fn= string.match(line, '%s*(.-)%s(.*)')
-          if fn then repo_changes[ Util.str_trim(fn) ]= lett end
+          --split "status filename"
+          --lett= 2 letters status XY (X=index Y=working tree)
+          local lett, fn= string.match(line, pattern)
+          if lett ~= nil and fn ~= nil then
+            lett= remove_trailing_(string.gsub(lett, ' ', '_')) --make ' ' explicit + remove trailing "_"..
+            repo_changes[ Util.str_trim(fn) ]= lett
+          end
         end
       end
 
     elseif vctype == Proj.VCS_FOLDER then
-      publish_folder= pref or "" --folder??
+      publish_folder= pref or "" --a folder is required
+      status_info= "FOLDER status options:\nM = MODIFIED, NEWER local file\nO = modified, OLDER local file\nA = local file ADDED\nD = local file DELETED"
     end
 
     flist= {}
@@ -363,16 +464,18 @@ function Proj.open_vcs_dialog(row)
     dconfig.can_move= true  --allow to move
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
     local buttons= {
-      --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 250, 95, 1, b_update, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE},
       {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 350, 95, 1, b_publish, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE},
       {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD},
-      {"dlg-mark-all", "Mark all", "Mark/unmark all", 500, 95, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.EN_ITEMS}
+      {"dlg-status-info", "help-about", status_info, 500, 0, 2, b_status_info, toolbar.DLGBUT.ICON},
+      {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS}
     }
     if gitbranch ~= "" then
+      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 150, 95, 1, b_gitstatus, 0}
       buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF}
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 55, 0, 2, nil, 0}
-      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 150, 95, 1, b_gitstatus, 0}
+      buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 350, 95, 2, b_gitadd, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
     end
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items

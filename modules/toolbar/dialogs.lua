@@ -109,7 +109,7 @@ local check_val= {}
 
 local function enable_buttons()
   for i=1, #dialog_buttons do
-    local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
     local flg= bt[8]
     if (flg & toolbar.DLGBUT.EN_OFF) ~= 0 then
       toolbar.enable(bt[1], false)  --disabled
@@ -264,7 +264,7 @@ events_connect("popup_key", dialog_key_ev)
 
 local function db_pressed(bname)
   for i=1, #dialog_buttons do
-    local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
     if bt[1] == bname then
       local chkflist= {}  --list of checked items
       for k,v in pairs(check_val) do
@@ -420,15 +420,20 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
     for i=1, #dialog_buttons do
-      local bt= dialog_buttons[i] --1:bname, 2:text, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       toolbar.gotopos(bt[4], (bt[6]-1)*toolbar.cfg.barsize+2)
       toolbar.cfg.butsize= bt[5]
       local flg= bt[8]
       local leftalign= ((flg & toolbar.DLGBUT.LEFT) ~= 0)
       local boldtxt= ((flg & toolbar.DLGBUT.BOLD) ~= 0)
       local dropdown= ((flg & toolbar.DLGBUT.DROPDOWN) ~= 0)
-      --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-      toolbar.cmdtext(bt[2], db_pressed, bt[3], bt[1], true, dropdown, leftalign, boldtxt)
+      if (flg & toolbar.DLGBUT.ICON) ~= 0 then
+        --name,func,tooltip,icon,passname,base
+        toolbar.cmd(bt[1], db_pressed, bt[3], bt[2], true, 0)
+      else
+        --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
+        toolbar.cmdtext(bt[2], db_pressed, bt[3], bt[1], true, dropdown, leftalign, boldtxt)
+      end
     end
     toolbar.cfg.butsize= sw
   end

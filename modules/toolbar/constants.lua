@@ -216,7 +216,8 @@ toolbar.DLGBUT ={
   DROPDOWN      = 0x00000010,   --button: show a drop down arrow
   EN_OFF        = 0x00000020,   --button: disabled
   EN_ITEMS      = 0x00000040,   --button: enable when there is at least one item
-  EN_MARK       = 0x00000080    --button: enable when something is checked
+  EN_MARK       = 0x00000080,   --button: enable when something is checked
+  ICON          = 0x00000100    --button: text=icon name
 }
 
 toolbar.DEFAULT_FONT= "(default)"
