@@ -518,14 +518,14 @@ function Proj.open_vcs_dialog(row)
     if vctype == Proj.VCS_FOLDER then
       buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 1, b_update, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
       buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 300, 95, 1, b_publish, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.BOLD}
+      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 95, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT|toolbar.DLGBUT.BOLD}
 
     elseif vctype == Proj.VCS_GIT then
       local ena= (gitbranch ~= "") and 0 or toolbar.DLGBUT.EN_OFF
       buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.EN_OFF}
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Show git status", 55, 0, 1, b_gitstatus, ena}
 
-      buttons[#buttons+1]= {"dlg-git-pull", "Pull origin", "Pull current branch from origin", 4, 95, 2, b_gitpullorg, ena}
+      buttons[#buttons+1]= {"dlg-git-pull", "Pull origin", "Pull current branch from origin", 4, 105, 2, b_gitpullorg, ena}
 
       buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 190, 95, 2, b_gitadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
       buttons[#buttons+1]= {"dlg-git-commit", "Commit", "Commit changes to the repository", 290, 95, 2, b_gitcommit, ena|toolbar.DLGBUT.CLOSE}
