@@ -224,16 +224,6 @@ local function b_gitpushorg(bname, chkflist)
   Proj.open_vcs_dialog(last_open_row) --reopen dialog
 end
 
-local function b_gitadd(bname, chkflist)
-  --Add files to index
-  if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(#chkflist, "file") .. " to the repository index?" ) then
-    for i=1, #chkflist do
-      run_gitcmd("git add ".. chkflist[i][1])  --add one file at the time
-    end
-  end
-  Proj.open_vcs_dialog(last_open_row) --reopen dialog
-end
-
 local function b_gitcommit(bname, chkflist)
   --Commit changes to the repository
   if Util.confirm( "GIT COMMIT", "Do you want to commit the added changes?" ) then
@@ -248,6 +238,8 @@ local function b_gitcommit(bname, chkflist)
         msg= string.gsub(msg, '\"', "\'") --use single quotes
         run_gitcmd('git commit -m \"' ..msg..'\"')
         ok= true
+        b_gitpushorg(bname, chkflist) --OK: ask to push
+        return
       end
     end
     if not ok then
@@ -255,6 +247,18 @@ local function b_gitcommit(bname, chkflist)
     end
   end
   Proj.open_vcs_dialog(last_open_row) --reopen dialog
+end
+
+local function b_gitadd(bname, chkflist)
+  --Add files to index
+  if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(#chkflist, "file") .. " to the repository index?" ) then
+    for i=1, #chkflist do
+      run_gitcmd("git add ".. chkflist[i][1])  --add one file at the time
+    end
+    b_gitcommit(bname, chkflist)  --OK: ask to commit
+  else
+    Proj.open_vcs_dialog(last_open_row) --reopen dialog
+  end
 end
 
 local function b_update(bname, chkflist)
