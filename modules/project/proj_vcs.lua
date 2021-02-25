@@ -529,7 +529,7 @@ function Proj.open_vcs_dialog(row)
 
       buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 190, 95, 2, b_gitadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
       buttons[#buttons+1]= {"dlg-git-commit", "Commit", "Commit changes to the repository", 290, 95, 2, b_gitcommit, ena|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-git-push", "Push origin", "Push current branch to origin", 390, 95, 2, b_gitpushorg, ena}
+      buttons[#buttons+1]= {"dlg-git-push", "Push origin", "Push current branch to origin\n=Requires stored credentials=", 390, 95, 2, b_gitpushorg, ena}
 
     elseif vctype == Proj.VCS_SVN then
       local ena= (repo_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
