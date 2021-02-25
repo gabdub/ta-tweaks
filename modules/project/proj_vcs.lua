@@ -210,11 +210,48 @@ local function b_gitstatus(bname, chkflist)
   run_gitcmd("git status -sb")  --Show git status
 end
 
+local function b_gitpullorg(bname, chkflist)
+  if Util.confirm( "GIT PULL", "Do you want to PULL the current branch ("..gitbranch.. ") from the 'origin' repository?" ) then
+    run_gitcmd("git pull origin "..gitbranch)  --Pull current branch from origin
+  end
+  Proj.open_vcs_dialog(last_open_row) --reopen dialog
+end
+
+local function b_gitpushorg(bname, chkflist)
+  if Util.confirm( "GIT PUSH", "Do you want to PUSH the current branch ("..gitbranch.. ") to the 'origin' repository?" ) then
+    run_gitcmd("git push origin "..gitbranch)  --Push current branch to origin
+  end
+  Proj.open_vcs_dialog(last_open_row) --reopen dialog
+end
+
 local function b_gitadd(bname, chkflist)
   --Add files to index
   if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(#chkflist, "file") .. " to the repository index?" ) then
     for i=1, #chkflist do
       run_gitcmd("git add ".. chkflist[i][1])  --add one file at the time
+    end
+  end
+  Proj.open_vcs_dialog(last_open_row) --reopen dialog
+end
+
+local function b_gitcommit(bname, chkflist)
+  --Commit changes to the repository
+  if Util.confirm( "GIT COMMIT", "Do you want to commit the added changes?" ) then
+    local ok= false
+    local r,msg= ui.dialogs.inputbox{title = 'Commit message', width = 400, text = ""}
+    if r == 1 then
+      if type(msg) == 'table' then
+        msg= table.concat(msg, ' ')
+      end
+      msg= Util.str_trim(msg)
+      if msg ~= "" then
+        msg= string.gsub(msg, '\"', "\'") --use single quotes
+        run_gitcmd('git commit -m \"' ..msg..'\"')
+        ok= true
+      end
+    end
+    if not ok then
+      ui.print("Commit cancelled!")
     end
   end
   Proj.open_vcs_dialog(last_open_row) --reopen dialog
@@ -465,17 +502,26 @@ function Proj.open_vcs_dialog(row)
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
     local buttons= {
       --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
-      {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 250, 95, 1, b_update, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE},
-      {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 350, 95, 1, b_publish, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE},
       {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD},
       {"dlg-status-info", "help-about", status_info, 500, 0, 2, b_status_info, toolbar.DLGBUT.ICON},
       {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS}
     }
-    if gitbranch ~= "" then
-      buttons[#buttons+1]= {"dlg-status", "Status", "Show git status", 150, 95, 1, b_gitstatus, 0}
-      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF}
-      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Git branch", 55, 0, 2, nil, 0}
-      buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 350, 95, 2, b_gitadd, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+    if vctype == Proj.VCS_FOLDER then
+      buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 1, b_update, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 300, 95, 1, b_publish, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.BOLD}
+    elseif vctype == Proj.VCS_GIT then
+      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.EN_OFF}
+      local ena= (gitbranch ~= "") and 0 or toolbar.DLGBUT.EN_OFF
+      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Show git status", 55, 0, 1, b_gitstatus, ena}
+
+      buttons[#buttons+1]= {"dlg-git-pull", "Pull origin", "Pull current branch from origin", 4, 95, 2, b_gitpullorg, ena}
+
+      buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 190, 95, 2, b_gitadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-git-commit", "Commit", "Commit changes to the repository", 290, 95, 2, b_gitcommit, ena|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-git-push", "Push origin", "Push current branch to origin", 390, 95, 2, b_gitpushorg, ena}
+    elseif vctype == Proj.VCS_SVN then
+
     end
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items

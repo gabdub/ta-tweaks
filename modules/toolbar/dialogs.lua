@@ -167,6 +167,7 @@ local function load_data()
   local n= 0
   idx_sel_i= 0
   idx_filtered= {}
+  check_val= {}
   local i
   local icon= dialog_data_icon
   local isMime= (dialog_data_icon == "MIME")
