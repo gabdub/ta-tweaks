@@ -15,7 +15,7 @@ local vfp2= 2
 local synchronizing= false
 local marking= false
 Proj.is_compare_on= false
-Proj.is_svn_on= false
+Proj.is_vc_chgs_on= false
 
 local function clear_buf_marks(b, clrflags)
   if b then
@@ -69,7 +69,7 @@ end
 local function diff_stop()
   if Proj.is_compare_on then
     Proj.is_compare_on= false
-    Proj.is_svn_on= false
+    Proj.is_vc_chgs_on= false
     clear_marked_changes(true)
     plugs.close_results()
     ui.statusbar_text= "File compare: OFF"
@@ -213,7 +213,7 @@ end
 ---- TA EVENTS ----
 --TA-EVENT QUIT
 function Proj.stop_compare()
-  local svn_on= Proj.is_svn_on
+  local svn_on= Proj.is_vc_chgs_on
   diff_stop() --end file compare
   if svn_on then
     --close right file (svn HEAD)
@@ -283,7 +283,7 @@ end
 --ACTION: toggle_filediff
 -- Highlight differences between files in left (NEW) / right (OLD) panel
 function Proj.compare_status()
-  return ((Proj.is_compare_on and not Proj.is_svn_on) and 1 or 2) --check
+  return ((Proj.is_compare_on and not Proj.is_vc_chgs_on) and 1 or 2) --check
 end
 function Proj.diff_start(silent)
   if Proj.is_compare_on then diff_stop() return end
@@ -318,12 +318,12 @@ end
 --ACTION: vc_changes
 --Version control SVN/GIT/FOLDER changes
 function Proj.vc_changes_status()
-  return (Proj.is_svn_on and 1 or 2) --check
+  return (Proj.is_vc_chgs_on and 1 or 2) --check
 end
 function Proj.vc_changes()
   Proj.goto_filesview(Proj.FILEPANEL_LEFT)
   local orgbuf= buffer
-  if Proj.is_svn_on then
+  if Proj.is_vc_chgs_on then
     diff_stop() --clear marks
     --close right file (svn HEAD)
     Proj.goto_filesview(Proj.FILEPANEL_RIGHT)
@@ -342,7 +342,7 @@ function Proj.vc_changes()
     --get version control params for filename
     local verctrl, cwd, url= Proj.get_versioncontrol_url(orgfile)
     if url then
-      Proj.is_svn_on= true
+      Proj.is_vc_chgs_on= true
       local enc= buffer.encoding     --keep encoding
       local lex= buffer:get_lexer()  --keep lexer
       local eol= buffer.eol_mode     --keep EOL

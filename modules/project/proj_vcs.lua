@@ -3,7 +3,7 @@
 local Proj = Proj
 local Util = Util
 local data = Proj.data
-local last_open_row= 0
+local last_open_idx= 1
 
 function Proj.get_cmd_output(cmd, cwd, info)
   if cmd and cmd ~= "" then
@@ -214,14 +214,14 @@ local function b_gitpullorg(bname, chkflist)
   if Util.confirm( "GIT PULL", "Do you want to PULL the current branch ("..gitbranch.. ") from the 'origin' repository?" ) then
     run_gitcmd("git pull origin "..gitbranch)  --Pull current branch from origin
   end
-  Proj.open_vcs_dialog(last_open_row) --reopen dialog
+  Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
 local function b_gitpushorg(bname, chkflist)
   if Util.confirm( "GIT PUSH", "Do you want to PUSH the current branch ("..gitbranch.. ") to the 'origin' repository?" ) then
     run_gitcmd("git push origin "..gitbranch)  --Push current branch to origin
   end
-  Proj.open_vcs_dialog(last_open_row) --reopen dialog
+  Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
 local function b_gitcommit(bname, chkflist)
@@ -246,7 +246,7 @@ local function b_gitcommit(bname, chkflist)
       ui.print("Commit cancelled!")
     end
   end
-  Proj.open_vcs_dialog(last_open_row) --reopen dialog
+  Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
 local function b_gitadd(bname, chkflist)
@@ -257,7 +257,7 @@ local function b_gitadd(bname, chkflist)
     end
     b_gitcommit(bname, chkflist)  --OK: ask to commit
   else
-    Proj.open_vcs_dialog(last_open_row) --reopen dialog
+    Proj.reopen_vcs_control_panel() --reopen dialog
   end
 end
 
@@ -388,12 +388,27 @@ end
 
 function Proj.open_vcs_dialog(row)
   --open a dialog with the project files that are in this VCS item folder/subfolders
-  last_open_row= row
-  local idx= Proj.get_vcs_index(row)
-  if idx then
-    local vc_item_name= data.proj_rowinfo[row][1]
+  Proj.vcs_control_panel(Proj.get_vcs_index(row))
+end
+
+function Proj.reopen_vcs_control_panel()
+  if last_open_idx < 1 or last_open_idx > #data.proj_vcontrol then
+    last_open_idx= 1
+  end
+  Proj.vcs_control_panel(last_open_idx)
+end
+
+function Proj.open_next_vcs_control_panel()
+  last_open_idx= last_open_idx+1
+  Proj.reopen_vcs_control_panel()
+end
+
+function Proj.vcs_control_panel(idx)
+  last_open_idx= idx
+  if idx and idx > 0 and idx <= #data.proj_vcontrol then
     local vctrl= data.proj_vcontrol[idx] --{path, param, vc_type, row}
     local vctype= vctrl[3]
+    local vc_item_name= data.proj_rowinfo[vctrl[4]][1]
     ui.statusbar_text= Proj.VCS_LIST[vctype] ..": "..vc_item_name
     vcs_item_base= string.gsub(vctrl[1], '%\\', '/')
     local fmt= '^'..Util.escape_match(vcs_item_base)..'(.*)'
@@ -509,6 +524,7 @@ function Proj.open_vcs_dialog(row)
     local enpub= false
     dconfig.can_move= true  --allow to move
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
+    if #data.proj_vcontrol > 0 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end
     local buttons= {
       --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD},
@@ -565,4 +581,12 @@ function Proj.open_vcs_dialog(row)
     toolbar.show_dialog()
     if toolbar.dlg_filter_col2 then toolbar.dialog_tog_check_all() end --mark all
   end
+end
+
+--ACTION: vc_controlpanel
+--Version control control panel
+function Proj.vc_controlpanel_status()
+  local ena= 8 --disable
+  if data.is_open and data.proj_vcontrol and #data.proj_vcontrol > 0 then ena=0 end
+  return ena
 end

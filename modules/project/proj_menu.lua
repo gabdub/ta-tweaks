@@ -120,11 +120,13 @@ if actions then
 
   actions.add("show_filevcinfo", "VC: show file info", Proj.show_filevcinfo, Util.KEY_SHIFT.."f5")
 
+  actions.add("vc_controlpanel", "VC: control panel", Proj.reopen_vcs_control_panel, Util.KEY_ALT.."f5", "document-open", Proj.vc_controlpanel_status)
+
   --add PROJECT menu (before Help)
   table.insert( actions.menubar, #actions.menubar,
     {title = Util.PROJECTMENU_TEXT,
      {"new_project","open_project","recent_project","close_project","toggle_editproj",SEPARATOR,
-      "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
+      "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo","vc_controlpanel",SEPARATOR,
       "save_position","next_position","prev_position","clear_position",SEPARATOR,
       "addcurrentfile_proj","addallfiles_proj","adddirfiles_proj"}
     })
@@ -179,7 +181,7 @@ if actions then
         {
           title = Util.PROJECTMENU_TEXT,
           {"addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-           "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
+           "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo","vc_controlpanel",SEPARATOR,
            "save_position","next_position","prev_position"}
         },
         {SEPARATOR,"showin_rightpanel"}
@@ -210,7 +212,7 @@ if actions then
         {
           title = Util.PROJECTMENU_TEXT,
           {"addcurrentfile_proj","addallfiles_proj","adddirfiles_proj",SEPARATOR,
-           "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo",SEPARATOR,
+           "search_project","goto_tag","toggle_filediff","vc_changes","show_filevcinfo","vc_controlpanel",SEPARATOR,
            "save_position","next_position","prev_position",SEPARATOR,
            "toggle_viewproj"}
         },

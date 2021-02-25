@@ -326,22 +326,32 @@ local function end_dlg_drag(cmd)
   end
 end
 
+local next_but_cb
+local function next_dlg()
+  close_dialog()
+  if next_but_cb then next_but_cb() end
+end
+
 function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
   if config then
     dialog_cols= config["columns"]  --columns width (up to 3 for now...)
+    if dialog_cols == nil then dialog_cols= {} end
     dialog_buttons= config["buttons"] --add this buttons to the dialog
+    if dialog_buttons == nil then dialog_buttons= {} end
     dlg_can_move= config.can_move or false --the dialog can be moved
     dialog_single_click= config.singleclick or false --choose and close on single click (combo style)
     dialog_font_preview= config.fontpreview or false --show a font preview of the selected item (items are font names)
+    next_but_cb= config.next_button_cb --show a next button in the title bar (this is the callback)
   else
     dialog_cols= {}
     dialog_buttons= {}
     dlg_can_move= false
     dialog_single_click= false
     dialog_font_preview= false
+    next_but_cb= nil
   end
   dialog_data_icon= dataicon
 
@@ -372,7 +382,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   if dlg_can_move and toolbar.setmovepopup ~= nil then
     toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
-    toolbar.cfg.butsize= dialog_w-toolbar.cfg.butsize-5
+    local nbut= next_but_cb and 2 or 1
+    toolbar.cfg.butsize= dialog_w-3-(toolbar.cfg.butsize+2)*nbut
     toolbar.gotopos(1, 2) --title bar
     --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
     toolbar.cmdtext(title, end_dlg_drag, "", "dlg-caption", true, false, true, true)
@@ -388,6 +399,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.listtb_y= 2
   toolbar.list_cmdright= 2
   toolbar.list_addbutton("close_dlg", "Close", close_dialog, "window-close")
+  if next_but_cb then toolbar.list_addbutton("next_dlg", "Next", next_dlg, "go-next") end
 
   if dialog_font_preview then
     local prevtxt= "0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz~{}[]"
