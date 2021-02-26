@@ -251,9 +251,20 @@ end
 
 local function b_gitadd(bname, chkflist)
   --Add files to index
-  if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(#chkflist, "file") .. " to the repository index?" ) then
+  local numA= 0
+  for i=1, #chkflist do
+    local le= chkflist[i][2]
+    if #le == 2 then numA= numA+1 end --count only if status == "*Y" (Y=> changed in the working copy)
+  end
+  if numA == 0 then
+    Util.info("Nothing to add", "You need to choose some modified files in the working copy")
+    Proj.reopen_vcs_control_panel() --reopen dialog
+    return
+  end
+  if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository index?" ) then
     for i=1, #chkflist do
-      run_gitcmd("git add ".. chkflist[i][1])  --add one file at the time
+      local le= chkflist[i][2]
+      if #le == 2 then run_gitcmd("git add ".. chkflist[i][1]) end  --add one file at the time
     end
     b_gitcommit(bname, chkflist)  --OK: ask to commit
   else
@@ -282,7 +293,11 @@ local function b_update(bname, chkflist)
   end
   local txt
   if numO == 0 then
-    if numD == 0 then Util.info("Nothing to update", "No files marked as 'O' or 'D' found") return end
+    if numD == 0 then
+      Util.info("Nothing to update", "No files marked as 'O' or 'D' found")
+      Proj.reopen_vcs_control_panel() --reopen dialog
+      return
+    end
     txt= conv_num(numD, "new file")
   else
     txt= conv_num(numO, "modified file")
@@ -324,7 +339,11 @@ local function b_publish(bname, chkflist)
   end
   local txt
   if numM == 0 then
-    if numA == 0 then Util.info("Nothing to publish", "No files marked as 'M' or 'A' found") return end
+    if numA == 0 then
+      Util.info("Nothing to publish", "No files marked as 'M' or 'A' found")
+      Proj.reopen_vcs_control_panel() --reopen dialog
+      return
+    end
     txt= conv_num(numA, "new file")
   else
     txt= conv_num(numM, "modified file")
