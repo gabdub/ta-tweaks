@@ -524,6 +524,8 @@ function Proj.vcs_control_panel(idx)
     local dconfig= {}
     local enupd= false
     local enpub= false
+    local enadd= false
+    local encomm= false
     dconfig.can_move= true  --allow to move
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
     if #data.proj_vcontrol > 1 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end
@@ -565,8 +567,11 @@ function Proj.vcs_control_panel(idx)
           if col2 ~= "" then
             toolbar.dlg_filter_col2= true --only show items with something in col2
             if vctype == Proj.VCS_FOLDER then
-              enupd= ((col2=='O') or (col2=='D'))
-              enpub= ((col2=='M') or (col2=='A'))
+              enupd= enupd or ((col2=='O') or (col2=='D'))
+              enpub= enpub or ((col2=='M') or (col2=='A'))
+            elseif vctype == Proj.VCS_GIT then
+              enadd= enadd or (#col2 == 2)
+              encomm= encomm or (#col2 == 1) or (string.sub(col2,1,1) ~= '_')
             end
           end
         end
@@ -574,6 +579,8 @@ function Proj.vcs_control_panel(idx)
     end
     cond_enable_button(buttons, "dlg-update",  enupd and (publish_folder ~= ""))
     cond_enable_button(buttons, "dlg-publish", enpub and (publish_folder ~= ""))
+    cond_enable_button(buttons, "dlg-git-add", enadd)
+    cond_enable_button(buttons, "dlg-git-commit", encomm)
     --show folder files
     toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
