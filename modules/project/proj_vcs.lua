@@ -305,6 +305,7 @@ local function b_update(bname, chkflist)
       Util.info("Update local folder", "Warning:\nOnly "..numok.." of the "..conv_num(numO+numD, "file").." were copied successfully")
     end
   end
+  Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
 local function b_publish(bname, chkflist)
@@ -346,6 +347,7 @@ local function b_publish(bname, chkflist)
       Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..conv_num(numM+numA, "file").." were copied successfully")
     end
   end
+  Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
 local function set_show_all_tit()
@@ -524,7 +526,7 @@ function Proj.vcs_control_panel(idx)
     local enpub= false
     dconfig.can_move= true  --allow to move
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
-    if #data.proj_vcontrol > 0 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end
+    if #data.proj_vcontrol > 1 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end
     local buttons= {
       --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
       {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD},
