@@ -217,7 +217,8 @@ toolbar.DLGBUT ={
   EN_OFF        = 0x00000020,   --button: disabled
   EN_ITEMS      = 0x00000040,   --button: enable when there is at least one item
   EN_MARK       = 0x00000080,   --button: enable when something is checked
-  ICON          = 0x00000100    --button: text=icon name
+  ICON          = 0x00000100,   --button: text=icon name
+  KEEP_MARKS    = 0x00000200    --try to keep checks when reloading
 }
 
 toolbar.DEFAULT_FONT= "(default)"

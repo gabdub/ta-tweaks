@@ -157,7 +157,13 @@ local function show_col_data(nrow, ncol, xcol, wcol)
   end
 end
 
-local function load_data()
+local function load_data(keep_marks)
+  local chknum= {}    --save checks
+  if keep_marks then
+    for k,v in pairs(check_val) do
+      if v then chknum[#chknum+1]= k end
+    end
+  end
   --remove all items
   toolbar.listtb_y= 1
   toolbar.listright= dialog_w-3
@@ -206,6 +212,12 @@ local function load_data()
     ensure_it_vis="it#"..i
     toolbar.selected(ensure_it_vis, false, true)
   end
+  if keep_marks then --try to keep checks
+    for i=1,#chknum do
+      local k= chknum[i]
+      if check_val[k] ~= nil then chg_check(k) end
+    end
+  end
   update_preview()
   enable_buttons()
 end
@@ -220,6 +232,7 @@ local function update_filter()
 end
 
 local function filter_key(keycode)
+  local afltr= filter
   if keycode >= 32 and keycode <= 126 then --ascii
     filter= filter .. string.char(keycode)
   elseif keycode == toolbar.KEY.BACKSPACE then --remove last letter
@@ -227,8 +240,10 @@ local function filter_key(keycode)
   elseif keycode == toolbar.KEY.DELETE then --clear
     filter= ""
   end
-  update_filter()
-  load_data()
+  if afltr ~= filter then
+    update_filter()
+    load_data( true ) --try to keep marks
+  end
 end
 
 local function translate_keypad_codes(keycode)
@@ -277,7 +292,9 @@ local function db_pressed(bname)
       local flg= bt[8]
       if (flg & toolbar.DLGBUT.CLOSE) ~= 0 then close_dialog() end  --close dialog
       if bt[7] ~= nil then bt[7](bname, chkflist) end --callback
-      if (flg & (toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.RELOAD)) == toolbar.DLGBUT.RELOAD then load_data() end --reload-list
+      if (flg & (toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.RELOAD)) == toolbar.DLGBUT.RELOAD then
+        load_data( (flg & toolbar.DLGBUT.KEEP_MARKS) ~= 0 ) --reload-list
+      end
       break
     end
   end
@@ -454,7 +471,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   --items group: full width + items height w/scroll
   itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, false)
   toolbar.setdefaulttextfont()
-  load_data()
+  load_data( false )
 end
 
 function toolbar.show_dialog()
