@@ -199,6 +199,7 @@ end
 local flist= {}
 local publish_folder= ""
 local gitbranch= ""
+local gitremote= ""
 local repo_folder= ""
 
 local function run_gitcmd(cmd)
@@ -211,15 +212,19 @@ local function b_gitstatus(bname, chkflist)
 end
 
 local function b_gitpullorg(bname, chkflist)
-  if Util.confirm( "GIT PULL", "Do you want to PULL the current branch ("..gitbranch.. ") from the 'origin' repository?" ) then
-    run_gitcmd("git pull origin "..gitbranch)  --Pull current branch from origin
+  if gitremote ~= "" then
+    if Util.confirm( "GIT PULL", "Do you want to PULL the current branch ("..gitbranch.. ") from repository: "..gitremote.." ?" ) then
+      run_gitcmd("git pull "..gitremote.." "..gitbranch)  --Pull current branch from origin
+    end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
 local function b_gitpushorg(bname, chkflist)
-  if Util.confirm( "GIT PUSH", "Do you want to PUSH the current branch ("..gitbranch.. ") to the 'origin' repository?" ) then
-    run_gitcmd("git push origin "..gitbranch)  --Push current branch to origin
+  if gitremote ~= "" then
+    if Util.confirm( "GIT PUSH", "Do you want to PUSH the current branch ("..gitbranch.. ") to repository: "..gitremote.." ?" ) then
+      run_gitcmd("git push "..gitremote.." "..gitbranch)  --Push current branch to origin
+    end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog
 end
@@ -436,6 +441,7 @@ function Proj.vcs_control_panel(idx)
 
     publish_folder= ""
     gitbranch= ""
+    gitremote= ""
     repo_folder= ""
     local pref, cwd
     local param= vctrl[2] --param
@@ -510,27 +516,25 @@ function Proj.vcs_control_panel(idx)
 ------------------------------------------------
       end
       repo_changes= {}
-      local stcmd= (vctype == Proj.VCS_GIT) and "git status -sb" or "svn status -q"
+      local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status -q"
       if cwd == nil or cwd == "" then
         if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
       end
       repo_folder= cwd
+      if vctype == Proj.VCS_GIT then
+        gitbranch= Util.str_trim(Proj.get_cmd_output("git branch --show-current", repo_folder, ""))
+        gitremote= Util.str_trim(Proj.get_cmd_output("git remote", repo_folder, ""))
+      end
       local rstat= string.gsub(Proj.get_cmd_output(stcmd, repo_folder, ""), '%\\', '/')
       --GIT uses a 2 letter status / SVN uses a 7 letter status
       local pattern= (vctype == Proj.VCS_GIT) and "(..)%s(.*)" or "(.......)%s(.*)"
-      local readbranch= (vctype == Proj.VCS_GIT)
       for line in rstat:gmatch('[^\n]+') do
-        if readbranch then
-          readbranch= false
-          gitbranch= string.match(line, '##%s*(.*)')
-        else
-          --split "status filename"
-          --lett= 2 letters status XY (X=index Y=working tree)
-          local lett, fn= string.match(line, pattern)
-          if lett ~= nil and fn ~= nil then
-            lett= remove_trailing_(string.gsub(lett, ' ', '_')) --make ' ' explicit + remove trailing "_"..
-            repo_changes[ Util.str_trim(fn) ]= lett
-          end
+        --split "status filename"
+        --lett= 2 letters status XY (X=index Y=working tree)
+        local lett, fn= string.match(line, pattern)
+        if lett ~= nil and fn ~= nil then
+          lett= remove_trailing_(string.gsub(lett, ' ', '_')) --make ' ' explicit + remove trailing "_"..
+          repo_changes[ Util.str_trim(fn) ]= lett
         end
       end
 
@@ -561,14 +565,16 @@ function Proj.vcs_control_panel(idx)
 
     elseif vctype == Proj.VCS_GIT then
       local ena= (gitbranch ~= "") and 0 or toolbar.DLGBUT.EN_OFF
+      local enaRem= (ena and gitremote ~= "") and 0 or toolbar.DLGBUT.EN_OFF
+
       buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.EN_OFF}
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Show git status", 55, 0, 1, b_gitstatus, ena}
 
-      buttons[#buttons+1]= {"dlg-git-pull", "Pull origin", "Pull current branch from origin", 4, 105, 2, b_gitpullorg, ena}
+      buttons[#buttons+1]= {"dlg-git-pull", "Pull "..gitremote, "Pull current branch from "..gitremote, 4, 105, 2, b_gitpullorg, enaRem}
 
       buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 190, 95, 2, b_gitadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
       buttons[#buttons+1]= {"dlg-git-commit", "Commit", "Commit changes to the repository", 290, 95, 2, b_gitcommit, ena|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-git-push", "Push origin", "Push current branch to origin\n=Requires stored credentials=", 390, 95, 2, b_gitpushorg, ena}
+      buttons[#buttons+1]= {"dlg-git-push", "Push "..gitremote, "Push current branch to "..gitremote.."\n=Requires stored credentials=", 390, 95, 2, b_gitpushorg, enaRem}
 
     elseif vctype == Proj.VCS_SVN then
       local ena= (repo_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
