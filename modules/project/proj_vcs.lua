@@ -27,13 +27,12 @@ function Proj.get_vc_param_newproj(rootdir, path)
   local vc_dir, vc_workdir, vc_param
   if not rootdir then
     rootdir=''  --relative to project file
-    vc_dir= path --with file separator
-    vc_workdir= Util.remove_pathsep_end(vc_dir) --without file separator
+    vc_dir= Util.ensure_pathsep_end(path) --with file separator
   else
-    vc_workdir= rootdir --without file separator
-    rootdir= rootdir .. Util.PATH_SEP
+    rootdir= Util.ensure_pathsep_end(rootdir)
     vc_dir= rootdir --with file separator
   end
+  vc_workdir= Util.remove_pathsep_end(vc_dir) --without file separator
   --check for ".git"/".svn" folders
   if Util.dir_exists(vc_dir..".git") then
     if Util.confirm("GIT support", "The project folder contains a GIT repository", "Do you want to add it to the project?") then
@@ -76,9 +75,9 @@ function Proj.get_filevcinfo(fname)
       post= "SVN"
     elseif verctrl == Proj.VCS_GIT and url ~= "" then
       info= fname..'\nGIT: '..url
-      cmd= "git status -sb "..url
+      cmd= 'git status -sb \"'..url..'\"'
       pre2= "\n--- Last 2 commits ----"
-      cmd2= "git log -n2 "..url
+      cmd2= 'git log -n2 \"'..url..'\"'
     elseif verctrl == Proj.VCS_FOLDER then
       local dm1= lfs.attributes(fname, 'modification')
       local sz1= lfs.attributes(fname, 'size')
@@ -269,7 +268,7 @@ local function b_gitadd(bname, chkflist)
   if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository index?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if #le == 2 then run_gitcmd("git add ".. chkflist[i][1]) end  --add one file at the time
+      if #le == 2 then run_gitcmd('git add \"'.. chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_gitcommit(bname, chkflist)  --OK: ask to commit
   else
@@ -534,7 +533,7 @@ function Proj.vcs_control_panel(idx)
         local lett, fn= string.match(line, pattern)
         if lett ~= nil and fn ~= nil then
           lett= remove_trailing_(string.gsub(lett, ' ', '_')) --make ' ' explicit + remove trailing "_"..
-          repo_changes[ Util.str_trim(fn) ]= lett
+          repo_changes[ Util.remove_quotes(Util.str_trim(fn)) ]= lett
         end
       end
 

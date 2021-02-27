@@ -153,7 +153,7 @@ if toolbar then
         local pa= Util.remove_pathsep_end(file_or_folder)
         if pa == file_or_folder then --file
           local pa2,fa,ea = Util.splitfilename(file_or_folder)
-          if not Util.is_fsroot(pa2) then pa= Util.remove_pathsep_end(pa2) end
+          pa= Util.remove_pathsep_end(pa2)
         end
         Util.os_open_file(pa)
       end

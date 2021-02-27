@@ -97,7 +97,7 @@ if toolbar then
   actions.add("open_filebrowser", 'Open', act_open_filebrowser)
 
   local function set_browsedir(folder, dontrefesh)
-    browse_dir= folder
+    browse_dir= Util.remove_pathsep_end(folder)
     openfolders= browse_hist_folders[browse_dir]  --keep previously opened subfolders
     if not openfolders then openfolders= {} end
     if dontrefesh == nil or dontrefesh == false then act_browse_refresh() end
@@ -105,7 +105,7 @@ if toolbar then
 
   local function set_filepath_as_brwdir(fname, dontrefesh)
     local pa,fa,ea = Util.splitfilename(fname)
-    if not Util.is_fsroot(pa) then set_browsedir(Util.remove_pathsep_end(pa), dontrefesh) else set_browsedir(pa, dontrefesh) end
+    set_browsedir(pa, dontrefesh)
   end
 
   local function set_file_or_folder_as_brwdir(file_or_folder, dontrefesh)
@@ -121,7 +121,7 @@ if toolbar then
       local pa= Util.remove_pathsep_end(file_or_folder)
       if pa == file_or_folder then --file
         local pa2,fa,ea = Util.splitfilename(file_or_folder)
-        if not Util.is_fsroot(pa2) then pa= Util.remove_pathsep_end(pa2) end
+        pa= Util.remove_pathsep_end(pa2)
       end
       Util.os_open_file(pa)
     end
@@ -188,7 +188,7 @@ if toolbar then
 
   --ACTION: browse project base folder
   local function brw_projfolder()
-    if Proj and Proj.data.is_open then set_browsedir(Util.remove_pathsep_end(Proj.data.proj_grp_path[1])) end
+    if Proj and Proj.data.is_open then set_browsedir(Proj.get_project_base()) end
   end
   local function brw_projfolder_status()
     return (Proj and Proj.data.is_open) and 0 or 8 --0=normal 8=disabled

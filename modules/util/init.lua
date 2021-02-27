@@ -151,12 +151,33 @@ function Util.str_starts(s, start)
   return (string.sub(s, 1, string.len(start)) == start)
 end
 
+--remove quotes
+function Util.remove_quotes(txt)
+  if txt == nil then txt= "" end
+  if #txt > 1 then
+    if string.sub(txt,1,1) == '\"' and string.sub(txt,-1) == '\"' then
+      txt= string.sub(txt,2,#txt-1)
+    end
+  end
+  return txt
+end
+
 --remove trailing path separator
 function Util.remove_pathsep_end(path)
   if path == nil then path= "" end
-  if path ~= "" then
-    local lastch= string.sub(path,-1) --remove "\" or "/" from the end
+  if path ~= "" and not Util.is_fsroot(path) then
+    local lastch= string.sub(path,-1) --remove "\" or "/" from the end unless is the file system root ("\" "/" "x:\"...)
     if lastch == "\\" or lastch == "/" then path= string.sub(path,1,string.len(path)-1) end
+  end
+  return path
+end
+
+--ensure trailing path separator
+function Util.ensure_pathsep_end(path)
+  if path == nil then path= "" end
+  if path ~= "" then
+    local lastch= string.sub(path,-1) --check "\" or "/" at the end
+    if lastch ~= "\\" and lastch ~= "/" then path= path .. Util.PATH_SEP end
   end
   return path
 end

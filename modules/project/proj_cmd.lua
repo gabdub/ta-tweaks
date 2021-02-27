@@ -304,6 +304,7 @@ function Proj.new_project()
     title = 'Select project root (Cancel = relative to project file)',
     select_only_directories = true, with_directory = path
   }
+  if rootdir and rootdir ~= "" then rootdir= Util.ensure_pathsep_end(rootdir) end
   local vc_param= Proj.get_vc_param_newproj(rootdir, path)
   --create the project file and open it
   if Proj.create_empty_project(filename, fn, rootdir, vc_param) then
@@ -485,7 +486,7 @@ function Proj.add_dir_files(dir)
 
   local defdir
   if #data.proj_files > 0 then
-    defdir= data.proj_grp_path[1]
+    defdir= Proj.get_project_base()
   end
   dir = dir or ui.dialogs.fileselect{
     title = 'Add all files from a Directory', select_only_directories = true,

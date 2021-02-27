@@ -212,6 +212,16 @@ function Proj.create_empty_project(filename, projname, rootdir, vc_param)
   return true
 end
 
+function Proj.get_project_base()
+  if not data.is_open then return nil end
+  local path= data.proj_grp_path[1] --project base directory
+  local fn,ext
+  if not path then --not set= relative to project file
+    path,fn,ext = Util.splitfilename(data.filename)
+  end
+  return path
+end
+
 function Proj.add_files_to_project(flist, groupfiles, all, finprj)
   if not data.is_open then return nil end
   local fo, err= io.open(data.filename, 'a+b')
@@ -222,7 +232,7 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
   end
   local row= nil
   local curpath= nil
-  local defdir= data.proj_grp_path[1]
+  local defdir= Proj.get_project_base()
   for i,file in ipairs(flist) do
     if all or finprj[i] == false then --all files or just new ones
       local path,fn,ext = Util.splitfilename(file)
