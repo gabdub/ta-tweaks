@@ -72,7 +72,7 @@ function Proj.get_filevcinfo(fname)
     if verctrl == Proj.VCS_SVN and url ~= "" then
       info= fname
       cmd= "svn info "..url
-      post= "SVN"
+      post= "\nSVN"
     elseif verctrl == Proj.VCS_GIT and url ~= "" then
       info= fname..'\nGIT: '..url
       cmd= 'git status -sb \"'..url..'\"'
@@ -202,7 +202,7 @@ local gitremote= ""
 local repo_folder= ""
 
 local function run_gitcmd(cmd)
-  --print git status
+  --print git command output
   if repo_folder ~= "" then ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n")) end
 end
 
@@ -276,10 +276,62 @@ local function b_gitadd(bname, chkflist)
   end
 end
 
-local function b_svninfo(bname, chkflist)
-  run_gitcmd("svn info")  --Show svn info
+local function run_svncmd(cmd)
+  --print svn command output
+  if repo_folder ~= "" then ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n")) end
 end
 
+local function b_svninfo(bname, chkflist)
+  run_svncmd("svn info")  --Show svn info
+end
+
+local function b_svnstat(bname, chkflist)
+  run_svncmd("svn status")  --Show svn status
+end
+
+local function b_svnadd(bname, chkflist)
+  --Add files to index
+  local numA= 0
+  for i=1, #chkflist do
+    local le= chkflist[i][2]
+    if le == "?" then numA= numA+1 end --count only if status == "?" (un-versioned)
+  end
+  if numA == 0 then
+    Util.info("Nothing to add", "You need to choose some un-versioned files in the working copy")
+    Proj.reopen_vcs_control_panel() --reopen dialog
+    return
+  end
+  if Util.confirm( "SVN ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository?" ) then
+    for i=1, #chkflist do
+      local le= chkflist[i][2]
+      if le == "?" then run_svncmd('svn add \"'.. chkflist[i][1]..'\"') end  --add one file at the time
+    end
+  end
+  Proj.reopen_vcs_control_panel() --reopen dialog
+end
+
+local function b_svncommit(bname, chkflist)
+  --Commit changes to the repository
+  if Util.confirm( "SVN COMMIT", "Do you want to commit all changes?" ) then
+    local ok= false
+    local r,msg= ui.dialogs.inputbox{title = 'Commit message', width = 400, text = ""}
+    if r == 1 then
+      if type(msg) == 'table' then
+        msg= table.concat(msg, ' ')
+      end
+      msg= Util.str_trim(msg)
+      if msg ~= "" then
+        msg= string.gsub(msg, '\"', "\'") --use single quotes
+        run_svncmd('svn commit -m \"' ..msg..'\"')
+        ok= true
+      end
+    end
+    if not ok then
+      ui.print("Commit cancelled!")
+    end
+  end
+  Proj.reopen_vcs_control_panel() --reopen dialog
+end
 
 local function b_update(bname, chkflist)
   --Copy changes (O/D) to the destination folder (only checked items)
@@ -515,7 +567,7 @@ function Proj.vcs_control_panel(idx)
 ------------------------------------------------
       end
       repo_changes= {}
-      local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status -q"
+      local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status"
       if cwd == nil or cwd == "" then
         if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
       end
@@ -578,6 +630,9 @@ function Proj.vcs_control_panel(idx)
     elseif vctype == Proj.VCS_SVN then
       local ena= (repo_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
       buttons[#buttons+1]= {"dlg-svn-info", "Info", "Show svn info", 4, 95, 1, b_svninfo, ena}
+      buttons[#buttons+1]= {"dlg-svn-status", "Status", "Show svn status", 105, 95, 1, b_svnstat, ena}
+      buttons[#buttons+1]= {"dlg-svn-add", "Add", "Add files to SVN", 190, 95, 2, b_svnadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-svn-commit", "Commit", "Commit all changes to the repository", 290, 95, 2, b_svncommit, ena|toolbar.DLGBUT.CLOSE}
     end
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items
@@ -596,6 +651,9 @@ function Proj.vcs_control_panel(idx)
             elseif vctype == Proj.VCS_GIT then
               enadd= enadd or (#col2 == 2)
               encomm= encomm or (#col2 == 1) or (string.sub(col2,1,1) ~= '_')
+            elseif vctype == Proj.VCS_SVN then
+              enadd= enadd or (col2 == "?") --add un-versioned files
+              encomm= true --any change is enough
             end
           end
         end
@@ -605,6 +663,8 @@ function Proj.vcs_control_panel(idx)
     cond_enable_button(buttons, "dlg-publish", enpub and (publish_folder ~= ""))
     cond_enable_button(buttons, "dlg-git-add", enadd)
     cond_enable_button(buttons, "dlg-git-commit", encomm)
+    cond_enable_button(buttons, "dlg-svn-add", enadd)
+    cond_enable_button(buttons, "dlg-svn-commit", encomm)
     --show folder files
     toolbar.dlg_select_it=""
     toolbar.dlg_select_ev= vcs_item_selected
