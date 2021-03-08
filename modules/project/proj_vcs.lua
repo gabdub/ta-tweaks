@@ -289,27 +289,6 @@ local function b_svnstat(bname, chkflist)
   run_svncmd("svn status")  --Show svn status
 end
 
-local function b_svnadd(bname, chkflist)
-  --Add files to index
-  local numA= 0
-  for i=1, #chkflist do
-    local le= chkflist[i][2]
-    if le == "?" then numA= numA+1 end --count only if status == "?" (un-versioned)
-  end
-  if numA == 0 then
-    Util.info("Nothing to add", "You need to choose some un-versioned files in the working copy")
-    Proj.reopen_vcs_control_panel() --reopen dialog
-    return
-  end
-  if Util.confirm( "SVN ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository?" ) then
-    for i=1, #chkflist do
-      local le= chkflist[i][2]
-      if le == "?" then run_svncmd('svn add \"'.. chkflist[i][1]..'\"') end  --add one file at the time
-    end
-  end
-  Proj.reopen_vcs_control_panel() --reopen dialog
-end
-
 local function b_svncommit(bname, chkflist)
   --Commit changes to the repository
   if Util.confirm( "SVN COMMIT", "Do you want to commit all changes?" ) then
@@ -331,6 +310,29 @@ local function b_svncommit(bname, chkflist)
     end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog
+end
+
+local function b_svnadd(bname, chkflist)
+  --Add files to index
+  local numA= 0
+  for i=1, #chkflist do
+    local le= chkflist[i][2]
+    if le == "?" then numA= numA+1 end --count only if status == "?" (un-versioned)
+  end
+  if numA == 0 then
+    Util.info("Nothing to add", "You need to choose some un-versioned files in the working copy")
+    Proj.reopen_vcs_control_panel() --reopen dialog
+    return
+  end
+  if Util.confirm( "SVN ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository?" ) then
+    for i=1, #chkflist do
+      local le= chkflist[i][2]
+      if le == "?" then run_svncmd('svn add \"'.. chkflist[i][1]..'\"') end  --add one file at the time
+    end
+    b_svncommit(bname, chkflist)  --OK: ask to commit
+  else
+    Proj.reopen_vcs_control_panel() --reopen dialog
+  end
 end
 
 local function b_update(bname, chkflist)
