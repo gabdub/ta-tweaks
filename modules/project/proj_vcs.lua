@@ -146,7 +146,11 @@ local function vcs_item_selected(fname)
 end
 
 local repo_changes= {}
-local function get_vcs_file_status(file1, fname, vctrl)
+local repo_vctype= 0
+local repo_param= ""
+local repo_pref= ""   --file prefix
+
+local function get_vcs_file_status(file1, fname)
   --compare files and return a status character:
   -- "M" = different files (local is NEWER)
   -- "O" = different files (local is OLDER)
@@ -154,20 +158,13 @@ local function get_vcs_file_status(file1, fname, vctrl)
   -- "D" = local file not present
   -- "-" = no files found
 
-  --vctrl= {path, param, vc_type, row}
-  local param= vctrl[2] --add prefix to url [,currentdir]
-  if param ~= "" then
-    local pref, cwd= string.match(param, '(.-),(.*)')
-
-    local vctype= vctrl[3]
-    if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then --check parsed "git/svn status"
-      if not pref then pref= "" end
-      local file2= pref..fname
+  if repo_param ~= "" then
+    if repo_vctype == Proj.VCS_GIT or repo_vctype == Proj.VCS_SVN then --check parsed "git/svn status"
+      local file2= repo_pref..fname
       return repo_changes[file2] or ""
     end
-    if vctype == Proj.VCS_FOLDER then
-      if not pref then pref= param end
-      local file2= pref..fname
+    if repo_vctype == Proj.VCS_FOLDER then
+      local file2= repo_pref..fname
       --test file1/2 existence
       local ex1= Util.file_exists(file1)
       local ex2= Util.file_exists(file2)
@@ -268,7 +265,7 @@ local function b_gitadd(bname, chkflist)
   if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository index?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if #le == 2 then run_gitcmd('git add \"'.. chkflist[i][1]..'\"') end  --add one file at the time
+      if #le == 2 then run_gitcmd('git add \"'..repo_pref..chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_gitcommit(bname, chkflist)  --OK: ask to commit
   else
@@ -327,7 +324,7 @@ local function b_svnadd(bname, chkflist)
   if Util.confirm( "SVN ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if le == "?" then run_svncmd('svn add \"'.. chkflist[i][1]..'\"') end  --add one file at the time
+      if le == "?" then run_svncmd('svn add \"'..repo_pref..chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_svncommit(bname, chkflist)  --OK: ask to commit
   else
@@ -499,6 +496,10 @@ function Proj.vcs_control_panel(idx)
     local pref, cwd
     local param= vctrl[2] --param
     if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
+    repo_vctype= vctype
+    repo_param= param
+    repo_pref= pref
+
     if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
       --parse GIT/SVN changes
       if vctype == Proj.VCS_GIT then
@@ -643,7 +644,7 @@ function Proj.vcs_control_panel(idx)
         local projfile= string.gsub(data.proj_files[row], '%\\', '/')
         local fname= string.match(projfile, fmt)
         if fname and fname ~= '' then
-          local col2= get_vcs_file_status(projfile, fname, vctrl)
+          local col2= get_vcs_file_status(projfile, fname)
           flist[ #flist+1 ]= {fname, col2, false}
           if col2 ~= "" then
             toolbar.dlg_filter_col2= true --only show items with something in col2
