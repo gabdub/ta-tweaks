@@ -340,7 +340,7 @@ static int ltoolbar_setresize(lua_State *L)
 /** `toolbar.setmovepopup(name,t_move)` Lua function.
 */
 static int ltoolbar_setmovepopup(lua_State *L)
-{ //the button resize the toolbar
+{ //the button move the popup (dialog caption)
   ttb_set_move_popup( luaL_checkstring(L, 1), lua_toboolean(L, 2) );
   return 0;
 }
@@ -435,6 +435,7 @@ static int ltoolbar_getpickcolor(lua_State *L)
 /** `toolbar.getversion([opt])` Lua function. */
 /** opt:  0:ta-toolbar version: "1.0.13 (Nov 13 2018)", 1: compilation date :"Nov 13 2018", 2:target TA version:"10.2", 3:GTK version: "2.24.32" */
 /** opt:  4:number of font families */
+/** opt:  5:get pop up last position "x,y" */
 /** opt:  100: "" (default font) */
 /** opt:  101..100+tonumber(toolbar.getversion(4)): font names */
 static int ltoolbar_getversion(lua_State *L)
