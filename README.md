@@ -21,7 +21,7 @@ Textadept is a fast, minimalist, and remarkably extensible cross-platform text e
 
 # tatoolbar
 This code adds toolbars to textadept, allows to gray and check menu items and adds functions to
-compare files and strings (__compiling is required__):
+compare files and strings (__compiling is required__ / download from [releases](https://github.com/gabdub/ta-tweaks/releases) ):
 
 Each toolbar can be used in many different ways. Check the default implementation in: [tatoolbar](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar)
 
