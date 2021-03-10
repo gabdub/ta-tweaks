@@ -148,6 +148,7 @@ end
 local publish_folder= ""
 local gitbranch= ""
 local gitremote= ""
+local svnserver= ""
 local repo_vctype= 0
 local repo_folder= ""
 local repo_changes= {}
@@ -493,12 +494,23 @@ function Proj.vcs_control_panel(idx)
     gitbranch= ""
     gitremote= ""
     repo_folder= ""
+    svnserver= ""
     local pref, cwd
-    local param= vctrl[2] --param
-    if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
+    local param= vctrl[2] --param= prefix [,working-directory]
+    if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref="" end end
+    if vctype == Proj.VCS_SVN then  --SVN: prefix= svnserver
+      svnserver= (pref ~= "") and pref or param --not used for now..
+      pref= ""
+      if cwd == nil or cwd == "" then cwd= vcs_item_base end
+    end
+    repo_folder= cwd or ""
     repo_vctype= vctype
 
-    if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
+    if vctype == Proj.VCS_FOLDER then --FOLDER: prefix= remote folder
+      publish_folder= (pref ~= "") and pref or param --a folder is required
+      pref= ""
+      status_info= "FOLDER status options:\nM = MODIFIED, NEWER local file\nO = modified, OLDER local file\nA = local file ADDED\nD = local file DELETED"
+    else
       --parse GIT/SVN changes
       if vctype == Proj.VCS_GIT then
         status_info= "GIT status options XY (X=index Y=working tree):\nM = modified\nA = added\nD = deleted\nR = renamed\nC = copied\nU = updated but unmerged\n? = untracked\n! = ignored"
@@ -569,10 +581,6 @@ function Proj.vcs_control_panel(idx)
       end
       repo_changes= {}
       local stcmd= (vctype == Proj.VCS_GIT) and "git status -s" or "svn status"
-      if cwd == nil or cwd == "" then
-        if vctype == Proj.VCS_SVN then cwd= vcs_item_base end
-      end
-      repo_folder= cwd
       if vctype == Proj.VCS_GIT then
         gitbranch= Util.str_trim(Proj.get_cmd_output("git branch --show-current", repo_folder, ""))
         gitremote= Util.str_trim(Proj.get_cmd_output("git remote", repo_folder, ""))
@@ -589,10 +597,6 @@ function Proj.vcs_control_panel(idx)
           repo_changes[ Util.remove_quotes(Util.str_trim(fn)) ]= lett
         end
       end
-
-    elseif vctype == Proj.VCS_FOLDER then
-      publish_folder= pref or "" --a folder is required
-      status_info= "FOLDER status options:\nM = MODIFIED, NEWER local file\nO = modified, OLDER local file\nA = local file ADDED\nD = local file DELETED"
     end
 
     flist= {}
