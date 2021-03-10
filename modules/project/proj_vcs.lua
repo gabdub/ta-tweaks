@@ -145,12 +145,14 @@ local function vcs_item_selected(fname)
   return true --keep dialog open
 end
 
-local repo_changes= {}
+local publish_folder= ""
+local gitbranch= ""
+local gitremote= ""
 local repo_vctype= 0
-local repo_param= ""
-local repo_pref= ""   --file prefix
+local repo_folder= ""
+local repo_changes= {}
 
-local function get_vcs_file_status(file1, fname)
+local function get_vcs_file_status(file1, file2)
   --compare files and return a status character:
   -- "M" = different files (local is NEWER)
   -- "O" = different files (local is OLDER)
@@ -158,30 +160,27 @@ local function get_vcs_file_status(file1, fname)
   -- "D" = local file not present
   -- "-" = no files found
 
-  if repo_param ~= "" then
-    if repo_vctype == Proj.VCS_GIT or repo_vctype == Proj.VCS_SVN then --check parsed "git/svn status"
-      local file2= repo_pref..fname
-      return repo_changes[file2] or ""
-    end
-    if repo_vctype == Proj.VCS_FOLDER then
-      local file2= repo_pref..fname
-      --test file1/2 existence
-      local ex1= Util.file_exists(file1)
-      local ex2= Util.file_exists(file2)
-      if (not ex1) and (not ex2) then return "-" end  --no file found on both sides
-      if not ex2 then return "A" end  --new local file
-      if not ex1 then return "D" end  --local file deleted
-      --compare file1/2 (quick test)
-      local sz1= lfs.attributes(file1, 'size')
-      local sz2= lfs.attributes(file2, 'size')
-      local modif= false --different size/content
-      if sz1 ~= sz2 then modif=true else modif= not Util.compare_file_content(file1, file2) end
-      if modif then
-        local dm1= lfs.attributes(file1, 'modification')
-        local dm2= lfs.attributes(file2, 'modification')
-        if dm1 >= dm2 then return "M" end --modified and NEWER
-        return "O" --modified but OLDER
-      end
+  if repo_vctype == Proj.VCS_GIT or repo_vctype == Proj.VCS_SVN then --check parsed "git/svn status"
+    return repo_changes[file2] or ""
+  end
+  if repo_vctype == Proj.VCS_FOLDER then
+    --test file1/2 existence
+    file2= publish_folder..file2
+    local ex1= Util.file_exists(file1)
+    local ex2= Util.file_exists(file2)
+    if (not ex1) and (not ex2) then return "-" end  --no file found on both sides
+    if not ex2 then return "A" end  --new local file
+    if not ex1 then return "D" end  --local file deleted
+    --compare file1/2 (quick test)
+    local sz1= lfs.attributes(file1, 'size')
+    local sz2= lfs.attributes(file2, 'size')
+    local modif= false --different size/content
+    if sz1 ~= sz2 then modif=true else modif= not Util.compare_file_content(file1, file2) end
+    if modif then
+      local dm1= lfs.attributes(file1, 'modification')
+      local dm2= lfs.attributes(file2, 'modification')
+      if dm1 >= dm2 then return "M" end --modified and NEWER
+      return "O" --modified but OLDER
     end
   end
   return "" --same
@@ -193,10 +192,6 @@ end
 
 --list files in this VCS folder/subfolders
 local flist= {}
-local publish_folder= ""
-local gitbranch= ""
-local gitremote= ""
-local repo_folder= ""
 
 local function run_gitcmd(cmd)
   --print git command output
@@ -265,7 +260,7 @@ local function b_gitadd(bname, chkflist)
   if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository index?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if #le == 2 then run_gitcmd('git add \"'..repo_pref..chkflist[i][1]..'\"') end  --add one file at the time
+      if #le == 2 then run_gitcmd('git add \"'..chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_gitcommit(bname, chkflist)  --OK: ask to commit
   else
@@ -324,7 +319,7 @@ local function b_svnadd(bname, chkflist)
   if Util.confirm( "SVN ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if le == "?" then run_svncmd('svn add \"'..repo_pref..chkflist[i][1]..'\"') end  --add one file at the time
+      if le == "?" then run_svncmd('svn add \"'..chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_svncommit(bname, chkflist)  --OK: ask to commit
   else
@@ -424,6 +419,11 @@ local function b_publish(bname, chkflist)
   Proj.reopen_vcs_control_panel() --reopen dialog
 end
 
+local function b_browsepub(bname, chkflist)
+  --Browse remote folder
+  if toolbar.filebrowser_browse ~= nil then toolbar.filebrowser_browse(publish_folder) end
+end
+
 local function set_show_all_tit()
   toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files", false)
 end
@@ -497,8 +497,6 @@ function Proj.vcs_control_panel(idx)
     local param= vctrl[2] --param
     if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref= param end end
     repo_vctype= vctype
-    repo_param= param
-    repo_pref= pref
 
     if vctype == Proj.VCS_GIT or vctype == Proj.VCS_SVN then
       --parse GIT/SVN changes
@@ -613,9 +611,12 @@ function Proj.vcs_control_panel(idx)
       {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS}
     }
     if vctype == Proj.VCS_FOLDER then
-      buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 1, b_update, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to the destination folder", 300, 95, 1, b_publish, toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 95, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT|toolbar.DLGBUT.BOLD}
+      local ena= (publish_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
+      buttons[#buttons+1]= {"dlg-lbl-remote", "Remote:", "Remote folder", 4, 95, 1, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT}
+      buttons[#buttons+1]= {"dlg-pubfold", publish_folder, "Browse remote folder", 60, 0, 1, b_browsepub, ena}
+      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT|toolbar.DLGBUT.BOLD}
+      buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 2, b_update, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to remote folder", 300, 95, 2, b_publish, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
 
     elseif vctype == Proj.VCS_GIT then
       local ena= (gitbranch ~= "") and 0 or toolbar.DLGBUT.EN_OFF
@@ -644,6 +645,9 @@ function Proj.vcs_control_panel(idx)
         local projfile= string.gsub(data.proj_files[row], '%\\', '/')
         local fname= string.match(projfile, fmt)
         if fname and fname ~= '' then
+          if vctype ~= Proj.VCS_FOLDER then
+            fname= pref..fname
+          end
           local col2= get_vcs_file_status(projfile, fname)
           flist[ #flist+1 ]= {fname, col2, false}
           if col2 ~= "" then
@@ -662,8 +666,8 @@ function Proj.vcs_control_panel(idx)
         end
       end
     end
-    cond_enable_button(buttons, "dlg-update",  enupd and (publish_folder ~= ""))
-    cond_enable_button(buttons, "dlg-publish", enpub and (publish_folder ~= ""))
+    cond_enable_button(buttons, "dlg-update",  enupd)
+    cond_enable_button(buttons, "dlg-publish", enpub)
     cond_enable_button(buttons, "dlg-git-add", enadd)
     cond_enable_button(buttons, "dlg-git-commit", encomm)
     cond_enable_button(buttons, "dlg-svn-add", enadd)
