@@ -6,6 +6,8 @@
 -- 2)  [b] [fn]
 -- 3)  [b]
 --
+-- The first project line MUST BE an "option 1"
+--
 -- [b] = optional blanks to visualy group files (folding groups)
 -- [n] = optional file/group name or description
 --        '['n']', '('n')', '<'n'>' are color/bold hightlighted
@@ -15,7 +17,9 @@
 --        '.\path\'  relative path definition 'p' (added to last absolute 'P')
 --        './path/'  relative path definition 'p' (added to last absolute 'P')
 --        'filename' open file 'fn' (absolute) or 'P'+'fn' (relative)
--- [opt] = optional control options
+-- (P= 'first' previous 'P'/'p' or project path)
+--
+-- [opt] = OPTIONAL CONTROL OPTIONS
 --        '-'     fold this group on project load / refresh
 ----------
 --        'C'     CTAGS file
@@ -25,31 +29,51 @@
 --                               %{projfiles.ext1.ext2...} only project files with this extensions are included
 --          e.g. [Update CTAGS]::C:\GNU\ctags.exe -n -L %{projfiles.lua.c} -f C:\textadept\ctags-ta.ctag::R
 --
----------- VERSION CONTROL: SVN / GIT / FOLDER
---        'Sxxx[,ccc]' SVN folder and repository base (xxx=URL prefix, ccc=working directory)
---          e.g. [svn]::/home/user/mw/::Shttps://192.168.0.11:8443/svn/
---                /home/user/mw/MGWdrv/trunk/v.c ==> svn cat https://192.168.0.11:8443/svn/MGWdrv/trunk/v.c
---                working dir= no need to set
+------ VERSION CONTROL: FOLDER / GIT / SVN
+--        format: 'name::/project/folder/::#[xxxx[,cccc]]
+--                #=F/G/S    xxxx=file prefix     cccc=repository directory
 --
---          e.g. [svn]::/home/user/mw/MGWdrv/::Shttp://192.168.0.60/svn/MGWdrv/
---                /home/user/mw/MGWdrv/trunk/v.c ==> svn cat http://192.168.0.60/svn/MGWdrv/trunk/v.c
---                working dir= no need to set
+--        Note: there is no comma before the file prefix.
+--
+--        The project files in "/project/folder/" are under version control unless they are marked with 'I'.
+--
+--        For every file in "/project/folder/" a target file is generated removing the "/project/folder/" and
+--        adding the file prefix.
+--
+--        For GIT and SVN, the repository directory must include the ".svn" or ".git" folder.
+--        "/project/folder/" is used as the repository directory when one is not explicity set.
 ----------
---        'Gxxx[,ccc]' GIT folder and repository base (xxx=URL prefix, ccc=working directory)
---          e.g. [git]::C:\Users\desa1\.textadept\::G,C:\Users\desa1\.textadept\ta-tweaks
+--        'Fxxx' COMPARE FOLDER xxx=file prefix= destination folder (REQUIRED)
+--          e.g. [dest folder]::C:\Users\desa1\.textadept\::FC:\repo\ta-tweaks\
+--                C:\Users\desa1\.textadept\*        ==> C:\repo\ta-tweaks\*
+--                C:\Users\desa1\.textadept\modules\init.lua ==> C:\repo\ta-tweaks\modules\init.lua
+----------
+--        'G[xxx[,ccc]]' GIT    xxx=file prefix, ccc=repository directory
+--          e.g. [git]::C:\Users\desa1\myproject\::G
+--                C:\Users\desa1\myproject\*                ==> git command *
+--                C:\Users\desa1\myproject\modules\init.lua ==> git show HEAD:modules\init.lua
+--                working dir= C:\Users\desa1\myproject\
+--
+--          e.g. [git]::C:\Users\desa1\.textadept\::G,C:\repo\ta-tweaks
+--                C:\Users\desa1\.textadept\*                ==> git command *
 --                C:\Users\desa1\.textadept\modules\init.lua ==> git show HEAD:modules\init.lua
---                working dir= C:\Users\desa1\.textadept\ta-tweaks
+--                working dir= C:\repo\ta-tweaks
 --
---          e.g. [git]::C:\textadept\ta9\src\::Gtatoolbar/src/,C:\Users\desa1\.textadept\ta-tweaks
---                C:\textadept\ta9\src\textadept.c ==> git show HEAD:tatoolbar/src/textadept.c
---                working dir= C:\Users\desa1\.textadept\ta-tweaks
+--          e.g. [git]::C:\textadept\ta11\src\::Gtatoolbar/src/,C:\repo\ta-tweaks
+--                C:\textadept\ta11\src\*           ==> git command tatoolbar/src/*
+--                C:\textadept\ta11\src\textadept.c ==> git show HEAD:tatoolbar/src/textadept.c
+--                working dir= C:\repo\ta-tweaks
+--
+--          Note: when the project files are NOT in the repository directory, they must be copied BEFORE
+--          running the git commands that update the repository. This can be done using the FOLDER option.
+--          Putting GIT/SVN first and FOLDER second.
 ----------
---        'Fxxx' COMPARE FOLDER (xxx=destination folder)
---          e.g. [dest folder]::C:\Users\desa1\.textadept\modules\::FC:\repo\tatoolbar\modules\
---                C:\Users\desa1\.textadept\modules\init.lua ==> C:\repo\tatoolbar\modules\init.lua
+--        'S[xxx[,ccc]]' SVN    xxx=file prefix, ccc=repository directory
+--                same as GIT except SVN commands are executed
 ----------
--- (P= 'first' previous 'P'/'p' or project path)
---  The first project line MUST BE an "option 1)"
+--        'I'     ignore this file from version control
+----------
+
 ----------------------------------------------------------------------
 -- Main vars added to project buffer:
 --  _project_select  = mark this buffer as a valid project file
@@ -68,7 +92,8 @@
 --   proj_filestype[]   = array with the type of each row: Proj.PRJF_...
 --   proj_fold_row[]    = array with the row numbers to fold on open
 --   proj_grp_path[]    = array with the path of each group or nil
---   proj_vcontrol[]    = array with the SVN/GIT/FOLDER version control rows
+--   proj_vcontrol[]    = array with the SVN/GIT/FOLDER version control rows { path, param, vc-type, nrow }
+--   proj_vcignore[]    = array with the filenames/rows that are not under version control
 --   proj_rowinfo[]     = array {row-text, indent, indent-len}
 --   config_hooks[]     = objects/toolbars that use the project configuration
 --                          {beforeload, afterload, beforesave, projloaded}
@@ -116,6 +141,7 @@ function Proj.clear_proj_arrays()
   data.proj_fold_row=  {}
   data.proj_grp_path=  {}
   data.proj_vcontrol=  {}
+  data.proj_vcignore=  {}
   data.proj_rowinfo=   {}   --{row-text, indent, indent-len}
   data.parse_ver= data.parse_ver+1 --advance parse version
 end
@@ -350,6 +376,10 @@ function Proj.parse_project_file()
         local vctype= o=='S' and Proj.VCS_SVN or (o=='G' and Proj.VCS_GIT or Proj.VCS_FOLDER)
         ftype= Proj.PRJF_VCS
         data.proj_vcontrol[ #data.proj_vcontrol+1 ]= { path, p, vctype, r }
+      elseif o == 'I' then
+        --  'I': ignore this file from version control
+        data.proj_vcignore[ fname ]= true --ignore this filename
+        data.proj_vcignore[ r ]= true     --ignore this row
       end
     end
     --set the filename/type asigned to each row
@@ -467,7 +497,7 @@ function Proj.run_command(cmd)
   end
 end
 
---get "version control number, path, url" for filename
+--get "version control number, repository directory, repo_fname" for filename
 --skip_first= false (return the 1st VC found)
 --skip_first= true  (return the 2nd VC found)
 function Proj.get_versioncontrol_url(filename, skip_first)
@@ -477,8 +507,12 @@ function Proj.get_versioncontrol_url(filename, skip_first)
     ui.statusbar_text= 'No SVN/GIT/FOLDER repository set in project'
     return
   end
-  filename=string.gsub(filename, '%\\', '/')
-  local url= ""
+  if data.proj_vcignore[ filename ] then
+    ui.statusbar_text= 'The file is marked as ignored from version control'
+    return
+  end
+  filename= string.gsub(filename, '%\\', '/')
+  local repo_fname= ""
   local nvc= 1
   local skip= skip_first
   while nvc <= #data.proj_vcontrol do
@@ -487,8 +521,8 @@ function Proj.get_versioncontrol_url(filename, skip_first)
       base= string.gsub(base, '%\\', '/')
       --remove base dir
       local fmt= '^'..Util.escape_match(base)..'(.*)'
-      url= string.match(filename,fmt)
-      if url and url ~= '' then
+      repo_fname= string.match(filename,fmt)
+      if repo_fname and repo_fname ~= '' then
         if skip then skip= false else break end
       end
     end
@@ -498,12 +532,8 @@ function Proj.get_versioncontrol_url(filename, skip_first)
     if not skip_first then ui.statusbar_text= 'The file is outside project base directory' end
     return
   end
-  local verctrl= data.proj_vcontrol[nvc][3] --VC type
-  local param= data.proj_vcontrol[nvc][2] --add prefix to url [,currentdir]
-  if param == "" then return verctrl, "", "" end
-  local pref, cwd= string.match(param, '(.-),(.*)')
-  if not pref then pref= param end
-  url= pref..url
-  if not skip_first then ui.statusbar_text= Proj.VCS_LIST[verctrl]..': '..url end
-  return verctrl, cwd, url
+  local proj_dir= data.proj_vcontrol[nvc][1] --VC project dir
+  local param= data.proj_vcontrol[nvc][2]    --VC param
+  local vctype= data.proj_vcontrol[nvc][3]   --VC type
+  return Proj.expand_vcparam(vctype, param, proj_dir, repo_fname, not skip_first) --show status (first VC)
 end

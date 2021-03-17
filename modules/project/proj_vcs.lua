@@ -24,33 +24,33 @@ function debug_cmd(cmd, cwd) --run a command from the "Command entry"
 end
 
 function Proj.get_vc_param_newproj(rootdir, path)
-  local vc_dir, vc_workdir, vc_param
-  if not rootdir then
-    rootdir=''  --relative to project file
-    vc_dir= Util.ensure_pathsep_end(path) --with file separator
-  else
-    rootdir= Util.ensure_pathsep_end(rootdir)
-    vc_dir= rootdir --with file separator
-  end
-  vc_workdir= Util.remove_pathsep_end(vc_dir) --without file separator
+  local vc_dir, vc_param
+  if not rootdir then vc_dir= path else vc_dir= rootdir end
+  vc_dir= Util.ensure_pathsep_end(vc_dir)
   --check for ".git"/".svn" folders
   if Util.dir_exists(vc_dir..".git") then
     if Util.confirm("GIT support", "The project folder contains a GIT repository", "Do you want to add it to the project?") then
-      --[git]::C:\Users\desa1\test\::G,C:\Users\desa1\test
-      vc_param= {"[git]", vc_dir, "G,"..vc_workdir}
+      --[git]::C:\Users\desa1\test\::G
+      vc_param= {"[git]", vc_dir, "G"}
     end
   elseif Util.dir_exists(vc_dir..".svn") then
     if Util.confirm("SVN support", "The project folder contains an SVN repository", "Do you want to add it to the project?") then
-      local r,vc_pref= ui.dialogs.inputbox{title = 'SVN Server', informative_text = 'Input the full SVN server path\n(e.g. https://192.168.0.11:8443/svn/repo-name/\n or http://192.168.0.60/svn/repo-name/)', width = 400, text = ""}
-      if type(vc_pref) == 'table' then
-        vc_pref= table.concat(vc_pref, ' ')
-      end
-      --[svn]::/home/user/::Shttps://192.168.0.11:8443/svn/
-      --[svn]::/home/user/repo-name/::Shttp://192.168.0.60/svn/repo-name/
-      if vc_pref ~= "" then vc_param= {"[svn]", vc_dir, "S"..vc_pref} end
+      --[svn]::/home/user/::S
+      if vc_pref ~= "" then vc_param= {"[svn]", vc_dir, "S"} end
     end
   end
   return vc_param
+end
+
+-- expand VC param into: {vctype, repo_dir, repo_fname}
+function Proj.expand_vcparam(vctype, param, proj_dir, repo_fname, show_status)
+  local pref, repo_dir
+  if vctype == Proj.VCS_FOLDER then pref= param --FOLDER: param= destination folder
+  elseif param ~= "" then pref, repo_dir= string.match(param, '(.-),(.*)') end --GIT/SVN: param= [file prefix[, repo-dir]]
+  if not repo_dir then repo_dir= proj_dir end --not set, use project directory
+  if pref ~= nil then repo_fname= pref..repo_fname end --add file prefix
+  if show_status then ui.statusbar_text= Proj.VCS_LIST[vctype]..': '..repo_fname end
+  return vctype, repo_dir, repo_fname
 end
 
 function Proj.get_filevcinfo(fname)
@@ -148,7 +148,6 @@ end
 local publish_folder= ""
 local gitbranch= ""
 local gitremote= ""
-local svnserver= ""
 local repo_vctype= 0
 local repo_folder= ""
 local repo_changes= {}
@@ -493,19 +492,9 @@ function Proj.vcs_control_panel(idx)
     publish_folder= ""
     gitbranch= ""
     gitremote= ""
-    repo_folder= ""
-    svnserver= ""
-    local pref, cwd
+    local pref
     local param= vctrl[2] --param= prefix [,working-directory]
-    if param ~= "" then pref, cwd= string.match(param, '(.-),(.*)') if not pref then pref="" end end
-    if vctype == Proj.VCS_SVN then  --SVN: prefix= svnserver
-      svnserver= (pref ~= "") and pref or param --not used for now..
-      pref= ""
-      if cwd == nil or cwd == "" then cwd= vcs_item_base end
-    end
-    repo_folder= cwd or ""
-    repo_vctype= vctype
-
+    repo_vctype, repo_folder, pref= Proj.expand_vcparam(vctype, param, vctrl[1], "", false)
     if vctype == Proj.VCS_FOLDER then --FOLDER: prefix= remote folder
       publish_folder= (pref ~= "") and pref or param --a folder is required
       pref= ""
@@ -645,7 +634,8 @@ function Proj.vcs_control_panel(idx)
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items
     for row= 1, #data.proj_files do
-      if data.proj_filestype[row] == Proj.PRJF_FILE then --ignore CTAGS files / path / empty rows
+      --ignore CTAGS files / path / empty rows / files marked as "VC ignored"
+      if data.proj_filestype[row] == Proj.PRJF_FILE and (data.proj_vcignore[row] == nil) then
         local projfile= string.gsub(data.proj_files[row], '%\\', '/')
         local fname= string.match(projfile, fmt)
         if fname and fname ~= '' then
