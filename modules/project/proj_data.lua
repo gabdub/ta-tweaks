@@ -40,7 +40,7 @@
 --        For every file in "/project/folder/" a target file is generated removing the "/project/folder/" and
 --        adding the file prefix.
 --
---        For GIT and SVN, the repository directory must include the ".svn" or ".git" folder.
+--        For GIT and SVN, the repository directory is the PARENT of the ".svn" or ".git" folder.
 --        "/project/folder/" is used as the repository directory when one is not explicity set.
 ----------
 --        'Fxxx' COMPARE FOLDER xxx=file prefix= destination folder (REQUIRED)
@@ -69,7 +69,7 @@
 --          Putting GIT/SVN first and FOLDER second.
 ----------
 --        'S[xxx[,ccc]]' SVN    xxx=file prefix, ccc=repository directory
---                same as GIT except SVN commands are executed
+--                same as GIT except SVN commands are executed instead
 ----------
 --        'I'     ignore this file from version control
 ----------
