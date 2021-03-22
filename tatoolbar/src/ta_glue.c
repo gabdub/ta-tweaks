@@ -1754,6 +1754,7 @@ void ttb_move_popup(struct toolbar_data *T, int x, int y )
 /** `toolbar.popup(ntoolbar, show, button-name, button-corner, width, height)` Lua function. */
 /** width, height >= 0: minimal size + expand if needed */
 /** width, height < 0 : force this size */
+/** button-name can be a tab-number: "T?_TAB#tab-number" ?=toolbar-number (since version: 1.1.13) */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
   struct toolbar_data * T;
@@ -1804,12 +1805,23 @@ static int ltoolbar_popup(lua_State *L)
     }
     if( p != NULL ){
       int wx, wy, loc;
+      struct toolbar_group * g;
       x= 0; y= 0;
-      gdk_window_get_origin( get_draw_widget( p->group->toolbar)->window, &x, &y );
-      x += p->group->barx1;
-      y += p->group->bary1 - p->group->yvscroll;
-      p->group->flags |= TTBF_GRP_VSCR_INH;  //inhibit vertical scroll while popup is open
-      T->lock_group= p->group;  //unlock when closed
+      g= p->group;
+      gdk_window_get_origin( get_draw_widget( g->toolbar)->window, &x, &y );
+      x += g->barx1;
+      y += g->bary1 - g->yvscroll;
+      if( (g->flags & TTBF_GRP_TABBAR) != 0 ){ //it's a tabbar, add previous tabs width + separators
+        struct toolbar_item * tab;
+        x -= g->tabxmargin; //h scroll
+        for( tab= g->list; (tab != NULL) && (tab != p); tab= tab->next ){
+          if( (tab->flags & TTBF_HIDDEN) == 0 ){  //skip hidden tabs
+            x += tab->barx2 + g->tabxsep;
+          }
+        }
+      }
+      g->flags |= TTBF_GRP_VSCR_INH;  //inhibit vertical scroll while popup is open
+      T->lock_group= g;  //unlock when closed
       loc= intluadef(L, 4, 0);
       wx= loc & 7;
       switch( wx ){

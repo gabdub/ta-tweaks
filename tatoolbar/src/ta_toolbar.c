@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.12 (Feb 18 2021)"
+#define TA_TOOLBAR_VERSION_STR "1.1.13 (Mar 22 2021)"
 
 static void free_img_list( void );
 
@@ -588,9 +588,24 @@ struct toolbar_item * item_from_nameG(struct toolbar_group *G, const char *name)
 { //find an item in a group
   struct toolbar_item * p;
   if( (G != NULL) && (name != NULL) ){
-    for( p= G->list; (p != NULL); p= p->next ){
-      if( (p->name != NULL) && (strcmp(p->name, name) == 0) ){
-        return p;
+    if( (G->flags & TTBF_GRP_TABBAR) != 0 ){  //tabs use "num" not "name"
+      char tabnamebase[40];
+      int n;
+      sprintf( tabnamebase, "T%d_TAB#", G->toolbar->num );  //simulate tab name = "T"..toolbar-num.."_TAB#"..tab-number
+      n= strlen(tabnamebase);
+      if( strncmp( name, tabnamebase, n) == 0 ){
+        int ntab= atoi(name+n);
+        for( p= G->list; (p != NULL); p= p->next ){
+          if( p->num == ntab ){
+            return p;
+          }
+        }
+      }
+    }else{
+      for( p= G->list; (p != NULL); p= p->next ){
+        if( (p->name != NULL) && (strcmp(p->name, name) == 0) ){
+          return p;
+        }
       }
     }
   }
