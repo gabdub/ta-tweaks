@@ -133,23 +133,21 @@ if toolbar then
     end
   end
 
-  local function change_encoding()
-    local options= {'UTF-8','ASCII','CP1252','ISO-8859-1','UTF-16LE'}
-    local button, i = ui.dialogs.filteredlist{
-      title = "Select buffer enconding",
-      columns = _L['Name'],
-      items = options }
-    if button == 1 and i then
-      buffer:set_encoding(options[i])
-      events.emit(events.UPDATE_UI) -- for updating statusbar
-      if actions then
-        actions.updateaction("set_enc_utf8")
-        actions.updateaction("set_enc_ascii")
-        actions.updateaction("set_enc_1252")
-        actions.updateaction("set_enc_8859")
-        actions.updateaction("set_enc_utf16")
-      end
+  local function enc_selected(enc_sel)
+    buffer:set_encoding(enc_sel)
+    events.emit(events.UPDATE_UI, 1) -- for updating statusbar
+    if actions then
+      actions.updateaction("set_enc_utf8")
+      actions.updateaction("set_enc_ascii")
+      actions.updateaction("set_enc_1252")
+      actions.updateaction("set_enc_8859")
+      actions.updateaction("set_enc_utf16")
     end
+  end
+
+  local function change_encoding()
+    local enc_list= {'UTF-8','ASCII','CP1252','ISO-8859-1','UTF-16LE'}
+    toolbar.encoding_chooser("Select buffer enconding", buffer.encoding, enc_selected, enc_list, "T2_TAB#7", toolbar.ANCHOR.POP_R_IT_R)
   end
 
   events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ntabgroup)
