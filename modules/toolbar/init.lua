@@ -135,16 +135,18 @@ if toolbar then
 
   local function lexer_selected(lex_sel)
     buffer:set_lexer(lex_sel)
+    events.emit(events.UPDATE_UI, 1) -- for updating statusbar
+    toolbar.update_lexerdefaults() --update config panel
   end
 
-  local function change_lexer()
+  function toolbar.select_lexer()
     local lexers = {}
     local LEXERNAMES = _SCINTILLA.functions.property_names[1]
     for name in buffer:private_lexer_call(LEXERNAMES):gmatch('[^\n]+') do
       lexers[#lexers + 1] = name
     end
     toolbar.small_chooser(_L['Select Lexer'], buffer:get_lexer(), lexer_selected, lexers, "T2_TAB#4",
-      toolbar.ANCHOR.HCENTER, 210, 300, "LEXER")
+      toolbar.ANCHOR.HCENTER, 250, 300, "LEXER")
   end
 
   local function enc_selected(enc_sel)
@@ -186,7 +188,7 @@ if toolbar then
         end
       elseif ntab == 4 then --lexer
         --textadept.file_types.select_lexer()
-        change_lexer()
+        toolbar.select_lexer()
       elseif ntab == 5 or ntab == 6 then --eol / indent
         toolbar.toggle_buffer_configtab(ntab == 6)
       elseif ntab == 7 then --encoding

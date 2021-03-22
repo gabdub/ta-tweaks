@@ -346,8 +346,7 @@ actions.list = {
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
   ["select_lexer"]=         {_L['Select _Lexer...'], function()
-      textadept.file_types.select_lexer()
-      if toolbar then toolbar.update_lexerdefaults() end --update config panel
+      if toolbar then toolbar.select_lexer() else textadept.file_types.select_lexer() end
     end},
 --["refresh_syntax"]=       {_L['_Refresh Syntax Highlighting'], refresh_syntax},
 
@@ -668,8 +667,7 @@ actions.list = {
       if toolbar then toolbar.setcfg_from_view_checks() end --update config panel
     end},
   ["select_lexer"]=         {_L['Select Lexer...'], function()
-      textadept.file_types.select_lexer()
-      if toolbar then toolbar.update_lexerdefaults() end --update config panel
+      if toolbar then toolbar.select_lexer() else textadept.file_types.select_lexer() end
     end},
 
 --VIEW
