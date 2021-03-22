@@ -491,11 +491,11 @@ function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
   ensure_sel_view()
 end
 
-function toolbar.encoding_chooser(title, sel_enc, enc_selected, enc_list, btname, anchor)
+function toolbar.small_chooser(title, sel_enc, enc_selected, enc_list, btname, anchor, width, height, icon)
   toolbar.dlg_select_it= sel_enc
   toolbar.dlg_select_ev= enc_selected
   toolbar.dlg_filter_col2= false
-  toolbar.create_dialog(title or "Enconding chooser", 210, 185, enc_list, "insert-text", {singleclick=true, can_move=(btname==nil)})
+  toolbar.create_dialog(title, width, height, enc_list, icon, {singleclick=true, can_move=(btname==nil)})
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
   else

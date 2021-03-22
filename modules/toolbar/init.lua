@@ -133,6 +133,20 @@ if toolbar then
     end
   end
 
+  local function lexer_selected(lex_sel)
+    buffer:set_lexer(lex_sel)
+  end
+
+  local function change_lexer()
+    local lexers = {}
+    local LEXERNAMES = _SCINTILLA.functions.property_names[1]
+    for name in buffer:private_lexer_call(LEXERNAMES):gmatch('[^\n]+') do
+      lexers[#lexers + 1] = name
+    end
+    toolbar.small_chooser(_L['Select Lexer'], buffer:get_lexer(), lexer_selected, lexers, "T2_TAB#4",
+      toolbar.ANCHOR.HCENTER, 210, 300, "gnome-app-install-star")
+  end
+
   local function enc_selected(enc_sel)
     buffer:set_encoding(enc_sel)
     events.emit(events.UPDATE_UI, 1) -- for updating statusbar
@@ -147,7 +161,8 @@ if toolbar then
 
   local function change_encoding()
     local enc_list= {'UTF-8','ASCII','CP1252','ISO-8859-1','UTF-16LE'}
-    toolbar.encoding_chooser("Select buffer enconding", buffer.encoding, enc_selected, enc_list, "T2_TAB#7", toolbar.ANCHOR.POP_R_IT_R)
+    toolbar.small_chooser("Select buffer enconding", buffer.encoding, enc_selected, enc_list, "T2_TAB#7",
+      toolbar.ANCHOR.POP_R_IT_R, 210, 185, "insert-text")
   end
 
   events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ntabgroup)
@@ -170,7 +185,8 @@ if toolbar then
           goto_line_col(true)
         end
       elseif ntab == 4 then --lexer
-        textadept.file_types.select_lexer()
+        --textadept.file_types.select_lexer()
+        change_lexer()
       elseif ntab == 5 or ntab == 6 then --eol / indent
         toolbar.toggle_buffer_configtab(ntab == 6)
       elseif ntab == 7 then --encoding
