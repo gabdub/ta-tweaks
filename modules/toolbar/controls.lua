@@ -473,6 +473,10 @@ toolbar.icon_ext= {
   ["exe"]=  "application-x-executable",
   ["bat"]=  "text-x-script",
   ["rc"]=   "text-x-generic-template",
+  ["rb"]=   "application-x-ruby",
+  ["mak"]=  "text-x-makefile",
+  ["sql"]=  "text-x-sql",
+  ["tex"]=  "text-x-tex",
 }
 
 toolbar.icon_ext_path= _USERHOME.."/toolbar/icons/mime/"
@@ -493,10 +497,11 @@ end
 toolbar.icon_lex= nil
 function toolbar.icon_lexer(lexername)
   if toolbar.icon_lex == nil then
-    toolbar.icon_lex= {}  --build list
-    toolbar.icon_lex["makefile"]= "text-x-makefile"
-    toolbar.icon_lex["cmake"]= "text-x-makefile"
-    toolbar.icon_lex["objective_c"]= "text-x-c"
+    toolbar.icon_lex= {
+      ["cmake"]=  "text-x-makefile",
+      ["objective_c"]= "text-x-c",
+      ["bibtex"]= "text-x-bibtex",
+    }
     for ext,icon in pairs(toolbar.icon_ext) do
       if ext ~= "hpp" then
         local lex= textadept.file_types.extensions[ext]
