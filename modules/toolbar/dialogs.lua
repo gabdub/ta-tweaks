@@ -177,10 +177,12 @@ local function load_data(keep_marks)
   local i
   local icon= dialog_data_icon
   local isMime= (dialog_data_icon == "MIME")
+  local isLexer= (dialog_data_icon == "LEXER")
   local x2= 0
   local w2= 0
   local x3= 0
   local w3= 0
+  local lex_icon= {}
   if dialog_cols and #dialog_cols > 1 then
     x2= dialog_cols[1]
     w2= dialog_cols[2]
@@ -196,7 +198,7 @@ local function load_data(keep_marks)
       n= n+1
       idx_filtered[n]= i
       local btname= "it#"..i
-      if isMime then icon= toolbar.icon_fname(itstr) end
+      if isMime then icon= toolbar.icon_fname(itstr) elseif isLexer then icon= toolbar.icon_lexer(itstr) end
       toolbar.list_add_txt_ico(btname, itstr, "", false, click_item, icon, (n%2 ==1),  0, 0, 0, dialog_w-13)
       if w2 > 0 then show_col_data(i, 2, x2, w2) end --col #2
       if w3 > 0 then show_col_data(i, 3, x3, w3) end --col #3

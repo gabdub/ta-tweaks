@@ -144,7 +144,7 @@ if toolbar then
       lexers[#lexers + 1] = name
     end
     toolbar.small_chooser(_L['Select Lexer'], buffer:get_lexer(), lexer_selected, lexers, "T2_TAB#4",
-      toolbar.ANCHOR.HCENTER, 210, 300, "gnome-app-install-star")
+      toolbar.ANCHOR.HCENTER, 210, 300, "LEXER")
   end
 
   local function enc_selected(enc_sel)

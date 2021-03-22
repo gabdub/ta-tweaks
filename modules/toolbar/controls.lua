@@ -489,3 +489,21 @@ function toolbar.icon_fname(fname)
   end
   return toolbar.icon_ext_path.."text-plain.png"
 end
+
+toolbar.icon_lex= nil
+function toolbar.icon_lexer(lexername)
+  if toolbar.icon_lex == nil then
+    toolbar.icon_lex= {}  --build list
+    toolbar.icon_lex["makefile"]= "text-x-makefile"
+    toolbar.icon_lex["cmake"]= "text-x-makefile"
+    toolbar.icon_lex["objective_c"]= "text-x-c"
+    for ext,icon in pairs(toolbar.icon_ext) do
+      if ext ~= "hpp" then
+        local lex= textadept.file_types.extensions[ext]
+        if lex ~= nil and toolbar.icon_lex[lex] == nil then toolbar.icon_lex[lex]= icon end
+      end
+    end
+  end
+  local icon= toolbar.icon_lex[lexername] or "text-plain"
+  return toolbar.icon_ext_path..icon..".png"
+end
