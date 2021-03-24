@@ -61,7 +61,34 @@ if toolbar then
   end
 
   local function print_dclick(name) --double click= copy row
-    buffer:copy_text(fullprint[toolbar.getnum_cmd(name)])
+    --lua error: "lua: /path/../fname.lua:linenum: error description" ==> goto error
+    local ln= fullprint[toolbar.getnum_cmd(name)]
+    local fname, linenum, errtxt= string.match(ln, 'lua:%s(.-):(%d*):%s(.*)')
+    if not fname then
+      --try with incomplete path ".../path/../fname.lua:linenum: error description"
+      fname, linenum, errtxt= string.match(ln, '%.%.%.(.-):(%d*):%s(.*)')
+      if fname then
+        if Proj.data.is_open then
+          --try to complete the path
+          local lenfname= #fname
+          for k,v in ipairs(Proj.data.proj_files) do
+            if #v > lenfname then
+              if fname == string.sub(v,-lenfname) then
+                fname= v  --found, open this file
+                break
+              end
+            end
+          end
+        end
+      end
+    end
+    if fname and Util.file_exists(fname) then
+      ui.statusbar_text= "> "..errtxt
+      Proj.go_file(fname, linenum)
+    else
+      ui.statusbar_text= "Text copied to clipboard"
+      buffer:copy_text(ln)
+    end
   end
 
   function toolbar.print_result(ml_txt)
