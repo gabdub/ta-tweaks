@@ -503,7 +503,7 @@ function toolbar.icon_lexer(lexername)
       ["bibtex"]= "text-x-bibtex",
     }
     for ext,icon in pairs(toolbar.icon_ext) do
-      if ext ~= "hpp" then
+      if ext ~= "hpp" and ext ~= "h" then --"h" and "hpp" use the "cpp" lexer, ignore this icons
         local lex= textadept.file_types.extensions[ext]
         if lex ~= nil and toolbar.icon_lex[lex] == nil then toolbar.icon_lex[lex]= icon end
       end
