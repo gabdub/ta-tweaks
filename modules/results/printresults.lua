@@ -60,9 +60,7 @@ if toolbar then
     select_printrow(toolbar.getnum_cmd(name))
   end
 
-  local function print_dclick(name) --double click= copy row
-    --lua error: "lua: /path/../fname.lua:linenum: error description" ==> goto error
-    local ln= fullprint[toolbar.getnum_cmd(name)]
+  local function get_fileerror(ln)
     local fname, linenum, errtxt= string.match(ln, 'lua:%s(.-):(%d*):%s(.*)')
     if not fname then
       --try with incomplete path ".../path/../fname.lua:linenum: error description"
@@ -83,6 +81,16 @@ if toolbar then
       end
     end
     if fname and Util.file_exists(fname) then
+      return fname, linenum, errtxt
+    end
+    return nil
+  end
+
+  local function print_dclick(name) --double click= copy row
+    --lua error: "lua: /path/../fname.lua:linenum: error description" ==> goto error
+    local ln= fullprint[toolbar.getnum_cmd(name)]
+    local fname, linenum, errtxt= get_fileerror(ln)
+    if fname then
       ui.statusbar_text= "> "..errtxt
       Proj.go_file(fname, linenum)
     else
@@ -90,6 +98,8 @@ if toolbar then
       buffer:copy_text(ln)
     end
   end
+
+  toolbar.print_console_icon= false
 
   function toolbar.print_result(ml_txt)
     toolbar.sel_results_bar(itemsgrp)
@@ -101,11 +111,19 @@ if toolbar then
       if firstname == nil then firstname= name end
       toolbar.listtb_y= yout
       fullprint[#fullprint+1]= txt
+      local icon= nil
+      if toolbar.print_console_icon then
+        toolbar.print_console_icon= false
+        icon= toolbar.icon_ext_path.."text-x-script.png"  --mark console commands
+      else
+        local fname, linenum, errtxt= get_fileerror(txt)
+        if fname then icon="lpi-bug" end  --mark lua errors (d-click jumps to error)
+      end
       if #txt > 2000 then txt= txt:sub(1,2000).."..." end
       txt= string.gsub(txt, '\t', ' ') --replace tabs with spaces
       local oneline= txt --Util.str_one_line(txt)
       if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
-      toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, nil, false, 0, 0, 0, 250)
+      toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, icon, false, 0, 0, 0, 250)
       yout= yout + toolbar.cfg.butsize
     end
     toolbar.showresults("printresults")

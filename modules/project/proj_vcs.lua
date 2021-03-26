@@ -193,19 +193,22 @@ end
 --list files in this VCS folder/subfolders
 local flist= {}
 
-local function run_gitcmd(cmd)
-  --print git command output
-  if repo_folder ~= "" then ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n")) end
+local function run_cmd(cmd)
+  --run and print git/svn command
+  if repo_folder ~= "" then
+    toolbar.print_console_icon= true --show a console icon before the command line
+    ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n"))
+  end
 end
 
 local function b_gitstatus(bname, chkflist)
-  run_gitcmd("git status -sb")  --Show git status
+  run_cmd("git status -sb")  --Show git status
 end
 
 local function b_gitpullorg(bname, chkflist)
   if gitremote ~= "" then
     if Util.confirm( "GIT PULL", "Do you want to PULL the current branch ("..gitbranch.. ") from repository: "..gitremote.." ?" ) then
-      run_gitcmd("git pull "..gitremote.." "..gitbranch)  --Pull current branch from origin
+      run_cmd("git pull "..gitremote.." "..gitbranch)  --Pull current branch from origin
     end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog
@@ -214,7 +217,7 @@ end
 local function b_gitpushorg(bname, chkflist)
   if gitremote ~= "" then
     if Util.confirm( "GIT PUSH", "Do you want to PUSH the current branch ("..gitbranch.. ") to repository: "..gitremote.." ?" ) then
-      run_gitcmd("git push "..gitremote.." "..gitbranch)  --Push current branch to origin
+      run_cmd("git push "..gitremote.." "..gitbranch)  --Push current branch to origin
     end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog
@@ -232,7 +235,7 @@ local function b_gitcommit(bname, chkflist)
       msg= Util.str_trim(msg)
       if msg ~= "" then
         msg= string.gsub(msg, '\"', "\'") --use single quotes
-        run_gitcmd('git commit -m \"' ..msg..'\"')
+        run_cmd('git commit -m \"' ..msg..'\"')
         ok= true
         b_gitpushorg(bname, chkflist) --OK: ask to push
         return
@@ -260,7 +263,7 @@ local function b_gitadd(bname, chkflist)
   if Util.confirm( "GIT ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository index?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if #le == 2 then run_gitcmd('git add \"'..chkflist[i][1]..'\"') end  --add one file at the time
+      if #le == 2 then run_cmd('git add \"'..chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_gitcommit(bname, chkflist)  --OK: ask to commit
   else
@@ -268,17 +271,12 @@ local function b_gitadd(bname, chkflist)
   end
 end
 
-local function run_svncmd(cmd)
-  --print svn command output
-  if repo_folder ~= "" then ui.print(Proj.get_cmd_output(cmd, repo_folder, repo_folder.."> "..cmd.."\n")) end
-end
-
 local function b_svninfo(bname, chkflist)
-  run_svncmd("svn info")  --Show svn info
+  run_cmd("svn info")  --Show svn info
 end
 
 local function b_svnstat(bname, chkflist)
-  run_svncmd("svn status")  --Show svn status
+  run_cmd("svn status")  --Show svn status
 end
 
 local function b_svncommit(bname, chkflist)
@@ -293,7 +291,7 @@ local function b_svncommit(bname, chkflist)
       msg= Util.str_trim(msg)
       if msg ~= "" then
         msg= string.gsub(msg, '\"', "\'") --use single quotes
-        run_svncmd('svn commit -m \"' ..msg..'\"')
+        run_cmd('svn commit -m \"' ..msg..'\"')
         ok= true
       end
     end
@@ -319,7 +317,7 @@ local function b_svnadd(bname, chkflist)
   if Util.confirm( "SVN ADD", "Do you want to add ".. conv_num(numA, "file") .. " to the repository?" ) then
     for i=1, #chkflist do
       local le= chkflist[i][2]
-      if le == "?" then run_svncmd('svn add \"'..chkflist[i][1]..'\"') end  --add one file at the time
+      if le == "?" then run_cmd('svn add \"'..chkflist[i][1]..'\"') end  --add one file at the time
     end
     b_svncommit(bname, chkflist)  --OK: ask to commit
   else
