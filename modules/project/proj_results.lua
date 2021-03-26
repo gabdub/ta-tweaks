@@ -165,6 +165,32 @@ function plugs.search_result_end()
   end
 end
 
+local function get_fileerror(ln)
+  local fname, linenum, errtxt= string.match(ln, 'lua:%s(.-):(%d*):%s(.*)')
+  if not fname then
+    --try with incomplete path ".../path/../fname.lua:linenum: error description"
+    fname, linenum, errtxt= string.match(ln, '%.%.%.(.-):(%d*):%s(.*)')
+    if fname then
+      if Proj.data.is_open then
+        --try to complete the path
+        local lenfname= #fname
+        for k,v in ipairs(Proj.data.proj_files) do
+          if #v > lenfname then
+            if fname == string.sub(v,-lenfname) then
+              fname= v  --found, open this file
+              break
+            end
+          end
+        end
+      end
+    end
+  end
+  if fname and Util.file_exists(fname) then
+    return fname, linenum, errtxt
+  end
+  return nil
+end
+
 function plugs.doble_click_searchview()
   --open the selected file in the search view
   --clear selection
@@ -181,8 +207,13 @@ function plugs.doble_click_searchview()
       if file then break end
     end
   else
-    --just open the file
-    file= buffer:get_cur_line():match('^[^@]-::(.+)::.+$')
+    --try: open the file
+    local ln= buffer:get_cur_line()
+    file= ln:match('^[^@]-::(.+)::.+$')
+    if file == nil then
+      local errtxt --try: lua error
+      file, line_num, errtxt= get_fileerror(ln)
+    end
   end
   if file then
     textadept.bookmarks.clear()
