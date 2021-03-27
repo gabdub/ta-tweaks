@@ -11,6 +11,8 @@ if toolbar then
   local events, events_connect = events, events.connect
   toolbar.tabpos= 0
 
+  toolbar.keyflags= 0 --key modifiers for current toolbar event (toolbar.KEYFLAGS.xxx)
+
   --select a toolbar as current
   function toolbar.sel_toolbar_n(ntb, ngrp, emptygrp)
     if ngrp == nil then ngrp = 0 end
@@ -167,7 +169,8 @@ if toolbar then
       toolbar.ANCHOR.POP_R_IT_R, 210, 185, "insert-text")
   end
 
-  events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ntabgroup)
+  events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ntabgroup,keyflags)
+    toolbar.keyflags= keyflags
     --ui.statusbar_text= "tab "..ntab.." clicked"
     if ntoolbar == toolbar.TOP_TOOLBAR then
       --tab bar click
@@ -200,7 +203,8 @@ if toolbar then
     end
   end)
 
-  events_connect("toolbar_tabRclicked", function(ntab,ntoolbar,ntabgroup)
+  events_connect("toolbar_tabRclicked", function(ntab,ntoolbar,ntabgroup,keyflags)
+    toolbar.keyflags= keyflags
     --ui.statusbar_text= "tab "..ntab.." R clicked"
     if ntoolbar == toolbar.TOP_TOOLBAR then
       toolbar.selecttab(ntab)
@@ -208,7 +212,8 @@ if toolbar then
     end
   end)
 
-  events_connect("toolbar_tab2clicked", function(ntab,ntoolbar,ntabgroup)
+  events_connect("toolbar_tab2clicked", function(ntab,ntoolbar,ntabgroup,keyflags)
+    toolbar.keyflags= keyflags
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
     if ntoolbar == 0 and toolbar.cfg.tab2clickclose then
@@ -216,7 +221,8 @@ if toolbar then
     end
   end)
 
-  events_connect("toolbar_tabclose", function(ntab,ntoolbar,ntabgroup)
+  events_connect("toolbar_tabclose", function(ntab,ntoolbar,ntabgroup,keyflags)
+    toolbar.keyflags= keyflags
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
     if ntoolbar == 0 then

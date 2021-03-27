@@ -40,7 +40,7 @@
 #define TTBF_IS_TRESIZE     0x00004000  //the button resize the toolbar
 #define TTBF_ANCHOR_END     0x00008000  //anchor the item's right (x2) instead of it's left (x1)
 #define TTBF_IS_TMOVE       0x00010000  //the button move the toolbar (window title)
-//iternal use item flags
+//internal use item flags
 #define TTBF_CLOSETAB_BUT   0x01000000  //highlighted xbutton is a close tab button (internal use)
 #define TTBF_SCROLL_BUT     0x02000000  //highlighted xbutton is a scroll button (internal use)
 #define TTBF_SCROLL_BAR     0x04000000  //highlighted xbutton is a group scroll bar (internal use)
@@ -62,7 +62,7 @@
 #define TTBF_GRP_ITEM_H     0x00002000  //this group set height using items position
 #define TTBF_GRP_VSCROLL    0x00004000  //this group can be scrolled vertically when needed
 #define TTBF_GRP_SHOWVSCR   0x00008000  //this group shows a vertical scrollbar when needed
-//iternal use group flags
+//internal use group flags
 #define TTBF_GRP_TRY_PACK   0x01000000  //after item delete try to scroll left (internal use)
 #define TTBF_GRP_LASTIT_SH  0x02000000  //is the last item of the group shown (internal use)
 #define TTBF_GRP_VSCR_INH   0x04000000  //inhibit vertical scroll while popup is open
@@ -71,8 +71,15 @@
 #define TTBF_TB_VERTICAL    0x00000001  //it's vertical
 #define TTBF_TB_VISIBLE     0x00000002  //it's visible
 #define TTBF_TB_V_LAYOUT    0x00000004  //put groups in a vertical layout
-//iternal use toolbar flags
+//internal use toolbar flags
 #define TTBF_TB_REDRAW      0x01000000  //hold updates for now.. redraw later (internal use)
+
+//key flags
+#define TK_FLG_SHIFT        0x00000001
+#define TK_FLG_CONTROL      0x00000002
+#define TK_FLG_ALT          0x00000004
+#define TK_FLG_META         0x00000008
+#define TK_FLG_CAPSLOCK     0x00000010
 
 //item images
 #define TTBI_BACKGROUND     0
@@ -465,10 +472,10 @@ void show_toolbar(struct toolbar_data *T, int show, int newsize);
 #define TEV_RCLICK    2
 #define TEV_CLOSE     3
 #define TEV_N_EVS     4
-int fire_tab_event( struct toolbar_item * p, int evtype );
-int fire_item_event( struct toolbar_item * p, int evtype );
-int fire_group_event( struct toolbar_group * g, int evtype );
-int fire_toolbar_event( struct toolbar_data * T, int evtype );
+int fire_tab_event( struct toolbar_item * p, int evtype, int state );
+int fire_item_event( struct toolbar_item * p, int evtype, int state );
+int fire_group_event( struct toolbar_group * g, int evtype, int state );
+int fire_toolbar_event( struct toolbar_data * T, int evtype, int state );
 
 void ttb_move_popup(struct toolbar_data *T, int x, int y );
 
@@ -519,7 +526,7 @@ void set_hilight_off( void );
 void calc_popup_sizeT( struct toolbar_data *T);
 
 void mouse_leave_toolbar( struct toolbar_data *T );
-void mouse_move_toolbar( struct toolbar_data *T, int x, int y );
+void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state );
 void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir, int shift );
 void color_pick_ev( struct toolbar_item *p, int dir, int redraw );
 

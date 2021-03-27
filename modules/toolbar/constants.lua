@@ -181,6 +181,14 @@ toolbar.KEY = {
   DELETE        = 65535
 }
 
+toolbar.KEYFLAGS = {
+  SHIFT         = 0x00000001,
+  CONTROL       = 0x00000002,
+  ALT           = 0x00000004,
+  META          = 0x00000008,
+  CAPSLOCK      = 0x00000010
+}
+
 toolbar.ANCHOR = {
   --horizontal
   POP_R_IT_L    = 0,  --popup right at item left

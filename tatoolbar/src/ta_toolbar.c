@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.13 (Mar 22 2021)"
+#define TA_TOOLBAR_VERSION_STR "1.1.14 (Mar 27 2021)"
 
 static void free_img_list( void );
 
@@ -1772,7 +1772,7 @@ void mouse_leave_toolbar( struct toolbar_data *T )
   }
 }
 
-void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
+void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state )
 {
   int nx, xhi, ok, w;
   struct toolbar_item * p, *prev;
@@ -1853,12 +1853,12 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y )
     }else if( p->back_color == BKCOLOR_MINIMAP_CLICK ){
       mini_map_ev( 0, 1 ); //update mini map click (drag)
       if( ttb.philight != NULL ){
-        fire_item_event(p, TEV_CLICK); //scroll buffer while moving with mouse down
+        fire_item_event(p, TEV_CLICK, state); //scroll buffer while moving with mouse down
       }
     }else if( p->back_color == BKCOLOR_TBH_SCR_CLICK ){
       tbh_scroll_ev( 0, 1 ); //update tbh scroll click (drag)
       if( ttb.philight != NULL ){
-        fire_item_event(p, TEV_CLICK); //scroll buffer while moving with mouse down
+        fire_item_event(p, TEV_CLICK, state); //scroll buffer while moving with mouse down
       }
     }else if( (p->flags & TTBF_SCROLL_BAR) != 0 ){
       vscroll_clickG(p->group); //update scrollbar click (drag)
@@ -2762,7 +2762,7 @@ void ttb_goto_tabG(struct toolbar_group *G, int tabpos)
       }
     }
     if( (p != NULL) && (p != pcurr) ){
-      fire_tab_event(p, TEV_CLICK); //fire "toolbar_tabclicked" EVENT
+      fire_tab_event(p, TEV_CLICK, 0); //fire "toolbar_tabclicked" EVENT
     }
   }
 }

@@ -203,7 +203,8 @@ function toolbar.get_cfg_font_extrasize(name)
   return tonumber(esz) or 0
 end
 
-events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup)
+events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup,keyflags)
+  toolbar.keyflags= keyflags
   if buttonname == "TOOLBAR" then
     buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)
   elseif buttonname == "GROUP" then
@@ -227,7 +228,8 @@ function toolbar.cmd_dclick(name,func)
   toolbar.cmds_d[ rm_namenum(name) ]= func
 end
 
-events_connect("toolbar_2clicked", function(buttonname,ntoolbar,ngroup)
+events_connect("toolbar_2clicked", function(buttonname,ntoolbar,ngroup,keyflags)
+  toolbar.keyflags= keyflags
   local bfunc= rm_namenum(buttonname) --"name#num" --> "name"
   --pass the complete name of the button ("name#num")
   if toolbar.cmds_d[bfunc] ~= nil then return toolbar.cmds_d[bfunc](buttonname) end
@@ -238,7 +240,8 @@ function toolbar.cmd_rclick(name,func)
   toolbar.cmds_r[ rm_namenum(name) ]= func
 end
 
-events_connect("toolbar_Rclicked", function(buttonname,ntoolbar,ngroup)
+events_connect("toolbar_Rclicked", function(buttonname,ntoolbar,ngroup,keyflags)
+  toolbar.keyflags= keyflags
   if buttonname == "TOOLBAR" then
     buttonname= "TOOLBAR".. ntoolbar  --button name="TOOLBAR#" (#=toolbar num)
   elseif buttonname == "GROUP" then

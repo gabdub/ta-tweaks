@@ -39,6 +39,15 @@ static void kill_fonts( void )
   }
 }
 
+static int get_keyflags(int state) {
+  int flags= 0;
+  if( (state & GDK_SHIFT_MASK) != 0 ){    flags |= TK_FLG_SHIFT;   }
+  if( (state & GDK_CONTROL_MASK) != 0 ){  flags |= TK_FLG_CONTROL; }
+  if( (state & GDK_MOD1_MASK) != 0 ){     flags |= TK_FLG_ALT;     }
+  if( (state & GDK_META_MASK) != 0 ){     flags |= TK_FLG_META;    }
+  if( (state & GDK_LOCK_MASK) != 0 ){     flags |= TK_FLG_CAPSLOCK;}
+  return flags;
+}
 
 //from textadept.c
 static void show_context_menu(lua_State *L, GdkEventButton *event, char *k);
@@ -1419,7 +1428,7 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
     x = event->x;
     y = event->y;
   }
-  mouse_move_toolbar(T, x, y);
+  mouse_move_toolbar(T, x, y, event->state);
   return TRUE;
 }
 
@@ -1450,11 +1459,13 @@ static char * tabevtype_name[TEV_N_EVS]={
   "toolbar_tabclose"       //TEV_CLOSE
 };
 
-int fire_tab_event( struct toolbar_item * p, int evtype )
+//emit tabevtype[] event + int tab-num + int toolbar-num + int group-num
+//since 1.1.14: + int key-flags (TK_FLG_..= SHIFT,CONTROL,ETC)
+int fire_tab_event( struct toolbar_item * p, int evtype, int state )
 { //emit event(tab.num, toolbar.num, tabgroup.num)
   //a context menu is shown when TEV_RCLICK return value is not 0
   if( (p != NULL) && (evtype >= 0) && (evtype < TEV_N_EVS) ){
-    return emit(lua, tabevtype_name[evtype], LUA_TNUMBER, p->num, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, -1);
+    return emit(lua, tabevtype_name[evtype], LUA_TNUMBER, p->num, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, LUA_TNUMBER, get_keyflags(state), -1);
   }
   return 0;
 }
@@ -1462,10 +1473,10 @@ int fire_tab_event( struct toolbar_item * p, int evtype )
 static void proc_tab_click( struct toolbar_item * p, GdkEventButton *event )
 {
   if(event->button == 1){       //tab left click
-    fire_tab_event(p, TEV_CLICK);
+    fire_tab_event(p, TEV_CLICK, event->state);
 
   }else if(event->button == 3){ //tab right click
-    if( fire_tab_event(p, TEV_RCLICK) ){
+    if( fire_tab_event(p, TEV_RCLICK, event->state) ){
       show_context_menu(lua, event, "tab_context_menu"); //open context menu
     }
   }
@@ -1478,29 +1489,31 @@ static char * evtype_name[TEV_N_EVS]={
   "toolbar_close"       //TEV_CLOSE (not used)
 };
 
-int fire_item_event( struct toolbar_item * p, int evtype )
+//emit evtype[] event + string item-name + int toolbar-num + int group-num
+//since 1.1.14: + int key-flags (TK_FLG_..= SHIFT,CONTROL,ETC)
+int fire_item_event( struct toolbar_item * p, int evtype, int state )
 { //emit event(item.name, toolbar.num, group.num)
   //a context menu is shown when TEV_RCLICK return value is not 0
   if( (p != NULL) && (p->name != NULL) && (evtype >= 0) && (evtype < TEV_N_EVS) ){
-    return emit(lua, evtype_name[evtype], LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, -1);
+    return emit(lua, evtype_name[evtype], LUA_TSTRING, p->name, LUA_TNUMBER, p->group->toolbar->num, LUA_TNUMBER, p->group->num, LUA_TNUMBER, get_keyflags(state), -1);
   }
   return 0;
 }
 
-int fire_group_event( struct toolbar_group * g, int evtype )
+int fire_group_event( struct toolbar_group * g, int evtype, int state )
 { //emit event("GROUP", toolbar.num, group.num)
   //a context menu is shown when TEV_RCLICK return value is not 0
   if( (g != NULL) && (evtype >= 0) && (evtype < TEV_N_EVS) ){
-    return emit(lua, evtype_name[evtype], LUA_TSTRING, "GROUP", LUA_TNUMBER, g->toolbar->num, LUA_TNUMBER, g->num, -1);
+    return emit(lua, evtype_name[evtype], LUA_TSTRING, "GROUP", LUA_TNUMBER, g->toolbar->num, LUA_TNUMBER, g->num, LUA_TNUMBER, get_keyflags(state), -1);
   }
   return 0;
 }
 
-int fire_toolbar_event( struct toolbar_data * T, int evtype )
+int fire_toolbar_event( struct toolbar_data * T, int evtype, int state )
 { //emit event("TOOLBAR", toolbar.num, 0)
   //a context menu is shown when TEV_RCLICK return value is not 0
   if( (T != NULL) && (evtype >= 0) && (evtype < TEV_N_EVS) ){
-    return emit(lua, evtype_name[evtype], LUA_TSTRING, "TOOLBAR", LUA_TNUMBER, T->num, LUA_TNUMBER, 0, -1);
+    return emit(lua, evtype_name[evtype], LUA_TSTRING, "TOOLBAR", LUA_TNUMBER, T->num, LUA_TNUMBER, 0, LUA_TNUMBER, get_keyflags(state), -1);
   }
   return 0;
 }
@@ -1513,10 +1526,10 @@ static void open_tb_contextmenu( GdkEventButton *event )
 static void proc_item_click( struct toolbar_item * p, GdkEventButton *event )
 { //item left/right click + open context menu
   if(event->button == 1){       //item left click
-    fire_item_event(p, TEV_CLICK);
+    fire_item_event(p, TEV_CLICK, event->state);
 
   }else if(event->button == 3){ //item right click
-    if( fire_item_event(p, TEV_RCLICK) ){
+    if( fire_item_event(p, TEV_RCLICK, event->state) ){
       open_tb_contextmenu(event); //open context menu
     }
   }
@@ -1525,10 +1538,10 @@ static void proc_item_click( struct toolbar_item * p, GdkEventButton *event )
 static void proc_group_click( struct toolbar_group * g, GdkEventButton *event )
 { //group left/right click + open context menu
   if(event->button == 1){       //group left click
-    fire_group_event(g, TEV_CLICK);
+    fire_group_event(g, TEV_CLICK, event->state);
 
   }else if(event->button == 3){ //group right click
-    if( fire_group_event(g, TEV_RCLICK) ){
+    if( fire_group_event(g, TEV_RCLICK, event->state) ){
       open_tb_contextmenu(event); //open context menu
     }
   }
@@ -1537,10 +1550,10 @@ static void proc_group_click( struct toolbar_group * g, GdkEventButton *event )
 static void proc_toolbar_click( struct toolbar_data * T, GdkEventButton *event )
 { //toolbar left/right click + open context menu
   if(event->button == 1){       //toolbar left click
-    fire_toolbar_event(T, TEV_CLICK);
+    fire_toolbar_event(T, TEV_CLICK, event->state);
 
   }else if(event->button == 3){ //toolbar right click
-    if( fire_toolbar_event(T, TEV_RCLICK) ){
+    if( fire_toolbar_event(T, TEV_RCLICK, event->state) ){
       open_tb_contextmenu(event); //open context menu
     }
   }
@@ -1568,11 +1581,11 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           color_pick_ev( ttb.phipress, 0, 0 ); //COLOR PICKER click
         }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
           mini_map_ev( 0, 0 );   //MINI MAP click
-          fire_item_event(ttb.phipress, TEV_CLICK); //scroll buffer now
+          fire_item_event(ttb.phipress, TEV_CLICK, event->state); //scroll buffer now
           start_drag(event->x, event->y);  //drag the minimap until the mouse button is released
         }else if( ttb.phipress->back_color == BKCOLOR_TBH_SCR_CLICK ){
           tbh_scroll_ev( 0, 0 );   //TBH SCROLL click
-          fire_item_event(ttb.phipress, TEV_CLICK); //scroll buffer now
+          fire_item_event(ttb.phipress, TEV_CLICK, event->state); //scroll buffer now
           start_drag(event->x, event->y);  //drag the tbh_scroll until the mouse button is released
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
           vscroll_clickG(ttb.phipress->group); //scrollbar click
@@ -1613,8 +1626,8 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
           scroll_toolbarT(T, event->x, event->y, p->num, 0);
 
         }else if( (p->flags & TTBF_CLOSETAB_BUT) != 0 ){
-          fire_tab_event(p, TEV_CLICK);
-          fire_tab_event(p, TEV_CLOSE);
+          fire_tab_event(p, TEV_CLICK, event->state);
+          fire_tab_event(p, TEV_CLOSE, event->state);
 
         }else if( (p->flags & TTBF_TAB) == 0 ){
           proc_item_click(p, event);  //item left/right click + open context menu
@@ -1624,7 +1637,7 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
       }else{
         if( ttb.pdrag != NULL ){
           if( event->button == 1 ){
-            fire_item_event(ttb.pdrag, TEV_CLICK);         //notify drag end
+            fire_item_event(ttb.pdrag, TEV_CLICK, event->state);         //notify drag end
           }
           set_hilight_off();  //cancel drag highlight
 
@@ -1652,9 +1665,9 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         p= item_fromXYT(T, event->x, event->y);
         if( p != NULL ){
           if( (p->flags & TTBF_TAB) == 0 ){
-            fire_item_event(p, TEV_2CLICK); //button left double-click
+            fire_item_event(p, TEV_2CLICK, event->state); //button left double-click
           }else{
-            fire_tab_event(p, TEV_2CLICK);  //tab left double-click
+            fire_tab_event(p, TEV_2CLICK, event->state);  //tab left double-click
           }
         }
       }
