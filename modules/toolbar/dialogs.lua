@@ -233,14 +233,18 @@ local function update_filter()
   toolbar.enable("edit-find", ena)
 end
 
-local function filter_key(keycode)
+local function filter_key(keycode, keyflags)
   local afltr= filter
-  if keycode >= 32 and keycode <= 126 then --ascii
-    filter= filter .. string.char(keycode)
-  elseif keycode == toolbar.KEY.BACKSPACE then --remove last letter
-    filter= filter:sub(1,-2)
-  elseif keycode == toolbar.KEY.DELETE then --clear
-    filter= ""
+  if (keyflags & toolbar.KEYFLAGS.CTRL_ALT_META) == 0 then  --ignore key if ctrl/alt/meta are pressed
+    if keycode >= 32 and keycode <= 126 then --ascii
+      filter= filter .. string.char(keycode)
+    elseif (keyflags & toolbar.KEYFLAGS.SHIFT) == 0 then  --ignore key if shift is pressed
+      if keycode == toolbar.KEY.BACKSPACE then --remove last letter
+        filter= filter:sub(1,-2)
+      elseif keycode == toolbar.KEY.DELETE then --clear
+        filter= ""
+      end
+    end
   end
   if afltr ~= filter then
     update_filter()
@@ -254,27 +258,29 @@ local function translate_keypad_codes(keycode)
   return keycode
 end
 
-local function dialog_key_ev(npop, keycode)
+local function dialog_key_ev(npop, keycode,keyflags)
+  toolbar.keyflags= keyflags
   if npop == toolbar.DIALOG_POPUP then
     --ui.statusbar_text= "dialog key= ".. keycode
     keycode= translate_keypad_codes(keycode)
-    if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
-      if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
-    elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
-      change_selection( idx_sel_i-1 )  --select previous item
-    elseif keycode == toolbar.KEY.DOWN or keycode == toolbar.KEY.RIGHT then
-      change_selection( idx_sel_i+1 )  --select next item
-    elseif keycode == toolbar.KEY.PG_UP then
-      change_selection( idx_sel_i-10 )  --select previous page item
-    elseif keycode == toolbar.KEY.PG_DWN then
-      change_selection( idx_sel_i+10 )  --select next page item
-    elseif keycode == toolbar.KEY.HOME then
-      change_selection( 1 )  --select previous page item
-    elseif keycode == toolbar.KEY.END then
-      change_selection( #idx_filtered )  --select next page item
-    else
-      filter_key(keycode) --modify filter
+    if (keyflags & toolbar.KEYFLAGS.ALL_MODS) == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
+      if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
+        if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
+      elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
+        change_selection( idx_sel_i-1 )  --select previous item
+      elseif keycode == toolbar.KEY.DOWN or keycode == toolbar.KEY.RIGHT then
+        change_selection( idx_sel_i+1 )  --select next item
+      elseif keycode == toolbar.KEY.PG_UP then
+        change_selection( idx_sel_i-10 )  --select previous page item
+      elseif keycode == toolbar.KEY.PG_DWN then
+        change_selection( idx_sel_i+10 )  --select next page item
+      elseif keycode == toolbar.KEY.HOME then
+        change_selection( 1 )  --select previous page item
+      elseif keycode == toolbar.KEY.END then
+        change_selection( #idx_filtered )  --select next page item
+      end
     end
+    filter_key(keycode, keyflags) --modify filter
     --return true to cancel default key actions (like close on ESCAPE)
   end
 end

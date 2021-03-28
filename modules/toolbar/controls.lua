@@ -112,8 +112,8 @@ local function change_comboselection(newsel)
   return false
 end
 
-local function popup_key_ev(npop, keycode)
-  if npop == toolbar.COMBO_POPUP and combo_open == 1 then
+local function popup_key_ev(npop, keycode,keyflags)
+  if npop == toolbar.COMBO_POPUP and combo_open == 1 and (keyflags & toolbar.KEYFLAGS.ALL_MODS) == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
     if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
       combo_clicked(combo_op_name.."#"..combo_sel_i)  --select and close
     elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
