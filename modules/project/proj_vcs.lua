@@ -423,7 +423,7 @@ local function b_browsepub(bname, chkflist)
 end
 
 local function set_show_all_tit()
-  toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files", false)
+  toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files [Control+S]", false)
 end
 
 local status_info= ""
@@ -442,7 +442,7 @@ end
 local function cond_enable_button(buttons, bname, cond)
   if not cond then
     for i=1, #buttons do
-      local bt= buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      local bt= buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
       if bt[1] == bname then
         bt[8]= bt[8] | toolbar.DLGBUT.EN_OFF
         break
@@ -594,40 +594,40 @@ function Proj.vcs_control_panel(idx)
     local encomm= false
     dconfig.can_move= true  --allow to move
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
-    if #data.proj_vcontrol > 1 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end
+    if #data.proj_vcontrol > 1 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end  --"Control+N"
     local buttons= {
-      --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
-      {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD|toolbar.DLGBUT.KEEP_MARKS},
-      {"dlg-status-info", "help-about", status_info, 500, 0, 2, b_status_info, toolbar.DLGBUT.ICON},
-      {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS}
+      --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
+      {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD|toolbar.DLGBUT.KEEP_MARKS, "Control+S"}, --re-set in set_show_all_tit()
+      {"dlg-status-info", "help-about", status_info, 500, 0, 2, b_status_info, toolbar.DLGBUT.ICON, nil},
+      {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS, "Control+M"}
     }
     if vctype == Proj.VCS_FOLDER then
       local ena= (publish_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
-      buttons[#buttons+1]= {"dlg-lbl-remote", "Remote:", "Remote folder", 4, 95, 1, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT}
-      buttons[#buttons+1]= {"dlg-pubfold", publish_folder, "Browse remote folder", 60, 0, 1, b_browsepub, ena}
-      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT|toolbar.DLGBUT.BOLD}
-      buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 2, b_update, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to remote folder", 300, 95, 2, b_publish, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-lbl-remote", "Remote:", "Remote folder", 4, 95, 1, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT, "Control+R"}
+      buttons[#buttons+1]= {"dlg-pubfold", publish_folder, "Browse remote folder", 60, 0, 1, b_browsepub, ena, "Control+B"}
+      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT|toolbar.DLGBUT.BOLD, nil}
+      buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 2, b_update, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE, "Control+U"}
+      buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to remote folder", 300, 95, 2, b_publish, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE, "Control+P"}
 
     elseif vctype == Proj.VCS_GIT then
       local ena= (gitbranch ~= "") and 0 or toolbar.DLGBUT.EN_OFF
       local enaRem= (ena and gitremote ~= "") and 0 or toolbar.DLGBUT.EN_OFF
 
-      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.EN_OFF}
-      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Show git status", 55, 0, 1, b_gitstatus, ena}
+      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.EN_OFF, nil}
+      buttons[#buttons+1]= {"dlg-branch", gitbranch, "Show git status", 55, 0, 1, b_gitstatus, ena, "Control+B"}
 
-      buttons[#buttons+1]= {"dlg-git-pull", "Pull "..gitremote, "Pull current branch from "..gitremote, 4, 105, 2, b_gitpullorg, enaRem}
+      buttons[#buttons+1]= {"dlg-git-pull", "Pull "..gitremote, "Pull current branch from "..gitremote, 4, 105, 2, b_gitpullorg, enaRem, "Control+P"}
 
-      buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 190, 95, 2, b_gitadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-git-commit", "Commit", "Commit changes to the repository", 290, 95, 2, b_gitcommit, ena|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-git-push", "Push "..gitremote, "Push current branch to "..gitremote.."\n=Requires stored credentials=", 390, 95, 2, b_gitpushorg, enaRem}
+      buttons[#buttons+1]= {"dlg-git-add", "Add", "Add files to index", 190, 95, 2, b_gitadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE, "Control+A"}
+      buttons[#buttons+1]= {"dlg-git-commit", "Commit", "Commit changes to the repository", 290, 95, 2, b_gitcommit, ena|toolbar.DLGBUT.CLOSE, "Control+C"}
+      buttons[#buttons+1]= {"dlg-git-push", "Push "..gitremote, "Push current branch to "..gitremote.."\n=Requires stored credentials=", 390, 95, 2, b_gitpushorg, enaRem, "Control+Shift+P"}
 
     elseif vctype == Proj.VCS_SVN then
       local ena= (repo_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
-      buttons[#buttons+1]= {"dlg-svn-info", "Info", "Show svn info", 4, 95, 1, b_svninfo, ena}
-      buttons[#buttons+1]= {"dlg-svn-status", "Status", "Show svn status", 105, 95, 1, b_svnstat, ena}
-      buttons[#buttons+1]= {"dlg-svn-add", "Add", "Add files to SVN", 190, 95, 2, b_svnadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE}
-      buttons[#buttons+1]= {"dlg-svn-commit", "Commit", "Commit all changes to the repository", 290, 95, 2, b_svncommit, ena|toolbar.DLGBUT.CLOSE}
+      buttons[#buttons+1]= {"dlg-svn-info", "Info", "Show svn info", 4, 95, 1, b_svninfo, ena, "Control+I"}
+      buttons[#buttons+1]= {"dlg-svn-status", "Status", "Show svn status", 105, 95, 1, b_svnstat, ena, "Control+T"}
+      buttons[#buttons+1]= {"dlg-svn-add", "Add", "Add files to SVN", 190, 95, 2, b_svnadd, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE, "Control+A"}
+      buttons[#buttons+1]= {"dlg-svn-commit", "Commit", "Commit all changes to the repository", 290, 95, 2, b_svncommit, ena|toolbar.DLGBUT.CLOSE, "Control+C"}
     end
     dconfig.buttons= buttons
     toolbar.dlg_filter_col2= false --show all items

@@ -12,6 +12,7 @@ local previewgrp2
 local dialog_list= {}
 local dialog_cols= {}
 local dialog_buttons= {}
+local dialog_accel= {}
 local dialog_data_icon= ""
 local dialog_font_preview= false
 local dialog_single_click= false
@@ -109,7 +110,7 @@ local check_val= {}
 
 local function enable_buttons()
   for i=1, #dialog_buttons do
-    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     local flg= bt[8]
     if (flg & toolbar.DLGBUT.EN_OFF) ~= 0 then
       toolbar.enable(bt[1], false)  --disabled
@@ -258,11 +259,46 @@ local function translate_keypad_codes(keycode)
   return keycode
 end
 
+local function db_pressed(bname)
+  for i=1, #dialog_buttons do
+    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
+    if bt[1] == bname then
+      local chkflist= {}  --list of checked items
+      for k,v in pairs(check_val) do
+        if v then
+          local itnum= toolbar.getnum_cmd(k)
+          chkflist[#chkflist+1]= dialog_list[itnum]
+        end
+      end
+      local flg= bt[8]
+      if (flg & toolbar.DLGBUT.CLOSE) ~= 0 then close_dialog() end  --close dialog
+      if bt[7] ~= nil then bt[7](bname, chkflist) end --callback
+      if (flg & (toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.RELOAD)) == toolbar.DLGBUT.RELOAD then
+        load_data( (flg & toolbar.DLGBUT.KEEP_MARKS) ~= 0 ) --reload-list
+      end
+      return true
+    end
+  end
+  return false
+end
+
 local function dialog_key_ev(npop, keycode,keyflags)
   toolbar.keyflags= keyflags
   if npop == toolbar.DIALOG_POPUP then
     --ui.statusbar_text= "dialog key= ".. keycode
     keycode= translate_keypad_codes(keycode)
+    --check accelerators
+    for i=1,#dialog_accel do  --{keycode, keyflags, buttname}
+      if dialog_accel[i][1] == keycode and dialog_accel[i][2] == keyflags then
+        local bname= dialog_accel[i][3]
+        if not db_pressed(bname) then --dialog button?
+          if toolbar.cmds_n[bname] ~= nil then toolbar.cmds_n[bname](bname)
+          elseif toolbar.cmds[bname] ~= nil then toolbar.cmds[bname](bname) end --TODO: unify "cmds" with "cmds_n"
+        end
+        return
+      end
+    end
+
     if (keyflags & toolbar.KEYFLAGS.ALL_MODS) == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
       if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
         if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
@@ -286,26 +322,17 @@ local function dialog_key_ev(npop, keycode,keyflags)
 end
 events_connect("popup_key", dialog_key_ev)
 
-local function db_pressed(bname)
-  for i=1, #dialog_buttons do
-    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
-    if bt[1] == bname then
-      local chkflist= {}  --list of checked items
-      for k,v in pairs(check_val) do
-        if v then
-          local itnum= toolbar.getnum_cmd(k)
-          chkflist[#chkflist+1]= dialog_list[itnum]
-        end
-      end
-      local flg= bt[8]
-      if (flg & toolbar.DLGBUT.CLOSE) ~= 0 then close_dialog() end  --close dialog
-      if bt[7] ~= nil then bt[7](bname, chkflist) end --callback
-      if (flg & (toolbar.DLGBUT.CLOSE|toolbar.DLGBUT.RELOAD)) == toolbar.DLGBUT.RELOAD then
-        load_data( (flg & toolbar.DLGBUT.KEEP_MARKS) ~= 0 ) --reload-list
-      end
-      break
-    end
+local function add_accelerator(keyname, buttname)
+  local keyflags= 0
+  keyname= string.lower(keyname)
+  if keyname:match("control+")  then keyflags= keyflags | toolbar.KEYFLAGS.CONTROL  keyname= keyname:gsub("control%+","")  end
+  if keyname:match("alt+")      then keyflags= keyflags | toolbar.KEYFLAGS.ALT      keyname= keyname:gsub("alt%+","")  end
+  if keyname:match("shift+")    then keyflags= keyflags | toolbar.KEYFLAGS.SHIFT    keyname= string.upper(keyname:gsub("shift%+","")) end
+  local keycode= 0
+  if #keyname == 1 then
+    keycode= string.byte(keyname)
   end
+  if keycode ~= 0 then dialog_accel[#dialog_accel+1]= {keycode, keyflags, buttname} end
 end
 
 local dlg_can_move= false
@@ -379,6 +406,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     next_but_cb= nil
   end
   dialog_data_icon= dataicon
+  dialog_accel= {}
 
   filter= ""
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
@@ -424,7 +452,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.listtb_y= 2
   toolbar.list_cmdright= 2
   toolbar.list_addbutton("close_dlg", "Close", close_dialog, "window-close")
-  if next_but_cb then toolbar.list_addbutton("next_dlg", "Next", next_dlg, "go-next") end
+  if next_but_cb then toolbar.list_addbutton("next_dlg", "Next [Control+N]", next_dlg, "go-next") add_accelerator("Control+N", "next_dlg") end
 
   if dialog_font_preview then
     local prevtxt= "0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz~{}[]"
@@ -458,19 +486,24 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
     for i=1, #dialog_buttons do
-      local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT...
+      local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
       toolbar.gotopos(bt[4], (bt[6]-1)*toolbar.cfg.barsize+2)
       toolbar.cfg.butsize= bt[5]
       local flg= bt[8]
       local leftalign= ((flg & toolbar.DLGBUT.LEFT) ~= 0)
       local boldtxt= ((flg & toolbar.DLGBUT.BOLD) ~= 0)
       local dropdown= ((flg & toolbar.DLGBUT.DROPDOWN) ~= 0)
+      local tooltip= bt[3]
+      if bt[9] then
+        if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+        add_accelerator(bt[9], bt[1])
+      end
       if (flg & toolbar.DLGBUT.ICON) ~= 0 then
         --name,func,tooltip,icon,passname,base
-        toolbar.cmd(bt[1], db_pressed, bt[3], bt[2], true, 0)
+        toolbar.cmd(bt[1], db_pressed, tooltip, bt[2], true, 0)
       else
         --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-        toolbar.cmdtext(bt[2], db_pressed, bt[3], bt[1], true, dropdown, leftalign, boldtxt)
+        toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
       end
     end
     toolbar.cfg.butsize= sw
