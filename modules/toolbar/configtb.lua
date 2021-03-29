@@ -952,7 +952,7 @@ local function add_toolbar_cfg_panel()
   add_config_check("tbshowminimap", "Show mini map", "", true)
   add_config_check("tbhidemmapcfg", "Hide when config is open", "", true)
   add_config_check("tbreplvscroll", "Replace vertical scrollbar", "", true)
-  if tbh_scroll then add_config_check("tbreplhscroll", "Replace horizontal scrollbar", "", false) end
+  add_config_check("tbreplhscroll", "Replace horizontal scrollbar", "", false)
 
   toolbar.config_saveon=false --end of config save options of this panel
 
