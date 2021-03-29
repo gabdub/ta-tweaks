@@ -54,7 +54,7 @@ local function close_search_view()
     plugs.goto_searchview()
     --close buffer / view
     buffer:set_save_point()
-    Util.close_buffer()
+    buffer:close()
     Util.goto_view( sv -1 )
     view.unsplit(view)
     return true
@@ -66,7 +66,7 @@ local function close_search_view()
       if view.buffer._type ~= Proj.PRJT_SEARCH then
         Util.goto_buffer(sbuffer)
       end
-      Util.close_buffer()
+      buffer:close()
       break
     end
   end

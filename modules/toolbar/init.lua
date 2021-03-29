@@ -217,7 +217,7 @@ if toolbar then
     --double click tab: close current buffer
     --ui.statusbar_text= "tab "..ntab.." 2 clicked"
     if ntoolbar == 0 and toolbar.cfg.tab2clickclose then
-      if Proj then Proj.close_buffer() else Util.close_buffer() end
+      if Proj then Proj.close_buffer() else buffer:close() end
     end
   end)
 
@@ -226,7 +226,7 @@ if toolbar then
     --close tab button clicked: close current buffer
     --ui.statusbar_text= "tab "..ntab.." close clicked"
     if ntoolbar == 0 then
-      if Proj then Proj.close_buffer() else Util.close_buffer() end
+      if Proj then Proj.close_buffer() else buffer:close() end
     end
   end)
 

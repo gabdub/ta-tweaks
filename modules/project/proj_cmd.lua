@@ -35,7 +35,7 @@ function Proj.close_buffer()
 
   else
     --close a regular file
-    if Util.close_buffer() then
+    if buffer:close() then
       --check that at least one regular buffer remains after closing
       Proj.check_panels()
     end
@@ -65,7 +65,7 @@ function Proj.onlykeep_projopen(keepone)
     if Proj.isRegularBuf(buf) and not buf._dont_close then
       --regular file, close it
       Util.goto_buffer(buf)
-      if not Util.close_buffer() then
+      if not buffer:close() then
         Proj.stop_update_ui(false)
         return --cancel close all
       end

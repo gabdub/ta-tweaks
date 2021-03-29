@@ -361,7 +361,7 @@ if toolbar then
       for _, buff in ipairs(_BUFFERS) do
         if buff.filename == fn then
           Util.goto_buffer(buff)
-          Util.close_buffer()
+          buffer:close()
           break
         end
       end

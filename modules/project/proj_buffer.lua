@@ -325,7 +325,7 @@ function plugs.open_project()
       plugs.check_lost_focus(buffer)
     else
       --invalid project
-      Util.close_buffer()
+      buffer:close()
       Proj.closed_cleardata()
       ui.statusbar_text= 'Invalid project file'
       Util.info('Open error', 'Invalid project file')
@@ -349,7 +349,7 @@ function plugs.close_project(keepviews)
       Util.goto_view(projv)
     end
     Util.goto_buffer(p_buffer)
-    if Util.close_buffer() then
+    if buffer:close() then
       Proj.closed_cleardata()
       if not keepviews then
         plugs.close_results()
@@ -469,7 +469,7 @@ function plugs.update_proj_buffer(reload)
     if reload then
       local save_ro= p_buffer.read_only
       p_buffer.read_only= false
-      Util.reload_file()
+      buffer:reload()
       p_buffer.read_only= save_ro
 
       --move the selection bar to the first added file

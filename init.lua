@@ -105,7 +105,7 @@ if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or abo
 
   --reload changed files without prompting
   events.connect(events.FILE_CHANGED, function()
-    Util.reload_file()
+    buffer:reload()
     return false
   end,1)
 end

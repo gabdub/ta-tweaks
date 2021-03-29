@@ -214,7 +214,7 @@ function Proj.selection_mode()
       if buff.filename == fn then
         if buff.modify then
           Util.goto_buffer(buff)
-          Util.save_file()
+          buffer:save()
         end
         break
       end
@@ -616,7 +616,7 @@ function Proj.close_untitled()
         if (right and buf._right_side) or (not right) and not buf._right_side then
           --same side, close auto_opened buffer
           Util.goto_buffer(buf)
-          Util.close_buffer()
+          buffer:close()
           break
         end
       end

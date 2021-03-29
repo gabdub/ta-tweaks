@@ -49,18 +49,6 @@ function Util.goto_line(p_buffer,line)
   p_buffer:goto_line(r)
 end
 
-function Util.close_buffer()
-  return buffer:close()
-end
-
-function Util.reload_file()
-  buffer:reload()
-end
-
-function Util.save_file()
-  buffer:save()
-end
-
 -- Returns the Path, Filename, and Extension of a filename as 3 strings
 function Util.splitfilename(strfilename)
   if not strfilename then return {'','',''} end
