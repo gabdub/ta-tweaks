@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 --
 -- This module add a recent project list to the "lists" toolbar
 --
@@ -207,7 +207,7 @@ if toolbar then
   function expand_brw_list(cmd)
     sel_brwfile(cmd)
     toolbar.set_expand_icon(cmd,"list-colapse2")
-    toolbar.cmds_n[cmd]= collapse_brw_list
+    toolbar.cmds[cmd]= collapse_brw_list
     toolbar.collapse(cmd, false)
     collarow[cmd]= false
     local id= toolbar.getnum_cmd(cmd)
@@ -220,7 +220,7 @@ if toolbar then
   function collapse_brw_list(cmd)
     sel_brwfile(cmd)
     toolbar.set_expand_icon(cmd,"list-expand2")
-    toolbar.cmds_n[cmd]= expand_brw_list
+    toolbar.cmds[cmd]= expand_brw_list
     toolbar.collapse(cmd, true)
     collarow[cmd]= true
     local id= toolbar.getnum_cmd(cmd)

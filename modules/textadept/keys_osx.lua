@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 -- Mac OSX key bindings.
 --
 -- Unassigned keys (~ denotes keys reserved by the operating system):

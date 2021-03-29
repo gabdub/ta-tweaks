@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 --
 -- This module control the "results" toolbar
 --
@@ -167,7 +167,7 @@ if toolbar then
         local ls= toolbar.resultsselect[i] --{name, tooltip, icon, createfun, notify, show}
         toolbar.gotopos( toolbar.listtb_x, toolbar.listtb_y)
         toolbar.listtb_x=toolbar.listtb_x+toolbar.cfg.butsize
-        toolbar.cmd(ls[1], select_results, ls[2], ls[3], true)
+        toolbar.cmd(ls[1], select_results, ls[2], ls[3])
       end
       toolbar.listtb_x=toolbar.listtb_x+toolbar.cfg.butsize/2
       lblResult= toolbar.list_addinfo("Results",true)

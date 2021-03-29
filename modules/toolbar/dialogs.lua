@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 
 local Util = Util
 local events, events_connect = events, events.connect
@@ -150,7 +150,7 @@ local function show_col_data(nrow, ncol, xcol, wcol)
   if type(txt) == "boolean" then
     toolbar.gotopos(xcol, toolbar.listtb_y - toolbar.cfg.butsize)
     local name= "dlg-check#"..nrow
-    toolbar.cmd(name, chg_check, "", "", "", toolbar.TTBI_TB.CHECK_BASE)
+    toolbar.cmd(name, chg_check, "", "", toolbar.TTBI_TB.CHECK_BASE)
     check_val[name]= txt
   elseif txt ~= "" then
     toolbar.gotopos(xcol, toolbar.listtb_y - toolbar.cfg.butsize)
@@ -294,9 +294,8 @@ local function dialog_key_ev(npop, keycode,keyflags)
     for i=1,#dialog_accel do  --{keycode, keyflags, buttname}
       if dialog_accel[i][1] == kc and dialog_accel[i][2] == keyflags then
         local bname= dialog_accel[i][3]
-        if not db_pressed(bname) then --dialog button?
-          if toolbar.cmds_n[bname] ~= nil then toolbar.cmds_n[bname](bname)
-          elseif toolbar.cmds[bname] ~= nil then toolbar.cmds[bname](bname) end --TODO: unify "cmds" with "cmds_n"
+        if not db_pressed(bname) then --try dialog buttons
+          if toolbar.cmds[bname] ~= nil then toolbar.cmds[bname](bname) end --try other buttons
         end
         return
       end
@@ -472,7 +471,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
-  toolbar.cmd("edit-find", nil, "")
+  toolbar.cmd("edit-find", nil, "", "")
   toolbar.gotopos(2+toolbar.cfg.butsize, 3)
   toolbar.addlabel("...", "", dialog_w-toolbar.cfg.butsize-10, true, false, "filter-txt")  --left align
   update_filter()
@@ -502,8 +501,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
         add_accelerator(bt[9], bt[1])
       end
       if (flg & toolbar.DLGBUT.ICON) ~= 0 then
-        --name,func,tooltip,icon,passname,base
-        toolbar.cmd(bt[1], db_pressed, tooltip, bt[2], true, 0)
+        --name,func,tooltip,icon,base
+        toolbar.cmd(bt[1], db_pressed, tooltip, bt[2])
       else
         --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
         toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)

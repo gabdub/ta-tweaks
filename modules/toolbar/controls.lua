@@ -1,10 +1,9 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 --functions to define common controls like buttons, combo-boxes, etc in the toolbars
 local events, events_connect = events, events.connect
 
 --buttons callback functions
-toolbar.cmds={}     --functions without the name of the clicked button as an argument
-toolbar.cmds_n={}   --functions with the name of the clicked button as an argument
+toolbar.cmds={}     --functions with the name of the clicked button as an argument
 toolbar.cmds_d={}   --functions with the name of the double clicked button as an argument
 toolbar.cmds_r={}   --functions with the name of the right clicked button as an argument
 
@@ -24,10 +23,10 @@ function toolbar.getnum_cmd(cmd)
 end
 
 --define a graphical toolbar button
-function toolbar.cmd(name,func,tooltip,icon,passname,base)
+function toolbar.cmd(name,func,tooltip,icon,base)
   toolbar.addbutton(name,tooltip,base)
-  if passname then toolbar.cmds_n[name]= func else toolbar.cmds[name]= func end
-  if icon == nil then
+  toolbar.cmds[name]= func
+  if icon == nil or icon == "" then
     toolbar.setthemeicon(name,name) --no icon: use 'name' from theme
   elseif string.match(icon,"%.png") == nil then
     toolbar.setthemeicon(name,icon) --no ".png": use 'icon' from theme
@@ -157,7 +156,7 @@ local function show_combo_list(btname)
     local ittxt= combo_data[btname][i]
     toolbar.addtext(itname,ittxt,"",282,false,true)
     if ittxt == currit then combo_sel_i= i toolbar.selected(itname, false, true) end
-    toolbar.cmds_n[itname]= combo_clicked
+    toolbar.cmds[itname]= combo_clicked
   end
   toolbar.popup(toolbar.COMBO_POPUP,true,btname,35,combo_width[btname]-2)
   toolbar.sel_combo_popup()
@@ -171,7 +170,7 @@ function toolbar.cmd_combo(name,func,tooltip,txtarray,txtval,width,bold)
   if not txtval then txtval= txtarray[1] end
   combo_txt[name]= txtval
   toolbar.addtext(name,txtval,tooltip,width,true,true,bold) --show current value
-  toolbar.cmds_n[name]= show_combo_list --pass the combo name when clicked
+  toolbar.cmds[name]= show_combo_list --pass the combo name when clicked
   combo_func[name]= func
 end
 
@@ -210,8 +209,8 @@ events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup,keyflags)
   elseif buttonname == "GROUP" then
     buttonname= "GROUP".. ngroup.. "-"..ntoolbar  --button name="GROUP#-T" (#=group num, T=toolbar num)
   end
-  if toolbar.cmds_n[buttonname] ~= nil then
-    toolbar.cmds_n[buttonname](buttonname) --pass the name of the button
+  if toolbar.cmds[buttonname] ~= nil then
+    toolbar.cmds[buttonname](buttonname) --pass the name of the button
   elseif toolbar.cmds[buttonname] ~= nil then
     --is a config checkbox?
     if toolbar.cfgpnl_chkval ~= nil and toolbar.cfgpnl_chkval[buttonname] ~= nil then
@@ -280,7 +279,7 @@ local function check_clicked(name)
 end
 
 function toolbar.cmd_check(name,tooltip,checked)
-  toolbar.cmd(name, check_clicked, tooltip, nil, nil, toolbar.TTBI_TB.CHECK_BASE)
+  toolbar.cmd(name, check_clicked, tooltip, nil, toolbar.TTBI_TB.CHECK_BASE)
   toolbar.selected(name, checked)
   toolbar.cfgpnl_chkval[name]=checked
 end
@@ -309,7 +308,7 @@ local function radio_clicked(name,dontset_toolbar,dont_notify)
 end
 
 function toolbar.cmd_radio(name,tooltip,checked)
-  toolbar.cmd(name, radio_clicked, tooltip, nil, nil, toolbar.TTBI_TB.RADIO_BASE)
+  toolbar.cmd(name, radio_clicked, tooltip, nil, toolbar.TTBI_TB.RADIO_BASE)
   toolbar.selected(name, checked)
   toolbar.cfgpnl_chkval[name]=checked
 end
@@ -374,7 +373,7 @@ toolbar.listright= 250
 
 function toolbar.list_addbutton(name, tooltip, funct, icon)
   toolbar.gotopos( 0, toolbar.listtb_y)
-  toolbar.cmd(name, funct, tooltip or "", icon, true)
+  toolbar.cmd(name, funct, tooltip or "", icon)
   toolbar.list_cmdright= toolbar.list_cmdright + toolbar.cfg.butsize
   toolbar.anchor(name, toolbar.list_cmdright) --anchor to the right
 end
@@ -414,16 +413,16 @@ function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, e
       toolbar.adjust(toolbar.cfg.butsize+4,toolbar.cfg.butsize,3,3,4,4)
       toolbar.gotopos(3 + indent, toolbar.listtb_y)
       local iobut= "open-"..name
-      toolbar.cmd(iobut, nil, "", (open_hi == 1) and "open-back" or "closed-back", true)
+      toolbar.cmd(iobut, nil, "", (open_hi == 1) and "open-back" or "closed-back")
       toolbar.enable(iobut,false,false) --non-selectable image
       toolbar.adjust(toolbar.cfg.butsize,toolbar.cfg.butsize,3,3,4,4)
     end
     toolbar.gotopos(3 + indent, toolbar.listtb_y)
     local icbut= "ico-"..name
-    toolbar.cmd(icbut, nil, "", bicon, true)
+    toolbar.cmd(icbut, nil, "", bicon)
     toolbar.enable(icbut,false,false) --non-selectable image
   end
-  toolbar.cmds_n[name]= click_fun
+  toolbar.cmds[name]= click_fun
   if idlen > 0 then return true end --toolbar.list_add_collapse() must be called
   toolbar.listtb_y= toolbar.listtb_y + toolbar.cfg.butsize
 end
@@ -431,7 +430,7 @@ end
 function toolbar.list_add_collapse(name, click_fun, indent, hide_nrows, colla_tab)
   toolbar.gotopos( indent+3, toolbar.listtb_y)
   local exbut= "exp-"..name
-  toolbar.cmd(exbut, click_fun, "", "list-colapse2", true)
+  toolbar.cmd(exbut, click_fun, "", "list-colapse2")
   toolbar.set_expand_icon(exbut,"list-colapse2")
   toolbar.collapse(exbut, false, toolbar.cfg.butsize * hide_nrows, true)
   colla_tab[exbut]= false

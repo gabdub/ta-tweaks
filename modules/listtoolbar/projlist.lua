@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 --
 -- This module implements the selection of project files using the "lists" toolbar
 --
@@ -177,7 +177,7 @@ if toolbar then
   function expand_prj_list(cmd)
     sel_file(cmd)
     toolbar.set_expand_icon(cmd,"list-colapse2")
-    toolbar.cmds_n[cmd]= collapse_prj_list
+    toolbar.cmds[cmd]= collapse_prj_list
     toolbar.collapse(cmd, false)
     collarow[cmd]= false
   end
@@ -185,7 +185,7 @@ if toolbar then
   function collapse_prj_list(cmd)
     sel_file(cmd)
     toolbar.set_expand_icon(cmd,"list-expand2")
-    toolbar.cmds_n[cmd]= expand_prj_list
+    toolbar.cmds[cmd]= expand_prj_list
     toolbar.collapse(cmd, true)
     collarow[cmd]= true
   end

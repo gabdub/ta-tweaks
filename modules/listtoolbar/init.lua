@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 --
 -- This module control the "lists" toolbar
 --
@@ -175,7 +175,7 @@ if toolbar then
     if #toolbar.listselections > 0 then
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i]
-        toolbar.cmd(ls[LSTSEL_NAME], toolbar.select_list, ls[LSTSEL_TOOLTIP], ls[LSTSEL_ICON], true)
+        toolbar.cmd(ls[LSTSEL_NAME], toolbar.select_list, ls[LSTSEL_TOOLTIP], ls[LSTSEL_ICON])
       end
       toolbar.addspace()
     end

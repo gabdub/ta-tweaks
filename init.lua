@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 -- code adjusted for TA 10 and 11
 
 --NOTE: to prevent Kubuntu 20.04.1 from closing at random: comment line 74 in modules/textadept/file_types.lua

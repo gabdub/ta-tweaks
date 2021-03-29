@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 local Util = Util
 local toolbar = toolbar
 local events, events_connect = events, events.connect
@@ -77,7 +77,6 @@ function toolbar.add_showconfig_button()
   toolbar.addpending()
   --add a group of buttons after tabs
   toolbar.addrightgroup()
-  --toolbar.cmd("showconfig", toolbar.toggle_showconfig, "Show configuration panel [F9]", "visualization")
   toolbar.addaction("toggle_viewcfgpanel")
 end
 
@@ -246,7 +245,7 @@ local function add_cfg_prop(propname, x, tooltip)
   if propname ~= "" then
     local prop= "color."..propname
     toolbar.gotopos(x, toolbar.cfgpnl_y)
-    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn", true)
+    toolbar.cmd(prop, changeprop_clicked, tooltip, "colorn")
     toolbar.setthemeicon(prop, "colorh", toolbar.TTBI_TB.IT_HILIGHT)
     toolbar.setthemeicon(prop, "colorp", toolbar.TTBI_TB.IT_HIPRESSED)
     toolbar.setbackcolor(prop, toolbar.get_rgbcolor_prop(prop), true)
@@ -283,7 +282,7 @@ local function add_color_preset( n, color, bkcolor )
   if not bkcolor then bkcolor=color end
   toolbar.gotopos(290, toolbar.cfgpnl_y)
   local name= "preset"..color
-  toolbar.cmd(name, colorpreset_clicked, "", "", true)
+  toolbar.cmd(name, colorpreset_clicked, "", "")
   toolbar.setbackcolor(name, bkcolor, true)
   set_img_colorbut(name, true) --border on over and click
   pnly_add(31)
@@ -321,7 +320,7 @@ local function add_config_colorpicker()
   toolbar.cfgpnl_y= ynext
 --  if Util.TA_MAYOR_VER >= 10 then
     toolbar.gotopos(290, toolbar.cfgpnl_y)
-    toolbar.cmd("colorwheel", colorwheel_clicked, "Show color wheel", "edit-find", true)
+    toolbar.cmd("colorwheel", colorwheel_clicked, "Show color wheel", "edit-find")
 --  end
 end
 
@@ -384,7 +383,7 @@ local function add_config_font(text, name)
   add_config_label(text)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.addtext(name,toolbar.get_font_val(name),"Change font",toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,true,false)
-  toolbar.cmds_n[name]= changefont_clicked
+  toolbar.cmds[name]= changefont_clicked
   pnly_newrow()
   add_config_combo("cbo."..name:gsub("%.","size_"),nil,"Change font size",{"default size","+1 pt","+2 pts","+3 pts","+4 pts","+5 pts","+6 pts","-1 pt","-2 pts","-3 pts","-4 pts","-5 pts","-6 pts"},nil,false)
   if toolbar.config_saveon then --save as a comment in the config file
@@ -1194,12 +1193,12 @@ local function add_picker_cfg_panel()
   add_config_colorpicker()
 
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmd("choosencolor", picker_clicked, "")
+  toolbar.cmd("choosencolor", picker_clicked, "", "")
   toolbar.setbackcolor("choosencolor", toolbar.BKCOLOR.SEL_COLOR, true)
   set_img_colorbut("choosencolor", true) --border on over and click
 
   toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
-  toolbar.cmd("oldcolor", oldcolor_clicked, "")
+  toolbar.cmd("oldcolor", oldcolor_clicked, "", "")
   toolbar.edit_color_prop= "color.text_back"
   toolbar.setbackcolor("oldcolor", 0, true) --set later
   set_img_colorbut("oldcolor", true) --border on over and click

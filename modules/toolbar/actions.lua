@@ -1,4 +1,4 @@
--- Copyright 2016-2020 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 local default_icons= {
 --FILE
   "new",                    "document-new",
@@ -177,12 +177,12 @@ local function updatestatus(action)
 end
 
 --add and action button to the toolbar
-function toolbar.addaction(action,passname)
+function toolbar.addaction(action)
   local runact= function() return actions.run({action}) end
   local tooltip= actions.gettooltip(action)
   local icon= actions.icons[action]
   if type(icon) == 'function' then icon=icon() end
-  toolbar.cmd(action,runact,tooltip,icon,passname)
+  toolbar.cmd(action,runact,tooltip,icon)
   updatestatus(action)
 end
 
