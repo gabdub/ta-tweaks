@@ -237,7 +237,7 @@ end
 local function filter_key(keycode, keyflags)
   local afltr= filter
   if (keyflags & toolbar.KEYFLAGS.CTRL_ALT_META) == 0 then  --ignore key if ctrl/alt/meta are pressed
-    if keycode >= 32 and keycode <= 126 then --ascii
+    if keycode >= 32 and keycode <= 126 then --ASCII (ignore SHIFT)
       filter= filter .. string.char(keycode)
     elseif (keyflags & toolbar.KEYFLAGS.SHIFT) == 0 then  --ignore key if shift is pressed
       if keycode == toolbar.KEY.BACKSPACE then --remove last letter
@@ -285,11 +285,14 @@ end
 local function dialog_key_ev(npop, keycode,keyflags)
   toolbar.keyflags= keyflags
   if npop == toolbar.DIALOG_POPUP then
-    --ui.statusbar_text= "dialog key= ".. keycode
     keycode= translate_keypad_codes(keycode)
+    local kc= keycode
+    if kc >= 65 and kc <= 90 then kc= kc+32 end --lower case letter (A..Z)
+    keyflags= keyflags & toolbar.KEYFLAGS.ALL_MODS --keep only SHIFT/CTRL/ALT/META
+    ui.statusbar_text= "dialog key= ".. kc.." flags= ".. keyflags
     --check accelerators
     for i=1,#dialog_accel do  --{keycode, keyflags, buttname}
-      if dialog_accel[i][1] == keycode and dialog_accel[i][2] == keyflags then
+      if dialog_accel[i][1] == kc and dialog_accel[i][2] == keyflags then
         local bname= dialog_accel[i][3]
         if not db_pressed(bname) then --dialog button?
           if toolbar.cmds_n[bname] ~= nil then toolbar.cmds_n[bname](bname)
@@ -298,8 +301,7 @@ local function dialog_key_ev(npop, keycode,keyflags)
         return
       end
     end
-
-    if (keyflags & toolbar.KEYFLAGS.ALL_MODS) == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
+    if keyflags == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
       if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
         if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
       elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
@@ -325,12 +327,13 @@ events_connect("popup_key", dialog_key_ev)
 local function add_accelerator(keyname, buttname)
   local keyflags= 0
   keyname= string.lower(keyname)
-  if keyname:match("control+")  then keyflags= keyflags | toolbar.KEYFLAGS.CONTROL  keyname= keyname:gsub("control%+","")  end
-  if keyname:match("alt+")      then keyflags= keyflags | toolbar.KEYFLAGS.ALT      keyname= keyname:gsub("alt%+","")  end
-  if keyname:match("shift+")    then keyflags= keyflags | toolbar.KEYFLAGS.SHIFT    keyname= string.upper(keyname:gsub("shift%+","")) end
+  if keyname:match("control+")  then keyflags= keyflags | toolbar.KEYFLAGS.CONTROL  keyname= keyname:gsub("control%+","") end
+  if keyname:match("alt+")      then keyflags= keyflags | toolbar.KEYFLAGS.ALT      keyname= keyname:gsub("alt%+","") end
+  if keyname:match("meta+")     then keyflags= keyflags | toolbar.KEYFLAGS.META     keyname= keyname:gsub("meta%+","") end
+  if keyname:match("shift+")    then keyflags= keyflags | toolbar.KEYFLAGS.SHIFT    keyname= keyname:gsub("shift%+","") end
   local keycode= 0
   if #keyname == 1 then
-    keycode= string.byte(keyname)
+    keycode= string.byte(keyname) --in lower case
   end
   if keycode ~= 0 then dialog_accel[#dialog_accel+1]= {keycode, keyflags, buttname} end
 end
