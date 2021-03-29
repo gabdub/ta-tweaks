@@ -139,7 +139,7 @@ function Proj.show_doc()
   --call_tip_show
   if buffer._project_select ~= nil then
     if buffer:call_tip_active() then events.emit(events.CALL_TIP_CLICK) return end
-    local r= buffer.line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
+    local r= buffer.line_from_position(buffer.current_pos)
     local info = data.proj_files[r]
     local ftype= data.proj_filestype[r]
     if ftype == Proj.PRJF_CTAG then info= 'CTAG: '..info
@@ -232,7 +232,7 @@ function Proj.trim_trailing_spaces()
   local buffer = buffer
   buffer:begin_undo_action()
   local n= 0
-  local fromln= Util.LINE_BASE
+  local fromln= 1
   local toln= fromln + buffer.line_count - 1
   for line = fromln, toln do
     local trail = buffer:get_line(line):match('^.-(%s-)[\n\r]*$')
@@ -267,7 +267,7 @@ function Proj.remove_tabs()
   pos= buffer:search_next(0, "\t")
   while pos ~= -1 do
     buffer:set_target_range(pos, pos+1)
-    local col= buffer.column[pos] -Util.LINE_BASE
+    local col= buffer.column[pos] -1
     local spaces = tw - math.fmod(col, tw)
     buffer:replace_target(string.rep(' ', spaces))
     nt=nt+1
@@ -498,18 +498,10 @@ function Proj.add_dir_files(dir)
   local flist= {}
   local extlist= {}
   local ext
-  if Util.TA_MAYOR_VER < 11 then
-    lfs.dir_foreach(dir, function(file)
-      flist[ #flist+1 ]= file
-      ext= file:match('[^%.\\/]+$')
-      if ext then extlist[ext]= true end
-      end, lfs.FILTER, nil, false)
-  else
-    for file in lfs.walk(dir, lfs.default_filter, nil, false) do
-      flist[ #flist+1 ]= file
-      ext= file:match('[^%.\\/]+$')
-      if ext then extlist[ext]= true end
-    end
+  for file in lfs.walk(dir, lfs.default_filter, nil, false) do
+    flist[ #flist+1 ]= file
+    ext= file:match('[^%.\\/]+$')
+    if ext then extlist[ext]= true end
   end
   if #flist > 0 then
     --choose extension to import

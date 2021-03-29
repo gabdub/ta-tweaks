@@ -38,192 +38,6 @@
 -- Control, Meta, and 'a' = 'ctrl+meta+a'
 local keys = keys
 
-if Util.TA_MAYOR_VER < 11 then   --TA 10
-default_accelerators= {
---FILE                      GUI             CURSES
-  "new",                    "cn",           "cmn",
-  "open",                   "co",           "co",
-  "recent",                 "cao",          "cmo",
-  "reload",                 "cO",           "mo",
-  "save",                   "cs",           "cs",
-  "saveas",                 "cS",           "cms",
---"saveall",                "",             "",
-  "close",                  "cw",           "cw",
-  "closeall",               "cW",           "cmw",
---"session_load",           "",             "",
---"session_save",           "",             "",
-  "quit",                   "cq",           "cq",
-
---EDIT
-  "undo",                   "cz",           {"cz","mz"}, --^Z suspends in some terminals
-  "redo",                   {"cy","cZ"},    {"cy","mZ"},
-  "cut",                    "cx",           "cx",
-  "copy",                   "cc",           "cc",
-  "paste",                  "cv",           "cv",
-  "paste_reindent",         "cV",           "cV",
-  "duplicate_line",         "cd",           "",
-  "delete_char",            "del",          "del",
-  "delete_word",            "adel",         "mdel",
-  "delete_line",            "cl",           "cl",
-  "selectall",              "ca",           "ma",
-  "match_brace",            "cm",           "mm",
-  "complete_word",          "c\n",          "cmj", --CURSES: Win32:c\n + LINUX:cmj
-  "highlight_word",         "caH",          "",
-  "toggle_comment",         "c/",           "m/",
-  "transpose_chars",        "ct",           "ct",
-  "join_lines",             "cJ",           "mj",
-  "filterthrough",          "c|",           "c\\",
-  "sel_matchbrace",         "cM",           "mM",
-  "sel_betweenxmltag",      "c<",           "m<",
-  "sel_xmltag",             "c>",           "",
-  "sel_word",               "cD",           "mW",
-  "sel_line",               "cN",           "mN",
-  "sel_paragraph",          "cP",           "mP",
-  "upper_sel",              "cau",          "cmu",
-  "lower_sel",              "caU",          "cml",
-  "enclose_xmltags",        "a<",           "m>",
-  "enclose_xmltag",         "a>",           "",
-  "enclose_singlequotes",   "a'",           "",
-  "enclose_doublequotes",   'a"',           "",
-  "enclose_parentheses",    "a(",           "m)",
-  "enclose_brackets",       "a[",           "m]",
-  "enclose_braces",         "a{",           "m}",
-  "moveup_sellines",        "csup",         "csup",
-  "movedown_sellines",      "csdown",       "csdown",
-
---SEARCH
-  "find",                   "cf",           {"mf","mF"}, --mf is used by some GUI terminals
-  "find_next",              {"f3","cg"},    "mg",
-  "find_prev",              {"sf3","cG"},   "mG",
-  "replace",                "car",          "mr",
-  "replaceall",             "caR",          "mR",
--- Find Next is   "an" when find pane is focused in GUI
--- Find Prev is   "ap" when find pane is focused in GUI
--- Replace is     "ar" when find pane is focused in GUI
--- Replace All is "aa" when find pane is focused in GUI
-  "find_increment",         "caf",          "cmf",
---"find_infiles",           "cF",           "",
-  "find_replace",           "cF",           "",
-  "next_filefound",         "cag",          "",
-  "prev_filefound",         "caG",          "",
-  "goto_line",              "cj",           "cj",
-
---TOOLS
-  "toggle_commandentry",    "ce",           "mc",
-  "run_command",            "cE",           "mC",
-  "run",                    "cr",           "cr",
-  "compile",                "cR",           "cmr",
-  "set_runargs",            "cB",           "cmb",
-  "build",                  "cA",           "",
-  "stop_run",               "cX",           "cmx",
-  "next_error",             "cae",          "mx",
-  "prev_error",             "caE",          "mX",
-  "toggle_bookmark",        "cf2",          "f1",
-  "clear_bookmarks",        "csf2",         "f6",
-  "next_bookmark",          "f2",           "f2",
-  "prev_bookmark",          "sf2",          "f3",
-  "goto_bookmark",          "af2",          "f4",
-  "open_userhome",          "cu",           "cu",
---"open_textadepthome",     "",             "",
-  "open_currentdir",        "caO",          "mO",
-  "quick_open_projectdir",  "caP",          "cmp",
-  "snippet_select",         "cK",           "mK",
-  "complete_trigger",       "ck",           "mk",
-  "tab_key",                "\t",           "\t",
-  "shift_tab_key",          "s\t",          "s\t",
-  "cancel_snippet",         "esc",          "esc",
-  "complete_symbol",        "c ",           "c ",
-  "show_documentation",     "ch",           {"mh","mH"}, --mh is used by some GUI terminals
-  "show_style",             "ci",           "mI",
-
---BUFFER
-  "next_buffer",            "c\t",          "mn",
-  "prev_buffer",            "cs\t",         "mp",
-  "switch_buffer",          "cb",           {"mb","mB"}, --mb is used by some GUI terminals
---"set_tab_2",              "",             "",
---"set_tab_3",              "",             "",
---"set_tab_4",              "",             "",
---"set_tab_8",              "",             "",
-  "toggle_usetabs",         "caT",          {"mt","mT"}, --mt is used by some GUI terminals
-  "convert_indentation",    "cai",          "mi",
---"set_eol_crlf",           "",             "",
---"set_eol_lf",             "",             "",
---"set_enc_utf8",           "",             "",
---"set_enc_ascii",          "",             "",
---"set_enc_8859",           "",             "",
---"set_enc_utf16",          "",             "",
-  "toggle_view_oel",        "ca\n",         "",
-  "toggle_view_wrap",       "ca\\",         "",
-  "toggle_view_ws",         "caS",          "",
-  "select_lexer",           "cL",           "mL",
---"refresh_syntax",         "f5",           "f5",
-
---VIEW
-  "next_view",              "can",          "",
-  "prev_view",              "cap",          "",
-  "split_view_h",           {"cas","cah"},  "",
-  "split_view_v",           "cav",          "",
-  "unsplit_view",           "caw",          "",
-  "unsplit_allviews",       "caW",          "",
-  "grow_view",              {"ca+","ca="},  "",
-  "shrink_view",            "ca-",          "",
-  "toggle_fold",            "c*",           "m*",
-  "toggle_view_indguides",  "caI",          "",
-  "toggle_virtualspace",    "caV",          "",
-  "zoom_in",                "c=",           "",
-  "zoom_out",               "c-",           "",
-  "reset_zoom",             "c0",           "",
-
---HELP
-  "show_manual",            "f1",           "",
-  "show_luadoc",            "sf1",          "",
---"about",                  "",             "",
-
---MOVE CURSOR
-  "down",                   "down",         {'down',  'cn'},
-  "up",                     "up",           {'up',    'cp'},
-  "left",                   "left",         {'left',  'cb'},
-  "word_left",              "cleft",        "cleft",
-  "right",                  "right",        {'right', 'cf'},
-  "word_right",             "cright",       "cright",
-  "home",                   "home",         {'home', 'ca'},
-  "end",                    "end",          {'end', 'ce'},
- --vertical_center_caret
-  "page_up",                "pgup",         "pgup",
-  "page_down",              "pgdn",         "pgdn",
-  "doc_start",              "chome",        "cma",
-  "doc_end",                "cend",         "cme",
---SELECTION
-  "sel_down",               "sdown",        "sdown",
-  "sel_up",                 "sup",          "sup",
-  "sel_left",               "sleft",        "sleft",
-  "sel_word_left",          "csleft",       "csleft",
-  "sel_right",              'sright',       "sright",
-  "sel_word_right",         "csright",      "csright",
-  "sel_home",               "shome",        "mA",
-  "sel_end",                "send",         "mE",
-  "sel_page_up",            "spgup",        "mU",
-  "sel_page_down",          "spgdn",        "mD",
-  "sel_doc_start",          "cshome",       "cshome",
-  "sel_doc_end",            "csend",        "csend",
---RECTANGULAR SELECTION
-  "rsel_left",              "asleft",       "asleft",
-  "rsel_right",             "asright",      "asright",
-  "rsel_up",                "asup",         "asup",
-  "rsel_down",              "asdown",       "asdown",
-  "rsel_home",              "ashome",       "ashome",
-  "rsel_end",               "asend",        "asend",
-  "rsel_page_up",           "aspgup",       "aspgup",
-  "rsel_page_down",         "aspgdn",       "aspgdn",
---DELETE
-  "del_back",               "\b",           "\b",
-  "del",                    "del",          "del",
-  "del_word_left",          "ctrl+\b",      "ctrl+\b",
-  "del_word_right",         "ctrl+del",     "ctrl+del"
-}
-
-else  --TA 11
-
 default_accelerators= {
 --FILE                      GUI             CURSES
   "new",                    "ctrl+n",       "ctrl+meta+n",
@@ -410,7 +224,6 @@ default_accelerators= {
 --buffer.selection_mode = 0  "",            'ctrl+^',
 --buffer.swap_main_anchor_caret "",         'ctrl+]',
 }
-end
 
 local function load_accel_list(lst)
   --load the accelerators for this OS
@@ -425,47 +238,18 @@ end
 actions.accelerators = {}
 load_accel_list(default_accelerators)
 
-if Util.TA_MAYOR_VER < 11 then   --TA 10
-  -- Movement commands.
-  if CURSES then
-    keys['c^'] = function() buffer.selection_mode = 0 end
-    keys['c]'] = buffer.swap_main_anchor_caret
-    keys.cf, keys.cb = buffer.char_right, buffer.char_left
-    keys.cn, keys.cp = buffer.line_down, buffer.line_up
-    keys.ca, keys.ce = buffer.vc_home, buffer.line_end
-    keys.mA, keys.mE = buffer.vc_home_extend, buffer.line_end_extend
-    keys.mU, keys.mD = buffer.page_up_extend, buffer.page_down_extend
-    keys.cma, keys.cme = buffer.document_start, buffer.document_end
-    keys.cd, keys.md, keys.ch = buffer.clear, keys.mdel, buffer.delete_back
-    keys.ck = function()
-      buffer:line_end_extend()
-      if not buffer.selection_empty then buffer:cut() else buffer:clear() end
-    end
-    keys['mu'] = function()
-      ui.command_entry.run(function(code)
-        buffer:add_text(utf8.char(tonumber(code, 16)))
-      end)
-    end
-  --complete_word=   CURSES: Win32: c\n + LINUX:cmj
-    if WIN32 then
-      actions.accelerators["complete_word"]=   "c\n"
-    end
+-- Movement commands.
+if CURSES then
+  keys['ctrl+^'] = function() buffer.selection_mode = 0 end
+  keys['ctrl+]'] = buffer.swap_main_anchor_caret
+
+  keys['ctrl+k'] = function()
+    buffer:line_end_extend()
+    if not buffer.selection_empty then buffer:cut() else buffer:clear() end
   end
-
-else --TA 11
-  -- Movement commands.
-  if CURSES then
-    keys['ctrl+^'] = function() buffer.selection_mode = 0 end
-    keys['ctrl+]'] = buffer.swap_main_anchor_caret
-
-    keys['ctrl+k'] = function()
-      buffer:line_end_extend()
-      if not buffer.selection_empty then buffer:cut() else buffer:clear() end
-    end
-    keys['meta+u'] = function()
-      ui.command_entry.run(function(code)
-        buffer:add_text(utf8.char(tonumber(code, 16)))
-      end)
-    end
+  keys['meta+u'] = function()
+    ui.command_entry.run(function(code)
+      buffer:add_text(utf8.char(tonumber(code, 16)))
+    end)
   end
 end

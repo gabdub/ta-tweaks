@@ -24,7 +24,7 @@ local function clear_buf_marks(b, clrflags)
     end
     for _, indic in ipairs{Proj.INDIC_ADDITION, Proj.INDIC_DELETION} do
       b.indicator_current = indic
-      b:indicator_clear_range(Util.LINE_BASE, b.length)
+      b:indicator_clear_range(1, b.length)
     end
     b:annotation_clear_all()
     if clrflags then
@@ -142,7 +142,7 @@ local function mark_changes(goto_first)
   for i=1,#r1,2 do
     n1= n1 + r1[i+1]-r1[i]+1
     for j=r1[i],r1[i+1] do
-      buffer1:marker_add(j-1+Util.LINE_BASE, Proj.MARK_ADDITION)
+      buffer1:marker_add(j, Proj.MARK_ADDITION)
       buffer1._mark_add[n]= j
       n= n+1
     end
@@ -154,7 +154,7 @@ local function mark_changes(goto_first)
   for i=1,#r2,2 do
     n2= n2 + r2[i+1]-r2[i]+1
     for j=r2[i],r2[i+1] do
-      buffer2:marker_add(j-1+Util.LINE_BASE, Proj.MARK_DELETION)
+      buffer2:marker_add(j, Proj.MARK_DELETION)
       buffer2._mark_del[n]= j
       n= n+1
     end
@@ -166,8 +166,8 @@ local function mark_changes(goto_first)
   local n3= #rm // 2
   n= 1
   for i=1, #rm, 2 do
-    buffer1:marker_add(rm[i]-1+Util.LINE_BASE, Proj.MARK_MODIFICATION)
-    buffer2:marker_add(rm[i+1]-1+Util.LINE_BASE, Proj.MARK_MODIFICATION)
+    buffer1:marker_add(rm[i], Proj.MARK_MODIFICATION)
+    buffer2:marker_add(rm[i+1], Proj.MARK_MODIFICATION)
     buffer1._mark_mod[n]= rm[i]
     buffer1._mark_all[rm[i]]= 0
     buffer2._mark_mod[n]= rm[i+1]
@@ -179,7 +179,7 @@ local function mark_changes(goto_first)
   local r= filediff.getdiff( 1, 3 ) --buffer#1, 3=get blank lines list
   if #r > 0 and (first == 0 or r[1]<first) then first= r[1] end
   for i=1,#r,2 do
-    buffer1.annotation_text[r[i]-1+Util.LINE_BASE] = string.rep('\n', r[i+1]-1)
+    buffer1.annotation_text[r[i]] = string.rep('\n', r[i+1]-1)
     buffer1._mark_del[#buffer1._mark_del+1]= r[i]
     buffer1._mark_all[r[i]]= -1
   end
@@ -187,7 +187,7 @@ local function mark_changes(goto_first)
   --idem buffer #2
   r= filediff.getdiff( 2, 3 )--buffer#2, 3=get blank lines list
   for i=1,#r,2 do
-    buffer2.annotation_text[r[i]-1+Util.LINE_BASE] = string.rep('\n', r[i+1]-1)
+    buffer2.annotation_text[r[i]] = string.rep('\n', r[i+1]-1)
     buffer2._mark_add[#buffer2._mark_add+1]= r[i]
     buffer2._mark_all[r[i]]= 1
   end
@@ -197,13 +197,13 @@ local function mark_changes(goto_first)
   for i=1,#r,3 do
     if r[i] == 1 then
       buffer1.indicator_current = Proj.INDIC_ADDITION
-      buffer1:indicator_fill_range(r[i+1]+Util.LINE_BASE, r[i+2])
+      buffer1:indicator_fill_range(r[i+1]+1, r[i+2])
     else
       buffer2.indicator_current = Proj.INDIC_DELETION
-      buffer2:indicator_fill_range(r[i+1]+Util.LINE_BASE, r[i+2])
+      buffer2:indicator_fill_range(r[i+1]+1, r[i+2])
     end
   end
-  if goto_first and first > 0 then buffer1:goto_line(first-1+Util.LINE_BASE) end
+  if goto_first and first > 0 then buffer1:goto_line(first) end
   synchronize()
   --load some info in the results view the first time the files are compared
   if goto_first then plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm) end
@@ -251,14 +251,8 @@ end
 
 --TA-EVENT: MODIFIED
 -- Highlight differences as text is typed and deleted.
-if Util.TA_MAYOR_VER < 11 then  --TA10
-  function Proj.EVmodified(modification_type)
-    if not marking and check_comp_buffers() and (modification_type & (0x01 | 0x02)) > 0 then mark_changes(false) end
-  end
-else  --TA11
-  function Proj.EVmodified(position, modification_type)
-    if not marking and check_comp_buffers() and (modification_type & (0x01 | 0x02)) > 0 then mark_changes(false) end
-  end
+function Proj.EVmodified(position, modification_type)
+  if not marking and check_comp_buffers() and (modification_type & (0x01 | 0x02)) > 0 then mark_changes(false) end
 end
 
 --TA-EVENT: VIEW_NEW

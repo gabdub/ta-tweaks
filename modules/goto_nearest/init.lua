@@ -122,13 +122,13 @@ function goto_line_col(askcol)
     local button, inputs = ui.dialogs.inputbox{
       title = 'Goto Line and Column',
       informative_text = {'Goto Position', 'Line:', 'Col:'},
-      text = {buffer:line_from_position(pos) +1 -Util.LINE_BASE, buffer.column[pos] +1 -Util.LINE_BASE}
+      text = {buffer:line_from_position(pos), buffer.column[pos]}
     }
     local line = tonumber(inputs[1])
     local column = tonumber(inputs[2])
     if button == 1 and line and column then
-      buffer:ensure_visible_enforce_policy(line -1 + Util.LINE_BASE)
-      local pos = buffer:find_column(line -1 +Util.LINE_BASE, column -1 +Util.LINE_BASE)
+      buffer:ensure_visible_enforce_policy(line)
+      local pos = buffer:find_column(line, column)
       buffer:goto_pos(pos)
     end
   else

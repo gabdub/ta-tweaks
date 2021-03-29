@@ -307,14 +307,8 @@ if toolbar then
 
   local function load_files(brwdir, brwlevel)
     local flistsz= #flist
-    if Util.TA_MAYOR_VER < 11 then
-      lfs.dir_foreach(brwdir, function(file)
-        flist[ #flist+1 ]= file
-        end, lfs.FILTER, brwlevel, true)
-    else
-      for file in lfs.walk(brwdir, lfs.default_filter, brwlevel, true) do
-        flist[ #flist+1 ]= file
-      end
+    for file in lfs.walk(brwdir, lfs.default_filter, brwlevel, true) do
+      flist[ #flist+1 ]= file
     end
     if flistsz < #flist then  --some files were added
       table.sort(flist, file_sort)

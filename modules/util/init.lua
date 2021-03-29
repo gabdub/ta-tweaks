@@ -1,10 +1,8 @@
 -- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 ----- utility functions
-if Util == nil then
-  Util = {}
-  Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
-  Util.LINE_BASE= (Util.TA_MAYOR_VER < 11) and 0 or 1
-end
+if Util == nil then Util = {} end
+local Util = Util
+Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
 
 Util.PATH_SEP= (WIN32 and '\\' or '/')
 Util.UNTITLED_TEXT= _L['Untitled']
@@ -15,17 +13,10 @@ Util.UNTITLED_TEXT= _L['Untitled']
 -- Alt      | `'alt'`       | `'alt'`   | `'meta'`  |
 -- Command  | N/A           | `'cmd'`   | N/A       |
 -- Shift    | `'shift'`     | `'shift'` | `'shift'` |
-if Util.TA_MAYOR_VER < 11 then   --TA 10
-  Util.KEY_CTRL= "c"
-  Util.KEY_ALT= CURSES and "m" or "a"
-  Util.KEY_CMD= CURSES and "" or "m"
-  Util.KEY_SHIFT= "s"
-else --TA 11
-  Util.KEY_CTRL= "ctrl+"
-  Util.KEY_ALT= CURSES and "meta+" or "alt+"
-  Util.KEY_CMD= CURSES and "" or "cmd+"
-  Util.KEY_SHIFT= "shift+"
-end
+Util.KEY_CTRL= "ctrl+"
+Util.KEY_ALT= CURSES and "meta+" or "alt+"
+Util.KEY_CMD= CURSES and "" or "cmd+"
+Util.KEY_SHIFT= "shift+"
 
 function Util.info(msg,info)
   ui.dialogs.msgbox{
@@ -53,23 +44,21 @@ end
 
 --goto line= 1...
 function Util.goto_line(p_buffer,line)
-  local r= line -1 + Util.LINE_BASE
+  local r= line
   p_buffer:ensure_visible_enforce_policy(r)
   p_buffer:goto_line(r)
 end
 
 function Util.close_buffer()
-  local ok
-  if Util.TA_MAYOR_VER < 11 then ok= io.close_buffer() else ok= buffer:close() end
-  return ok
+  return buffer:close()
 end
 
 function Util.reload_file()
-  if Util.TA_MAYOR_VER < 11 then io.reload_file() else buffer:reload() end
+  buffer:reload()
 end
 
 function Util.save_file()
-  if Util.TA_MAYOR_VER < 11 then io.save_file() else buffer:save() end
+  buffer:save()
 end
 
 -- Returns the Path, Filename, and Extension of a filename as 3 strings
@@ -211,7 +200,7 @@ function Util.os_open_page(url)
 end
 
 function Util.type_before_after(before,after)
-  if (buffer.selections > 1) or (buffer.selection_n_start[ Util.LINE_BASE ] ~= buffer.selection_n_end[ Util.LINE_BASE ]) then
+  if (buffer.selections > 1) or (buffer.selection_n_start[1] ~= buffer.selection_n_end[1]) then
     --if something is selected use enclose (left the cursor at the end)
     textadept.editing.enclose(before,after)
     return

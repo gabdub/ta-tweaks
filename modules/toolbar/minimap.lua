@@ -15,7 +15,7 @@ end
 
 --"logical line number" (1..) to "visual line number" (1..)
 local function lin2vis(nl)
-  return buffer:visible_from_doc_line( nl+Util.LINE_BASE-1 ) +1-Util.LINE_BASE
+  return buffer:visible_from_doc_line( nl )
 end
 
 --add a hilight to the minimap (correcting annotation/hidden lines)
@@ -25,11 +25,11 @@ end
 
 --add markers to the minimap
 local function add_mmap_markers(markbit, colorprop)
-  local mbit= 1 << (markbit -Util.LINE_BASE)
+  local mbit= 1 << (markbit -1)
   local color= toolbar.get_rgbcolor_prop(colorprop)
   local nl= buffer:marker_next(0, mbit)
   while nl >= 0 do
-    mmhilight(nl +1 -Util.LINE_BASE,color)
+    mmhilight(nl, color)
     local nl2= buffer:marker_next(nl+1, mbit)
     if nl2 <= nl then break end
     nl= nl2
@@ -39,11 +39,11 @@ end
 --add indicators to the minimap
 local function add_mmap_indicators(indicator, colorprop)
   local color= toolbar.get_rgbcolor_prop(colorprop)
-  local pos= buffer:indicator_end(indicator, Util.LINE_BASE)
-  while pos > Util.LINE_BASE and pos < buffer.length do
-    local nl= buffer:line_from_position(pos) + 1 - Util.LINE_BASE
+  local pos= buffer:indicator_end(indicator, 1)
+  while pos > 1 and pos < buffer.length do
+    local nl= buffer:line_from_position(pos)
     mmhilight(nl, color)
-    pos= buffer:indicator_end(indicator, buffer:position_from_line(nl + Util.LINE_BASE))
+    pos= buffer:indicator_end(indicator, buffer:position_from_line(nl+1))
   end
 end
 
@@ -58,7 +58,7 @@ end
 
 local function minimap_scroll()
   local nl= buffer.lines_on_screen
-  local first= buffer.first_visible_line + 1 - Util.LINE_BASE
+  local first= buffer.first_visible_line
   minimap.scrollpos(nl, first, 0)
   minimap.lines_screen= nl
 end
@@ -121,7 +121,7 @@ local function minimap_clicked()
   local nl= minimap.getclickline()
   if nl > 0 then
     --"visual line number" (1..) to "logical line number" (0..)
-    nl= buffer:doc_line_from_visible(nl-1+Util.LINE_BASE)
+    nl= buffer:doc_line_from_visible(nl)
     if nl >= buffer.line_count then nl= buffer.line_count-1 end
     textadept.editing.goto_line(nl)
     buffer:vertical_center_caret()

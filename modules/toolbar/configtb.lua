@@ -318,10 +318,8 @@ local function add_config_colorpicker()
   add_color_preset(7,0x000000)
   add_color_preset(8,0xffffff)
   toolbar.cfgpnl_y= ynext
---  if Util.TA_MAYOR_VER >= 10 then
-    toolbar.gotopos(290, toolbar.cfgpnl_y)
-    toolbar.cmd("colorwheel", colorwheel_clicked, "Show color wheel", "edit-find")
---  end
+  toolbar.gotopos(290, toolbar.cfgpnl_y)
+  toolbar.cmd("colorwheel", colorwheel_clicked, "Show color wheel", "edit-find")
 end
 
 local function _add_config_radio(name,text,tooltip,checked)
@@ -439,19 +437,17 @@ local function reload_theme()
   --Reset to apply the changes
   toolbar.save_config()
   buffer.reopen_config_panel= toolbar.cfgpnl_curgroup
-  if Util.TA_MAYOR_VER > 10 then
-    --TA11: apply the theme to all the buffers before reset
-    if Proj and Proj.tab_changeView and #_BUFFERS > 1 then
-      local sbuf= buffer
-      for _, buf in ipairs(_BUFFERS) do
-        Proj.tab_changeView(buf)
-        view:goto_buffer(buf)
-        view:set_theme(TA_THEME)
-      end
-      --keep current buffer selected
-      Proj.tab_changeView(sbuf)
-      view:goto_buffer(sbuf)
+  --apply the theme to all the buffers before reset
+  if Proj and Proj.tab_changeView and #_BUFFERS > 1 then
+    local sbuf= buffer
+    for _, buf in ipairs(_BUFFERS) do
+      Proj.tab_changeView(buf)
+      view:goto_buffer(buf)
+      view:set_theme(TA_THEME)
     end
+    --keep current buffer selected
+    Proj.tab_changeView(sbuf)
+    view:goto_buffer(sbuf)
   end
   reset()
 end

@@ -77,13 +77,13 @@ end
 local function get_sel_linerange(all_lines)
   local n1, n2
   if all_lines then
-    n1= Util.LINE_BASE
-    n2= buffer.line_count + Util.LINE_BASE-1
+    n1= 1
+    n2= buffer.line_count
   else  --current line
     n1= buffer:line_from_position(buffer.current_pos)
     n2= n1
   end
-  local s, e= buffer.selection_n_start[ Util.LINE_BASE ], buffer.selection_n_end[ Util.LINE_BASE ]
+  local s, e= buffer.selection_n_start[1], buffer.selection_n_end[1]
   if (buffer.selections > 1) or (s ~= e) then
     --if something is selected use the selected line range
     n1= buffer:line_from_position(s)
@@ -147,13 +147,13 @@ local function multiline_typer()
   local button, inputs = ui.dialogs.inputbox{
     title = 'Quick-type',
     informative_text = {'Multiline Typer', 'Before begin:', 'After end:', 'Empty lines:', 'From line:', 'To line:'},
-    text = {"","","", n1+1-Util.LINE_BASE, n2+1-Util.LINE_BASE}
+    text = {"","","", n1, n2}
   }
   if button == 1 then
-    n1= tonumber(inputs[4]) + Util.LINE_BASE-1
-    n2= tonumber(inputs[5]) + Util.LINE_BASE-1
-    local minln= Util.LINE_BASE
-    local maxln= buffer.line_count + Util.LINE_BASE-1
+    n1= tonumber(inputs[4])
+    n2= tonumber(inputs[5])
+    local minln= 1
+    local maxln= buffer.line_count
     if n2 >= n1 then
       local totne= 0
       local totem= 0
@@ -185,15 +185,15 @@ local function sel_rec_col_down()
     pos= buffer.current_pos
     e= pos
   end
-  local toln= buffer.line_count + Util.LINE_BASE-1
-  local col= buffer.column[e] + 1 - Util.LINE_BASE
+  local toln= buffer.line_count
+  local col= buffer.column[e]
   buffer.rectangular_selection_anchor= pos
   local erow= buffer:line_from_position(pos)
   for r= erow, toln do
     if buffer:line_length(r) <= col then break end
     erow= r
   end
-  pos= buffer:find_column(erow, col+ Util.LINE_BASE-1)
+  pos= buffer:find_column(erow, col)
   buffer.rectangular_selection_caret= pos
   buffer.ensure_visible_enforce_policy(erow)
 end
@@ -205,19 +205,19 @@ end
 
 local function find_line(fmatch,dirf,roff)
   local r
-  local curr= buffer:line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
-  local fromln= Util.LINE_BASE
-  local toln= buffer.line_count + Util.LINE_BASE-1
+  local curr= buffer:line_from_position(buffer.current_pos)
+  local fromln= 1
+  local toln= buffer.line_count
   if dirf then --forward
     for i = curr +1 -roff, toln, 1 do
-      if buffer:get_line(i+Util.LINE_BASE-1):match(fmatch) then
+      if buffer:get_line(i):match(fmatch) then
         r=i+roff
         break
       end
     end
   else  --backward
     for i = curr -1 -roff, fromln, -1 do
-      if buffer:get_line(i+Util.LINE_BASE-1):match(fmatch) then
+      if buffer:get_line(i):match(fmatch) then
         r=i+roff
         break
       end
@@ -233,9 +233,9 @@ end
 
 local function nav_buf_marks(dirf)
   --navigate file compare results
-  local curr= buffer:line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
-  local fromln= Util.LINE_BASE
-  local toln= buffer.line_count + Util.LINE_BASE-1
+  local curr= buffer:line_from_position(buffer.current_pos)
+  local fromln= 1
+  local toln= buffer.line_count
   if dirf then --forward
     for i= curr +1, toln, 1 do
       if buffer._mark_all[i] then Util.goto_line(buffer,i) return end

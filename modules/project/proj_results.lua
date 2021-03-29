@@ -149,7 +149,7 @@ function plugs.search_result_found(fname, nlin, txt, s_start, s_end)
   if s_started then
     local snum= ('%4d'):format(nlin)
     buffer:append_text(('  @%s:%s\n'):format(snum, txt))
-    local pos = buffer:position_from_line(buffer.line_count -2 + Util.LINE_BASE) + #snum + 4
+    local pos = buffer:position_from_line(buffer.line_count -1) + #snum + 4
     buffer:indicator_fill_range(pos + s_start - 1, s_end - s_start + 1)
   end
 end
@@ -200,8 +200,8 @@ function plugs.doble_click_searchview()
   local file
   if line_num then
     --get file name from previous lines
-    local fromln= buffer:line_from_position(buffer.current_pos) + Util.LINE_BASE-1
-    local toln= Util.LINE_BASE
+    local fromln= buffer:line_from_position(buffer.current_pos)
+    local toln= 1
     for i = fromln, toln, -1 do
       file = buffer:get_line(i):match('^[^@]-::(.+)::.+$')
       if file then break end

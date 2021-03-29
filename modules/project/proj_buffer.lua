@@ -63,14 +63,14 @@ end
 local function is_prj_buffer(p_buffer)
   --check if the buffer is a valid project
   --The first file line MUST BE a valid "option 1)": ...##...##...
-  local line= p_buffer:get_line( Util.LINE_BASE )
+  local line= p_buffer:get_line(1)
   local n, fn, opt = string.match(line,'^%s*(.-)%s*::(.*)::(.-)%s*$')
   return (n ~= nil)   --return: is a project file
 end
 
 --project is in SELECTION mode with focus--
 local function show_sel_w_focus(buff)
-  buff.margin_width_n[Util.LINE_BASE]= 0 --hide line numbers
+  buff.margin_width_n[1]= 0 --hide line numbers
   buff.caret_width= 0 --highlight current line as selected
   buff.caret_line_back = buff.property['color.prj_sel_bar']
 end
@@ -372,7 +372,7 @@ function plugs.get_prj_currow()
     ui.statusbar_text= 'No project found'
     return 0
   end
-  return p_buffer.line_from_position(p_buffer.current_pos) +1 -Util.LINE_BASE
+  return p_buffer.line_from_position(p_buffer.current_pos)
 end
 
 --open the selected file/s
@@ -382,8 +382,8 @@ function plugs.open_sel_file()
   if #data.proj_files == 0 then return end
 
   --read selected line range
-  local r1= buffer.line_from_position(buffer.selection_start) +1 -Util.LINE_BASE
-  local r2= buffer.line_from_position(buffer.selection_end) +1 -Util.LINE_BASE
+  local r1= buffer.line_from_position(buffer.selection_start)
+  local r2= buffer.line_from_position(buffer.selection_end)
   --clear selection
   buffer.selection_start= buffer.selection_end
 
@@ -402,7 +402,7 @@ function plugs.open_sel_file()
   end
   if #flist == 0 and #rlist == 0 then
     --no files/run in range, use current line; action=fold
-    r1= buffer.line_from_position(buffer.current_pos) +1 -Util.LINE_BASE
+    r1= buffer.line_from_position(buffer.current_pos)
     if data.proj_files[r] ~= "" then
       local ft= data.proj_filestype[r]
       if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then

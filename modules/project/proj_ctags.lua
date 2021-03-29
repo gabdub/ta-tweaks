@@ -211,8 +211,8 @@ function Proj.goto_tag(ask)
   --if the current view is a project view, goto left/only files view. if not, keep the current view
   Proj.go_file(tag[2])
   if not tonumber(tag[3]) then
-    local fromln= Util.LINE_BASE
-    local toln= buffer.line_count -1 + Util.LINE_BASE
+    local fromln= 1
+    local toln= buffer.line_count
     for i= fromln, toln do
       if buffer:get_line(i):find(tag[3], 1, true) then
         Util.goto_line(buffer, i)

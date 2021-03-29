@@ -1,15 +1,6 @@
 -- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 local keys, OSX = keys, OSX
-
-if Util == nil then
-  Util = {}
-  Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
-  Util.LINE_BASE= (Util.TA_MAYOR_VER < 11) and 0 or 1
-end
-if Util.KEY_CTRL == nil then
-  Util.KEY_CTRL= (Util.TA_MAYOR_VER < 11) and "c" or "ctrl+"
-  Util.KEY_SHIFT= (Util.TA_MAYOR_VER < 11) and "s" or "shift+"
-end
+local Util = Util
 
 --list of accelerators (index= action)
 actions.accelerators = {}
@@ -87,20 +78,12 @@ end
 
 local function key_name(kcode)
   local mods, key, mname
-if Util.TA_MAYOR_VER < 11 then   --TA 10
-  mods, key = kcode:match('^([cams]*)(.+)$')
-  mname = (mods:find('m') and (CURSES and "Alt+" or "Cmd+") or "") ..
-                (mods:find('c') and "Ctrl+" or "") ..
-                (mods:find('a') and "Alt+" or "") ..
-                (mods:find('s') and "Shift+" or "")
-else --TA 11
   mods, key = kcode:match('^(.*%+)(.+)$')
   if not mods and not key then mods, key = '', kcode end
   mname = (mods:find('meta+') and (CURSES and "Alt+" or "Cmd+") or "") ..
                 (mods:find('ctrl+') and "Ctrl+" or "") ..
                 (mods:find('alt+') and "Alt+" or "") ..
                 (mods:find('shift+') and "Shift+" or "")
-end
   local ku=string.upper(key)
   local lu=string.lower(key)
   if ku == lu then --only symbols and numbers
@@ -142,21 +125,6 @@ function actions.get_gdkkey(action)
     --more than one option, show the first in menus
     key_seq= key_seq[1]
   end
-if Util.TA_MAYOR_VER < 11 then   --TA 10
-  local mods, key = key_seq:match('^([cams]*)(.+)$')
-  if not mods or not key then return nil end
-  local modifiers = ((mods:find('s') or key:lower() ~= key) and 1 or 0) +
-                    (mods:find('c') and 4 or 0) + (mods:find('a') and 8 or 0) +
-                    (mods:find('m') and 0x10000000 or 0)
-  local code = string.byte(key)
-  if #key > 1 or code < 32 then
-    for i, s in pairs(keys.KEYSYMS) do
-      if s == key and i > 0xFE20 then code = i break end
-    end
-  end
-  return code, modifiers
-
-else --TA 11
   local mods, key = key_seq:match('^(.*%+)(.+)$')
   if not mods and not key then mods, key = '', key_seq end
   local modifiers = ((mods:find('shift%+') or key:lower() ~= key) and 1 or 0) +
@@ -169,7 +137,6 @@ else --TA 11
     end
   end
   return code, modifiers
-end
 end
 
 --macro recording
@@ -242,7 +209,7 @@ end
 local function mrectog_text()
   return (actions.recording and "Stop macro recording" or "Start macro recording")
 end
-actions.add("toggle_macrorec", '_Start/stop macro recording', mrec_toggle, Util.KEY_CTRL.."f7", mrectog_icon, nil, mrectog_text)
+actions.add("toggle_macrorec", '_Start/stop macro recording', mrec_toggle, "ctrl+f7", mrectog_icon, nil, mrectog_text)
 
 local function mrec_play()
   if actions.recording then
@@ -288,7 +255,7 @@ local function mrecsave()
     end
   end
 end
-actions.add("save_macrorec", _L['Save']..' macro', mrecsave, Util.KEY_SHIFT.."f7", "document-export", mrecplay_status)
+actions.add("save_macrorec", _L['Save']..' macro', mrecsave, "shift+f7", "document-export", mrecplay_status)
 
 local function mrecload_status()
   return ((not actions.recording) and 0 or 8) --8=disabled
@@ -321,13 +288,13 @@ local function key_return()
   buffer.add_text('\n')
   if not textadept.editing.auto_indent then return end
   local line = buffer:line_from_position(buffer.current_pos)
-  if line > Util.LINE_BASE and buffer:get_line(line - 1):find('^[\r\n]+$') and
+  if line > 1 and buffer:get_line(line - 1):find('^[\r\n]+$') and
      buffer:get_line(line):find('^[^\r\n]') then
     return -- do not auto-indent when pressing enter from start of previous line
   end
   local i = line - 1
-  while i >= Util.LINE_BASE and buffer:get_line(i):find('^[\r\n]+$') do i = i - 1 end
-  if i >= Util.LINE_BASE then
+  while i >= 1 and buffer:get_line(i):find('^[\r\n]+$') do i = i - 1 end
+  if i >= 1 then
     buffer.line_indentation[line] = buffer.line_indentation[i]
     buffer:vc_home()
   end

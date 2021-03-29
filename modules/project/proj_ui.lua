@@ -494,11 +494,11 @@ buffer.indic_style[indic_open]= buffer.INDIC_DOTS
 --remove all open-indicators from project
 function Proj.clear_open_indicators(pbuf)
   pbuf.indicator_current= indic_open
-  pbuf:indicator_clear_range(Util.LINE_BASE, pbuf.length)
+  pbuf:indicator_clear_range(1, pbuf.length)
 end
 
 function Proj.add_open_indicator(pbuf,row)
-  local r= row -1 + Util.LINE_BASE
+  local r= row
   pbuf.indicator_current= indic_open
   local pos= pbuf.line_indent_position[r]
   local len= pbuf.line_end_position[r] - pos
@@ -558,7 +558,7 @@ function Proj.show_default(buff)
   --project in EDIT mode / default text file--
   --show line numbers
   local width = 4 * buff:text_width(buffer.STYLE_LINENUMBER, '9')
-  buff.margin_width_n[ Util.LINE_BASE ] = width + (not CURSES and 4 or 0)
+  buff.margin_width_n[1] = width + (not CURSES and 4 or 0)
   --return to default
   buff.caret_width= 2
   buff.caret_line_back = buff.property['color.curr_line_back']

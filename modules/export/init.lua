@@ -1,6 +1,7 @@
 -- Copyright 2016-2021 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 local M = {}
+local Util = Util
 
 --[[This comment is for LuaDoc
 ---
@@ -58,8 +59,8 @@ function M.to_html(filename, out_filename)
   -- Iterate over defined styles and convert them into CSS.
   html[#html + 1] = '<style type="text/css">'
   local style_name = buffer.style_name
-  for i = Util.LINE_BASE, (Util.TA_MAYOR_VER < 11 and 255 or buffer.STYLE_MAX) do
-    local name = (Util.TA_MAYOR_VER < 11 and style_name[i] or buffer:name_of_style(i))
+  for i = 1, buffer.STYLE_MAX do
+    local name = buffer:name_of_style(i)
     if name == 'Not Available' then goto continue end
     local style = {}
     -- Determine style properties.
@@ -116,7 +117,7 @@ function M.to_html(filename, out_filename)
   -- Iterate over characters in the buffer, grouping styles into <span>s whose
   -- classes are their respective style names.
   local style_at = buffer.style_at
-  local pos, style = Util.LINE_BASE, style_at[ Util.LINE_BASE ]
+  local pos, style = 1, style_at[1]
   local prev_pos, prev_style
   local text_range = buffer.text_range
   local position_after = buffer.position_after
@@ -136,43 +137,23 @@ function M.to_html(filename, out_filename)
     end)
     return format('%s</span>', code)
   end
-  if Util.TA_MAYOR_VER < 11 then
-    while pos < buffer.length do
-      style = style_at[pos]
-      if style ~= prev_style then
-        -- Start of new <span>. Finish the old one first, if necessary.
-        if prev_pos then
-          html[#html + 1] = format_span(text_range(buffer, prev_pos, pos))
-        end
-        html[#html + 1] = format('<span class="%s">', style_name[style])
-        prev_pos, prev_style = pos, style
+  while pos <= buffer.length do
+    style = style_at[pos]
+    if style ~= prev_style then
+      -- Start of new <span>. Finish the old one first, if necessary.
+      if prev_pos then
+        html[#html + 1] = format_span(text_range(buffer, prev_pos, pos))
       end
-      pos = position_after(buffer, pos)
+      html[#html + 1] = format('<span class="%s">', buffer:name_of_style(style))
+      prev_pos, prev_style = pos, style
     end
-    -- Finish any incomplete <span>.
-    if prev_pos then
-      html[#html + 1] = format_span(text_range(buffer, prev_pos, buffer.length))
-    end
-  else
-    while pos <= buffer.length do
-      style = style_at[pos]
-      if style ~= prev_style then
-        -- Start of new <span>. Finish the old one first, if necessary.
-        if prev_pos then
-          html[#html + 1] = format_span(text_range(buffer, prev_pos, pos))
-        end
-        html[#html + 1] = format('<span class="%s">', buffer:name_of_style(style))
-        prev_pos, prev_style = pos, style
-      end
-      pos = position_after(buffer, pos)
-    end
-    -- Finish any incomplete <span>.
-    if prev_pos then
-      html[#html + 1] = format_span(
-        text_range(buffer, prev_pos, buffer.length + 1))
-    end
+    pos = position_after(buffer, pos)
   end
-
+  -- Finish any incomplete <span>.
+  if prev_pos then
+    html[#html + 1] = format_span(
+      text_range(buffer, prev_pos, buffer.length + 1))
+  end
   html[#html + 1] = '</body></html>'
 
   -- Done. Export to the file and show it.
@@ -193,17 +174,10 @@ if actions then
 else
   local m_file = textadept.menu.menubar[ Util.FILEMENU_TEXT ]
   table.insert(m_file, #m_file - 1, {''}) -- separator
-  if Util.TA_MAYOR_VER < 11 then
-    table.insert(m_file, #m_file - 1, {
-      title = 'E_xport',
-      {'Export to _HTML...', M.to_html}
-    })
-  else
-    table.insert(m_file, #m_file - 1, {
-      title = _L['Export'],
-      {_L['Export to HTML...'], M.to_html}
-    })
-  end
+  table.insert(m_file, #m_file - 1, {
+    title = _L['Export'],
+    {_L['Export to HTML...'], M.to_html}
+  })
 end
 
 return M
