@@ -410,7 +410,7 @@ actions.menubar = {
      "join_lines","filterthrough"},
     {
       title = Util.SELECTMENU_TEXT,
-      {"sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_word","sel_line","sel_paragraph"} --TA10
+      {"sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_word","sel_line","sel_paragraph"}
     },
     {
       title = Util.SELECTIONMENU_TEXT,
@@ -491,7 +491,6 @@ actions.menubar = {
      "about"}
   }
 }
-
 
 ---
 -- The right-click context menu
