@@ -905,13 +905,29 @@ local function cbtheme_change(cboname, newidx, newtxt)
   new_theme= true
 end
 
+local _themes
+function toolbar.get_installed_themes()
+  if _themes == nil then
+    _themes= {}
+    local tdir= _USERHOME.."/toolbar/"
+    for file in lfs.walk(tdir, lfs.default_filter, 0, true) do
+      if Util.file_exists(file.."toolbar.cfg") then
+        local theme= string.sub(file,#tdir+1,-2)  --remove dir and trailing path separator
+        _themes[ #_themes+1 ]= theme
+      end
+    end
+    if #_themes == 0 then _themes[1]= "bar-sm-light" end --just in case... (add default theme)
+  end
+  return _themes
+end
+
 local function add_toolbar_cfg_panel()
   new_theme= false
   toolbar.config_saveon=true --save the config options of this panel
   toolbar.toolbar_panel= add_config_tabgroup("Toolbar", "Toolbar configuration")
 
   add_config_label("THEME")
-  add_config_combo("cbo.theme",cbtheme_change,"Change toolbar theme",{"bar-sm-light","bar-th-dark","bar-ch-dark"},nil,true)
+  add_config_combo("cbo.theme",cbtheme_change,"Change toolbar theme",toolbar.get_installed_themes(),nil,true)
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")
