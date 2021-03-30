@@ -399,6 +399,10 @@ function toolbar.list_addinfo(text,bold)
   return name
 end
 
+function toolbar.get_openback_icon(isopen)
+  return toolbar.themepath..(isopen and "open-back.png" or "closed-back.png")
+end
+
 function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, evenrow, indent, idlen, open_hi, lstwidth)
   if not idlen then idlen=0 end
   if idlen > 0 then indent= indent + 10 end --add a collapse icon
@@ -413,7 +417,7 @@ function toolbar.list_add_txt_ico(name, text, tooltip, bold, click_fun, bicon, e
       toolbar.adjust(toolbar.cfg.butsize+4,toolbar.cfg.butsize,3,3,4,4)
       toolbar.gotopos(3 + indent, toolbar.listtb_y)
       local iobut= "open-"..name
-      toolbar.cmd(iobut, nil, "", (open_hi == 1) and "open-back" or "closed-back")
+      toolbar.cmd(iobut, nil, "", toolbar.get_openback_icon(open_hi == 1))
       toolbar.enable(iobut,false,false) --non-selectable image
       toolbar.adjust(toolbar.cfg.butsize,toolbar.cfg.butsize,3,3,4,4)
     end

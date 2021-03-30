@@ -104,7 +104,7 @@ if toolbar then
   end
 
   local function mark_open_proj()
-    toolbar.setthemeicon("open-goproj#1", Proj.data.is_open and "open-back" or "closed-back")
+    toolbar.seticon("open-goproj#1", toolbar.get_openback_icon(Proj.data.is_open), toolbar.TTBI_TB.IT_NORMAL)
   end
 
   local function recentproj_create_cb()

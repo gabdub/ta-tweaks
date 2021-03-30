@@ -291,7 +291,7 @@ if toolbar then
           local row= get_brwfile_row(file)
           if row then
             local name= "open-brwfile#"..row
-            if not openfs[name] then toolbar.setthemeicon(name,"open-back") end
+            if not openfs[name] then toolbar.seticon(name, toolbar.get_openback_icon(true), toolbar.TTBI_TB.IT_NORMAL) end
             openfs[name]= true
           end
         end
