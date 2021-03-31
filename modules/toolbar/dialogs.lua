@@ -433,9 +433,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   --title group: align top + fixed height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
   toolbar.setdefaulttextfont()
-  toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
   if dlg_can_move and toolbar.setmovepopup ~= nil then
-    toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
     local nbut= next_but_cb and 2 or 1
     toolbar.cfg.butsize= dialog_w-3-(toolbar.cfg.butsize+2)*nbut
