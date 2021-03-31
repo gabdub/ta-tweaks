@@ -415,8 +415,12 @@ local function load_colors_from_theme(dontask, apply)
   end
 end
 
-local function save_theme_colors(dontask)
-  if confirm_color_overwrite("Save this colors as theme's default", dontask) then
+local function load_colors_from_theme_ask()
+  load_colors_from_theme(false, false)  --ask, don't apply
+end
+
+local function save_theme_colors()
+  if confirm_color_overwrite("Save this colors as theme's default", false) then
     local f = io.open(toolbar.themepath.."colors.cfg", 'wb')
     if f then
       local savedata = {}
@@ -488,9 +492,9 @@ function toolbar.save_colors_reset()
   reload_theme()
 end
 
-local function reload_colors(dontask)
+local function reload_colors()
   local rname,rnum
-  if confirm_color_overwrite("Reload current colors", dontask) then
+  if confirm_color_overwrite("Reload current colors", false) then
     local f = io.open(_USERHOME..'/themes/colors.lua', 'rb')
     if f then
       for line in f:lines() do
@@ -525,7 +529,7 @@ local base0X_prop= {
 
 local function import_color_scheme()
   local rname,rnum
-  if confirm_color_overwrite("Import a color scheme file", dontask) then
+  if confirm_color_overwrite("Import a color scheme file", false) then
     local scheme= ui.dialogs.fileselect{
       title = 'Open scheme file',
       with_directory = _USERHOME..'/themes',
@@ -634,7 +638,7 @@ function toolbar.load_config(dontset_toolbar)
   end
   toolbar.config_change= false
   if not colors and not dontset_toolbar and toolbar.themepath then --no colors in config, use theme default
-    load_colors_from_theme(true) --don't ask nor apply
+    load_colors_from_theme(true, false) --don't ask nor apply
   end
 end
 
@@ -1083,7 +1087,7 @@ local function add_colors_cfg_panel()
   pnly_add(21)
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  toolbar.cmdtext("Restore theme's palette", load_colors_from_theme, "Set default colors from theme", "getthemecolors")
+  toolbar.cmdtext("Restore theme's palette", load_colors_from_theme_ask, "Set default colors from theme", "getthemecolors")
   pnly_add(30)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Save as theme's palette", save_theme_colors, "Save this colors as theme's default", "savethemecolors")
@@ -1116,7 +1120,7 @@ local function oldcolor_clicked()
   toolbar.setbackcolor("CPICKER", toolbar.get_rgbcolor_prop(toolbar.edit_color_prop))
 end
 
-local function picker_type(toclipboard)
+local function get_picker_color()
   local col= toolbar.getpickcolor() --RGB
   if toolbar.get_radio_val("ctypeorder") == 2 then
     col=Util.rgb_2_bgr(col)
@@ -1132,28 +1136,18 @@ local function picker_type(toclipboard)
       scol="#"..scol
     end
   end
-  if toclipboard then
-    buffer:copy_text(scol)
-  else
-    buffer.add_text(buffer, scol)
-  end
+  return scol
 end
 
 local function picker_copy()
-  picker_type(true)
+  buffer:copy_text(get_picker_color())
 end
 
-local function picker_get(fromclipboard)
-  local text
-  if fromclipboard then
-    text= Util.str_trim(ui.clipboard_text)
-  else
-    local s, e = buffer.selection_start, buffer.selection_end
-    if s == e then
-      s, e = buffer:word_start_position(s), buffer:word_end_position(s)
-    end
-    text= Util.str_trim(buffer:text_range(s, e))
-  end
+local function picker_type()
+  buffer.add_text(buffer, get_picker_color())
+end
+
+local function picker_set_color(text)
   if text and text ~= "" then
     local hex= false
     local v= string.match(text,"0x(%x+)")
@@ -1195,7 +1189,15 @@ local function picker_get(fromclipboard)
 end
 
 local function picker_paste()
-  picker_get(true)
+  picker_set_color(Util.str_trim(ui.clipboard_text))
+end
+
+local function picker_get()
+  local s, e = buffer.selection_start, buffer.selection_end
+  if s == e then
+    s, e = buffer:word_start_position(s), buffer:word_end_position(s)
+  end
+  picker_set_color(Util.str_trim(buffer:text_range(s, e)))
 end
 
 local function add_picker_cfg_panel()
