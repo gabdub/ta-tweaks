@@ -450,9 +450,15 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     toolbar.gotopos(2, 3)
     toolbar.addlabel(title, "", dialog_w-toolbar.cfg.butsize-10, true, true)  --left align, bold
   end
+  toolbar.listtb_y= 0
+  toolbar.list_cmdright= 0
+  toolbar.list_addbutton("close_dlg", "Close", close_dialog, "transparent")
+  toolbar.seticon("close_dlg", "ttb-close-normal",  toolbar.TTBI_TB.BACKGROUND, true)
+  toolbar.seticon("close_dlg", "ttb-close-hilight", toolbar.TTBI_TB.IT_HILIGHT, true)
+  toolbar.seticon("close_dlg", "ttb-close-press",   toolbar.TTBI_TB.IT_HIPRESSED, true)
+
   toolbar.listtb_y= 2
-  toolbar.list_cmdright= 2
-  toolbar.list_addbutton("close_dlg", "Close", close_dialog, "window-close")
+  toolbar.list_cmdright= toolbar.list_cmdright+4
   if next_but_cb then toolbar.list_addbutton("next_dlg", "Next [Control+N]", next_dlg, "go-next") add_accelerator("Control+N", "next_dlg") end
 
   if dialog_font_preview then
