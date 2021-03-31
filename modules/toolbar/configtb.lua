@@ -383,6 +383,7 @@ local function add_config_font(text, name)
   toolbar.addtext(name,toolbar.get_font_val(name),"Change font",toolbar.cfgpnl_width-toolbar.cfgpnl_xtext*2,true,true,false)
   toolbar.cmds[name]= changefont_clicked
   pnly_newrow()
+  pnly_add(4) --add a little extra separation
   add_config_combo("cbo."..name:gsub("%.","size_"),nil,"Change font size",{"default size","+1 pt","+2 pts","+3 pts","+4 pts","+5 pts","+6 pts","-1 pt","-2 pts","-3 pts","-4 pts","-5 pts","-6 pts"},nil,false)
   if toolbar.config_saveon then --save as a comment in the config file
     toolbar.cfgpnl_savelst[#toolbar.cfgpnl_savelst+1]=name
