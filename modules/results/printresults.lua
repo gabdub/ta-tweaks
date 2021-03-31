@@ -123,7 +123,7 @@ if toolbar then
       txt= string.gsub(txt, '\t', ' ') --replace tabs with spaces
       local oneline= txt --Util.str_one_line(txt)
       if #oneline > 200 then oneline= oneline:sub(1,200).."..." end
-      toolbar.list_add_txt_ico(name, oneline, txt, true, print_click, icon, false, 0, 0, 0, 250)
+      toolbar.list_add_txt_ico(name, oneline, txt, false, print_click, icon, false, 0, 0, 0, 250)
       yout= yout + toolbar.cfg.butsize
     end
     toolbar.showresults("printresults")
