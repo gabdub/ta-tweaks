@@ -954,19 +954,12 @@ local function add_toolbar_cfg_panel()
   add_config_label("STATUS BAR",true)
   add_config_check("tbshowstatbar", "Use toolbar status bar", "", true)
 
-  add_config_label("VERTICAL BAR",true)
-  if toolbar.list_toolbar_onoff ~= nil then
-    local savecfg= toolbar.config_saveon
-    toolbar.config_saveon=false --don't save this check
-    add_config_check("tbshowlist", "Show LIST toolbar", "", false, toolbar.list_toolbar_onoff)
-    toolbar.config_saveon=savecfg
-  else
+  if toolbar.list_toolbar_onoff == nil then
+    add_config_label("VERTICAL BAR",true)
     add_config_radio("tbvertbar", "1 Column", "", true)
     cont_config_radio("2 Columns")
-    if toolbar.add_html_toolbar == nil then
-      --NO HTML quicktype toolbar, add "HIDE" option
-      cont_config_radio("Hide")
-    end
+    --NO HTML quicktype toolbar, add "HIDE" option
+    if toolbar.add_html_toolbar == nil then cont_config_radio("Hide") end
   end
 
   add_config_label("MINI MAP",true)
@@ -977,17 +970,23 @@ local function add_toolbar_cfg_panel()
 
   toolbar.config_saveon=false --end of config save options of this panel
 
-  if toolbar.results_onoff ~= nil then
-    add_config_label("RESULTS",true)
-    add_config_check("tbshowresults", "Show Results toolbar", "", false, toolbar.results_onoff)
-  end
-
   add_config_separator()
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
   toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload1")
   pnly_add(21)
   add_config_separator()
-
+  
+  pnly_newrow()
+  if toolbar.list_toolbar_onoff ~= nil then
+    add_config_label("VERTICAL BAR",true)
+    toolbar.config_saveon=false --don't save this check
+    add_config_check("tbshowlist", "Show LIST toolbar", "", false, toolbar.list_toolbar_onoff)
+  end
+  if toolbar.results_onoff ~= nil then
+    add_config_label("RESULTS",true)
+    add_config_check("tbshowresults", "Show Results toolbar", "", false, toolbar.results_onoff)
+  end
+  
   pnly_newrow()
   add_config_separator()
   add_config_label("About ta-toolbar", false)
