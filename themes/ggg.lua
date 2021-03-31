@@ -44,8 +44,8 @@ property['style.whitespace'] = ''
 
 property['style.line_number'] = 'fore:%(color.linenum_fore),back:%(color.linenum_back)'
 property['style.indent_guide'] = 'fore:%(color.indentguide)'
-property['style.call_tip'] = 'fore:%(color.calltips_fore),back:%(color.color.calltips_back)'
-property['style.fold_display_text'] = 'fore:%(color.text_fore),back:%(color.color.text_back)'
+property['style.call_tip'] = 'fore:%(color.calltips_fore),back:%(color.calltips_back)'
+property['style.fold_display_text'] = 'fore:%(color.text_fore),back:%(color.text_back)'
 
 --Caret and Selection Styles
 view:set_sel_fore(true, property_int['color.selection_fore'])
