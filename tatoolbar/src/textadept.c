@@ -1,7 +1,7 @@
 // Copyright 2007-2021 Mitchell. See LICENSE.
 // USE_TA_TOOLBAR changes: Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
-#define TA_VERSION 111  //TA code updated for textadept 11.1
+#define TA_VERSION 112  //TA code updated for textadept 11.2 beta
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -192,7 +192,9 @@ static lua_State *lua;
 #if CURSES
 static bool quitting;
 #endif
-static bool initing, closing, show_tabs = true, tab_sync, dialog_active;
+static bool initing, closing, tab_sync, dialog_active;
+static int tabs = 1; // int for more options than true/false
+#define show_tabs(condition) tabs && (condition || tabs > 1)
 enum {SVOID, SINT, SLEN, SINDEX, SCOLOR, SBOOL, SKEYMOD, SSTRING, SSTRINGRET};
 
 // Forward declarations.
@@ -369,6 +371,8 @@ static void refresh_all() {
   refresh_pane(pane);
   if (command_entry_active) scintilla_noutrefresh(command_entry);
   refresh();
+  if (findbox) return;
+  scintilla_update_cursor(!command_entry_active ? focused_view : command_entry);
 }
 
 /**
@@ -460,7 +464,6 @@ static int focus_find(lua_State *L) {
   setCDKEntryPostProcess(find_entry, find_keypress, NULL);
   char *clipboard = scintilla_get_clipboard(focused_view, NULL);
   GPasteBuffer = copyChar(clipboard); // set the CDK paste buffer
-  curs_set(1);
   refreshCDKScreen(findbox), activateCDKEntry(focused_entry = find_entry, NULL);
   while (focused_entry->exitType == vNORMAL ||
          focused_entry->exitType == vNEVER_ACTIVATED) {
@@ -471,7 +474,6 @@ static int focus_find(lua_State *L) {
     find_entry->exitType = repl_entry->exitType = vNEVER_ACTIVATED;
     refreshCDKScreen(findbox), activateCDKEntry(focused_entry, NULL);
   }
-  curs_set(0);
   // Set Scintilla clipboard with new CDK paste buffer if necessary.
   if (strcmp(clipboard, GPasteBuffer) != 0)
     SS(focused_view, SCI_COPYTEXT, strlen(GPasteBuffer), (sptr_t)GPasteBuffer);
@@ -686,8 +688,8 @@ static void sync_tabbar() {
     lua_pushdoc(lua, SS(focused_view, SCI_GETDOCPOINTER, 0, 0)),
     lua_gettable(lua, -2), lua_tointeger(lua, -1) - 1);
   lua_pop(lua, 2); // index and buffers
-  GtkNotebook *tabs = GTK_NOTEBOOK(tabbar);
-  tab_sync = true, gtk_notebook_set_current_page(tabs, i), tab_sync = false;
+  GtkNotebook *notebook = GTK_NOTEBOOK(tabbar);
+  tab_sync = true, gtk_notebook_set_current_page(notebook, i), tab_sync = false;
 //#elif CURSES
   // TODO: tabs
 #endif
@@ -875,7 +877,7 @@ static int ui_index(lua_State *L) {
     lua_pushinteger(L, width), lua_rawseti(L, -2, 1);
     lua_pushinteger(L, height), lua_rawseti(L, -2, 2);
   } else if (strcmp(key, "tabs") == 0)
-    lua_pushboolean(L, show_tabs);
+    tabs <= 1 ? lua_pushboolean(L, tabs) : lua_pushinteger(L, tabs);
   else
     lua_rawget(L, 1);
   return 1;
@@ -958,10 +960,10 @@ static int ui_newindex(lua_State *L) {
     if (w > 0 && h > 0) gtk_window_resize(GTK_WINDOW(window), w, h);
 #endif
   } else if (strcmp(key, "tabs") == 0) {
-    show_tabs = lua_toboolean(L, 3);
+    tabs = !lua_isinteger(L, 3) ? lua_toboolean(L, 3) : lua_tointeger(L, 3);
 #if GTK
     gtk_widget_set_visible(
-      tabbar, show_tabs && gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabbar)) > 1);
+      tabbar, show_tabs(gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabbar)) > 1));
 //#elif CURSES
     // TODO: tabs
 #endif
@@ -1080,7 +1082,7 @@ static void remove_doc(lua_State *L, sptr_t doc) {
 #if GTK
       // Remove the tab from the tabbar.
       gtk_notebook_remove_page(GTK_NOTEBOOK(tabbar), i - 1);
-      gtk_widget_set_visible(tabbar, show_tabs && lua_rawlen(L, -2) > 2);
+      gtk_widget_set_visible(tabbar, show_tabs(lua_rawlen(L, -2) > 2));
 //#elif CURSES
       // TODO: tabs
 #endif
@@ -1246,10 +1248,10 @@ static void show_context_menu(lua_State *L, GdkEventButton *event, char *k) {
 
 /** Signal for a tab label mouse click. */
 static bool tab_clicked(GtkWidget *label, GdkEventButton *event, void *L) {
-  GtkNotebook *tabs = GTK_NOTEBOOK(tabbar);
-  for (int i = 0; i < gtk_notebook_get_n_pages(tabs); i++) {
-    GtkWidget *page = gtk_notebook_get_nth_page(tabs, i);
-    if (label != gtk_notebook_get_tab_label(tabs, page)) continue;
+  GtkNotebook *notebook = GTK_NOTEBOOK(tabbar);
+  for (int i = 0; i < gtk_notebook_get_n_pages(notebook); i++) {
+    GtkWidget *page = gtk_notebook_get_nth_page(notebook, i);
+    if (label != gtk_notebook_get_tab_label(notebook, page)) continue;
     emit(
       L, "tab_clicked", LUA_TNUMBER, i + 1, LUA_TNUMBER, event->button,
       LUA_TBOOLEAN, event->state & GDK_SHIFT_MASK,
@@ -1447,7 +1449,7 @@ static void new_buffer(sptr_t doc) {
     lua_getfield(lua, -1, "tab_pointer"), lua_touserdata(lua, -1));
   tab_sync = true;
   int i = gtk_notebook_append_page(GTK_NOTEBOOK(tabbar), tab, NULL);
-  gtk_widget_show(tab), gtk_widget_set_visible(tabbar, show_tabs && i > 0);
+  gtk_widget_show(tab), gtk_widget_set_visible(tabbar, show_tabs(i > 0));
   gtk_notebook_set_current_page(GTK_NOTEBOOK(tabbar), i);
   tab_sync = false;
   lua_pop(lua, 2); // tab_pointer and buffer
@@ -1636,7 +1638,7 @@ static bool init_lua(lua_State *L, int argc, char **argv, bool reinit) {
   if (platform) lua_pushboolean(L, true), lua_setglobal(L, platform);
 #if CURSES
   lua_pushboolean(L, true), lua_setglobal(L, "CURSES");
-  show_tabs = false; // TODO: tabs
+  tabs = 0; // TODO: tabs
 #endif
   const char *charset = NULL;
 #if GTK
@@ -1922,16 +1924,17 @@ static void emit_notification(lua_State *L, SCNotification *n) {
   if (n->text)
     lua_pushlstring(L, n->text, n->length ? n->length : strlen(n->text)),
       lua_setfield(L, -2, "text");
-  lua_pushinteger(L, n->length), lua_setfield(L, -2, "length"); // SCN_MODIFIED
-  //lua_pushinteger(L, n->linesAdded), lua_setfield(L, -2, "lines_added");
+  lua_pushinteger(L, n->length), lua_setfield(L, -2, "length");
+  lua_pushinteger(L, n->linesAdded), lua_setfield(L, -2, "lines_added");
   //lua_pushinteger(L, n->message), lua_setfield(L, -2, "message");
-  lua_pushinteger(L, n->listType), lua_setfield(L, -2, "list_type");
+  //lua_pushinteger(L, n->wParam), lua_setfield(L, -2, "wParam");
   //lua_pushinteger(L, n->lParam), lua_setfield(L, -2, "lParam");
   lua_pushinteger(L, n->line + 1), lua_setfield(L, -2, "line");
   //lua_pushinteger(L, n->foldLevelNow), lua_setfield(L, -2, "fold_level_now");
   //lua_pushinteger(L, n->foldLevelPrev),
   //  lua_setfield(L, -2, "fold_level_prev");
   lua_pushinteger(L, n->margin + 1), lua_setfield(L, -2, "margin");
+  lua_pushinteger(L, n->listType), lua_setfield(L, -2, "list_type");
   lua_pushinteger(L, n->x), lua_setfield(L, -2, "x");
   lua_pushinteger(L, n->y), lua_setfield(L, -2, "y");
   //lua_pushinteger(L, n->token), lua_setfield(L, -2, "token");
@@ -1940,6 +1943,8 @@ static void emit_notification(lua_State *L, SCNotification *n) {
   lua_pushinteger(L, n->updated), lua_setfield(L, -2, "updated");
   //lua_pushinteger(L, n->listCompletionMethod),
   //  lua_setfield(L, -2, "list_completion_method");
+  //lua_pushinteger(L, n->characterSource),
+  //  lua_setfield(L, -2, "character_source");
   emit(L, "SCN", LUA_TTABLE, luaL_ref(L, LUA_REGISTRYINDEX), -1);
 }
 
@@ -2403,6 +2408,7 @@ static void new_window() {
             gtk_box_pack_start(GTK_BOX(hboxIN), hboxED, true, true, 0);
             //------------------------------------------hboxED(buffers)
             gtk_box_pack_start(GTK_BOX(hboxED), new_view(0), true, true, 0);
+            gtk_widget_grab_focus(focused_view);
             //==========================================TB#4
             create_tatoolbar(lua, hboxIN, MINIMAP_TOOLBAR); //TOOLBAR: VERTICAL (right internal: minimap/scrollbar)
 
@@ -2416,6 +2422,7 @@ static void new_window() {
 #else
         //==========================================hbox(buffers) (when TOOLBAR IS NOT USED)
         gtk_box_pack_start(GTK_BOX(hbox), new_view(0), true, true, 0);
+        gtk_widget_grab_focus(focused_view);
 #endif
       //------------------------------------------new_findbox
   gtk_box_pack_start(GTK_BOX(vboxp), new_findbox(), false, false, 5);
@@ -2577,7 +2584,6 @@ int main(int argc, char **argv) {
   ta_tk = termkey_new(0, 0);
   setlocale(LC_CTYPE, ""); // for displaying UTF-8 characters properly
   initscr(); // raw()/cbreak() and noecho() are taken care of in libtermkey
-  curs_set(0); // disable cursor when Scintilla has focus
 #if NCURSES_REENTRANT
   ESCDELAY = getenv("ESCDELAY") ? atoi(getenv("ESCDELAY")) : 100;
 #endif
