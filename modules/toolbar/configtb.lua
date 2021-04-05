@@ -975,7 +975,7 @@ local function add_toolbar_cfg_panel()
   toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload1")
   pnly_add(21)
   add_config_separator()
-  
+
   pnly_newrow()
   if toolbar.list_toolbar_onoff ~= nil then
     add_config_label("VERTICAL BAR",true)
@@ -986,7 +986,7 @@ local function add_toolbar_cfg_panel()
     add_config_label("RESULTS",true)
     add_config_check("tbshowresults", "Show Results toolbar", "", false, toolbar.results_onoff)
   end
-  
+
   pnly_newrow()
   add_config_separator()
   add_config_label("About ta-toolbar", false)
@@ -1163,19 +1163,24 @@ local function picker_set_color(text)
       end
     end
     if v then
-      if not hex and v == string.match(text,"^(%d+)$") then
-        --all digits are decimal, use radio to decide
-        if toolbar.get_radio_val("ctypeformat") ~= 3 then
-          hex= true --not decimal
+      if not hex then
+        local decdig= string.match(text,"^(%d+)$")
+        if decdig and v == decdig then
+          --all digits are decimal, use the radio to decide ("decimal" is option #3)
+          if toolbar.get_radio_val("ctypeformat") ~= 3 then hex= true end
+        else
+          hex= true --not all digits are numbers, use hexadecimal
         end
       end
       local color
       if hex then color=tonumber(v,16) else color=tonumber(v) end
+      local order= " (RGB)"
       if toolbar.get_radio_val("ctypeorder") == 2 then
-        color=Util.rgb_2_bgr(color) --convert from BGR to RGB
+        color= Util.rgb_2_bgr(color) --convert from BGR to RGB
+        order= " (BGR)"
       end
       toolbar.setbackcolor("CPICKER", color)
-      ui.statusbar_text= 'imported color= '..v
+      ui.statusbar_text= 'imported color= '..v..order
       return
     end
     if string.len(text) > 30 then

@@ -228,7 +228,8 @@ function Util.Hex2Ascii(str)
   return res
 end
 
-function Util.rgb_2_bgr(col)
+function Util.rgb_2_bgr(colrgb)
+  local col= colrgb or 0
   return ((col >> 16) & 0xFF) | (col & 0x00FF00) | ((col << 16) & 0xFF0000)
 end
 
