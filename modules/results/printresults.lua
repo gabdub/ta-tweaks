@@ -102,6 +102,8 @@ if toolbar then
   toolbar.print_console_icon= false
 
   function toolbar.print_result(ml_txt)
+    local savect= toolbar.current_toolbar --save current toolbar/group
+    local savecg= toolbar.current_tb_group
     toolbar.sel_results_bar(itemsgrp)
     local name, firstname
     local firstitem= nitems+1
@@ -129,6 +131,7 @@ if toolbar then
     toolbar.showresults("printresults")
     toolbar.ensurevisible(firstname)
     select_printrow(firstitem)
+    toolbar.sel_toolbar_n(savect, savecg, false)  --restore current toolbar/group
   end
 
   -------- overwrite default ui._print function -----
