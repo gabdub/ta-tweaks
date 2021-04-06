@@ -83,10 +83,12 @@ local function choose_item(cmd)
   local itnum= toolbar.getnum_cmd(cmd)
   if itnum then
     toolbar.dlg_select_it= get_list_itemstr(itnum)
-    --ui.statusbar_text= "it selected: " .. toolbar.dlg_select_it
     if toolbar.dlg_select_ev then
       local keepopen= toolbar.dlg_select_ev(toolbar.dlg_select_it)
-      if keepopen then return end --return true to keep the dialog open
+      if keepopen then --return true to keep the dialog open
+        toolbar.sel_dialog_popup(itemsgrp,false) --keep the popup toolbar selected
+        return
+      end
     end
   end
   close_dialog()
@@ -289,7 +291,7 @@ local function dialog_key_ev(npop, keycode,keyflags)
     local kc= keycode
     if kc >= 65 and kc <= 90 then kc= kc+32 end --lower case letter (A..Z)
     keyflags= keyflags & toolbar.KEYFLAGS.ALL_MODS --keep only SHIFT/CTRL/ALT/META
-    ui.statusbar_text= "dialog key= ".. kc.." flags= ".. keyflags
+    --ui.statusbar_text= "dialog key= ".. kc.." flags= ".. keyflags
     --check accelerators
     for i=1,#dialog_accel do  --{keycode, keyflags, buttname}
       if dialog_accel[i][1] == kc and dialog_accel[i][2] == keyflags then
@@ -297,13 +299,15 @@ local function dialog_key_ev(npop, keycode,keyflags)
         if not db_pressed(bname) then --try dialog buttons
           if toolbar.cmds[bname] ~= nil then toolbar.cmds[bname](bname) end --try other buttons
         end
+        toolbar.sel_dialog_popup(itemsgrp,false) --keep the popup toolbar selected
         return
       end
     end
-    if keyflags == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
-      if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
-        if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
-      elseif keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
+    if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
+      if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
+
+    elseif keyflags == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
+      if keycode == toolbar.KEY.UP or keycode == toolbar.KEY.LEFT then
         change_selection( idx_sel_i-1 )  --select previous item
       elseif keycode == toolbar.KEY.DOWN or keycode == toolbar.KEY.RIGHT then
         change_selection( idx_sel_i+1 )  --select next item
@@ -551,3 +555,100 @@ function toolbar.small_chooser(title, sel_enc, enc_selected, enc_list, btname, a
   end
   ensure_sel_view()
 end
+
+local fdialog_opt= ""
+local fdialog_currdir= ""
+local fdialog_brow_dir= ""
+local function file_sort(filea,fileb)
+  local pa,fa,ea = Util.splitfilename(filea)
+  local pb,fb,eb = Util.splitfilename(fileb)
+  if pa == pb then return fa < fb end
+  return pa < pb
+end
+
+local function b_change_dir(cmd)
+  --change current dir
+  if fdialog_opt ~= "" then toolbar.selected(fdialog_opt, false, false, true) end --unmark old option
+  fdialog_opt= cmd
+  toolbar.selected(fdialog_opt, false, true, true) --mark new option
+  toolbar.dlg_select_it= ""
+  --clear filter
+  filter= ""
+  update_filter()
+  --load file list
+  dialog_list= {}
+  if fdialog_opt == "fdlg-project" then
+    --project files
+    if Proj and Proj.data.is_open then
+      for r=1,#Proj.data.proj_files do
+        local ft= Proj.data.proj_filestype[r]
+        if ft == Proj.PRJF_FILE or ft == Proj.PRJF_CTAG then
+          dialog_list[ #dialog_list+1 ]= Proj.data.proj_files[r]
+        end
+      end
+    end
+  elseif fdialog_opt == "fdlg-browdir" then
+    if fdialog_brow_dir ~= "" then
+      for file in lfs.walk(fdialog_brow_dir, lfs.default_filter, 0, false) do --no recursion
+        dialog_list[ #dialog_list+1 ]= file
+      end
+      --show all open dirs in browse panel
+      local of= toolbar.get_filebrowser_openfolders()
+      for fdir,_ in pairs(of) do
+        for file in lfs.walk(fdir, lfs.default_filter, 0, false) do --no recursion
+          dialog_list[ #dialog_list+1 ]= file
+        end
+      end
+      table.sort(dialog_list, file_sort)
+    end
+  else
+    --walk folder
+    local fdir= _USERHOME
+    if fdialog_opt == "fdlg-ta-home" then fdir= _HOME
+    elseif fdialog_opt == "fdlg-currdir" then fdir= fdialog_currdir end
+    for file in lfs.walk(fdir, lfs.default_filter, nil, false) do --full recursion
+      dialog_list[ #dialog_list+1 ]= file
+    end
+    table.sort(dialog_list, file_sort)
+  end
+  load_data(false)
+end
+
+local function fdlg_item_selected(fname)
+  Proj.go_file( fname )
+  --keep dialog open if SHIFT or CONTROL is pressed
+  return (toolbar.keyflags & (toolbar.KEYFLAGS.CONTROL|toolbar.KEYFLAGS.SHIFT) ~= 0)
+end
+
+function toolbar.file_chooser(option, title)
+  local flist= {}
+  local dconfig= {}
+  fdialog_currdir= ""
+  fdialog_brow_dir=""
+  local fname= buffer.filename
+  if fname then fdialog_currdir=fname:match('^(.+)[/\\]') end
+  local isprj= (Proj and Proj.data.is_open)
+  if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() end
+  local buttons= {
+    --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
+    {"fdlg-project", "Project", "Project files", 5, 95, 1, b_change_dir, isprj and 0 or toolbar.DLGBUT.EN_OFF, "Control+P"},
+    {"fdlg-user",    "User", _USERHOME, 105, 95, 1, b_change_dir, 0, "Control+U"},
+    {"fdlg-ta-home", "Home", _HOME, 205, 95, 1, b_change_dir, 0, "Control+H"},
+    {"fdlg-currdir", "Current", fdialog_currdir, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
+    {"fdlg-browdir", "Browser", fdialog_brow_dir, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
+  }
+  dconfig.can_move= true  --allow to move
+  dconfig.buttons= buttons
+  toolbar.dlg_select_it= ""
+  toolbar.dlg_select_ev= fdlg_item_selected
+  toolbar.create_dialog(title or "File chooser", 600, 400, flist, "MIME", dconfig)
+  if not option or option < 1 or option > #buttons then option= (isprj) and 1 or 2 end
+  b_change_dir(buttons[option][1])
+  toolbar.show_dialog()
+end
+
+--ACTION: quick_browse
+local function quick_browse()
+  toolbar.file_chooser(5)
+end
+actions.add("quick_browse", 'Quickly Open Browse Directory', quick_browse, Util.KEY_ALT.."O")

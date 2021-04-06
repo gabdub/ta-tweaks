@@ -21,11 +21,11 @@ if toolbar then
 
   --right-click context menu
   local filebrowser_context_menu = {
-    {"open_filebrowser", "browse_folder", "browse_folder_in_filemanager", SEPARATOR,
+    {"open_filebrowser", "quick_browse", "browse_folder", "browse_folder_in_filemanager", SEPARATOR,
      "browse_home", "browse_selectfolder", "browse_proj_folder", "browse_refresh", SEPARATOR, "browse_up_folder", "browse_prev_folder", "browse_next_folder"}
   }
   local nofile_filebrowser_cmenu = {
-    {"browse_home", "browse_selectfolder", "browse_proj_folder", "browse_refresh", SEPARATOR, "browse_up_folder", "browse_prev_folder", "browse_next_folder"}
+    {"quick_browse", "browse_home", "browse_selectfolder", "browse_proj_folder", "browse_refresh", SEPARATOR, "browse_up_folder", "browse_prev_folder", "browse_next_folder"}
   }
 
   local function clear_selected()
@@ -454,6 +454,13 @@ if toolbar then
       toolbar.select_list("filebrowser", true) --force visible / activate
       set_file_or_folder_as_brwdir(file_or_folder)
     end
+  end
+
+  function toolbar.get_filebrowser_dir()
+    return browse_dir
+  end
+  function toolbar.get_filebrowser_openfolders()
+    return openfolders
   end
 
   toolbar.registerlisttb("filebrowser", "File browser", "document-open", filebrowser_create_cb, filebrowser_update_cb, filebrowser_showlist_cb, nofile_rclick)

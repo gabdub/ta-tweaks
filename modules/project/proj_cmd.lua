@@ -108,8 +108,11 @@ end
 --ACTION: quick_open_projectdir
 --quick open project files based on io.quick_open/snapopen @ file_io.lua
 function Proj.quick_open()
+  if toolbar.file_chooser then
+    toolbar.file_chooser()  --use dialog option when available
+    return
+  end
   if not Proj.check_is_open() then return end
-
   --if the current view is a project view, goto files view
   Proj.goto_filesview()
   local utf8_list = {}
