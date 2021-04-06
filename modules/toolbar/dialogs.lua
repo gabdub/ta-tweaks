@@ -295,6 +295,7 @@ local function dialog_key_ev(npop, keycode,keyflags)
     --check accelerators
     for i=1,#dialog_accel do  --{keycode, keyflags, buttname}
       if dialog_accel[i][1] == kc and dialog_accel[i][2] == keyflags then
+        toolbar.keyflags= 0
         local bname= dialog_accel[i][3]
         if not db_pressed(bname) then --try dialog buttons
           if toolbar.cmds[bname] ~= nil then toolbar.cmds[bname](bname) end --try other buttons
@@ -589,14 +590,19 @@ local function b_change_dir(cmd)
     end
   elseif fdialog_opt == "fdlg-browdir" then
     if fdialog_brow_dir ~= "" then
-      for file in lfs.walk(fdialog_brow_dir, lfs.default_filter, 0, false) do --no recursion
+      local nrec= 0
+      if (toolbar.keyflags & toolbar.KEYFLAGS.SHIFT) ~= 0 then nrec= 1  --SHIFT+click= 1 level recursion
+      elseif (toolbar.keyflags & toolbar.KEYFLAGS.CONTROL) ~= 0 then nrec= nil end --CONTROL+click= full recursion
+      for file in lfs.walk(fdialog_brow_dir, lfs.default_filter, nrec, false) do
         dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
       end
-      --show all open dirs in browse panel
-      local of= toolbar.get_filebrowser_openfolders()
-      for fdir,_ in pairs(of) do
-        for file in lfs.walk(fdir, lfs.default_filter, 0, false) do --no recursion
-          dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
+      if nrec == 0 then
+        --show all open dirs in browse panel
+        local of= toolbar.get_filebrowser_openfolders()
+        for fdir,_ in pairs(of) do
+          for file in lfs.walk(fdir, lfs.default_filter, nrec, false) do --no recursion
+            dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
+          end
         end
       end
       table.sort(dialog_list, file_sort)
@@ -635,7 +641,7 @@ function toolbar.file_chooser(option, title)
     {"fdlg-user",    "User", _USERHOME, 105, 95, 1, b_change_dir, 0, "Control+U"},
     {"fdlg-ta-home", "Home", _HOME, 205, 95, 1, b_change_dir, 0, "Control+H"},
     {"fdlg-currdir", "Current", fdialog_currdir, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
-    {"fdlg-browdir", "Browser", fdialog_brow_dir, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
+    {"fdlg-browdir", "Browser", fdialog_brow_dir.."\n  Shift+Click= 1 sub-level\n  Control+Click= all sub-levels", 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
   }
   dconfig.can_move= true  --allow to move
   dconfig.buttons= buttons
