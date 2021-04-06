@@ -84,6 +84,8 @@ end
 --ACTION: open_userhome
 function Proj.qopen_user()
   Proj.goto_filesview()
+  --use dialog option when available
+  if toolbar.file_chooser then toolbar.file_chooser(2) return end
   io.quick_open(_USERHOME)
   plugs.track_this_file()
 end
@@ -91,6 +93,8 @@ end
 --ACTION: open_textadepthome
 function Proj.qopen_home()
   Proj.goto_filesview()
+  --use dialog option when available
+  if toolbar.file_chooser then toolbar.file_chooser(3) return end
   io.quick_open(_HOME)
   plugs.track_this_file()
 end
@@ -98,6 +102,8 @@ end
 --ACTION: open_currentdir
 function Proj.qopen_curdir()
   Proj.goto_filesview()
+  --use dialog option when available
+  if toolbar.file_chooser then toolbar.file_chooser(4) return end
   local fname= buffer.filename
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
@@ -108,13 +114,11 @@ end
 --ACTION: quick_open_projectdir
 --quick open project files based on io.quick_open/snapopen @ file_io.lua
 function Proj.quick_open()
-  if toolbar.file_chooser then
-    toolbar.file_chooser()  --use dialog option when available
-    return
-  end
+  Proj.goto_filesview()
+  --use dialog option when available
+  if toolbar.file_chooser then toolbar.file_chooser(1) return end
   if not Proj.check_is_open() then return end
   --if the current view is a project view, goto files view
-  Proj.goto_filesview()
   local utf8_list = {}
   for row= 1, #data.proj_files do
     local file= data.proj_files[row]
