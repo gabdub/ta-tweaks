@@ -915,7 +915,8 @@ function toolbar.get_installed_themes()
   if _themes == nil then
     _themes= {}
     local tdir= _USERHOME.."/toolbar/"
-    for file in lfs.walk(tdir, lfs.default_filter, 0, true) do
+    for f in lfs.walk(tdir, lfs.default_filter, 0, true) do
+      local file= f:iconv('UTF-8', _CHARSET)
       if Util.file_exists(file.."toolbar.cfg") then
         local theme= string.sub(file,#tdir+1,-2)  --remove dir and trailing path separator
         _themes[ #_themes+1 ]= theme

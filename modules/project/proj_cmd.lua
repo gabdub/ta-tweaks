@@ -505,7 +505,8 @@ function Proj.add_dir_files(dir)
   local flist= {}
   local extlist= {}
   local ext
-  for file in lfs.walk(dir, lfs.default_filter, nil, false) do
+  for f in lfs.walk(dir, lfs.default_filter, nil, false) do
+    local file= f:iconv('UTF-8', _CHARSET)
     flist[ #flist+1 ]= file
     ext= file:match('[^%.\\/]+$')
     if ext then extlist[ext]= true end

@@ -590,13 +590,13 @@ local function b_change_dir(cmd)
   elseif fdialog_opt == "fdlg-browdir" then
     if fdialog_brow_dir ~= "" then
       for file in lfs.walk(fdialog_brow_dir, lfs.default_filter, 0, false) do --no recursion
-        dialog_list[ #dialog_list+1 ]= file
+        dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
       end
       --show all open dirs in browse panel
       local of= toolbar.get_filebrowser_openfolders()
       for fdir,_ in pairs(of) do
         for file in lfs.walk(fdir, lfs.default_filter, 0, false) do --no recursion
-          dialog_list[ #dialog_list+1 ]= file
+          dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
         end
       end
       table.sort(dialog_list, file_sort)
@@ -607,7 +607,7 @@ local function b_change_dir(cmd)
     if fdialog_opt == "fdlg-ta-home" then fdir= _HOME
     elseif fdialog_opt == "fdlg-currdir" then fdir= fdialog_currdir end
     for file in lfs.walk(fdir, lfs.default_filter, nil, false) do --full recursion
-      dialog_list[ #dialog_list+1 ]= file
+      dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
     end
     table.sort(dialog_list, file_sort)
   end

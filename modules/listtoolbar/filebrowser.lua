@@ -308,7 +308,7 @@ if toolbar then
   local function load_files(brwdir, brwlevel)
     local flistsz= #flist
     for file in lfs.walk(brwdir, lfs.default_filter, brwlevel, true) do
-      flist[ #flist+1 ]= file
+      flist[ #flist+1 ]= file:iconv('UTF-8', _CHARSET)
     end
     if flistsz < #flist then  --some files were added
       table.sort(flist, file_sort)
@@ -384,7 +384,7 @@ if toolbar then
 
     local fold_row= {}
     for i=1, #flist do
-      local fli= flist[i]:iconv('UTF-8', _CHARSET)
+      local fli= flist[i]
       local fname= Util.getfilename(fli,true)
       local bicon
       local idlen= 0
