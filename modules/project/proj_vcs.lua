@@ -423,7 +423,7 @@ local function b_browsepub(bname, chkflist)
 end
 
 local function set_show_all_tit()
-  toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Only changed" or "Show all", "Show all/changed files [Control+S]", false)
+  toolbar.settext("dlg-show-all", toolbar.dlg_filter_col2 and "Show changes" or "Show all", "Show all/changed files [Control+S]", false)
 end
 
 local status_info= ""
@@ -597,7 +597,7 @@ function Proj.vcs_control_panel(idx)
     if #data.proj_vcontrol > 1 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end  --"Control+N"
     local buttons= {
       --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
-      {"dlg-show-all", "All", "Show all/changed files", 500, 95, 1, b_show_all, toolbar.DLGBUT.RELOAD|toolbar.DLGBUT.KEEP_MARKS, "Control+S"}, --re-set in set_show_all_tit()
+      {"dlg-show-all", "All", "Show all/changed files", 490, 105, 1, b_show_all, toolbar.DLGBUT.RELOAD|toolbar.DLGBUT.KEEP_MARKS, "Control+S"}, --re-set in set_show_all_tit()
       {"dlg-status-info", "help-about", status_info, 500, 0, 2, b_status_info, toolbar.DLGBUT.ICON, nil},
       {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS, "Control+M"}
     }
