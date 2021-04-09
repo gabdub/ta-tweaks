@@ -138,7 +138,9 @@ toolbar.GRPC ={
 }
 
 toolbar.KEY = {
+  SHIFT_TAB     = 65056,
   BACKSPACE     = 65288,
+  TAB           = 65289,
   RETURN        = 65293,
   ESCAPE        = 65307,
   HOME          = 65360,

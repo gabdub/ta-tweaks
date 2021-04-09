@@ -260,9 +260,11 @@ local function filter_key(keycode, keyflags)
   end
 end
 
-local function translate_keypad_codes(keycode)
+local function translate_key_codes(keycode)
   --convert keypad keycodes: *+-./0..9
   if keycode >= toolbar.KEY.KP_MULT and keycode <= toolbar.KEY.KP9 then return keycode-toolbar.KEY.KP_MULT+toolbar.KEY.MULT end
+  if keycode >= toolbar.KEY.KP_MULT and keycode <= toolbar.KEY.KP9 then return keycode-toolbar.KEY.KP_MULT+toolbar.KEY.MULT end
+  if keycode == toolbar.KEY.TAB or keycode == toolbar.KEY.SHIFT_TAB then return 9 end
   return keycode
 end
 
@@ -292,7 +294,7 @@ end
 local function dialog_key_ev(npop, keycode,keyflags)
   toolbar.keyflags= keyflags
   if npop == toolbar.DIALOG_POPUP then
-    keycode= translate_keypad_codes(keycode)
+    keycode= translate_key_codes(keycode)
     local kc= keycode
     if kc >= 65 and kc <= 90 then kc= kc+32 end --lower case letter (A..Z)
     keyflags= keyflags & toolbar.KEYFLAGS.ALL_MODS --keep only SHIFT/CTRL/ALT/META
@@ -580,7 +582,12 @@ local function file_sort(filea,fileb)
   return pa < pb
 end
 
+local ncd_butt= 1
 local function b_change_dir(cmd)
+  ncd_butt= 1
+  for i=1,#dialog_buttons do
+    if dialog_buttons[i][1] == cmd then ncd_butt=i break end
+  end
   --change current dir
   if fdialog_opt ~= "" then toolbar.selected(fdialog_opt, false, false, true) end --unmark old option
   fdialog_opt= cmd
@@ -639,6 +646,30 @@ local function fdlg_item_selected(fname)
   return (toolbar.keyflags & (toolbar.KEYFLAGS.CONTROL|toolbar.KEYFLAGS.SHIFT) ~= 0)
 end
 
+local n_fdlg_opts= 5  --number of "fdlg-xxx" buttons
+local function fdialog_prev_tab(cmd)
+  local n= ncd_butt-1
+  if n < 1 then n= n_fdlg_opts end
+  b_change_dir(dialog_buttons[n][1])
+end
+local function fdialog_next_tab(cmd)
+  local n= ncd_butt+1
+  if n > n_fdlg_opts then n= 1 end
+  b_change_dir(dialog_buttons[n][1])
+end
+local function fdialog_basic_reload(cmd)
+  b_change_dir(dialog_buttons[ncd_butt][1]) --no recursion reload
+  toolbar.keyflags= 0
+end
+local function fdialog_1level_reload(cmd)
+  toolbar.keyflags= toolbar.KEYFLAGS.SHIFT  --1 level recursion reload
+  fdialog_basic_reload(cmd)
+end
+local function fdialog_full_rec(cmd)
+  toolbar.keyflags= toolbar.KEYFLAGS.CONTROL  --full recursion reload
+  fdialog_basic_reload(cmd)
+end
+
 function toolbar.file_chooser(option, title)
   local flist= {}
   local dconfig= {}
@@ -655,7 +686,12 @@ function toolbar.file_chooser(option, title)
     {"fdlg-user",    "User home", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
     {"fdlg-ta-home", "TA Home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+H"},
     {"fdlg-currdir", "Current", fdialog_currdir..click_info, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
-    {"fdlg-browdir", "Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
+    {"fdlg-browdir", "Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"},
+    {"acc-fdlg-ntab", "", "", 0, 0, 0, fdialog_next_tab, 0, "\t"}, --accelerators
+    {"acc-fdlg-ptab", "", "", 0, 0, 0, fdialog_prev_tab, 0, "Shift+\t"},
+    {"acc-fdlg-0reload", "", "", 0, 0, 0, fdialog_basic_reload, 0, "Control+R"}, --no recursion reload
+    {"acc-fdlg-1reload", "", "", 0, 0, 0, fdialog_1level_reload, 0, "Control+1"}, --1 level recursion reload
+    {"acc-fdlg-fullrec", "", "", 0, 0, 0, fdialog_full_rec, 0, "Control+F"}  --full recursion reload
   }
   dconfig.can_move= true  --allow to move
   dconfig.buttons= buttons
