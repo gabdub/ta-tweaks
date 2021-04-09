@@ -15,7 +15,7 @@ Textadept is a fast, minimalist, and remarkably extensible cross-platform text e
 * [project](https://github.com/gabdub/ta-tweaks/wiki/project-module) module allows to group files in projects. One view/panel is used to show the project files as a vertical list. It allows to search into project files (the results are shown in another view/panel),
   CTAG file search and RUN commands from the project tree view. VC: SVN/GIT/FOLDER: multiple repositories per project, compare file to HEAD/FOLDER and basic VC control panel. The project and the search results can be shown using a buffer or a toolbar panel.
 
-![file search](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ta_search.png "Search text in Project files")
+![Project](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tatoolbar_off.png "Project without ta-toolbar")
 
 ***
 
@@ -25,13 +25,24 @@ compare files and strings (__compiling is required__ / download from [releases](
 
 Each toolbar can be used in many different ways. Check the default implementation in: [tatoolbar](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar)
 
-![4 toolbars in action](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tab-win12.png "4 toolbars in action")
+![ta-toolbar](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/tatoolbar_on.png "ta-toolbar demo")
 
-Tatoolbar allows to gray and check menu items:
+_Notes_
+
+* (1) themed tabs in the same row or in a different row than the graphical buttons
+* (2) panel lists (last projects / project / c-tag browser / file browser)
+* (3) results panels (console output / search results)
+* (4) quick open files dialog
+* (5) scroll bar with marks
+* (6) status bar with click actions
+* (7) compact list selectors (lexer / buffer encoding)
+* (8) configuration panel: buffer / toolbar / color / color picker / fonts
+
+Tatoolbar also allows to gray and check menu items:
 
 ![Menu changes](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ttbmenu.png "Menu changes")
 
-and compare files + MINIMAP:
+and compare files + show a MINIMAP (mostly a scroll bar with markers for now):
 
 ![filediff](https://github.com/gabdub/ta-tweaks/wiki/img/filediff.png "File diff")
 
@@ -41,3 +52,4 @@ check the wiki:
 * [status bar](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---status-bar)
 * [tabs & theming](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---tabs-&-theming)
 * [left panel](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---left-panel)
+* [results panel](https://github.com/gabdub/ta-tweaks/wiki/tatoolbar---results-panel)
