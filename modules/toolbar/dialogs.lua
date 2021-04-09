@@ -129,7 +129,7 @@ local function enable_buttons()
 end
 
 function toolbar.dialog_tog_check_all()
-  --toggle un/check all
+  --toggle all checks
   local setchk= false
   for k,v in pairs(check_val) do
     if not v then setchk=true break end --at least one is unchecked
@@ -145,6 +145,11 @@ local function chg_check(cmd) --check-box clicked
   check_val[cmd]= not check_val[cmd]
   toolbar.selected(cmd, check_val[cmd], false)
   enable_buttons()
+end
+
+function toolbar.dialog_tog_one_check()
+  --toggle current check
+  if idx_sel_i > 0 then chg_check("dlg-check#"..idx_filtered[idx_sel_i]) end
 end
 
 local function show_col_data(nrow, ncol, xcol, wcol)
@@ -499,23 +504,31 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     local sw= toolbar.cfg.butsize
     for i=1, #dialog_buttons do
       local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
-      toolbar.gotopos(bt[4], (bt[6]-1)*toolbar.cfg.barsize+2)
-      toolbar.cfg.butsize= bt[5]
+      local nr= bt[6]
+      if nr > 0 then
+        toolbar.gotopos(bt[4], (nr-1)*toolbar.cfg.barsize+2)
+        toolbar.cfg.butsize= bt[5]
+      end
       local flg= bt[8]
       local leftalign= ((flg & toolbar.DLGBUT.LEFT) ~= 0)
       local boldtxt= ((flg & toolbar.DLGBUT.BOLD) ~= 0)
       local dropdown= ((flg & toolbar.DLGBUT.DROPDOWN) ~= 0)
       local tooltip= bt[3]
-      if bt[9] then
-        if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+      if nr > 0 then  --button
+        if bt[9] then --add button accelerator
+          if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+          add_accelerator(bt[9], bt[1])
+        end
+        if (flg & toolbar.DLGBUT.ICON) ~= 0 then
+          --name,func,tooltip,icon,base
+          toolbar.cmd(bt[1], db_pressed, tooltip, bt[2])
+        else
+          --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
+          toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
+        end
+      elseif bt[9] then   --accelerator only
+        toolbar.cmds[bt[1]]= db_pressed
         add_accelerator(bt[9], bt[1])
-      end
-      if (flg & toolbar.DLGBUT.ICON) ~= 0 then
-        --name,func,tooltip,icon,base
-        toolbar.cmd(bt[1], db_pressed, tooltip, bt[2])
-      else
-        --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-        toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
       end
     end
     toolbar.cfg.butsize= sw
@@ -639,8 +652,8 @@ function toolbar.file_chooser(option, title)
   local buttons= {
     --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     {"fdlg-project", "Project", "Project files", 5, 95, 1, b_change_dir, isprj and 0 or toolbar.DLGBUT.EN_OFF, "Control+P"},
-    {"fdlg-user",    "User", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
-    {"fdlg-ta-home", "Home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+H"},
+    {"fdlg-user",    "User home", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
+    {"fdlg-ta-home", "TA Home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+H"},
     {"fdlg-currdir", "Current", fdialog_currdir..click_info, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
     {"fdlg-browdir", "Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
   }

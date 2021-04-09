@@ -599,7 +599,8 @@ function Proj.vcs_control_panel(idx)
       --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
       {"dlg-show-all", "All", "Show all/changed files", 490, 105, 1, b_show_all, toolbar.DLGBUT.RELOAD|toolbar.DLGBUT.KEEP_MARKS, "Control+S"}, --re-set in set_show_all_tit()
       {"dlg-status-info", "help-about", status_info, 500, 0, 2, b_status_info, toolbar.DLGBUT.ICON, nil},
-      {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS, "Control+M"}
+      {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS, "Control+M"},
+      {"acc-dlg-mark", "", "", 0, 0, 0, toolbar.dialog_tog_one_check, 0, "Control+ "} --accelerator
     }
     if vctype == Proj.VCS_FOLDER then
       local ena= (publish_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
