@@ -586,7 +586,11 @@ local ncd_butt= 1
 local function b_change_dir(cmd)
   ncd_butt= 1
   for i=1,#dialog_buttons do
-    if dialog_buttons[i][1] == cmd then ncd_butt=i break end
+    if dialog_buttons[i][1] == cmd then
+      ncd_butt=i
+      if dialog_buttons[i][8] & toolbar.DLGBUT.EN_OFF ~= 0 then return end  --the button is disabled
+      break
+    end
   end
   --change current dir
   if fdialog_opt ~= "" then toolbar.selected(fdialog_opt, false, false, true) end --unmark old option
@@ -648,13 +652,19 @@ end
 
 local n_fdlg_opts= 5  --number of "fdlg-xxx" buttons
 local function fdialog_prev_tab(cmd)
-  local n= ncd_butt-1
-  if n < 1 then n= n_fdlg_opts end
+  local n= ncd_butt
+  repeat
+    n= n-1
+    if n < 1 then n= n_fdlg_opts end
+  until dialog_buttons[n][8] & toolbar.DLGBUT.EN_OFF == 0 --skip disabled buttons
   b_change_dir(dialog_buttons[n][1])
 end
 local function fdialog_next_tab(cmd)
-  local n= ncd_butt+1
-  if n > n_fdlg_opts then n= 1 end
+  local n= ncd_butt
+  repeat
+    n= n+1
+    if n > n_fdlg_opts then n= 1 end
+  until dialog_buttons[n][8] & toolbar.DLGBUT.EN_OFF == 0 --skip disabled buttons
   b_change_dir(dialog_buttons[n][1])
 end
 local function fdialog_basic_reload(cmd)
@@ -683,10 +693,11 @@ function toolbar.file_chooser(option, title)
   local dconfig= {}
   fdialog_currdir= ""
   fdialog_brow_dir=""
+  local enbr= toolbar.DLGBUT.EN_OFF
   local fname= buffer.filename
   if fname then fdialog_currdir=fname:match('^(.+)[/\\]') end
   local isprj= (Proj and Proj.data.is_open)
-  if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() end
+  if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() enbr=0 end
   local click_info= "\n  Click / Control+R= no sub-folders\n  Shift+Click / Control+1= 1 sub-folder\n  Control+Click / Control+F= all sub-folders"
   local buttons= {
     --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
@@ -694,8 +705,8 @@ function toolbar.file_chooser(option, title)
     {"fdlg-user",    "User home", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
     {"fdlg-ta-home", "TA Home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+H"},
     {"fdlg-currdir", "Current", fdialog_currdir..click_info, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
-    {"fdlg-browdir", "File Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"},
-    {"fdlg-change-browdir", "document-open", "Select folder", 505, 24, 1, fdialog_brow_sel_folder, toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+O"},
+    {"fdlg-browdir", "File Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, enbr, "Control+B"},
+    {"fdlg-change-browdir", "document-open", "Select folder", 505, 24, 1, fdialog_brow_sel_folder, enbr|toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+O"},
     {"acc-fdlg-ntab", "", "", 0, 0, 0, fdialog_next_tab, 0, "\t"}, --accelerators
     {"acc-fdlg-ptab", "", "", 0, 0, 0, fdialog_prev_tab, 0, "Shift+\t"},
     {"acc-fdlg-0reload", "", "", 0, 0, 0, fdialog_basic_reload, 0, "Control+R"}, --no recursion reload
