@@ -462,6 +462,9 @@ if toolbar then
   function toolbar.get_filebrowser_openfolders()
     return openfolders
   end
+  function toolbar.set_filebrowser_dir(folder)
+    set_browsedir(folder)
+  end
 
   toolbar.registerlisttb("filebrowser", "File browser", "document-open", filebrowser_create_cb, filebrowser_update_cb, filebrowser_showlist_cb, nofile_rclick)
 end

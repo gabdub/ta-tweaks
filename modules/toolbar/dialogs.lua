@@ -670,6 +670,14 @@ local function fdialog_full_rec(cmd)
   fdialog_basic_reload(cmd)
 end
 
+local function fdialog_brow_sel_folder(cmd)
+  local folder = ui.dialogs.fileselect{ title = 'Select folder', select_only_directories = true, with_directory = fdialog_brow_dir }
+  if folder then
+    toolbar.set_filebrowser_dir(folder)
+  end
+  toolbar.file_chooser(5) --reopen the dialog
+end
+
 function toolbar.file_chooser(option, title)
   local flist= {}
   local dconfig= {}
@@ -679,14 +687,15 @@ function toolbar.file_chooser(option, title)
   if fname then fdialog_currdir=fname:match('^(.+)[/\\]') end
   local isprj= (Proj and Proj.data.is_open)
   if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() end
-  local click_info= "\n  Shift+Click= 1 sub-level\n  Control+Click= all sub-levels"
+  local click_info= "\n  Click / Control+R= no sub-folders\n  Shift+Click / Control+1= 1 sub-folder\n  Control+Click / Control+F= all sub-folders"
   local buttons= {
     --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     {"fdlg-project", "Project", "Project files", 5, 95, 1, b_change_dir, isprj and 0 or toolbar.DLGBUT.EN_OFF, "Control+P"},
     {"fdlg-user",    "User home", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
     {"fdlg-ta-home", "TA Home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+H"},
     {"fdlg-currdir", "Current", fdialog_currdir..click_info, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
-    {"fdlg-browdir", "Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"},
+    {"fdlg-browdir", "File Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"},
+    {"fdlg-change-browdir", "document-open", "Select folder", 505, 24, 1, fdialog_brow_sel_folder, toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+O"},
     {"acc-fdlg-ntab", "", "", 0, 0, 0, fdialog_next_tab, 0, "\t"}, --accelerators
     {"acc-fdlg-ptab", "", "", 0, 0, 0, fdialog_prev_tab, 0, "Shift+\t"},
     {"acc-fdlg-0reload", "", "", 0, 0, 0, fdialog_basic_reload, 0, "Control+R"}, --no recursion reload
