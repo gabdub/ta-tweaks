@@ -85,7 +85,7 @@ end
 function Proj.qopen_user()
   Proj.goto_filesview()
   --use dialog option when available
-  if toolbar.file_chooser then toolbar.file_chooser(2) return end
+  if USE_FILE_CHOOSER then toolbar.file_chooser(2) return end
   io.quick_open(_USERHOME)
   plugs.track_this_file()
 end
@@ -94,7 +94,7 @@ end
 function Proj.qopen_home()
   Proj.goto_filesview()
   --use dialog option when available
-  if toolbar.file_chooser then toolbar.file_chooser(3) return end
+  if USE_FILE_CHOOSER then toolbar.file_chooser(3) return end
   io.quick_open(_HOME)
   plugs.track_this_file()
 end
@@ -103,7 +103,7 @@ end
 function Proj.qopen_curdir()
   Proj.goto_filesview()
   --use dialog option when available
-  if toolbar.file_chooser then toolbar.file_chooser(4) return end
+  if USE_FILE_CHOOSER then toolbar.file_chooser(4) return end
   local fname= buffer.filename
   if fname then
     io.quick_open(fname:match('^(.+)[/\\]'))
@@ -116,7 +116,7 @@ end
 function Proj.quick_open()
   Proj.goto_filesview()
   --use dialog option when available
-  if toolbar.file_chooser then toolbar.file_chooser(1) return end
+  if USE_FILE_CHOOSER then toolbar.file_chooser(1) return end
   if not Proj.check_is_open() then return end
   --if the current view is a project view, goto files view
   local utf8_list = {}

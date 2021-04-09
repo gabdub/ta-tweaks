@@ -578,8 +578,11 @@ local function b_change_dir(cmd)
   update_filter()
   --load file list
   dialog_list= {}
+  local nrec= 0
+  if (toolbar.keyflags & toolbar.KEYFLAGS.SHIFT) ~= 0 then nrec= 1  --SHIFT+click= 1 level recursion
+  elseif (toolbar.keyflags & toolbar.KEYFLAGS.CONTROL) ~= 0 then nrec= nil end --CONTROL+click= full recursion
   if fdialog_opt == "fdlg-project" then
-    --project files
+    --project files (ignore shift/control modifiers)
     if Proj and Proj.data.is_open then
       for r=1,#Proj.data.proj_files do
         local ft= Proj.data.proj_filestype[r]
@@ -590,9 +593,6 @@ local function b_change_dir(cmd)
     end
   elseif fdialog_opt == "fdlg-browdir" then
     if fdialog_brow_dir ~= "" then
-      local nrec= 0
-      if (toolbar.keyflags & toolbar.KEYFLAGS.SHIFT) ~= 0 then nrec= 1  --SHIFT+click= 1 level recursion
-      elseif (toolbar.keyflags & toolbar.KEYFLAGS.CONTROL) ~= 0 then nrec= nil end --CONTROL+click= full recursion
       for file in lfs.walk(fdialog_brow_dir, lfs.default_filter, nrec, false) do
         dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
       end
@@ -600,7 +600,7 @@ local function b_change_dir(cmd)
         --show all open dirs in browse panel
         local of= toolbar.get_filebrowser_openfolders()
         for fdir,_ in pairs(of) do
-          for file in lfs.walk(fdir, lfs.default_filter, nrec, false) do --no recursion
+          for file in lfs.walk(fdir, lfs.default_filter, nrec, false) do
             dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
           end
         end
@@ -612,7 +612,7 @@ local function b_change_dir(cmd)
     local fdir= _USERHOME
     if fdialog_opt == "fdlg-ta-home" then fdir= _HOME
     elseif fdialog_opt == "fdlg-currdir" then fdir= fdialog_currdir end
-    for file in lfs.walk(fdir, lfs.default_filter, nil, false) do --full recursion
+    for file in lfs.walk(fdir, lfs.default_filter, nrec, false) do
       dialog_list[ #dialog_list+1 ]= file:iconv('UTF-8', _CHARSET)
     end
     table.sort(dialog_list, file_sort)
@@ -635,18 +635,20 @@ function toolbar.file_chooser(option, title)
   if fname then fdialog_currdir=fname:match('^(.+)[/\\]') end
   local isprj= (Proj and Proj.data.is_open)
   if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() end
+  local click_info= "\n  Shift+Click= 1 sub-level\n  Control+Click= all sub-levels"
   local buttons= {
     --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     {"fdlg-project", "Project", "Project files", 5, 95, 1, b_change_dir, isprj and 0 or toolbar.DLGBUT.EN_OFF, "Control+P"},
-    {"fdlg-user",    "User", _USERHOME, 105, 95, 1, b_change_dir, 0, "Control+U"},
-    {"fdlg-ta-home", "Home", _HOME, 205, 95, 1, b_change_dir, 0, "Control+H"},
-    {"fdlg-currdir", "Current", fdialog_currdir, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
-    {"fdlg-browdir", "Browser", fdialog_brow_dir.."\n  Shift+Click= 1 sub-level\n  Control+Click= all sub-levels", 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
+    {"fdlg-user",    "User", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
+    {"fdlg-ta-home", "Home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+H"},
+    {"fdlg-currdir", "Current", fdialog_currdir..click_info, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
+    {"fdlg-browdir", "Browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, (fdialog_brow_dir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+B"}
   }
   dconfig.can_move= true  --allow to move
   dconfig.buttons= buttons
   toolbar.dlg_select_it= ""
   toolbar.dlg_select_ev= fdlg_item_selected
+  toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title or "File chooser", 600, 400, flist, "MIME", dconfig)
   if not option or option < 1 or option > #buttons then option= (isprj) and 1 or 2 end
   b_change_dir(buttons[option][1])
