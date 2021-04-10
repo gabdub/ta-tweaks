@@ -65,7 +65,7 @@ local function ensure_sel_view()
 end
 
 local function change_selection(newsel)
-  if newsel and idx_sel_i ~= newsel then
+  if newsel and idx_sel_i ~= newsel and #idx_filtered > 1 then
     if newsel < 1 then newsel=1 end
     if newsel > #idx_filtered then newsel= #idx_filtered end
     toolbar.selected("it#"..idx_filtered[idx_sel_i], false, false)

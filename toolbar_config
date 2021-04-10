@@ -1,17 +1,15 @@
 ;===[ Toolbar ]===
 ;THEME
-cbo.theme:bar-sm-light
+cbo.theme:win10-light
 ;TABS
 ;Tabs position
 tbtabs:2
 ;Show close button
-tbtabclose:3
+tbtabclose:1
 ;Close with double click
 tbtab2clickclose:2
 ;STATUS BAR
 tbshowstatbar:true
-;VERTICAL BAR
-tblist_hideprj:true
 ;MINI MAP
 tbshowminimap:true
 tbhidemmapcfg:true
@@ -20,27 +18,27 @@ tbreplhscroll:true
 ;===[ Color ]===
 ;Editor
 color.text_fore:0x101000
-color.text_back:0xd6e7ff
+color.text_back:0xFAFAFA
 color.caret:0x362b00
-color.curr_line_back:0xf5f9ff
-color.selection_fore:0x905090
-color.selection_back:0x88acdf
-color.hilight:0x88B7FF
-color.placeholder:0x88acdf
-color.find:0xa8ccff
-color.calltips_fore:0x0a70ff
-color.calltips_back:0x362b00
-color.linenum_fore:0x0a70ff
-color.linenum_back:0xb8dcff
-color.markers:0x6D6D3E
-color.markers_sel:0x0a70ff
-color.bookmark:0x015aee
+color.curr_line_back:0xF9EAD8
+color.selection_fore:0xFFFFFF
+color.selection_back:0xFF9900
+color.hilight:0xC06B00
+color.placeholder:0xC06B00
+color.find:0xFFB200
+color.calltips_fore:0xFFFFFF
+color.calltips_back:0xC06B00
+color.linenum_fore:0xA8A8A8
+color.linenum_back:0xEDEDED
+color.markers:0x4C3500
+color.markers_sel:0xC06B00
+color.bookmark:0xFFB200
 color.warning:0x0089b5
 color.error:0x2f32dc
-color.indentguide:0x837b65
+color.indentguide:0x4C3500
 ;Project
-color.prj_sel_bar_nof:0x88acdf
-color.prj_sel_bar:0xa8ccff
+color.prj_sel_bar_nof:0xE5E5E5
+color.prj_sel_bar:0xF9EAD8
 color.prj_open_mark:0x404040
 ;Syntax highlighting
 color.comment:0x6D6D3E
@@ -66,20 +64,26 @@ color.green:0x7AE584
 ;Order
 ctypeorder:1
 ;Format
-ctypeformat:1
+ctypeformat:2
 ;IMPORT
 ;===[ Fonts ]===
 ;Editor
+cbo.fontsize_editor:default size
 font.editor:(default)
 ;Toolbars
+cbo.fontsize_toolbars:default size
 font.toolbars:(default)
 ;Tabs
+cbo.fontsize_tabs:default size
 font.tabs:(default)
 ;Status bar
+cbo.fontsize_status:default size
 font.status:(default)
 ;===========
 LEXER:INDENT
-cpp:s2
-ansi_c:s2
-lua:s2
+text:s2
 asm:s2
+lua:s2
+ansi_c:s2
+cpp:s2
+mas:s4

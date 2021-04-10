@@ -8,7 +8,7 @@
 if toolbar then
   USE_LISTS_PANEL= true   --true:show project lists in the left toolbar;   false= use a buffer
   USE_RESULTS_PANEL= true --true:show results lists in the bottom toolbar; false= use a buffer
-  USE_FILE_CHOOSER= true  --true:quick open files using a toolbar dialog;  false= use TA dialogs
+  USE_FILE_CHOOSER= true  --true:use file chooser toolbar dialogs;         false= use TA dialogs: ui.dialogs / io.quick_open
 end
 
 plugs= {} --add here functions from interfaces (e.g. project/results lists)
