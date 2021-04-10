@@ -698,7 +698,7 @@ function toolbar.file_chooser(option, title)
   if fname then fdialog_currdir=fname:match('^(.+)[/\\]') end
   local isprj= (Proj and Proj.data.is_open)
   if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() enbr=0 end
-  local click_info= "\n  Click / Control+R= no sub-folders reload\n  Shift+Click / Control+1= 1 sub-folder reload\n  Control+Click / Control+F= all sub-folders reload"
+  local click_info= "\n  Click / Control+R= no sub-folders reload\n  Shift+Click / Control+1= 1 sub-folder reload\n  Control+Click / Control+A= all sub-folders reload"
   local buttons= {
     --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     {"fdlg-project", "Project", "Project files", 5, 95, 1, b_change_dir, isprj and 0 or toolbar.DLGBUT.EN_OFF, "Control+P"},
