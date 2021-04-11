@@ -5,6 +5,7 @@ local events, events_connect = events, events.connect
 
 local dialog_w= 800
 local dialog_h= 600
+local dialog_title= ""
 local itemsgrp
 local previewgrp1
 local previewgrp2
@@ -402,6 +403,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
+  dialog_title= title
   if config then
     dialog_cols= config["columns"]  --columns width (up to 3 for now...)
     if dialog_cols == nil then dialog_cols= {} end
@@ -543,7 +545,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
 end
 
 function toolbar.show_dialog()
-  toolbar.popup(toolbar.DIALOG_POPUP,true,dlg_start_x,dlg_start_y,-dialog_w,-dialog_h) --open at a fixed position
+  --show=2 (show dialog borders with native controls and title) (work in progress...)
+  toolbar.popup(toolbar.DIALOG_POPUP,1,dlg_start_x,dlg_start_y,-dialog_w,-dialog_h, dialog_title)
 end
 
 function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
@@ -552,7 +555,7 @@ function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
   toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", {fontpreview=true, can_move=(btname==nil)})
   if btname then
-    toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
+    toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
   else
     toolbar.show_dialog() --open at a fixed position
   end
@@ -565,7 +568,7 @@ function toolbar.small_chooser(title, sel_enc, enc_selected, enc_list, btname, a
   toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title, width, height, enc_list, icon, {singleclick=true, can_move=(btname==nil)})
   if btname then
-    toolbar.popup(toolbar.DIALOG_POPUP,true,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR)
+    toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
   else
     toolbar.show_dialog() --open at a fixed position
   end

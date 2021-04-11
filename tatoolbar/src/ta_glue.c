@@ -1705,14 +1705,18 @@ static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
   return FALSE;
 }
 
-static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w, int h )
+static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w, int h, const char * title )
 {
   struct toolbar_data *T;
+  int decorate= FALSE;
   if((ntb < POPUP_FIRST) || (ntb >= NTOOLBARS)){
     ntb= POPUP_FIRST;
   }
   T= &ttb.tbdata[ntb];
-  if( show ){
+  if( show != 0 ){
+    if( show == 2 ){
+      decorate= TRUE;
+    }
     //SHOW POPUP
     if( T->win == NULL ){
       T->win= gtk_window_new( GTK_WINDOW_TOPLEVEL );
@@ -1722,10 +1726,12 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         //connect to parent window (textadept window)
         gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(window) );
         gtk_window_set_resizable (GTK_WINDOW(T->win), FALSE);
-        gtk_window_set_decorated (GTK_WINDOW(T->win), FALSE);
+        gtk_window_set_decorated (GTK_WINDOW(T->win), decorate);
         gtk_window_set_skip_taskbar_hint (GTK_WINDOW(T->win), TRUE);
         gtk_window_set_skip_pager_hint (GTK_WINDOW(T->win), TRUE);
-
+        if( (decorate) && (title != NULL) && (*title != 0) ){
+          gtk_window_set_title(GTK_WINDOW(T->win), title);
+        }
         gtk_window_set_accept_focus( GTK_WINDOW(T->win), TRUE );
         gtk_window_set_default_size(GTK_WINDOW(T->win), T->barwidth, T->barheight );
         gtk_window_move(GTK_WINDOW(T->win), x, y );
@@ -1765,11 +1771,12 @@ void ttb_move_popup(struct toolbar_data *T, int x, int y )
   }
 }
 
-/** `toolbar.popup(ntoolbar, show, x, y, width, height)` Lua function. */
-/** `toolbar.popup(ntoolbar, show, button-name, button-corner, width, height)` Lua function. */
+/** `toolbar.popup(ntoolbar, show, x, y, width, height, title)` Lua function. */
+/** `toolbar.popup(ntoolbar, show, button-name, button-corner, width, height, title)` Lua function. */
 /** width, height >= 0: minimal size + expand if needed */
 /** width, height < 0 : force this size */
 /** button-name can be a tab-number: "T?_TAB#tab-number" ?=toolbar-number (since version: 1.1.13) */
+/** title= window title (show=2: show window decorations) (since version: 1.1.15) */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
   struct toolbar_data * T;
@@ -1789,6 +1796,8 @@ static int ltoolbar_popup(lua_State *L)
     if( !lua_toboolean(L,2) ){
       show= 0;
     }
+  }else{
+    show= lua_tointeger(L, 2);
   }
   T= toolbar_from_num(ntb);
   //set T->barwidth / T->barheight to show all fixed size groups
@@ -1859,7 +1868,7 @@ static int ltoolbar_popup(lua_State *L)
     x= intluadef(L, 3, 100);
     y= intluadef(L, 4, 100);
   }
-  ttb_show_popup( L, ntb, show, x, y, w, h );
+  ttb_show_popup( L, ntb, show, x, y, w, h, lua_tostring(L, 7) );
   return 0;
 }
 
