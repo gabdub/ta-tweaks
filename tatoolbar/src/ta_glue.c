@@ -1705,6 +1705,17 @@ static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
   return FALSE;
 }
 
+static void popup_configure_ev(GtkWindow *window, GdkEvent *event, gpointer data)
+{
+  int npop= POPUP_FIRST;
+  gtk_window_get_position(window, &ttb.drag_win_x, &ttb.drag_win_y );
+  struct toolbar_data *T= toolbar_from_popup( (GtkWidget *) window );
+  if( T != NULL ){
+    npop= T->num;
+  }
+  emit(lua, evtype_name[TEV_CLICK], LUA_TSTRING, "popup-caption-endmove", LUA_TNUMBER, npop, LUA_TNUMBER, 0, LUA_TNUMBER, 0, -1); //generate a click to notify the new popup position
+}
+
 static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w, int h, const char * title )
 {
   struct toolbar_data *T;
@@ -1736,10 +1747,12 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         gtk_window_set_default_size(GTK_WINDOW(T->win), T->barwidth, T->barheight );
         gtk_window_move(GTK_WINDOW(T->win), x, y );
 
-        gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK);
+        gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK|GDK_CONFIGURE);
 
         g_signal_connect(T->win, "focus-out-event", G_CALLBACK(popup_focus_out_ev), L );
-        g_signal_connect(T->win, "key-press-event", G_CALLBACK(popup_keypress_ev), L );
+        g_signal_connect(T->win, "key-press-event", G_CALLBACK(popup_keypress_ev),  L );
+        g_signal_connect(T->win, "configure-event", G_CALLBACK(popup_configure_ev), L );
+        g_signal_connect(T->win, "destroy",         G_CALLBACK(popup_focus_out_ev), L);
 
         GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
         gtk_container_add(GTK_CONTAINER(T->win), vbox);

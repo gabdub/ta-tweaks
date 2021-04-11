@@ -17,6 +17,7 @@ local dialog_accel= {}
 local dialog_data_icon= ""
 local dialog_font_preview= false
 local dialog_single_click= false
+local dialog_native= false
 
 toolbar.dlg_select_it= ""
 toolbar.dlg_select_ev= nil
@@ -423,6 +424,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   end
   dialog_data_icon= dataicon
   dialog_accel= {}
+  dialog_native= toolbar.get_check_val("tbnativedialogs") --use native window borders or implement the title bar using controls
 
   filter= ""
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
@@ -443,37 +445,42 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-selected", toolbar.TTBI_TB.CHECK_ON)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-hilight", toolbar.TTBI_TB.CHECK_HILIGHT)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-press", toolbar.TTBI_TB.CHECK_HIPRESS)
+  toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
 
   --title group: align top + fixed height
-  toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
-  toolbar.setdefaulttextfont()
-  toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
   if dlg_can_move and toolbar.setmovepopup ~= nil then
-    local sw= toolbar.cfg.butsize
-    local nbut= next_but_cb and 2 or 1
-    toolbar.cfg.butsize= dialog_w-3-(toolbar.cfg.butsize+2)*nbut
-    toolbar.gotopos(1, 2) --title bar
-    --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-    toolbar.cmdtext(title, end_dlg_drag, "", "dlg-caption", true, false, true, true)
-    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_NORMAL)
-    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HILIGHT)
-    toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HIPRESSED)
-    toolbar.setmovepopup("dlg-caption", true)
-    toolbar.cfg.butsize= sw
+    if not dialog_native then --implement a title bar using controls
+      toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
+      toolbar.setdefaulttextfont()
+      local sw= toolbar.cfg.butsize
+      local nbut= next_but_cb and 2 or 1
+      toolbar.cfg.butsize= dialog_w-3-(toolbar.cfg.butsize+2)*nbut
+      toolbar.gotopos(1, 2) --title bar
+      --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
+      toolbar.cmdtext(title, end_dlg_drag, "", "dlg-caption", true, false, true, true) --save last dialog position
+      toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_NORMAL)
+      toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HILIGHT)
+      toolbar.setthemeicon("dlg-caption", "transparent", toolbar.TTBI_TB.IT_HIPRESSED)
+      toolbar.setmovepopup("dlg-caption", true)
+      toolbar.cfg.butsize= sw
+    else
+      toolbar.cmds["popup-caption-endmove"]= end_dlg_drag --save last dialog position
+    end
   else
+    dialog_native= false --if the dialog cannot move: use a custom border
+    toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
+    toolbar.setdefaulttextfont()
     toolbar.gotopos(2, 3)
     toolbar.addlabel(title, "", dialog_w-toolbar.cfg.butsize-10, true, true)  --left align, bold
   end
-  toolbar.listtb_y= 0
-  toolbar.list_cmdright= 0
-  toolbar.list_addbutton("close_dlg", "Close", close_dialog, "transparent")
-  toolbar.seticon("close_dlg", "ttb-close-normal",  toolbar.TTBI_TB.BACKGROUND, true)
-  toolbar.seticon("close_dlg", "ttb-close-hilight", toolbar.TTBI_TB.IT_HILIGHT, true)
-  toolbar.seticon("close_dlg", "ttb-close-press",   toolbar.TTBI_TB.IT_HIPRESSED, true)
-
-  toolbar.listtb_y= 2
-  toolbar.list_cmdright= toolbar.list_cmdright+4
-  if next_but_cb then toolbar.list_addbutton("next_dlg", "Next [Control+N]", next_dlg, "go-next") add_accelerator("Control+N", "next_dlg") end
+  if not dialog_native then --implement a close button using controls
+    toolbar.listtb_y= 0
+    toolbar.list_cmdright= 0
+    toolbar.list_addbutton("close_dlg", "Close", close_dialog, "transparent")
+    toolbar.seticon("close_dlg", "ttb-close-normal",  toolbar.TTBI_TB.BACKGROUND, true)
+    toolbar.seticon("close_dlg", "ttb-close-hilight", toolbar.TTBI_TB.IT_HILIGHT, true)
+    toolbar.seticon("close_dlg", "ttb-close-press",   toolbar.TTBI_TB.IT_HIPRESSED, true)
+  end
 
   if dialog_font_preview then
     local prevtxt= "0123456789-AaBbCcDdEdFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz~{}[]"
@@ -487,12 +494,18 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
 
   --filter group: full width + items height
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
+  toolbar.list_cmdright= 2
+  if next_but_cb then
+    toolbar.listtb_y= 2
+    toolbar.list_addbutton("next_dlg", "Next [Control+N]", next_dlg, "go-next") add_accelerator("Control+N", "next_dlg")
+    toolbar.list_cmdright= toolbar.cfg.butsize
+  end
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
   toolbar.cmd("edit-find", nil, "", "")
   toolbar.gotopos(2+toolbar.cfg.butsize, 3)
-  toolbar.addlabel("...", "", dialog_w-toolbar.cfg.butsize-10, true, false, "filter-txt")  --left align
+  toolbar.addlabel("...", "", dialog_w-toolbar.cfg.butsize-8-toolbar.list_cmdright, true, false, "filter-txt")  --left align
   update_filter()
 
   if dialog_buttons and #dialog_buttons > 0 then
@@ -545,8 +558,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
 end
 
 function toolbar.show_dialog()
-  --show=2 (show dialog borders with native controls and title) (work in progress...)
-  toolbar.popup(toolbar.DIALOG_POPUP,1,dlg_start_x,dlg_start_y,-dialog_w,-dialog_h, dialog_title)
+  toolbar.popup(toolbar.DIALOG_POPUP, dialog_native and 2 or 1, dlg_start_x,dlg_start_y, -dialog_w,-dialog_h, dialog_title)
 end
 
 function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
