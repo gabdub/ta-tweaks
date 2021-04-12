@@ -445,7 +445,6 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-selected", toolbar.TTBI_TB.CHECK_ON)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-hilight", toolbar.TTBI_TB.CHECK_HILIGHT)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-press", toolbar.TTBI_TB.CHECK_HIPRESS)
-  toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND)
 
   --title group: align top + fixed height
   if dlg_can_move and toolbar.setmovepopup ~= nil then
@@ -473,7 +472,11 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     toolbar.gotopos(2, 3)
     toolbar.addlabel(title, "", dialog_w-toolbar.cfg.butsize-10, true, true)  --left align, bold
   end
-  if not dialog_native then --implement a close button using controls
+  if dialog_native then
+    toolbar.setbackcolor(toolbar.globalicon, toolbar.cfg.popup_back, false, true) --solid background
+  else
+    toolbar.themed_icon(toolbar.globalicon, "ttb-dialog-border", toolbar.TTBI_TB.BACKGROUND) --draw borders
+    --implement a close button using controls
     toolbar.listtb_y= 0
     toolbar.list_cmdright= 0
     toolbar.list_addbutton("close_dlg", "Close", close_dialog, "transparent")

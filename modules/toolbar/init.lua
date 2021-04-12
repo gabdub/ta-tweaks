@@ -445,7 +445,7 @@ if toolbar then
     tbconfig_color( "statcolor_normal", 0x202020)
     tbconfig_color( "statcolor_hilight",0x000000)
     --pop-ups
-    tbconfig_color( "popup_back",       0x000000)
+    tbconfig_color( "popup_back",       0xFFFFFF)
   end
 
   function toolbar.set_theme(theme)

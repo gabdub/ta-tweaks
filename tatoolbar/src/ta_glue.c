@@ -1736,17 +1736,19 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         T->barheight= h;
         //connect to parent window (textadept window)
         gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(window) );
-        gtk_window_set_resizable (GTK_WINDOW(T->win), FALSE);
-        gtk_window_set_decorated (GTK_WINDOW(T->win), decorate);
-        gtk_window_set_skip_taskbar_hint (GTK_WINDOW(T->win), TRUE);
-        gtk_window_set_skip_pager_hint (GTK_WINDOW(T->win), TRUE);
-        if( (decorate) && (title != NULL) && (*title != 0) ){
-          gtk_window_set_title(GTK_WINDOW(T->win), title);
+        gtk_window_set_resizable(GTK_WINDOW(T->win), FALSE);
+        gtk_window_set_decorated(GTK_WINDOW(T->win), decorate);
+        gtk_window_set_skip_taskbar_hint(GTK_WINDOW(T->win), TRUE);
+        gtk_window_set_skip_pager_hint(GTK_WINDOW(T->win), TRUE);
+        if( decorate ){
+          gdk_window_set_type_hint(T->win, GDK_WINDOW_TYPE_HINT_DIALOG);
+          if( (title != NULL) && (*title != 0) ){
+            gtk_window_set_title(GTK_WINDOW(T->win), title);
+          }
         }
         gtk_window_set_accept_focus( GTK_WINDOW(T->win), TRUE );
         gtk_window_set_default_size(GTK_WINDOW(T->win), T->barwidth, T->barheight );
         gtk_window_move(GTK_WINDOW(T->win), x, y );
-
         gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK|GDK_CONFIGURE);
 
         g_signal_connect(T->win, "focus-out-event", G_CALLBACK(popup_focus_out_ev), L );
