@@ -976,7 +976,7 @@ local function add_toolbar_cfg_panel()
   add_config_separator()
 
   add_config_label("DIALOGS",true)
-  add_config_check("tbnativedialogs", "Use native window decorations", "", false)
+  add_config_check("tbnativedialogs", "Use native window decorations", "", true)
 
   toolbar.config_saveon=false --end of config save options of this panel
 

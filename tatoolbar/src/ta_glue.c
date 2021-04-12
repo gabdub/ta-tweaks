@@ -1741,7 +1741,7 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         gtk_window_set_skip_taskbar_hint(GTK_WINDOW(T->win), TRUE);
         gtk_window_set_skip_pager_hint(GTK_WINDOW(T->win), TRUE);
         if( decorate ){
-          gdk_window_set_type_hint(T->win, GDK_WINDOW_TYPE_HINT_DIALOG);
+          gtk_window_set_type_hint(GTK_WINDOW(T->win), GDK_WINDOW_TYPE_HINT_DIALOG);
           if( (title != NULL) && (*title != 0) ){
             gtk_window_set_title(GTK_WINDOW(T->win), title);
           }
