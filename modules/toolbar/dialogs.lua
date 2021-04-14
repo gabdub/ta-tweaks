@@ -424,9 +424,10 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   end
   dialog_data_icon= dataicon
   dialog_accel= {}
-  dialog_native= toolbar.get_check_val("tbnativedialogs") --use native window borders or implement the title bar using controls
 
   filter= ""
+  local canmove= dlg_can_move and (toolbar.setmovepopup ~= nil)
+  dialog_native= canmove and toolbar.get_check_val("tbnativedialogs") --use native window borders or implement the title bar using controls
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath, dialog_native and 0 or 1)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
@@ -447,7 +448,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.themed_icon(toolbar.globalicon, "ttb-checkbox-press", toolbar.TTBI_TB.CHECK_HIPRESS)
 
   --title group: align top + fixed height
-  if dlg_can_move and toolbar.setmovepopup ~= nil then
+  if canmove then
     if not dialog_native then --implement a title bar using controls
       toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
       toolbar.setdefaulttextfont()
@@ -466,7 +467,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
       toolbar.cmds["popup-caption-endmove"]= end_dlg_drag --save last dialog position
     end
   else
-    dialog_native= false --if the dialog cannot move: use a custom border
+    --if the dialog cannot move: use a custom border
     toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
     toolbar.setdefaulttextfont()
     toolbar.gotopos(2, 3)
