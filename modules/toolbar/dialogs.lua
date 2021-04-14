@@ -427,7 +427,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   dialog_native= toolbar.get_check_val("tbnativedialogs") --use native window borders or implement the title bar using controls
 
   filter= ""
-  toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath,1)
+  toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath, dialog_native and 0 or 1)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
   toolbar.themed_icon(toolbar.globalicon, "ttb-button-hilight", toolbar.TTBI_TB.BUT_HILIGHT)
