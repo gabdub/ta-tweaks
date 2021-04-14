@@ -1706,7 +1706,7 @@ static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
 }
 
 static void popup_configure_ev(GtkWindow *window, GdkEvent *event, gpointer data)
-{
+{ //notify popup dialog has stopped moving (since version: 1.1.15)
   int npop= POPUP_FIRST;
   gtk_window_get_position(window, &ttb.drag_win_x, &ttb.drag_win_y );
   struct toolbar_data *T= toolbar_from_popup( (GtkWidget *) window );
