@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.15 (Apr 12 2021)"
+#define TA_TOOLBAR_VERSION_STR "1.1.16 (Apr 16 2021)"
 
 static void free_img_list( void );
 
@@ -2986,6 +2986,10 @@ void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * p
           color= &(g->txttextcolN);
           if( (p->flags & TTBF_GRAYED) != 0){
             color= &(g->txttextcolG);
+            struct toolbar_img * di= get_item_img(p,TTBI_DISABLED,p->imgbase);
+            if( (di != NULL) && (di->fname != NULL) ){ //draw disabled background if set
+              draw_fill_mp_img(gcontext, di, x0+p->barx1, y0+p->bary1, wt2, ht2 );
+            }
           }
           xa= x0 + p->barx2 - p->postw;
           draw_txt(gcontext, p->text, x, y, y0+p->bary1, xa-x+1, p->bary2 - p->bary1, color, g->txtfontsz, (p->flags & TTBF_TEXT_BOLD), g->txtfontnum );
