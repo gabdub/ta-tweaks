@@ -520,7 +520,6 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     end
     local buttons= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize * nrows +1, false)
     toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BUT_NORMAL)
-    toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BUT_DISABLED)
     toolbar.setdefaulttextfont()
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
@@ -548,6 +547,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
         else --TEXT BUTTON
           --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
           toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
+          toolbar.themed_icon(bt[1], "ttb-button-disabled", toolbar.TTBI_TB.IT_DISABLED)
         end
       elseif bt[9] then   --accelerator only
         toolbar.cmds[bt[1]]= db_pressed
