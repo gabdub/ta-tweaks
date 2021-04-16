@@ -29,6 +29,7 @@ toolbar.TTBI_TB = {
     VSEPARATOR    = 11,   --vertical separator   (for horizontal toolbars)
   BUTTON_BASE   = 12,
     BUT_NORMAL    = 13,   --default button
+    BUT_DISABLED  = 14,
     BUT_HILIGHT   = 15,
     BUT_HIPRESSED = 16,
     BUT_SELECTED  = 17,
@@ -221,7 +222,8 @@ toolbar.DLGBUT ={
   EN_ITEMS      = 0x00000040,   --button: enable when there is at least one item
   EN_MARK       = 0x00000080,   --button: enable when something is checked
   ICON          = 0x00000100,   --button: text=icon name
-  KEEP_MARKS    = 0x00000200    --try to keep checks when reloading
+  KEEP_MARKS    = 0x00000200,   --try to keep checks when reloading
+  LABEL         = 0x00000400    --it's a label (not a button)
 }
 
 toolbar.DEFAULT_FONT= "(default)"

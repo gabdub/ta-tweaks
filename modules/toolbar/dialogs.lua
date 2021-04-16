@@ -520,6 +520,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     end
     local buttons= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize * nrows +1, false)
     toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BUT_NORMAL)
+    toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BUT_DISABLED)
     toolbar.setdefaulttextfont()
     toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
     local sw= toolbar.cfg.butsize
@@ -540,10 +541,11 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
           if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
           add_accelerator(bt[9], bt[1])
         end
-        if (flg & toolbar.DLGBUT.ICON) ~= 0 then
-          --name,func,tooltip,icon,base
-          toolbar.cmd(bt[1], db_pressed, tooltip, bt[2])
-        else
+        if (flg & toolbar.DLGBUT.ICON) ~= 0 then  --ICON
+          toolbar.cmd(bt[1], db_pressed, tooltip, bt[2]) --name,func,tooltip,icon,base
+        elseif (flg & toolbar.DLGBUT.LABEL) ~= 0 then --LABEL
+          toolbar.addlabel(bt[2], tooltip, 0, true, boldtxt, bt[1]) --text,tooltip,width,leftalign,bold,name,xoff,yoff
+        else --TEXT BUTTON
           --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
           toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
         end

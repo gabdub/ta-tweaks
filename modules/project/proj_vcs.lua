@@ -604,9 +604,9 @@ function Proj.vcs_control_panel(idx)
     }
     if vctype == Proj.VCS_FOLDER then
       local ena= (publish_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
-      buttons[#buttons+1]= {"dlg-lbl-remote", "Remote:", "Remote folder", 4, 95, 1, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT, "Control+R"}
+      buttons[#buttons+1]= {"dlg-lbl-remote", "Remote:", "Remote folder", 4, 95, 1, nil, toolbar.DLGBUT.LABEL, "Control+R"}
       buttons[#buttons+1]= {"dlg-pubfold", publish_folder, "Browse remote folder", 60, 0, 1, b_browsepub, ena, "Control+B"}
-      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.EN_OFF|toolbar.DLGBUT.LEFT|toolbar.DLGBUT.BOLD, nil}
+      buttons[#buttons+1]= {"dlg-lbl-files", "Files", "Files", 4, 0, 2, nil, toolbar.DLGBUT.LABEL, nil}
       buttons[#buttons+1]= {"dlg-update", "Update", "Update local folder, get newer files (O/D)", 200, 95, 2, b_update, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE, "Control+U"}
       buttons[#buttons+1]= {"dlg-publish", "Publish", "Copy changes (M/A) to remote folder", 300, 95, 2, b_publish, ena|toolbar.DLGBUT.EN_MARK|toolbar.DLGBUT.CLOSE, "Control+P"}
 
@@ -614,7 +614,7 @@ function Proj.vcs_control_panel(idx)
       local ena= (gitbranch ~= "") and 0 or toolbar.DLGBUT.EN_OFF
       local enaRem= (ena and gitremote ~= "") and 0 or toolbar.DLGBUT.EN_OFF
 
-      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.EN_OFF, nil}
+      buttons[#buttons+1]= {"dlg-lbl-branch", "Branch:", "Git branch", 4, 0, 1, nil, toolbar.DLGBUT.LABEL, nil}
       buttons[#buttons+1]= {"dlg-branch", gitbranch, "Show git status", 55, 0, 1, b_gitstatus, ena, "Control+B"}
 
       buttons[#buttons+1]= {"dlg-git-pull", "Pull "..gitremote, "Pull current branch from "..gitremote, 4, 105, 2, b_gitpullorg, enaRem, "Control+P"}
