@@ -60,7 +60,7 @@ function toolbar.prev_configtab()
 end
 
 --show/hide buffer config panel
-function toolbar.toggle_buffer_configtab(indent)
+function toolbar.toggle_buffer_configtab()
   if (not toolbar.config_toolbar_shown) or toolbar.cfgpnl_curgroup == toolbar.buff_panel then
     toolbar.toggle_showconfig() --show/hide
   end
@@ -68,7 +68,7 @@ function toolbar.toggle_buffer_configtab(indent)
     toolbar.config_tab_click(toolbar.buff_panel) --activate buffer panel
   end
   toolbar.ensurevisible("setlexercfg") --try to show all
-  toolbar.ensurevisible(indent and "INDENTATION" or "EOLMODE")
+  toolbar.ensurevisible("INDENTATION")
 end
 
 --add a button to show/hide the config panel

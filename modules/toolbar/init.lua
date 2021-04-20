@@ -151,6 +151,21 @@ if toolbar then
       toolbar.ANCHOR.HCENTER, 250, 300, "LEXER")
   end
 
+  local function eol_selected(eol_sel)
+    local mode= string.match(eol_sel,'%+') and buffer.EOL_CRLF or buffer.EOL_LF
+    buffer.eol_mode = mode
+    buffer:convert_eols(mode)
+    events.emit(events.UPDATE_UI,1) -- for updating statusbar
+    toolbar.setcfg_from_eolmode() --update config panel
+  end
+
+  local function change_eol()
+    local eol_list
+    if WIN32 then eol_list= {"CR+LF (OS default)","LF"} else eol_list= {"CR+LF","LF (OS default)"} end
+    toolbar.small_chooser("Select EOL", eol_list[buffer.eol_mode == buffer.EOL_CRLF and 1 or 2], eol_selected, eol_list, "T2_TAB#5",
+      toolbar.ANCHOR.HCENTER, 210, 110, "dialog-apply")
+  end
+
   local function enc_selected(enc_sel)
     buffer:set_encoding(enc_sel)
     events.emit(events.UPDATE_UI, 1) -- for updating statusbar
@@ -192,8 +207,10 @@ if toolbar then
       elseif ntab == 4 then --lexer
         --textadept.file_types.select_lexer()
         toolbar.select_lexer()
-      elseif ntab == 5 or ntab == 6 then --eol / indent
-        toolbar.toggle_buffer_configtab(ntab == 6)
+      elseif ntab == 5 then --eol
+        change_eol()
+      elseif ntab == 6 then --indent
+        toolbar.toggle_buffer_configtab()
       elseif ntab == 7 then --encoding
         change_encoding()
       end
