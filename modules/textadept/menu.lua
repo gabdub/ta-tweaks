@@ -180,13 +180,19 @@ actions.list = {
   ["preferences"]=          {_L['Preferences'], function() io.open_file(_USERHOME .. '/init.lua') end},
 
 --SEARCH
+  --TO DO: replace "ui.find" (find/replace controls)
   ["find"]=                 {_L['Find'], ui.find.focus},
   ["find_next"]=            {_L['Find Next'], ui.find.find_next},
   ["find_prev"]=            {_L['Find Previous'], ui.find.find_prev},
   ["replace"]=              {_L['Replace'], ui.find.replace},
   ["replaceall"]=           {_L['Replace All'], ui.find.replace_all},
   ["find_increment"]=       {_L['Find Incremental'], function() ui.find.focus{incremental = true} end},
-  ["find_infiles"]=         {_L['Find in Files'], function() ui.find.focus{in_files = true} end},
+  ["find_infiles"]=         {_L['Find in Files'], function()
+    if USE_RESULTS_PANEL then  --NOTE: find in files uses ui._print() and also writes to the current buffer
+      actions.run("new")  --HACK: open a new buffer to show the results (better than overwriting the current buffer)
+    end
+    ui.find.focus{in_files = true}
+  end},
   ["find_replace"]=         {_L['Replace'], function()
       ui.find.in_files = false
       ui.find.focus()
