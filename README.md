@@ -40,7 +40,7 @@ _Notes_
 
 Tatoolbar also allows to gray and check menu items:
 
-![Menu changes](https://github.com/gabdub/ta-tweaks/blob/master/screencapt/ttbmenu.png "Menu changes")
+![Menu changes](https://github.com/gabdub/ta-tweaks/wiki/img/ttbmenu.png "Menu changes")
 
 and compare files + show a MINIMAP (mostly a scroll bar with markers for now):
 

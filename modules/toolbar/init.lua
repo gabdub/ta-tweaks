@@ -669,9 +669,11 @@ if toolbar then
         toolbar.cfg.statfont_sz+toolbar.font_status_extrasz, toolbar.cfg.statfont_yoffset, false, 4, toolbar.cfg.statsize, toolbar.font_status) --x-expanded
       toolbar.tabfontcolor( toolbar.cfg.statcolor_normal, toolbar.cfg.statcolor_hilight, toolbar.cfg.tabcolor_active,
         toolbar.cfg.tabcolor_modif, toolbar.cfg.statcolor_normal ) --grayed= normal
-      --statusbar has 7 sections: text, line, col, lexer, eol, indent, encoding
+      --statusbar has 7 sections: 1=text, 2=line, 3=col, 4=lexer, 5=eol, 6=indent, 7=encoding
+      --change the order of enconding and indentation so that a click in the last section (indent) opens the config panel
+      local statorder= {1,2,3,4,5,7,6}
       for i=1, 7 do
-        toolbar.settab(i,"", "")  --create the status panels
+        toolbar.settab(statorder[i],"", "")  --create the status panels
       end
       toolbar.tabwidth(1,-1, 150) --expand this section, min width= 150
       --NOTE: using variable width in fields 2..7 in "WIN32" breaks the UI!!
