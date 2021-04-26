@@ -97,6 +97,11 @@ actions.usedwithstatus= {}
 --nil = use menu text without "_"
 actions.buttontext= {}
 
+function save_all_files()
+  io.save_all_files()
+  if toolbar then toolbar.update_all_modified() end
+end
+
 actions.list = {
   --["action_object"]={"menu-text", exec(), ["button text"]}
 --FILE
@@ -106,7 +111,7 @@ actions.list = {
   ["reload"]=               {_L['Reload'], buffer.reload},
   ["save"]=                 {_L['Save'], buffer.save},
   ["saveas"]=               {_L['Save As'], buffer.save_as},
-  ["saveall"]=              {_L['Save All'], io.save_all_files},
+  ["saveall"]=              {_L['Save All'], save_all_files},
   ["close"]=                {_L['Close'], buffer.close},
   ["closeall"]=             {_L['Close All'], io.close_all_buffers},
   ["session_load"]=         {_L['Load Session...'], textadept.session.load},

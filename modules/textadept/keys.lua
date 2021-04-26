@@ -301,6 +301,15 @@ local function key_return()
 end
 actions.add("key_return", 'Return key', key_return)
 
+if toolbar then
+  local function save_saveas() --save / saveas when SHIFT is pressed
+    if (toolbar.keyflags & toolbar.KEYFLAGS.SHIFT) ~= 0 then buffer.save_as()
+    elseif (toolbar.keyflags & toolbar.KEYFLAGS.CONTROL) ~= 0 then save_all_files()
+    else buffer.save() end
+  end
+  actions.add("save_saveas", 'Save      [Click]/[Ctrl+S]\nSave As [Shift+Click]/[Ctrl+Shift+S]\nSave All [Ctrl+Click]', save_saveas, nil, "document-save")
+end
+
 --run an action (act: action-name=string, action-id=number, {act}=1 item table)
 function actions.run(act)
   local ret

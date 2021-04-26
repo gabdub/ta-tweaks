@@ -99,6 +99,12 @@ if toolbar then
     if toolbar.cfg.tabmodified ~= 0 then toolbar.modifiedtab(ntab, buf.modify) end --modified: change tab color/img
   end
 
+  function toolbar.update_all_modified()
+    for i, buf in ipairs(_BUFFERS) do
+      set_chg_tabbuf(buf)
+    end
+  end
+
   --select a buffer's tab
   function toolbar.seltabbuf(buf)
     --select the top toolbar and get the tab number of the buffer
@@ -181,7 +187,7 @@ if toolbar then
   local function change_encoding()
     local enc_list= {'UTF-8','ASCII','CP1252','ISO-8859-1','UTF-16LE'}
     toolbar.small_chooser("Select buffer enconding", buffer.encoding, enc_selected, enc_list, "T2_TAB#7",
-      toolbar.ANCHOR.POP_R_IT_R, 210, 185, "insert-text")
+      toolbar.ANCHOR.HCENTER, 210, 185, "insert-text")
   end
 
   local function go_line_col(line, col)

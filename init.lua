@@ -86,8 +86,7 @@ if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or abo
     end
 
     toolbar.addaction("new")
-    toolbar.addaction("save")
-    toolbar.addaction("saveas")
+    toolbar.addaction("save_saveas")  --save / save-as / save-all
     toolbar.addspace()
 
     toolbar.addaction("toggle_bookmark")
