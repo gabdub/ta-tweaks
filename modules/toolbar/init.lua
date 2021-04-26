@@ -184,6 +184,23 @@ if toolbar then
       toolbar.ANCHOR.POP_R_IT_R, 210, 185, "insert-text")
   end
 
+  local function go_line_col(line, col)
+    if line and col then
+      line= math.floor(line)
+      col= math.floor(col)
+      buffer:ensure_visible_enforce_policy(line)
+      local pos = buffer:find_column(line, col)
+      buffer:goto_pos(pos)
+    end
+  end
+  local function gotoline_selected(linenum)
+    go_line_col(tonumber(linenum), 1)
+  end
+  local function gotocol_selected(colnum)
+    local line = buffer:line_from_position(buffer.current_pos)
+    go_line_col(line, tonumber(colnum))
+  end
+
   events_connect("toolbar_tabclicked", function(ntab,ntoolbar,ntabgroup,keyflags)
     toolbar.keyflags= keyflags
     --ui.statusbar_text= "tab "..ntab.." clicked"
@@ -195,15 +212,11 @@ if toolbar then
       if ntab == 1 then --info
         if toolbar.results_onoff then toolbar.results_onoff() end --show/hide result toolbar
       elseif ntab == 2 then --Line
-        if goto_line_col then
-          goto_line_col(false)
-        else
-          textadept.editing.goto_line()
-        end
+        if Proj then Proj.store_current_pos(true) end
+        toolbar.small_edit("Goto line", "", "Line number", gotoline_selected, "T2_TAB#2", toolbar.ANCHOR.HCENTER, 200, 59, "go-jump")
       elseif ntab == 3 then --Col
-        if goto_line_col then
-          goto_line_col(true)
-        end
+        if Proj then Proj.store_current_pos(true) end
+        toolbar.small_edit("Goto Column", "", "Column number", gotocol_selected, "T2_TAB#3", toolbar.ANCHOR.HCENTER, 200, 59, "go-jump")
       elseif ntab == 4 then --lexer
         --textadept.file_types.select_lexer()
         toolbar.select_lexer()

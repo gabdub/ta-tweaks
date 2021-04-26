@@ -19,6 +19,12 @@ local dialog_font_preview= false
 local dialog_single_click= false
 local dialog_native= false
 
+local dlg_can_move= false
+local dlg_filter_is_edit= false
+local dlg_filter_empty_text= ""
+local dlg_start_x= 300
+local dlg_start_y= 300
+
 toolbar.dlg_select_it= ""
 toolbar.dlg_select_ev= nil
 toolbar.dlg_filter_col2= false
@@ -237,10 +243,19 @@ end
 local function update_filter()
   local ena= true
   local ftxt= filter
-  if filter == "" then ena=false ftxt="Type to filter" end
-  toolbar.settext("filter-txt", ftxt, "")
+  if filter == "" then ena=false ftxt=dlg_filter_empty_text end
+  toolbar.settext("filter-txt", ftxt, "Copy")
   toolbar.enable("filter-txt", ena)
-  toolbar.enable("edit-find", ena)
+end
+
+local function paste_filter()
+  filter= Util.str_trim(ui.clipboard_text)
+  update_filter()
+  load_data( true ) --try to keep marks
+end
+
+local function copy_filter()
+  buffer:copy_text(filter)
 end
 
 local function filter_key(keycode, keyflags)
@@ -314,6 +329,16 @@ local function dialog_key_ev(npop, keycode,keyflags)
       end
     end
     if keycode == toolbar.KEY.RETURN or keycode == toolbar.KEY.KPRETURN then
+      if dlg_filter_is_edit then
+        toolbar.dlg_select_it= filter
+        if toolbar.dlg_select_ev then
+          local keepopen= toolbar.dlg_select_ev(toolbar.dlg_select_it)
+          --return true to keep the dialog open
+          if keepopen then return end
+        end
+        close_dialog()
+        return
+      end
       if idx_sel_i > 0 then choose_item("it#"..idx_filtered[idx_sel_i]) end --select and close
 
     elseif keyflags == 0 then  --ignore key if shift/ctrl/alt/meta are pressed
@@ -351,9 +376,6 @@ local function add_accelerator(keyname, buttname)
   if keycode ~= 0 then dialog_accel[#dialog_accel+1]= {keycode, keyflags, buttname} end
 end
 
-local dlg_can_move= false
-local dlg_start_x= 300
-local dlg_start_y= 300
 local function beforeload_dlg(cfg)
   --CFGHOOK_BEFORE_LOAD: add hooked fields to config
   Util.add_config_field(cfg, "dlg_x", Util.cfg_int, 300)
@@ -405,6 +427,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   dialog_h= height
   dialog_list= datalist
   dialog_title= title
+  dlg_filter_empty_text= "Type to filter"
   if config then
     dialog_cols= config["columns"]  --columns width (up to 3 for now...)
     if dialog_cols == nil then dialog_cols= {} end
@@ -414,6 +437,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     dialog_single_click= config.singleclick or false --choose and close on single click (combo style)
     dialog_font_preview= config.fontpreview or false --show a font preview of the selected item (items are font names)
     next_but_cb= config.next_button_cb --show a next button in the title bar (this is the callback)
+    dlg_filter_is_edit= config.editmode or false
+    if config.filter_empty_text then dlg_filter_empty_text=config.filter_empty_text end
   else
     dialog_cols= {}
     dialog_buttons= {}
@@ -421,6 +446,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     dialog_single_click= false
     dialog_font_preview= false
     next_but_cb= nil
+    dlg_filter_is_edit= false
   end
   dialog_data_icon= dataicon
   dialog_accel= {}
@@ -507,9 +533,11 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
-  toolbar.cmd("edit-find", nil, "", "")
+  local icon= dlg_filter_is_edit and dialog_data_icon or "edit-find"
+  toolbar.cmd("filter-find", paste_filter, "Paste", icon)
   toolbar.gotopos(2+toolbar.cfg.butsize, 3)
-  toolbar.addlabel("...", "", dialog_w-toolbar.cfg.butsize-8-toolbar.list_cmdright, true, false, "filter-txt")  --left align
+  toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-8-toolbar.list_cmdright, true, false, "filter-txt")  --left align
+  toolbar.cmds["filter-txt"]= copy_filter
   update_filter()
 
   if dialog_buttons and #dialog_buttons > 0 then
@@ -585,6 +613,19 @@ function toolbar.small_chooser(title, sel_enc, enc_selected, enc_list, btname, a
   toolbar.dlg_select_ev= enc_selected
   toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title, width, height, enc_list, icon, {singleclick=true, can_move=(btname==nil)})
+  if btname then
+    toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
+  else
+    toolbar.show_dialog() --open at a fixed position
+  end
+  ensure_sel_view()
+end
+
+function toolbar.small_edit(title, txt_value, txt_info, val_changed, btname, anchor, width, height, icon)
+  toolbar.dlg_select_it= txt_value
+  toolbar.dlg_select_ev= val_changed
+  toolbar.dlg_filter_col2= false
+  toolbar.create_dialog(title, width, height, {}, icon, {editmode= true, filter_empty_text=txt_info, can_move=(btname==nil)})
   if btname then
     toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
   else
