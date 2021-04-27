@@ -71,6 +71,7 @@
 #define TTBF_TB_VERTICAL    0x00000001  //it's vertical
 #define TTBF_TB_VISIBLE     0x00000002  //it's visible
 #define TTBF_TB_V_LAYOUT    0x00000004  //put groups in a vertical layout
+#define TTBF_TB_KEEPOPEN    0x00000008  //POPUP: don't close the popup when focus is lost
 //internal use toolbar flags
 #define TTBF_TB_REDRAW      0x01000000  //hold updates for now.. redraw later (internal use)
 
@@ -175,6 +176,11 @@
 
 #define VSCROLL_STEP    100   //vertical scroll whell step
 #define VSCROLL_MIN     5     //less than this, scroll to top
+
+#define POPSHOW_HIDE          0     //hide popup / same as "false"
+#define POPSHOW_DRAW          1     //show popup (border, title and close button are custom drawn) / same as "true"
+#define POPSHOW_NATIVE        2     //show popup (use native dialog decorations)
+#define POPSHOW_KEEPOPEN      4     //don't close the popup when focus is lost
 
 // multi-part IMAGE
 //

@@ -47,7 +47,7 @@ local function get_list_col(idx, ncol)
 end
 
 local function close_dialog()
-  toolbar.popup(toolbar.DIALOG_POPUP,false) --hide dialog
+  toolbar.popup(toolbar.DIALOG_POPUP, toolbar.PSHOW.HIDE) --hide dialog
 end
 
 local function close_dialog_ev(npop)
@@ -591,7 +591,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
 end
 
 function toolbar.show_dialog()
-  toolbar.popup(toolbar.DIALOG_POPUP, dialog_native and 2 or 1, dlg_start_x,dlg_start_y, -dialog_w,-dialog_h, dialog_title)
+  local smode= dialog_native and toolbar.PSHOW.NATIVE or toolbar.PSHOW.DRAW
+  toolbar.popup(toolbar.DIALOG_POPUP, smode, dlg_start_x,dlg_start_y, -dialog_w,-dialog_h, dialog_title)
 end
 
 function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
@@ -600,7 +601,7 @@ function toolbar.font_chooser(title, sel_font, font_selected, btname, anchor)
   toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title or "Font chooser", 600, 331, toolbar.get_font_list(), "format-text-italic", {fontpreview=true, can_move=(btname==nil)})
   if btname then
-    toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
+    toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
   else
     toolbar.show_dialog() --open at a fixed position
   end
@@ -613,7 +614,7 @@ function toolbar.small_chooser(title, sel_enc, enc_selected, enc_list, btname, a
   toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title, width, height, enc_list, icon, {singleclick=true, can_move=(btname==nil)})
   if btname then
-    toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
+    toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
   else
     toolbar.show_dialog() --open at a fixed position
   end
@@ -626,7 +627,7 @@ function toolbar.small_edit(title, txt_value, txt_info, val_changed, btname, anc
   toolbar.dlg_filter_col2= false
   toolbar.create_dialog(title, width, height, {}, icon, {editmode= true, filter_empty_text=txt_info, can_move=(btname==nil)})
   if btname then
-    toolbar.popup(toolbar.DIALOG_POPUP,1,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
+    toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW,btname,anchor,-dialog_w,-dialog_h) --anchor to a button (toolbar.ANCHOR) (use custom dialog borders)
   else
     toolbar.show_dialog() --open at a fixed position
   end

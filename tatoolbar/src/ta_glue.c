@@ -1681,12 +1681,30 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
 /* ============================================================================= */
 /*                          TOOLBAR POPUPS                                       */
 /* ============================================================================= */
-static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
+static int popup_destroy(GtkWidget * widget, GdkEventKey *_, void*__) {
   struct toolbar_data *T= toolbar_from_popup(widget);
   if( T != NULL ){
     emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
     return TRUE;
   }
+  return FALSE;
+}
+
+static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
+  struct toolbar_data *T= toolbar_from_popup(widget);
+  if( T != NULL ){
+    if( (T->flags & TTBF_TB_KEEPOPEN) == 0 ){
+      emit(lua, "popup_close", LUA_TNUMBER, T->num, -1); //close the popup when the focus is lost
+      return TRUE;
+    }
+    //keep the popup open
+    //TO DO: draw focus lost
+  }
+  return FALSE;
+}
+
+static int popup_focus_in_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
+  //TO DO: draw focus recover
   return FALSE;
 }
 
@@ -1720,15 +1738,20 @@ static void popup_configure_ev(GtkWindow *window, GdkEvent *event, gpointer data
 static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w, int h, const char * title )
 {
   struct toolbar_data *T;
-  int decorate= FALSE;
+  int native_decorate= FALSE;
+  int keepopen= FALSE;
   if((ntb < POPUP_FIRST) || (ntb >= NTOOLBARS)){
     ntb= POPUP_FIRST;
   }
   T= &ttb.tbdata[ntb];
-  if( show != 0 ){
-    if( show == 2 ){
-      decorate= TRUE;
+  if( show != POPSHOW_HIDE ){
+    if( (show & POPSHOW_NATIVE) != 0 ){
+      native_decorate= TRUE;  //use native dialog decorations
     }
+    if( (show & POPSHOW_KEEPOPEN) != 0 ){
+      keepopen= TRUE;         //don't close the popup when focus is lost
+    }
+
     //SHOW POPUP
     if( T->win == NULL ){
       T->win= gtk_window_new( GTK_WINDOW_TOPLEVEL );
@@ -1738,10 +1761,10 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         //connect to parent window (textadept window)
         gtk_window_set_transient_for( GTK_WINDOW(T->win), GTK_WINDOW(window) );
         gtk_window_set_resizable(GTK_WINDOW(T->win), FALSE);
-        gtk_window_set_decorated(GTK_WINDOW(T->win), decorate);
+        gtk_window_set_decorated(GTK_WINDOW(T->win), native_decorate);
         gtk_window_set_skip_taskbar_hint(GTK_WINDOW(T->win), TRUE);
         gtk_window_set_skip_pager_hint(GTK_WINDOW(T->win), TRUE);
-        if( decorate ){
+        if( native_decorate ){
           gtk_window_set_type_hint(GTK_WINDOW(T->win), GDK_WINDOW_TYPE_HINT_DIALOG);
           if( (title != NULL) && (*title != 0) ){
             gtk_window_set_title(GTK_WINDOW(T->win), title);
@@ -1752,10 +1775,16 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         gtk_window_move(GTK_WINDOW(T->win), x, y );
         gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK|GDK_CONFIGURE);
 
+        if( keepopen ){
+          T->flags |= TTBF_TB_KEEPOPEN;
+          g_signal_connect(T->win, "focus-in-event", G_CALLBACK(popup_focus_in_ev), L );
+        }else{
+          T->flags &= ~TTBF_TB_KEEPOPEN;
+        }
         g_signal_connect(T->win, "focus-out-event", G_CALLBACK(popup_focus_out_ev), L );
         g_signal_connect(T->win, "key-press-event", G_CALLBACK(popup_keypress_ev),  L );
         g_signal_connect(T->win, "configure-event", G_CALLBACK(popup_configure_ev), L );
-        g_signal_connect(T->win, "destroy",         G_CALLBACK(popup_focus_out_ev), L);
+        g_signal_connect(T->win, "destroy",         G_CALLBACK(popup_destroy), L);
 
         GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
         gtk_container_add(GTK_CONTAINER(T->win), vbox);
@@ -1793,6 +1822,7 @@ void ttb_move_popup(struct toolbar_data *T, int x, int y )
 /** width, height < 0 : force this size */
 /** button-name can be a tab-number: "T?_TAB#tab-number" ?=toolbar-number (since version: 1.1.13) */
 /** title= window title (show=2: show window decorations) (since version: 1.1.15) */
+/** show |= 0x04 flag: don't close the popup when focus is lost (since version: 1.1.17) */
 static int ltoolbar_popup(lua_State *L)
 { //show popup toolbar
   struct toolbar_data * T;

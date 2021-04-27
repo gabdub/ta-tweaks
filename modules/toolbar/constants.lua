@@ -125,6 +125,7 @@ toolbar.TTBF ={
   TB_VERTICAL   = 0x00000001,   --vertical toolbar
   TB_VISIBLE    = 0x00000002,   --it's visible
   TB_V_LAYOUT   = 0x00000004,   --put groups in a vertical layout
+  TB_KEEPOPEN   = 0x00000008,   --POPUP: don't close the popup when focus is lost
 }
 
 toolbar.GRPC ={
@@ -199,6 +200,13 @@ toolbar.ANCHOR = {
   VCENTER       = 16, --align centers
   POP_B_IT_B    = 24, --popup bottom at item bottom
   POP_T_IT_B    = 32, --popup top    at item bottom
+}
+
+toolbar.PSHOW = {
+  HIDE          = 0,  --hide popup / same as "false"
+  DRAW          = 1,  --show popup (border, title and close button are custom drawn) / same as "true"
+  NATIVE        = 2,  --show popup (use native dialog decorations)
+  KEEPOPEN      = 4,  --don't close the popup when focus is lost
 }
 
 toolbar.GETVER = {    --toolbar.getversion(x)
