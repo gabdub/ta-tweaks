@@ -1695,17 +1695,21 @@ static int popup_focus_out_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
   if( T != NULL ){
     if( (T->flags & TTBF_TB_KEEPOPEN) == 0 ){
       emit(lua, "popup_close", LUA_TNUMBER, T->num, -1); //close the popup when the focus is lost
-      return TRUE;
+    }else{  //keep the popup open
+      emit(lua, "popup_focus", LUA_TNUMBER, T->num, LUA_TNUMBER, 0, -1); //emit: popup_focus #, 0
     }
-    //keep the popup open
-    //TO DO: draw focus lost
   }
-  return FALSE;
+  return TRUE;
 }
 
 static int popup_focus_in_ev(GtkWidget * widget, GdkEventKey *_, void*__) {
-  //TO DO: draw focus recover
-  return FALSE;
+  struct toolbar_data *T= toolbar_from_popup(widget);
+  if( T != NULL ){
+    if( (T->flags & TTBF_TB_KEEPOPEN) != 0 ){
+      emit(lua, "popup_focus", LUA_TNUMBER, T->num, LUA_TNUMBER, 1, -1); //emit: popup_focus #, 1
+    }
+  }
+  return TRUE;
 }
 
 //emit "popup_key" event + int pop-up-toolbar-num + int key-code

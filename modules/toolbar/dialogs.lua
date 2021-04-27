@@ -9,6 +9,7 @@ local dialog_title= ""
 local itemsgrp
 local previewgrp1
 local previewgrp2
+local filtergrp
 
 local dialog_list= {}
 local dialog_cols= {}
@@ -60,6 +61,18 @@ local function close_dialog_ev(npop)
   if npop == toolbar.DIALOG_POPUP then close_dialog() end
 end
 events_connect("popup_close", close_dialog_ev)
+
+local function focus_dialog_ev(npop, focused)
+  if npop == toolbar.DIALOG_POPUP then
+    toolbar.sel_dialog_popup(filtergrp,false)
+    if focused == 1 then
+      toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
+    else
+      toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BACKGROUND)
+    end
+  end
+end
+events_connect("popup_focus", focus_dialog_ev)
 
 local function update_preview()
   if dialog_font_preview and (idx_sel_i > 0) then
@@ -429,6 +442,7 @@ local function next_dlg()
 end
 
 function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
+  close_dialog() --make sure there is no open dialog
   dialog_w= width
   dialog_h= height
   dialog_list= datalist
@@ -528,7 +542,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   end
 
   --filter group: full width + items height
-  toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
+  filtergrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
   toolbar.list_cmdright= 2
   if next_but_cb then
     toolbar.listtb_y= 2
@@ -536,7 +550,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     toolbar.list_cmdright= toolbar.cfg.butsize
   end
   toolbar.setdefaulttextfont()
-  toolbar.themed_icon(toolbar.groupicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
+  toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
   local icon= dlg_filter_is_edit and dialog_data_icon or "edit-find"
   toolbar.cmd("filter-find", paste_filter, "Paste", icon)
@@ -802,7 +816,6 @@ function toolbar.find_dialog()
     finddlgopen= false
     toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.HIDE)
   else
-    finddlgopen= true
     toolbar.dlg_select_it= ""
     toolbar.dlg_select_ev= nil
     toolbar.dlg_filter_col2= false
@@ -811,6 +824,7 @@ function toolbar.find_dialog()
     toolbar.create_dialog("Find", width, height, {}, "edit-find", {editmode= true, filter_empty_text="Find text"})
     local anchor= toolbar.ANCHOR.POP_L_IT_L | toolbar.ANCHOR.POP_T_IT_B
     toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW|toolbar.PSHOW.KEEPOPEN,"find_dialog",anchor,-width,-height)
+    finddlgopen= true
   end
   toolbar.selected("find_dialog", false, finddlgopen)
 end
