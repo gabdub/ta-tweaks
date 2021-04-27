@@ -479,8 +479,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
       toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize, false)
       toolbar.setdefaulttextfont()
       local sw= toolbar.cfg.butsize
-      local nbut= next_but_cb and 2 or 1
-      toolbar.cfg.butsize= dialog_w-3-(toolbar.cfg.butsize+2)*nbut
+      toolbar.cfg.butsize= dialog_w-toolbar.cfg.butsize-3 --substract the close button
       toolbar.gotopos(1, 2) --title bar
       --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
       toolbar.cmdtext(title, end_dlg_drag, "", "dlg-caption", true, false, true, true) --save last dialog position
