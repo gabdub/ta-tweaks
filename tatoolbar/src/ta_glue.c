@@ -1428,7 +1428,7 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
     x = event->x;
     y = event->y;
   }
-  mouse_move_toolbar(T, x, y, event->state);
+  mouse_move_toolbar(T, x, y, event->state, event->x_root, event->y_root);
   return TRUE;
 }
 
@@ -1582,27 +1582,28 @@ static gboolean ttb_button_ev(GtkWidget *widget, GdkEventButton *event, void*__)
         }else if( ttb.phipress->back_color == BKCOLOR_MINIMAP_CLICK ){
           mini_map_ev( 0, 0 );   //MINI MAP click
           fire_item_event(ttb.phipress, TEV_CLICK, event->state); //scroll buffer now
-          start_drag(event->x, event->y);  //drag the minimap until the mouse button is released
+          //NOTE: root coordinates are more stable when the drag moves the window
+          start_drag(event->x_root, event->y_root);  //drag the minimap until the mouse button is released
         }else if( ttb.phipress->back_color == BKCOLOR_TBH_SCR_CLICK ){
           tbh_scroll_ev( 0, 0 );   //TBH SCROLL click
           fire_item_event(ttb.phipress, TEV_CLICK, event->state); //scroll buffer now
-          start_drag(event->x, event->y);  //drag the tbh_scroll until the mouse button is released
+          start_drag(event->x_root, event->y_root);  //drag the tbh_scroll until the mouse button is released
         }else if( (ttb.phipress->flags & TTBF_SCROLL_BAR) != 0 ){
           vscroll_clickG(ttb.phipress->group); //scrollbar click
-          start_drag(event->x, event->y);  //drag the scrollbar until the mouse button is released
+          start_drag(event->x_root, event->y_root);  //drag the scrollbar until the mouse button is released
         }else if( (ttb.phipress->flags & TTBF_IS_TRESIZE) != 0 ){
-          start_drag(event->x, event->y);  //drag the resize button until the mouse button is released
+          start_drag(event->x_root, event->y_root);  //drag the resize button until the mouse button is released
           if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
-            T->drag_off= T->barwidth  - item_xoff; //resize toolbar horizontally (X+)
+            T->drag_off= T->barwidth  - event->x_root; //resize toolbar horizontally (X+)
           }else{
-            T->drag_off= T->barheight + item_yoff; //resize toolbar vertically   (Y-)
+            T->drag_off= T->barheight + event->y_root; //resize toolbar vertically   (Y-)
           }
           clear_tooltip_textT(T);
         }else if( (ttb.phipress->flags & TTBF_IS_TMOVE) != 0 ){
-          start_drag(event->x, event->y);  //drag the pop up toolbar until the mouse button is released
+          start_drag(event->x_root, event->y_root);  //drag the pop up toolbar until the mouse button is released
           gtk_window_get_position(GTK_WINDOW(T->win), &ttb.drag_win_x, &ttb.drag_win_y );
-          ttb.drag_x= 0 - event->x;  //initial mouse position
-          ttb.drag_y= 0 - event->y;
+          ttb.drag_x= ttb.drag_win_x - event->x_root;  //initial mouse position
+          ttb.drag_y= ttb.drag_win_y - event->y_root;
         }
         redraw_item(ttb.philight);
       }else{

@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.16 (Apr 16 2021)"
+#define TA_TOOLBAR_VERSION_STR "1.1.17 (Apr 27 2021)"
 
 static void free_img_list( void );
 
@@ -788,11 +788,11 @@ struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt)
   return NULL;
 }
 
-void start_drag( int x, int y )
-{
+void start_drag( int x_root, int y_root )
+{ //NOTE: root coordinates are more stable when the drag moves the window
   ttb.pdrag= ttb.phipress;
-  ttb.drag_x= item_xoff - x;  //initial difference between mouse and item_xoff/yoff position
-  ttb.drag_y= item_yoff - y;
+  ttb.drag_x= item_xoff - x_root;  //initial difference between mouse and item_xoff/yoff position
+  ttb.drag_y= item_yoff - y_root;
 }
 
 //return the height of the hidden items above this one or -1 if the item is inside a hidden block
@@ -1772,7 +1772,7 @@ void mouse_leave_toolbar( struct toolbar_data *T )
   }
 }
 
-void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state )
+void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state, int x_root, int y_root )
 {
   int nx, xhi, ok, w;
   struct toolbar_item * p, *prev;
@@ -1782,8 +1782,8 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state )
     //dragging: keep the selected item until the mouse button is released
     p= ttb.pdrag;
     //keep the position relative to the start point
-    item_xoff= ttb.drag_x + x;
-    item_yoff= ttb.drag_y + y;
+    item_xoff= ttb.drag_x + x_root; //root coordinates are more stable when the drag moves the window
+    item_yoff= ttb.drag_y + y_root;
   }else{
     p= item_fromXYT(T, x, y);
   }
@@ -1864,7 +1864,7 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state )
       vscroll_clickG(p->group); //update scrollbar click (drag)
     }else if( (ttb.phipress->flags & TTBF_IS_TRESIZE) != 0 ){
       if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
-        w= T->drag_off + item_xoff; //resize toolbar horizontally (X+)
+        w= T->drag_off + x_root; //resize toolbar horizontally (X+)
         if( w < T->min_size ){
           w= T->min_size;
         }
@@ -1874,12 +1874,11 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state )
           //update_layoutT(T); called from the resize event
         }
       }else{
-        w= T->drag_off - item_yoff; //resize toolbar vertically (Y-)
+        w= T->drag_off - y_root; //resize toolbar vertically (Y-)
         if( w < T->min_size ){
           w= T->min_size;
         }
         if( T->barheight != w ){ //toolbar size changed, adjust groups layout
-          T->drag_off= T->drag_off - T->barheight + w;  //offset correction
           T->barheight= w;
           set_toolbar_size(T);
           //update_layoutT(T); called from the resize event
@@ -1887,14 +1886,9 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state )
       }
     }else if( (ttb.phipress->flags & TTBF_IS_TMOVE) != 0 ){
       //move window to new position
-      int newx= item_xoff+ttb.drag_win_x;
-      int newy= item_yoff+ttb.drag_win_y;
-      ttb_move_popup(T, newx, newy );
-      //reset drag offset
-      ttb.drag_x= item_xoff -x;
-      ttb.drag_y= item_yoff -y;
-      ttb.drag_win_x= newx;
-      ttb.drag_win_y= newy;
+      ttb.drag_win_x= ttb.drag_x + x_root;
+      ttb.drag_win_y= ttb.drag_y + y_root;
+      ttb_move_popup(T, ttb.drag_win_x, ttb.drag_win_y );
     }
   }
 }

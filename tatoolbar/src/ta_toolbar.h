@@ -526,7 +526,7 @@ void set_hilight_off( void );
 void calc_popup_sizeT( struct toolbar_data *T);
 
 void mouse_leave_toolbar( struct toolbar_data *T );
-void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state );
+void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state, int x_root, int y_root );
 void scroll_toolbarT(struct toolbar_data *T, int x, int y, int dir, int shift );
 void color_pick_ev( struct toolbar_item *p, int dir, int redraw );
 
@@ -549,7 +549,7 @@ struct toolbar_group * group_fromXYT(struct toolbar_data *T, int x, int y);
 extern int item_xoff;
 extern int item_yoff;
 struct toolbar_item * item_fromXYT(struct toolbar_data *T, int xt, int yt);
-void start_drag( int x, int y );
+void start_drag( int x_root, int y_root );
 int item_hiddenH_offset( struct toolbar_item * p );
 int group_hiddenH( struct toolbar_group *g );
 
