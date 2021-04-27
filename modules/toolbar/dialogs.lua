@@ -34,6 +34,8 @@ local idx_filtered= {}
 local ensure_it_vis= nil
 local idx_sel_i= 0
 
+local finddlgopen= false
+
 local function get_list_itemstr(idx)
   local name= dialog_list[idx] --string list
   if type(name) == "table" then name= name[1] end --multi column list: use first column
@@ -48,6 +50,10 @@ end
 
 local function close_dialog()
   toolbar.popup(toolbar.DIALOG_POPUP, toolbar.PSHOW.HIDE) --hide dialog
+  if finddlgopen then
+    finddlgopen= false
+    toolbar.selected("find_dialog", false, false)
+  end
 end
 
 local function close_dialog_ev(npop)
@@ -631,7 +637,6 @@ function toolbar.small_edit(title, txt_value, txt_info, val_changed, btname, anc
   else
     toolbar.show_dialog() --open at a fixed position
   end
-  ensure_sel_view()
 end
 
 local fdialog_opt= ""
@@ -791,3 +796,24 @@ local function quick_browse()
   toolbar.file_chooser(5)
 end
 actions.add("quick_browse", 'Quickly Open Browse Directory', quick_browse, Util.KEY_ALT.."O")
+
+function toolbar.find_dialog()
+  if finddlgopen then
+    finddlgopen= false
+    toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.HIDE)
+  else
+    finddlgopen= true
+    toolbar.dlg_select_it= ""
+    toolbar.dlg_select_ev= nil
+    toolbar.dlg_filter_col2= false
+    local width= 300
+    local height= 59
+    toolbar.create_dialog("Find", width, height, {}, "edit-find", {editmode= true, filter_empty_text="Find text"})
+    local anchor= toolbar.ANCHOR.POP_L_IT_L | toolbar.ANCHOR.POP_T_IT_B
+    toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW|toolbar.PSHOW.KEEPOPEN,"find_dialog",anchor,-width,-height)
+  end
+  toolbar.selected("find_dialog", false, finddlgopen)
+end
+
+--ACTION: find_dialog
+actions.add("find_dialog", "Open find dialog", toolbar.find_dialog, Util.KEY_CTRL.."f1", "edit-find")
