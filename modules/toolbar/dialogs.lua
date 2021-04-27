@@ -62,13 +62,23 @@ local function close_dialog_ev(npop)
 end
 events_connect("popup_close", close_dialog_ev)
 
+local function update_filter()
+  local ena= true
+  local ftxt= filter
+  if filter == "" then ena=false ftxt=dlg_filter_empty_text end
+  toolbar.settext("filter-txt", ftxt, "Copy")
+  toolbar.enable("filter-txt", ena)
+end
+
 local function focus_dialog_ev(npop, focused)
   if npop == toolbar.DIALOG_POPUP then
     toolbar.sel_dialog_popup(filtergrp,false)
     if focused == 1 then
       toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
+      update_filter()
     else
       toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BACKGROUND)
+      toolbar.enable("filter-txt", false)
     end
   end
 end
@@ -257,14 +267,6 @@ local function load_data(keep_marks)
   end
   update_preview()
   enable_buttons()
-end
-
-local function update_filter()
-  local ena= true
-  local ftxt= filter
-  if filter == "" then ena=false ftxt=dlg_filter_empty_text end
-  toolbar.settext("filter-txt", ftxt, "Copy")
-  toolbar.enable("filter-txt", ena)
 end
 
 local function paste_filter()
