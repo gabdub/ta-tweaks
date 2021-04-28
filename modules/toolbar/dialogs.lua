@@ -551,7 +551,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   --filter group: full width + items height
   filtergrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
   toolbar.list_cmdright= 2
-  toolbar.listtb_y= 2
+  toolbar.listtb_y= 3
   for i=1, #dialog_buttons do
     local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     local nr= bt[6]   --6:row= -1 (at the end of the filter input)
@@ -563,6 +563,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
         add_accelerator(bt[9], bt[1])
       end
       toolbar.list_addbutton(bt[1], tooltip, bt[7], bt[2])
+      toolbar.list_cmdright= toolbar.list_cmdright+1
     end
   end
   toolbar.setdefaulttextfont()
@@ -571,7 +572,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   local icon= dlg_filter_is_edit and dialog_data_icon or "edit-find"
   toolbar.cmd("filter-find", paste_filter, "Paste", icon)
   toolbar.gotopos(2+toolbar.cfg.butsize, 3)
-  toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-4-toolbar.list_cmdright, true, false, "filter-txt")  --left align
+  toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-6-toolbar.list_cmdright, true, false, "filter-txt")  --left align
   toolbar.cmds["filter-txt"]= copy_filter
   update_filter()
 
@@ -861,7 +862,7 @@ function toolbar.find_dialog()
     toolbar.dlg_select_it= ""
     toolbar.dlg_select_ev= dlg_enter
     toolbar.dlg_filter_col2= false
-    local width= 500
+    local width= 600
     local height= 59
     local dconfig= {editmode= true, filter_empty_text="Text to find"}
     local buttons= {
