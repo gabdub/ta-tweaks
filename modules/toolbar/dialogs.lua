@@ -840,6 +840,17 @@ local function dlg_enter()
   if (toolbar.keyflags & toolbar.KEYFLAGS.SHIFT) ~= 0 then dlg_find_prev() else dlg_find_next() end
   return true --don't close
 end
+
+local find_flags= {}
+local function dlg_mod(cmd)
+  local flg= find_flags[cmd] or false
+  flg= not flg
+  find_flags[cmd]= flg
+  toolbar.selected(cmd, false, flg)
+end
+local function set_dlg_mod(cmd)
+  toolbar.selected(cmd, false, find_flags[cmd] or false)
+end
 function toolbar.find_dialog()
   if finddlgopen then
     finddlgopen= false
@@ -848,18 +859,27 @@ function toolbar.find_dialog()
     toolbar.dlg_select_it= ""
     toolbar.dlg_select_ev= dlg_enter
     toolbar.dlg_filter_col2= false
-    local width= 300
+    local width= 500
     local height= 59
     local dconfig= {editmode= true, filter_empty_text="Text to find"}
     local buttons= {
       {"dlg-find-next", "go-down", "Next [Enter] /", 0, 0, -1, dlg_find_next, toolbar.DLGBUT.ICON, "F3"},
-      {"dlg-find-prev", "go-up", "Previous [Shift+Enter] /", 0, 0, -1, dlg_find_prev, toolbar.DLGBUT.ICON, "Control+F3"}
+      {"dlg-find-prev", "go-up", "Previous [Shift+Enter] /", 0, 0, -1, dlg_find_prev, toolbar.DLGBUT.ICON, "Control+F3"},
+      {"dlg-find-increm", "mod-increm", "Incremental", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+I"},
+      {"dlg-find-regexp", "mod-regexp", "Regex", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+R"},
+      {"dlg-find-word", "mod-word", "Whole word", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+W"},
+      {"dlg-find-case", "mod-case", "Match case", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+A"}
     }
     dconfig.buttons= buttons
     toolbar.create_dialog("Find", width, height, {}, "edit-find", dconfig)
     local anchor= toolbar.ANCHOR.POP_L_IT_L | toolbar.ANCHOR.POP_T_IT_B
     toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW|toolbar.PSHOW.KEEPOPEN,"find_dialog",anchor,-width,-height)
     finddlgopen= true
+    if #find_flags == 0 then find_flags["dlg-find-case"]= true end --set defaults modifiers
+    set_dlg_mod("dlg-find-increm")
+    set_dlg_mod("dlg-find-regexp")
+    set_dlg_mod("dlg-find-word")
+    set_dlg_mod("dlg-find-case")
   end
   toolbar.selected("find_dialog", false, finddlgopen)
 end
