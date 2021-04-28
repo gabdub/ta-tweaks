@@ -57,6 +57,16 @@ local function close_dialog()
   end
 end
 
+function toolbar.hide_find_dialog()
+  if finddlgopen then
+    close_dialog()
+    return true
+  end
+  return false
+end
+
+events.connect(events.RESET_BEFORE, close_dialog, 1)
+
 local function close_dialog_ev(npop)
   if npop == toolbar.DIALOG_POPUP then close_dialog() end
 end
@@ -393,6 +403,9 @@ local function add_accelerator(keyname, buttname)
   local keycode= 0
   if #keyname == 1 then
     keycode= string.byte(keyname) --in lower case
+  else
+    local fk= keyname:match("[fF](%d*)")
+    if fk then keycode= tonumber(fk) +toolbar.KEY.F1 -1 end
   end
   if keycode ~= 0 then dialog_accel[#dialog_accel+1]= {keycode, keyflags, buttname} end
 end
@@ -541,8 +554,9 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.listtb_y= 2
   for i=1, #dialog_buttons do
     local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
-    local nr= bt[6]
-    if nr == -1 then  --6:row= -1 (at the end of the filter input)
+    local nr= bt[6]   --6:row= -1 (at the end of the filter input)
+    local flg= bt[8]
+    if nr == -1 and (flg & toolbar.DLGBUT.ICON) ~= 0 then  --must be an ICON
       local tooltip= bt[3]
       if bt[9] then --add button accelerator
         if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
@@ -562,48 +576,50 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   update_filter()
 
   if dialog_buttons and #dialog_buttons > 0 then
-    local nrows= 1
+    local nrows= 0
     for i=1, #dialog_buttons do
       local nr= dialog_buttons[i][6]
       if nr > nrows then nrows= nr end
     end
-    local buttons= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize * nrows +1, false)
-    toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BUT_NORMAL)
-    toolbar.setdefaulttextfont()
-    toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
-    local sw= toolbar.cfg.butsize
-    for i=1, #dialog_buttons do
-      local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
-      local nr= bt[6]
-      if nr > 0 then
-        toolbar.gotopos(bt[4], (nr-1)*toolbar.cfg.barsize+2)
-        toolbar.cfg.butsize= bt[5]
-      end
-      local flg= bt[8]
-      local leftalign= ((flg & toolbar.DLGBUT.LEFT) ~= 0)
-      local boldtxt= ((flg & toolbar.DLGBUT.BOLD) ~= 0)
-      local dropdown= ((flg & toolbar.DLGBUT.DROPDOWN) ~= 0)
-      local tooltip= bt[3]
-      if nr > 0 then  --button
-        if bt[9] then --add button accelerator
-          if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+    if nrows > 0 then
+      local buttons= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize * nrows +1, false)
+      toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BUT_NORMAL)
+      toolbar.setdefaulttextfont()
+      toolbar.themed_icon(toolbar.groupicon, "cfg-back2", toolbar.TTBI_TB.BACKGROUND)
+      local sw= toolbar.cfg.butsize
+      for i=1, #dialog_buttons do
+        local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
+        local nr= bt[6]
+        if nr > 0 then
+          toolbar.gotopos(bt[4], (nr-1)*toolbar.cfg.barsize+2)
+          toolbar.cfg.butsize= bt[5]
+        end
+        local flg= bt[8]
+        local leftalign= ((flg & toolbar.DLGBUT.LEFT) ~= 0)
+        local boldtxt= ((flg & toolbar.DLGBUT.BOLD) ~= 0)
+        local dropdown= ((flg & toolbar.DLGBUT.DROPDOWN) ~= 0)
+        local tooltip= bt[3]
+        if nr > 0 then  --button
+          if bt[9] then --add button accelerator
+            if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+            add_accelerator(bt[9], bt[1])
+          end
+          if (flg & toolbar.DLGBUT.ICON) ~= 0 then  --ICON
+            toolbar.cmd(bt[1], db_pressed, tooltip, bt[2]) --name,func,tooltip,icon,base
+          elseif (flg & toolbar.DLGBUT.LABEL) ~= 0 then --LABEL
+            toolbar.addlabel(bt[2], tooltip, 0, true, boldtxt, bt[1]) --text,tooltip,width,leftalign,bold,name,xoff,yoff
+          else --TEXT BUTTON
+            --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
+            toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
+            toolbar.themed_icon(bt[1], "ttb-button-disabled", toolbar.TTBI_TB.IT_DISABLED)
+          end
+        elseif nr == 0 and bt[9] then   --accelerator only
+          toolbar.cmds[bt[1]]= db_pressed
           add_accelerator(bt[9], bt[1])
         end
-        if (flg & toolbar.DLGBUT.ICON) ~= 0 then  --ICON
-          toolbar.cmd(bt[1], db_pressed, tooltip, bt[2]) --name,func,tooltip,icon,base
-        elseif (flg & toolbar.DLGBUT.LABEL) ~= 0 then --LABEL
-          toolbar.addlabel(bt[2], tooltip, 0, true, boldtxt, bt[1]) --text,tooltip,width,leftalign,bold,name,xoff,yoff
-        else --TEXT BUTTON
-          --text,func,tooltip,name,usebutsz,dropbt,leftalign,bold
-          toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
-          toolbar.themed_icon(bt[1], "ttb-button-disabled", toolbar.TTBI_TB.IT_DISABLED)
-        end
-      elseif nr == 0 and bt[9] then   --accelerator only
-        toolbar.cmds[bt[1]]= db_pressed
-        add_accelerator(bt[9], bt[1])
       end
+      toolbar.cfg.butsize= sw
     end
-    toolbar.cfg.butsize= sw
   end
 
   --items group: full width + items height w/scroll
@@ -813,17 +829,34 @@ local function quick_browse()
 end
 actions.add("quick_browse", 'Quickly Open Browse Directory', quick_browse, Util.KEY_ALT.."O")
 
+local function dlg_find_next()
+  actions.run("match_next")
+end
+local function dlg_find_prev()
+  actions.run("match_prev")
+end
+local function dlg_enter()
+  --enter= next / shift+enter= previous
+  if (toolbar.keyflags & toolbar.KEYFLAGS.SHIFT) ~= 0 then dlg_find_prev() else dlg_find_next() end
+  return true --don't close
+end
 function toolbar.find_dialog()
   if finddlgopen then
     finddlgopen= false
     toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.HIDE)
   else
     toolbar.dlg_select_it= ""
-    toolbar.dlg_select_ev= nil
+    toolbar.dlg_select_ev= dlg_enter
     toolbar.dlg_filter_col2= false
     local width= 300
     local height= 59
-    toolbar.create_dialog("Find", width, height, {}, "edit-find", {editmode= true, filter_empty_text="Find text"})
+    local dconfig= {editmode= true, filter_empty_text="Text to find"}
+    local buttons= {
+      {"dlg-find-next", "go-down", "Next [Enter] /", 0, 0, -1, dlg_find_next, toolbar.DLGBUT.ICON, "F3"},
+      {"dlg-find-prev", "go-up", "Previous [Shift+Enter] /", 0, 0, -1, dlg_find_prev, toolbar.DLGBUT.ICON, "Control+F3"}
+    }
+    dconfig.buttons= buttons
+    toolbar.create_dialog("Find", width, height, {}, "edit-find", dconfig)
     local anchor= toolbar.ANCHOR.POP_L_IT_L | toolbar.ANCHOR.POP_T_IT_B
     toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW|toolbar.PSHOW.KEEPOPEN,"find_dialog",anchor,-width,-height)
     finddlgopen= true

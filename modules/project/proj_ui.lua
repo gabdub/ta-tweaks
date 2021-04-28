@@ -663,11 +663,15 @@ function Proj.EVkeypress(code)
       Proj.toggle_projview()
     end
   elseif ks == 'esc' then --"Escape"
-    --1) try to close the config panel
-    if toolbar and toolbar.hide_config() then return end
-    --2) try to close the search view
+    if toolbar then
+    --1) try to close the find dialog
+      if toolbar.hide_find_dialog() then return end
+    --2) try to close the config panel
+      if toolbar.hide_config() then return end
+    end
+    --3) try to close the search view
     if plugs.close_results() then return end
-    --3) change view
+    --4) change view
     if #_VIEWS > 1 then
       local nv= _VIEWS[view] +1
       if nv > #_VIEWS then nv=1 end
