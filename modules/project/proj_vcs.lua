@@ -477,6 +477,12 @@ function Proj.open_next_vcs_control_panel()
   Proj.reopen_vcs_control_panel()
 end
 
+function Proj.open_prev_vcs_control_panel()
+  last_open_idx= last_open_idx-1
+  if last_open_idx < 1 then last_open_idx=#data.proj_vcontrol end
+  Proj.reopen_vcs_control_panel()
+end
+
 function Proj.vcs_control_panel(idx)
   last_open_idx= idx
   if idx and idx > 0 and idx <= #data.proj_vcontrol then
@@ -594,7 +600,6 @@ function Proj.vcs_control_panel(idx)
     local encomm= false
     dconfig.can_move= true  --allow to move
     dconfig.columns= {500, 50, 50} --icon+filename | status-letter | checkbox
-    if #data.proj_vcontrol > 1 then dconfig.next_button_cb= Proj.open_next_vcs_control_panel end  --"Control+N"
     local buttons= {
       --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
       {"dlg-show-all", "All", "Show all/changed files", 490, 105, 1, b_show_all, toolbar.DLGBUT.RELOAD|toolbar.DLGBUT.KEEP_MARKS, "Control+S"}, --re-set in set_show_all_tit()
@@ -602,6 +607,11 @@ function Proj.vcs_control_panel(idx)
       {"dlg-mark-all", "package-install", "Mark/unmark all", 550, 0, 2, toolbar.dialog_tog_check_all, toolbar.DLGBUT.ICON|toolbar.DLGBUT.EN_ITEMS, "Control+M"},
       {"acc-dlg-mark", "", "", 0, 0, 0, toolbar.dialog_tog_one_check, 0, "Control+ "} --accelerator
     }
+    if #data.proj_vcontrol > 1 then
+      --6:row= -1 (at the end of the filter input) / buttons are added from right to left
+      buttons[#buttons+1]= {"dlg-vcs-next", "go-next", "Next", 0, 0, -1, Proj.open_next_vcs_control_panel, toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+N"}
+      buttons[#buttons+1]= {"dlg-vcs-prev", "go-previous", "Previous", 0, 0, -1, Proj.open_prev_vcs_control_panel, toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+Shift+N"}
+    end
     if vctype == Proj.VCS_FOLDER then
       local ena= (publish_folder ~= "") and 0 or toolbar.DLGBUT.EN_OFF
       buttons[#buttons+1]= {"dlg-lbl-remote", "Remote:", "Remote folder", 4, 95, 1, nil, toolbar.DLGBUT.LABEL, "Control+R"}

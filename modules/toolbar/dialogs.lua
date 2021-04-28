@@ -437,12 +437,6 @@ local function end_dlg_drag(cmd)
   end
 end
 
-local next_but_cb
-local function next_dlg()
-  close_dialog()
-  if next_but_cb then next_but_cb() end
-end
-
 function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   close_dialog() --make sure there is no open dialog
   dialog_w= width
@@ -458,7 +452,6 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     dlg_can_move= config.can_move or false --the dialog can be moved
     dialog_single_click= config.singleclick or false --choose and close on single click (combo style)
     dialog_font_preview= config.fontpreview or false --show a font preview of the selected item (items are font names)
-    next_but_cb= config.next_button_cb --show a next button in the title bar (this is the callback)
     dlg_filter_is_edit= config.editmode or false
     if config.filter_empty_text then dlg_filter_empty_text=config.filter_empty_text end
   else
@@ -467,7 +460,6 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
     dlg_can_move= false
     dialog_single_click= false
     dialog_font_preview= false
-    next_but_cb= nil
     dlg_filter_is_edit= false
   end
   dialog_data_icon= dataicon
@@ -546,10 +538,18 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   --filter group: full width + items height
   filtergrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
   toolbar.list_cmdright= 2
-  if next_but_cb then
-    toolbar.listtb_y= 2
-    toolbar.list_addbutton("next_dlg", "Next [Control+N]", next_dlg, "go-next") add_accelerator("Control+N", "next_dlg")
-    toolbar.list_cmdright= toolbar.cfg.butsize
+  toolbar.listtb_y= 2
+  for i=1, #dialog_buttons do
+    local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
+    local nr= bt[6]
+    if nr == -1 then  --6:row= -1 (at the end of the filter input)
+      local tooltip= bt[3]
+      if bt[9] then --add button accelerator
+        if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+        add_accelerator(bt[9], bt[1])
+      end
+      toolbar.list_addbutton(bt[1], tooltip, bt[7], bt[2])
+    end
   end
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
@@ -557,7 +557,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   local icon= dlg_filter_is_edit and dialog_data_icon or "edit-find"
   toolbar.cmd("filter-find", paste_filter, "Paste", icon)
   toolbar.gotopos(2+toolbar.cfg.butsize, 3)
-  toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-8-toolbar.list_cmdright, true, false, "filter-txt")  --left align
+  toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-4-toolbar.list_cmdright, true, false, "filter-txt")  --left align
   toolbar.cmds["filter-txt"]= copy_filter
   update_filter()
 
@@ -598,7 +598,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
           toolbar.cmdtext(bt[2], db_pressed, tooltip, bt[1], true, dropdown, leftalign, boldtxt)
           toolbar.themed_icon(bt[1], "ttb-button-disabled", toolbar.TTBI_TB.IT_DISABLED)
         end
-      elseif bt[9] then   --accelerator only
+      elseif nr == 0 and bt[9] then   --accelerator only
         toolbar.cmds[bt[1]]= db_pressed
         add_accelerator(bt[9], bt[1])
       end
