@@ -10,6 +10,8 @@ local itemsgrp
 local previewgrp1
 local previewgrp2
 local filtergrp
+local filter_w
+local replacegrp
 
 local dialog_list= {}
 local dialog_cols= {}
@@ -36,6 +38,7 @@ local ensure_it_vis= nil
 local idx_sel_i= 0
 
 local finddlgopen= false
+local finddlgmode= 1  --1:find 2:find+replace 3=find in files
 
 local function get_list_itemstr(idx)
   local name= dialog_list[idx] --string list
@@ -91,6 +94,14 @@ local function focus_dialog_ev(npop, focused)
       toolbar.themed_icon("filter-txt", "ttb-edit-disabled", toolbar.TTBI_TB.IT_DISABLED)
       toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BACKGROUND)
       toolbar.enable("filter-txt", false)
+    end
+    if finddlgmode > 1 then
+      toolbar.sel_dialog_popup(replacegrp,false)
+      if focused == 1 then
+        toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
+      else
+        toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BACKGROUND)
+      end
     end
   end
 end
@@ -215,6 +226,8 @@ local function show_col_data(nrow, ncol, xcol, wcol)
 end
 
 local function load_data(keep_marks)
+  if dlg_filter_is_edit then return end
+
   local chknum= {}    --save checks
   if keep_marks then
     for k,v in pairs(check_val) do
@@ -554,27 +567,44 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   filtergrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
   toolbar.list_cmdright= 2
   toolbar.listtb_y= 3
+  local flt_but= 0
   for i=1, #dialog_buttons do
     local bt= dialog_buttons[i] --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
     local nr= bt[6]   --6:row= -1 (at the end of the filter input)
     local flg= bt[8]
     if nr == -1 and (flg & toolbar.DLGBUT.ICON) ~= 0 then  --must be an ICON
-      local tooltip= bt[3]
-      if bt[9] then --add button accelerator
-        if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
-        add_accelerator(bt[9], bt[1])
+      local x= bt[4]
+      if x == 1 then  --x=1: draw before the edit/filter
+        flt_but= i
+      else
+        local tooltip= bt[3]
+        if bt[9] then --add button accelerator
+          if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+          add_accelerator(bt[9], bt[1])
+        end
+        toolbar.list_addbutton(bt[1], tooltip, bt[7], bt[2])
+        toolbar.list_cmdright= toolbar.list_cmdright+1
       end
-      toolbar.list_addbutton(bt[1], tooltip, bt[7], bt[2])
-      toolbar.list_cmdright= toolbar.list_cmdright+1
     end
   end
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
   toolbar.gotopos(2, 3)
-  local icon= dlg_filter_is_edit and dialog_data_icon or "edit-find"
-  toolbar.cmd("filter-find", paste_filter, "Paste", icon)
-  toolbar.gotopos(2+toolbar.cfg.butsize, 3)
-  toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-6-toolbar.list_cmdright, true, false, "filter-txt")  --left align
+  if flt_but < 1 then  --pre edit/filter button not set, use default (paste)
+    local icon= dlg_filter_is_edit and dialog_data_icon or "edit-find"
+    toolbar.cmd("filter-find", paste_filter, "Paste", icon)
+  else
+    local bt= dialog_buttons[flt_but]
+    local tooltip= bt[3]
+    if bt[9] then --add button accelerator
+      if #tooltip > 30 then tooltip= tooltip.."\n".."["..bt[9].."]" else tooltip= tooltip.." ["..bt[9].."]" end
+      add_accelerator(bt[9], bt[1])
+    end
+    toolbar.cmd(bt[1], bt[7], tooltip, bt[2])
+  end
+  toolbar.gotopos(toolbar.cfg.butsize+3, 3)
+  filter_w= dialog_w-toolbar.cfg.butsize-6-toolbar.list_cmdright
+  toolbar.addlabel("...", "Copy", filter_w, true, false, "filter-txt")  --left align
   toolbar.cmds["filter-txt"]= copy_filter
   if dlg_filter_is_edit then
     toolbar.themed_icon("filter-txt", "ttb-edit-focus", toolbar.TTBI_TB.IT_BACKGROUND)
@@ -628,11 +658,12 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
       toolbar.cfg.butsize= sw
     end
   end
-
-  --items group: full width + items height w/scroll
-  itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, false)
-  toolbar.setdefaulttextfont()
-  load_data( false )
+  if not dlg_filter_is_edit then
+    --items group: full width + items height w/scroll
+    itemsgrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.LAST|toolbar.GRPC.ITEMSIZE|toolbar.GRPC.SHOW_V_SCROLL, 0, 0, false)
+    toolbar.setdefaulttextfont()
+    load_data( false )
+  end
 end
 
 function toolbar.show_dialog()
@@ -860,36 +891,68 @@ end
 local function set_dlg_mod(cmd)
   toolbar.selected(cmd, false, find_flags[cmd] or false)
 end
-function toolbar.find_dialog()
+local function change_find_mode()
+  local fm= finddlgmode+1 --next mode
+  if fm > 3 then fm=1 end
+  toolbar.find_dialog(fm)
+end
+function toolbar.find_dialog(findmode)  --1:find 2:find+replace 3=find in files (nil=keep last mode)
+  local fm= findmode or finddlgmode --(nil=keep last mode)
   if finddlgopen then
     finddlgopen= false
     toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.HIDE)
-  else
-    toolbar.dlg_select_it= ""
-    toolbar.dlg_select_ev= dlg_enter
-    toolbar.dlg_filter_col2= false
-    local width= 600
-    local height= 59
-    local dconfig= {editmode= true, filter_empty_text="Text to find"}
-    local buttons= {
-      {"dlg-find-next", "go-down", "Next [Enter] /", 0, 0, -1, dlg_find_next, toolbar.DLGBUT.ICON, "F3"},
-      {"dlg-find-prev", "go-up", "Previous [Shift+Enter] /", 0, 0, -1, dlg_find_prev, toolbar.DLGBUT.ICON, "Control+F3"},
-      {"dlg-find-increm", "mod-increm", "Incremental", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+I"},
-      {"dlg-find-regexp", "mod-regexp", "Regular expression", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+R"},
-      {"dlg-find-word", "mod-word", "Whole word", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+W"},
-      {"dlg-find-case", "mod-case", "Match case", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+A"}
-    }
-    dconfig.buttons= buttons
-    toolbar.create_dialog("Find", width, height, {}, "edit-find", dconfig)
-    local anchor= toolbar.ANCHOR.POP_L_IT_L | toolbar.ANCHOR.POP_T_IT_B
-    toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW|toolbar.PSHOW.KEEPOPEN,"find_dialog",anchor,-width,-height)
-    finddlgopen= true
-    set_dlg_mod("dlg-find-increm")
-    set_dlg_mod("dlg-find-regexp")
-    set_dlg_mod("dlg-find-word")
-    set_dlg_mod("dlg-find-case")
+    if fm == finddlgmode then   toolbar.selected("find_dialog", false, false) return end
+    --reopen in the new mode
   end
-  toolbar.selected("find_dialog", false, finddlgopen)
+  finddlgmode= fm
+  toolbar.dlg_select_it= ""
+  toolbar.dlg_select_ev= dlg_enter
+  toolbar.dlg_filter_col2= false
+  local width= 600
+  local height= 59
+  local dconfig= {editmode= true, filter_empty_text="Text to find"}
+  local buttons= {
+    --button before the edit
+    {"dlg-find-mode", "edit-find-replace", "Find/replace mode", 1, 0, -1, change_find_mode, toolbar.DLGBUT.ICON, "Control+M"},
+    --buttons after the edit (from right to left)
+    {"dlg-find-next", "go-down", "Next [Enter] /", 0, 0, -1, dlg_find_next, toolbar.DLGBUT.ICON, "F3"},
+    {"dlg-find-prev", "go-up", "Previous [Shift+Enter] /", 0, 0, -1, dlg_find_prev, toolbar.DLGBUT.ICON, "Control+F3"},
+    {"dlg-find-increm", "mod-increm", "Incremental", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+I"},
+    {"dlg-find-regexp", "mod-regexp", "Regular expression", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+R"},
+    {"dlg-find-word", "mod-word", "Whole word", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+W"},
+    {"dlg-find-case", "mod-case", "Match case", 0, 0, -1, dlg_mod, toolbar.DLGBUT.ICON, "Control+A"}
+  }
+  dconfig.buttons= buttons
+  local title= (finddlgmode == 1) and "Find" or (finddlgmode == 2) and "Find and replace" or "Find in files"
+  if finddlgmode > 1 then height= 89 end
+  toolbar.create_dialog(title, width, height, {}, "edit-find-replace", dconfig)
+  replacegrp= nil
+  if finddlgmode > 1 then
+    replacegrp= toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 0, 0, toolbar.cfg.barsize+3, false)
+    toolbar.sel_dialog_popup(replacegrp,false)
+    toolbar.setdefaulttextfont()
+    toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
+    toolbar.gotopos(2, 3)
+    if finddlgmode == 2 then  --replace
+      toolbar.cmd("dlg-replace", paste_filter, "Replace", "format-text-direction-ltr")
+      toolbar.gotopos(toolbar.cfg.butsize+3, 3)
+      toolbar.addlabel("", "Replace", filter_w, true, false, "replace-txt")  --left align
+      toolbar.cmds["replace-txt"]= copy_filter
+      toolbar.themed_icon("replace-txt", "ttb-edit-normal", toolbar.TTBI_TB.IT_BACKGROUND)
+      toolbar.themed_icon("replace-txt", "ttb-edit-disabled", toolbar.TTBI_TB.IT_DISABLED)
+      toolbar.enable("replace-txt", true)
+    else  --find in files
+      toolbar.cmd("dlg-finf-in-files", paste_filter, "Filter", "folder-move")
+    end
+  end
+  local anchor= toolbar.ANCHOR.POP_L_IT_L | toolbar.ANCHOR.POP_T_IT_B
+  toolbar.popup(toolbar.DIALOG_POPUP,toolbar.PSHOW.DRAW|toolbar.PSHOW.KEEPOPEN,"find_dialog",anchor,-width,-height)
+  finddlgopen= true
+  set_dlg_mod("dlg-find-increm")
+  set_dlg_mod("dlg-find-regexp")
+  set_dlg_mod("dlg-find-word")
+  set_dlg_mod("dlg-find-case")
+  toolbar.selected("find_dialog", false, true)
 end
 
 --ACTION: find_dialog
