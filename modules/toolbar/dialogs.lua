@@ -84,9 +84,11 @@ local function focus_dialog_ev(npop, focused)
   if npop == toolbar.DIALOG_POPUP then
     toolbar.sel_dialog_popup(filtergrp,false)
     if focused == 1 then
+      toolbar.themed_icon("filter-txt", "ttb-edit-focus-disabled", toolbar.TTBI_TB.IT_DISABLED)
       toolbar.themed_icon(toolbar.groupicon, "ttb-button-normal", toolbar.TTBI_TB.BACKGROUND)
       update_filter()
     else
+      toolbar.themed_icon("filter-txt", "ttb-edit-disabled", toolbar.TTBI_TB.IT_DISABLED)
       toolbar.themed_icon(toolbar.groupicon, "ttb-button-disabled", toolbar.TTBI_TB.BACKGROUND)
       toolbar.enable("filter-txt", false)
     end
@@ -575,8 +577,8 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-6-toolbar.list_cmdright, true, false, "filter-txt")  --left align
   toolbar.cmds["filter-txt"]= copy_filter
   if dlg_filter_is_edit then
-    toolbar.themed_icon("filter-txt", "ttb-edit-normal", toolbar.TTBI_TB.IT_BACKGROUND)
-    toolbar.themed_icon("filter-txt", "ttb-edit-disabled", toolbar.TTBI_TB.IT_DISABLED)
+    toolbar.themed_icon("filter-txt", "ttb-edit-focus", toolbar.TTBI_TB.IT_BACKGROUND)
+    toolbar.themed_icon("filter-txt", "ttb-edit-focus-disabled", toolbar.TTBI_TB.IT_DISABLED)
   end
   update_filter()
 
