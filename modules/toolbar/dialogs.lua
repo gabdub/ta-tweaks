@@ -574,6 +574,10 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   toolbar.gotopos(2+toolbar.cfg.butsize, 3)
   toolbar.addlabel("...", "Copy", dialog_w-toolbar.cfg.butsize-6-toolbar.list_cmdright, true, false, "filter-txt")  --left align
   toolbar.cmds["filter-txt"]= copy_filter
+  if dlg_filter_is_edit then
+    toolbar.themed_icon("filter-txt", "ttb-edit-normal", toolbar.TTBI_TB.IT_BACKGROUND)
+    toolbar.themed_icon("filter-txt", "ttb-edit-disabled", toolbar.TTBI_TB.IT_DISABLED)
+  end
   update_filter()
 
   if dialog_buttons and #dialog_buttons > 0 then
