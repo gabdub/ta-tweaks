@@ -56,9 +56,9 @@ default_accelerators= {
 --EDIT
   "undo",                   "ctrl+z",       {"ctrl+z","meta+z"}, --^Z suspends in some terminals
   "redo",                   {"ctrl+y","ctrl+Z"}, {"ctrl+y","meta+Z"},
-  "cut",                    "ctrl+x",       "ctrl+x",
-  "copy",                   "ctrl+c",       "ctrl+c",
-  "paste",                  "ctrl+v",       "ctrl+v",
+  "cut",                    {"ctrl+x","shift+del"}, "ctrl+x",
+  "copy",                   {"ctrl+c","control+ins"}, "ctrl+c",
+  "paste",                  {"ctrl+v","shift+ins"}, "ctrl+v",
   "paste_reindent",         "ctrl+V",       "ctrl+V",
   "duplicate_line",         "ctrl+d",       "",
   "delete_char",            "del",          {"del", "ctrl+d"},
