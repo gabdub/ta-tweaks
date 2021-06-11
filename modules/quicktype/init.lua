@@ -198,11 +198,6 @@ local function sel_rec_col_down()
   buffer.ensure_visible_enforce_policy(erow)
 end
 
-local function get_lexer()
-  local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
-  return buffer:private_lexer_call(GETLEXERLANGUAGE):match('^[^/]+')
-end
-
 local function find_line(fmatch,dirf,roff)
   local r
   local curr= buffer:line_from_position(buffer.current_pos)
@@ -263,7 +258,7 @@ local function find_begin(dirf)
   end
   local sbeg='^{'
   local roff=-1
-  local lexer= get_lexer()
+  local lexer= buffer:get_lexer()
   if lexer == 'lua' then
     sbeg='^.*function%s*[%w_.]*%('
     roff=0
@@ -286,7 +281,7 @@ local function find_end(dirf)
     return
   end
   local send='^}'
-  local lexer= get_lexer()
+  local lexer= buffer:get_lexer()
   if lexer == 'lua' then send='^end' end
   if not find_line(send,dirf,0) then
     ui.statusbar_text= 'main block end: not found'

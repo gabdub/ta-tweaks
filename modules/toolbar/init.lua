@@ -149,10 +149,8 @@ if toolbar then
 
   function toolbar.select_lexer()
     local lexers = {}
-    local LEXERNAMES = _SCINTILLA.functions.property_names[1]
-    for name in buffer:private_lexer_call(LEXERNAMES):gmatch('[^\n]+') do
-      lexers[#lexers + 1] = name
-    end
+    local LEXERS = _SCINTILLA.properties.lexer_language[1]
+    for name in buffer:private_lexer_call(LEXERS):gmatch('[^\n]+') do lexers[#lexers + 1] = name end
     toolbar.small_chooser(_L['Select Lexer'], buffer:get_lexer(), lexer_selected, lexers, "T2_TAB#4",
       toolbar.ANCHOR.HCENTER, 250, 300, "LEXER")
   end

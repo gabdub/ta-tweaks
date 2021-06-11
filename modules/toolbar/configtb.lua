@@ -645,11 +645,6 @@ end
 -- Save configuration changes on quit
 events_connect(events.QUIT, function() toolbar.save_config() end, 1)
 
-local function get_lexer()
-  local GETLEXERLANGUAGE= _SCINTILLA.properties.lexer_language[1]
-  return buffer:private_lexer_call(GETLEXERLANGUAGE):match('^[^/]+')
-end
-
 local function get_lexer_cfg(lexer)
   if toolbar.cfgpnl_lexer_indent[lexer] ~= nil then return toolbar.cfgpnl_lexer_indent[lexer] end
   --no lexer val set, try "text"
@@ -671,7 +666,7 @@ end
 
 def_lexer_shown=""
 function toolbar.update_lexerdefaults(force)
-  local lx= get_lexer()
+  local lx= buffer:get_lexer()
   if lx and (force or (def_lexer_shown ~= lx)) then
     def_lexer_shown= lx
     toolbar.settext("bfindent:1_lbl","Use "..lx.." default ("..get_lexer_ind_width(lx)..")" )
@@ -681,7 +676,7 @@ end
 
 local function set_lexer_cfg()
   --Use current settings as Lexer default
-  local lexer= get_lexer()
+  local lexer= buffer:get_lexer()
   local indent=string.format('%s%d', buffer.use_tabs and 't' or 's', buffer.tab_width)
   toolbar.cfgpnl_lexer_indent[lexer]=indent
   toolbar.config_change=true
@@ -736,12 +731,12 @@ local function set_buffer_indent_as_cfg(updateui)
   elseif iw == 5 then   buffer.tab_width= 8
   elseif iw == 6 then   buffer.tab_width= 12
   elseif iw == 7 then   buffer.tab_width= 16
-  else                  buffer.tab_width= get_lexer_ind_width(get_lexer())   end
+  else                  buffer.tab_width= get_lexer_ind_width(buffer:get_lexer())   end
   --indentation char
   local ut= buffer._cfg_bfusetab
   if ut == 2 then       buffer.use_tabs= false
   elseif ut == 3 then   buffer.use_tabs= true
-  else                  buffer.use_tabs= get_lexer_ind_use_tabs(get_lexer()) end
+  else                  buffer.use_tabs= get_lexer_ind_use_tabs(buffer:get_lexer()) end
   --update UI
   if updateui then events.emit(events.UPDATE_UI,0) end
   --update TAB actions
