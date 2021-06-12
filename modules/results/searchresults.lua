@@ -146,8 +146,8 @@ if toolbar then
     ensurevisible()
   end
 
-  function plugs.doble_click_searchview()  --not used, use search_dclick() instead
-  end
+  --function plugs.doble_click_searchview()  --not used, use search_dclick() instead
+  --end
 
   --------------- COMPARE FILE RESULTS INTERFACE --------------
   local function dump_changes(n, buff, r, fname)

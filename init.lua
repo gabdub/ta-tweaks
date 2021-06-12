@@ -12,6 +12,37 @@ if toolbar then
 end
 
 plugs= {} --add here functions from interfaces (e.g. project/results lists)
+---- LISTS INTERFACE ------------------------
+function plugs.init_projectview() end
+function plugs.check_lost_focus(buff) end
+function plugs.goto_projectview() return false end
+function plugs.projmode_select() end
+function plugs.projmode_edit() end
+function plugs.update_after_switch() end
+function plugs.change_proj_ed_mode() end
+function plugs.track_this_file() end
+function plugs.proj_refresh_hilight() end
+function plugs.open_project() end
+function plugs.close_project(keepviews) end
+function plugs.get_prj_currow() return nil end
+function plugs.open_sel_file() end
+function plugs.buffer_deleted() end
+function plugs.update_proj_buffer(reload) end
+---- RESULTS INTERFACE ----------------------
+function plugs.init_searchview() end
+function plugs.goto_searchview() return false end
+function plugs.close_results(viewclosed) end
+function plugs.clear_results() end
+---- SEARCH RESULTS INTERFACE ---------------
+function plugs.search_result_start(s_txt, s_filter) end
+function plugs.search_result_info(s_txt, iserror) end
+function plugs.search_result_in_file(shortname, fname, nfiles) end
+function plugs.search_result_found(fname, nlin, txt, s_start, s_end) end
+function plugs.search_result_end() end
+function plugs.doble_click_searchview() end
+---- COMPARE FILE RESULTS INTERFACE ---------
+function plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm) end
+---------------------------------------------
 
 TA_THEME= 'ggg'
 
@@ -89,7 +120,7 @@ if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or abo
     toolbar.addaction("save_saveas")  --save / save-as / save-all
     toolbar.addspace()
     --toolbar.addaction("find_dialog") --not ready
-    
+
     toolbar.addaction("toggle_bookmark")
 
     toolbar.addaction("toggle_macrorec")

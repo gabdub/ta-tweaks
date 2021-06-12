@@ -206,13 +206,12 @@ if toolbar then
   end
 
   --------------- RESULTS INTERFACE --------------
-  function plugs.init_searchview()
-    --check if a search results buffer is open (not used with panels)
-  end
-
-  function plugs.goto_searchview()
-    return false --activate/create search view (not used with panels)
-  end
+  --function plugs.init_searchview()
+  --  --check if a search results buffer is open (not used with panels)
+  --end
+  --function plugs.goto_searchview()
+  --  return false --activate/create search view (not used with panels)
+  --end
 
   function plugs.close_results(viewclosed)
     --viewclosed= true (the right view was closed, don't close, results are in a toolbar not in a buffer)
@@ -225,5 +224,4 @@ if toolbar then
     toolbar.print_clear()
   end
   -------------------------------------------------------
-
 end

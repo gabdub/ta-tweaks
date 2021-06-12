@@ -346,12 +346,11 @@ if toolbar then
     if toolbar.open_saved_prj ~= "" then Proj.open_project(toolbar.open_saved_prj) end
   end
 
-  function plugs.check_lost_focus(buff)
-  end
-
-  function plugs.goto_projectview()
-    return false --activate/create project view (not used with panels)
-  end
+  --function plugs.check_lost_focus(buff)
+  --end
+  --function plugs.goto_projectview()
+  --  return false --activate/create project view (not used with panels)
+  --end
 
   function plugs.projmode_select()
     --activate select mode
@@ -398,11 +397,10 @@ if toolbar then
     Proj.toggle_selectionmode()
   end
 
-  function plugs.track_this_file()
-  end
-
-  function plugs.proj_refresh_hilight()
-  end
+  --function plugs.track_this_file()
+  --end
+  --function plugs.proj_refresh_hilight()
+  --end
 
   function plugs.open_project()
     --open the project file
@@ -422,8 +420,8 @@ if toolbar then
     return sel_file(itselected)  --get the selected project row number
   end
 
-  function plugs.open_sel_file() --not used
-  end
+  --function plugs.open_sel_file() --not used
+  --end
 
   function plugs.buffer_deleted()
     --if the poject buffer was closed, return to selection mode
@@ -441,7 +439,6 @@ if toolbar then
     end
   end
 
-  function plugs.update_proj_buffer(reload)
-  end
-
+  --function plugs.update_proj_buffer(reload)
+  --end
 end

@@ -21,7 +21,7 @@ function toolbar.toggle_showconfig()
   else
     toolbar.config_toolbar_shown= true
     --update current buffer config
-    toolbar.set_buffer_cfg()
+    toolbar.set_buffer_cfg(false)
   end
   --update icon/menu
   actions.updateaction("toggle_viewcfgpanel")
@@ -683,10 +683,10 @@ local function set_lexer_cfg()
   toolbar.update_lexerdefaults(true)
 end
 
-function toolbar.set_buffer_cfg()
+function toolbar.set_buffer_cfg(ignorelexer)
   toolbar.set_radio_val("bfindent", (buffer._cfg_bfindent ~= nil and buffer._cfg_bfindent or 1))
   toolbar.set_radio_val("bfusetab", (buffer._cfg_bfusetab ~= nil and buffer._cfg_bfusetab or 1))
-  toolbar.update_lexerdefaults()
+  if not ignorelexer then toolbar.update_lexerdefaults() end --workaround: buffer:get_lexer() fails at start
   local em=1
   if buffer._cfg_bfeol ~= nil then  em= buffer._cfg_bfeol
   elseif buffer.eol_mode == buffer.EOL_LF then em=2 end
@@ -709,7 +709,7 @@ end
 
 --only update when the config is open
 function update_buffer_cfg()
-  if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg() end
+  if toolbar.config_toolbar_shown then toolbar.set_buffer_cfg(false) end
   --update ALL actions in menus
   actions.update_menuitems()
   --update minimap
@@ -897,7 +897,7 @@ local function add_buffer_cfg_panel()
   add_config_separator()
 
   --show current buffer settings
-  toolbar.set_buffer_cfg()
+  toolbar.set_buffer_cfg(true)
 end
 
 --a new theme was chosen in the combo
