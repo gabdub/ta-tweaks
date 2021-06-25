@@ -7,9 +7,9 @@ local last_open_idx= 1
 
 function Proj.get_cmd_output(cmd, cwd, info)
   if cmd and cmd ~= "" then
-    local p = assert(os.spawn(cmd,cwd))
+    local p = assert(os.spawn(cmd:iconv(_CHARSET,'UTF-8'),cwd))
     p:close()
-    local einfo=(p:read('*a') or ''):iconv('UTF-8', _CHARSET)
+    local einfo=(p:read('*a') or '') --:iconv('UTF-8', _CHARSET)
     if einfo and einfo ~= '' then
       if info and info ~= '' then return info..'\n'..einfo end
       return einfo
