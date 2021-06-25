@@ -14,6 +14,7 @@ function Proj.get_cmd_output(cmd, cwd, info)
       if info and info ~= '' then return info..'\n'..einfo end
       return einfo
     end
+    --TO DO: convert OCTAL CODES returned by some git commands: M  "copiar \303\261\303\241s.bat" (\303\261 \303\241 => 0xC3 0xB1  0xC3 0x41 => ñá)
   end
   return info
 end
@@ -69,6 +70,8 @@ function Proj.get_filevcinfo(fname)
     cmd= ""
     pre2= ""
     cmd2= ""
+    if url and url ~= "" then url=url:iconv('UTF-8',_CHARSET) end
+    fname= fname:iconv('UTF-8',_CHARSET)
     if verctrl == Proj.VCS_SVN and url ~= "" then
       info= fname
       cmd= "svn info "..url
