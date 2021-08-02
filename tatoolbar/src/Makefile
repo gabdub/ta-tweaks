@@ -100,10 +100,10 @@ sci_flags = -pedantic $(plat_flag) -DSCI_LEXER -DNDEBUG -Iscintilla/include -Isc
   -Ilexilla/include -Ilexilla/lexlib -Wall
 
 sci_objs = AutoComplete.o CallTip.o CaseConvert.o CaseFolder.o CellBuffer.o CharacterCategoryMap.o \
-  CharacterType.o CharClassify.o ContractionState.o Decoration.o Document.o EditModel.o Editor.o \
-  EditView.o Geometry.o Indicator.o KeyMap.o LineMarker.o MarginView.o PerLine.o PositionCache.o \
-  RESearch.o RunStyles.o ScintillaBase.o Selection.o Style.o UniConversion.o UniqueString.o \
-  ViewStyle.o XPM.o
+  CharacterType.o CharClassify.o ContractionState.o DBCS.o Decoration.o Document.o EditModel.o \
+  Editor.o EditView.o Geometry.o Indicator.o KeyMap.o LineMarker.o MarginView.o PerLine.o \
+  PositionCache.o RESearch.o RunStyles.o ScintillaBase.o Selection.o Style.o UniConversion.o \
+  UniqueString.o ViewStyle.o XPM.o
 sci_lex_objs = Accessor.o CharacterCategory.o CharacterSet.o DefaultLexer.o LexerBase.o \
   LexerModule.o LexerNoExceptions.o LexerSimple.o PropSetSimple.o StyleContext.o WordList.o
 sci_lexer_objs = LexLPeg.o LexLPeg-curses.o
@@ -353,10 +353,10 @@ else
   gtdialog_url = $(root_url)/gtdialog/archive/default.zip
 endif
 
-scintilla_tgz = scintilla503.tgz
+scintilla_tgz = scintilla511.tgz
 lexilla_tgz = lexilla500.tgz
-scinterm_zip = f8980f045c16b79b6d7b83c06db2c6195e89e3e6.zip
-scintillua_zip = fff8d49b241b26a291031f34f8d572c276e2b918.zip
+scinterm_zip = scinterm_3.1.zip
+scintillua_zip = scintillua_5.0.zip
 lua_tgz = lua-5.4.2.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_8_0.zip
@@ -367,7 +367,7 @@ win32gtk_zip = win32gtk-2.24.32.zip
 win32curses_zip = win32curses39.zip
 pdcurses_zip = PDCurses-3.9.zip
 gtkosx_tgz = gtkosx-2.24.31.tar.gz
-cloc = cloc-1.60.pl
+cloc_zip = v1.90.zip
 
 LexLPeg = LexLPeg.cxx LexLPeg.h
 
@@ -432,7 +432,8 @@ win32curses: pdcurses.patch | $(win32curses_zip) $(pdcurses_zip)
 	cp $@/src/wincon/pdcurses.a $@/lib/
 $(gtkosx_tgz): ; $(WGET) $(root_url)/textadept-build/raw/default/$@
 gtkosx: | $(gtkosx_tgz) ; mkdir $@ && tar xzf $| -C $@ && mv $@/*/* $@
-$(cloc): ; $(WGET) http://prdownloads.sourceforge.net/cloc/$@
+$(cloc_zip): ; $(WGET) https://github.com/AlDanial/cloc/archive/refs/tags/$@
+cloc: | $(cloc_zip) ; unzip -j $| "*/$@" -x "*/Unix/$@"
 
 clean-deps:
 	rm -rf scintilla ../lexers lexilla $(LexLPeg) lua gtdialog cdk termkey win32gtk win32curses \
@@ -442,5 +443,5 @@ clean-deps:
 
 sources = ../core ../modules/ansi_c ../modules/lua ../modules/textadept textadept.c Makefile \
   ../init.lua
-count: $(cloc) ; perl $< $(sources) --not-match-f=tadoc.lua
+count: cloc ; perl $< $(sources) --not-match-f=tadoc.lua --exclude-lang=SVG
 plots: ; ../scripts/gen_plots.sh
