@@ -52,7 +52,7 @@ local function goto_current_pos()
       plugs.goto_searchview()
     else
       --if the current view is a project view, goto left/only files view. if not, keep the current view
-      Proj.go_file(bname)
+      Proj.go_file(bname:iconv('UTF-8',_CHARSET))
     end
     buffer:goto_pos(jump_list[jump_list.pos][2])
   end
