@@ -116,7 +116,7 @@ if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or abo
       toolbar.addspace()
     end
 
-    toolbar.addaction("new")
+    toolbar.addaction("new_open")     --new / open / recent
     toolbar.addaction("save_saveas")  --save / save-as / save-all
     toolbar.addspace()
     --toolbar.addaction("find_dialog") --not ready
