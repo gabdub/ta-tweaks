@@ -47,6 +47,10 @@ function plugs.compare_file_result(n1, buffer1, r1, n2, buffer2, r2, n3, rm) end
 TA_THEME= 'ggg'
 
 require('util')
+
+local snippath= _USERHOME..'/snippets'
+if Util.dir_exists(snippath) then table.insert(textadept.snippets.paths, snippath) end
+
 --require('log')
 if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or above
   for _, vw in ipairs(_VIEWS) do vw:set_theme(TA_THEME) end
