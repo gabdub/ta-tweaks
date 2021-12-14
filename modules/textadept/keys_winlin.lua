@@ -127,8 +127,10 @@ default_accelerators= {
   "open_currentdir",        "ctrl+alt+O",   "meta+O",
   "quick_open_projectdir",  "ctrl+alt+P",   "ctrl+meta+p",
   "snippet_select",         "ctrl+K",       "meta+K",
-  "tab_key",                "\t",           "\t",        --textadept.snippets.insert or TAB
-  "shift_tab_key",          "shift+\t",     "shift+\t",  --textadept.snippets.previous or shift+TAB
+  "tab_key",                "\t",           "\t",
+  "shift_tab_key",          "shift+\t",     "shift+\t",
+  "expand_snippet",         "\t",           "\t",
+  "prev_snipplaceholder",   "shift+\t",     "shift+\t",
   "cancel_snippet",         "esc",          "esc",
   "complete_trigger",       "ctrl+k",       "meta+k",
   "complete_symbol",        "ctrl+ ",       "ctrl+ ",
