@@ -141,9 +141,13 @@ if toolbar then
     end
   end
 
+  local function update_statusbar()
+    events.emit(events.UPDATE_UI, buffer.UPDATE_CONTENT) -- for updating statusbar
+  end
+
   local function lexer_selected(lex_sel)
     buffer:set_lexer(lex_sel)
-    events.emit(events.UPDATE_UI, 1) -- for updating statusbar
+    update_statusbar()
     toolbar.update_lexerdefaults() --update config panel
   end
 
@@ -159,7 +163,7 @@ if toolbar then
     local mode= string.match(eol_sel,'%+') and buffer.EOL_CRLF or buffer.EOL_LF
     buffer.eol_mode = mode
     buffer:convert_eols(mode)
-    events.emit(events.UPDATE_UI,1) -- for updating statusbar
+    update_statusbar()
     toolbar.setcfg_from_eolmode() --update config panel
   end
 
@@ -172,7 +176,7 @@ if toolbar then
 
   local function enc_selected(enc_sel)
     buffer:set_encoding(enc_sel)
-    events.emit(events.UPDATE_UI, 1) -- for updating statusbar
+    update_statusbar()
     if actions then
       actions.updateaction("set_enc_utf8")
       actions.updateaction("set_enc_ascii")

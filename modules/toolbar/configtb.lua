@@ -738,7 +738,7 @@ local function set_buffer_indent_as_cfg(updateui)
   elseif ut == 3 then   buffer.use_tabs= true
   else                  buffer.use_tabs= get_lexer_ind_use_tabs(buffer:get_lexer()) end
   --update UI
-  if updateui then events.emit(events.UPDATE_UI,0) end
+  if updateui then events.emit(events.UPDATE_UI, buffer.UPDATE_CONTENT) end -- for updating statusbar
   --update TAB actions
   actions.updateaction("set_tab_2")
   actions.updateaction("set_tab_3")
@@ -783,8 +783,7 @@ local function buf_eolmode_change()
     --EOL mode changed, update buffer
     buffer.eol_mode= neweol
     buffer:convert_eols(neweol)
-    --update UI
-    events.emit(events.UPDATE_UI,0)
+    events.emit(events.UPDATE_UI, buffer.UPDATE_CONTENT) -- for updating statusbar
   end
   --update EOL actions
   actions.updateaction("set_eol_crlf")
