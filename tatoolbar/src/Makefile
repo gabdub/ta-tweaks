@@ -1,4 +1,4 @@
-# Copyright 2007-2021 Mitchell. See LICENSE.
+# Copyright 2007-2022 Mitchell. See LICENSE.
 
 CC = gcc
 CFLAGS = -Os
@@ -330,7 +330,7 @@ osx-app: ../textadept ../textadept-curses ../scripts/osx/textadept_osx
 	$(call archive,$(osxapp_res))
 	cp -rL ../docs ../lexers $(osxapp_res)
 	mv $(osxapp_res)/core/images/textadept.icns $(osxapp_res)/
-	cp -r gtkosx/etc gtkosx/share $(osxapp_res)/ && mkdir $(osxapp_res)/lib/
+	cp -r gtkosx/etc gtkosx/share $(osxapp_res)/ && mkdir -p $(osxapp_res)/lib/
 	cp -r $(addprefix gtkosx/lib/, $(osxapp_libs)) $(osxapp_res)/lib/
 	rm -r $(osxapp_res)/lib/gtk-2.0/include $(osxapp_res)/lib/gtk-2.0/modules
 	rm $(osxapp_res)/lib/gtk-2.0/2.10.0/printbackends/*
@@ -353,14 +353,14 @@ else
   gtdialog_url = $(root_url)/gtdialog/archive/default.zip
 endif
 
-scintilla_tgz = scintilla511.tgz
-lexilla_tgz = lexilla500.tgz
-scinterm_zip = scinterm_3.1.zip
-scintillua_zip = scintillua_5.0.zip
+scintilla_tgz = scintilla514.tgz
+lexilla_tgz = lexilla510.tgz
+scinterm_zip = 475d8d43f3418590c28bd2fb07ee9229d1fa2d07.zip
+scintillua_zip = 4cb1464ef738a098f008d6530b776fe780b19c34.zip
 lua_tgz = lua-5.4.2.tar.gz
 lpeg_tgz = lpeg-1.0.2.tar.gz
 lfs_zip = v1_8_0.zip
-gtdialog_zip = 64587546482a1a6324706d75c80b77d2f87118a4.zip
+gtdialog_zip = gtdialog_1.5.zip
 cdk_tgz = cdk-5.0-20200923.tgz
 termkey_tgz = libtermkey-0.20.tar.gz
 win32gtk_zip = win32gtk-2.24.32.zip

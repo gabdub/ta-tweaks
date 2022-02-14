@@ -1,7 +1,7 @@
-// Copyright 2007-2021 Mitchell. See LICENSE.
+// Copyright 2007-2022 Mitchell. See LICENSE.
 // USE_TA_TOOLBAR changes: Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 #define USE_TA_TOOLBAR
-#define TA_VERSION 112  //TA code updated for textadept 11.2
+#define TA_VERSION 113  //TA code updated for textadept 11.3
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -445,6 +445,7 @@ static int focus_find(lua_State *L) {
   setCDKEntryPostProcess(find_entry, find_keypress, NULL);
   char *clipboard = scintilla_get_clipboard(focused_view, NULL);
   GPasteBuffer = copyChar(clipboard); // set the CDK paste buffer
+  curs_set(1); // ensure visible, even if cursor is out of view in focused_view
   refreshCDKScreen(findbox), activateCDKEntry(focused_entry = find_entry, NULL);
   while (focused_entry->exitType == vNORMAL || focused_entry->exitType == vNEVER_ACTIVATED) {
     copyfree(&find_text, getCDKEntryValue(find_entry));
@@ -908,6 +909,12 @@ static int ui_newindex(lua_State *L) {
     set_statusbar_text(lua_tostring(L, 3), *key == 's' ? 0 : 1);
   else if (strcmp(key, "menubar") == 0) {
 #if GTK
+#if __APPLE__
+    // TODO: gtkosx_application_set_menu_bar does not like being called more than once in an app.
+    // Random segfaults will happen after a second reset, even if menubar is g_object_ref/unrefed
+    // properly.
+    if (lua_getglobal(L, "arg") == LUA_TNIL) return 0;
+#endif
     luaL_argcheck(L, lua_istable(L, 3), 3, "table of menus expected");
     for (size_t i = 1; i <= lua_rawlen(L, 3); lua_pop(L, 1), i++)
       luaL_argcheck(L, lua_rawgeti(L, 3, i) == LUA_TLIGHTUSERDATA, 3,
