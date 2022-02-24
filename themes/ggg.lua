@@ -80,6 +80,7 @@ end
 view.indic_fore[ui.find.INDIC_FIND] = property_int['color.find']
 view.indic_alpha[ui.find.INDIC_FIND] = 128
 view.indic_fore[textadept.editing.INDIC_BRACEMATCH] = property_int['color.brace_ok']
+view.indic_outline_alpha[textadept.editing.INDIC_BRACEMATCH] = 255
 view.indic_fore[textadept.editing.INDIC_HIGHLIGHT] = property_int['color.hilight']
 view.indic_alpha[textadept.editing.INDIC_HIGHLIGHT] = 128
 view.indic_fore[textadept.snippets.INDIC_PLACEHOLDER] = property_int['color.placeholder']
