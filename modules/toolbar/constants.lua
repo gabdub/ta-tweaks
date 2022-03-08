@@ -229,6 +229,7 @@ toolbar.GETVER = {    --toolbar.getversion(x)
   GTK           = 3,  --GTK version:       "2.24.32"
   N_FONTS       = 4,  --number of installed fonts: "175"
   POPUP_POS     = 5,  --get pop up last position "x,y"
+  NBITS         = 6,  --get "32/64 bits" mode
   FONT_BASE     = 100 --name of the first font (100 .. 100+N_FONTS-1)
 }
 

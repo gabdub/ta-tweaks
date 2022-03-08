@@ -993,9 +993,12 @@ local function add_toolbar_cfg_panel()
   toolbar.cmdtext("@ github", open_tatoolbargit, "Visit "..tatoolbargit, "openttbgit")
   pnly_add(30)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
+  local nb= toolbar.getversion(toolbar.GETVER.NBITS)
+  if nb == "" then nb= "32 bits" end
+  toolbar.addlabel(nb .. " - GTK "..toolbar.getversion(toolbar.GETVER.GTK), "", toolbar.cfgpnl_width,true,false)
+  pnly_add(30)
   toolbar.addlabel("Compiled: "..toolbar.getversion(toolbar.GETVER.COMPILED) ..
-                   " for TA"..toolbar.getversion(toolbar.GETVER.TATARGET) ..
-                   " - GTK "..toolbar.getversion(toolbar.GETVER.GTK), "", toolbar.cfgpnl_width,true,false)
+                   " for TA"..toolbar.getversion(toolbar.GETVER.TATARGET), "", toolbar.cfgpnl_width,true,false)
   pnly_newrow()
   add_config_label("About Textadept", true)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
