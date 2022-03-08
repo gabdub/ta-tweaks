@@ -445,6 +445,7 @@ static int ltoolbar_getpickcolor(lua_State *L)
 /** opt:  0:ta-toolbar version: "1.0.13 (Nov 13 2018)", 1: compilation date :"Nov 13 2018", 2:target TA version:"10.2", 3:GTK version: "2.24.32" */
 /** opt:  4:number of font families */
 /** opt:  5:get pop up last position "x,y" */
+/** opt:  6:get "32/64 bits" mode */
 /** opt:  100: "" (default font) */
 /** opt:  101..100+tonumber(toolbar.getversion(4)): font names */
 static int ltoolbar_getversion(lua_State *L)
@@ -475,6 +476,14 @@ static int ltoolbar_getversion(lua_State *L)
 
     case 5:   //5: get pop up last position
       sprintf( str, "%d,%d", ttb.drag_win_x, ttb.drag_win_y );
+      break;
+
+    case 6:   //6: get "32/64 bits" mode
+      #ifdef __x86_64__
+      strcpy( str, "64 bits" );
+      #else
+      strcpy( str, "32 bits" );
+      #endif
       break;
 
     default:  //100:... get fonts name
@@ -1230,9 +1239,51 @@ static GtkWidget * get_draw_widget( struct toolbar_data * T )
   return (GtkWidget *) T->draw;
 }
 
-static GtkWidget * get_draw_tb0_widget( void )
+#if (GTK_MAJOR_VERSION <= 2)
+  //GTK 2
+  #define K_ESCAPE GDK_Escape
+#else
+  //GTK 3
+  #define K_ESCAPE GDK_KEY_Escape
+  static GdkWindow *widget_win;
+  static cairo_region_t * cairoRegion;
+  static GdkDrawingContext * drawingContext;
+#endif
+
+static GdkWindow * get_widget_win( GtkWidget * widget )
 {
-  return (GtkWidget *) ttb.tbdata[0].draw;
+#if (GTK_MAJOR_VERSION <= 2)
+  return widget->window;    //GTK 2
+#else
+  return gtk_widget_get_window( widget );  //GTK 3
+#endif
+}
+
+static cairo_t * get_cairo_for_widget( GtkWidget * widget )
+{
+#if (GTK_MAJOR_VERSION <= 2)
+  return gdk_cairo_create( widget->window );    //GTK 2
+#else
+  widget_win= gtk_widget_get_window( widget );  //GTK 3
+  cairoRegion= cairo_region_create();
+  drawingContext= gdk_window_begin_draw_frame( widget_win, cairoRegion );
+  return gdk_drawing_context_get_cairo_context( drawingContext );
+#endif
+}
+
+static void free_cairo( cairo_t * cr )
+{
+#if (GTK_MAJOR_VERSION <= 2)
+  cairo_destroy( cr );  //GTK 2
+#else
+  gdk_window_end_draw_frame( widget_win, drawingContext );  //GTK 3
+  cairo_region_destroy( cairoRegion );
+#endif
+}
+
+static cairo_t * get_cairo_for_tb0( void )
+{ //use toolbar #0 to measure text (pop-ups may not have a window yet)
+  return get_cairo_for_widget( (GtkWidget *) ttb.tbdata[0].draw );
 }
 
 int set_text_bt_width(struct toolbar_item * p )
@@ -1247,7 +1298,7 @@ int set_text_bt_width(struct toolbar_item * p )
       htb= TTBI_TB_DDBUT_HILIGHT;
     }
     //use toolbar #0 to measure text (pop-ups may not have a window yet)
-    cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window);
+    cairo_t *cr = get_cairo_for_tb0();
     if( (p->flags & TTBF_TAB) == 0 ){
       ctx_set_font( cr, G->txtfontsz, 0, G->txtfontnum );
     }else{
@@ -1264,7 +1315,7 @@ int set_text_bt_width(struct toolbar_item * p )
         G->txttexty= 0;
       }
     }
-    cairo_destroy(cr);
+    free_cairo(cr);
     diff= p->barx2;
 
     tn= get_group_img(G,htb);
@@ -1305,11 +1356,11 @@ int get_text_width( const char * text, int fontsz, int font_num )
 // so, fixed width is used for this fields
   cairo_text_extents_t ext;
   //use toolbar #0 to measure text (pop-ups may not have a window yet)
-  cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window); //get_draw_widget(p->group->toolbar)->window);
+  cairo_t *cr = get_cairo_for_tb0();
   ctx_set_font( cr, fontsz, 0, font_num );
   cairo_text_extents( cr, text, &ext );
   w= (int) ext.width +1; //+1 to see the antialiasing complete
-  cairo_destroy(cr);
+  free_cairo(cr);
   return w;
 }
 
@@ -1318,11 +1369,11 @@ int get_text_height( const char * text, int fontsz, int font_num )
   int h;
   cairo_text_extents_t ext;
   //use toolbar #0 to measure text (pop-ups may not have a window yet)
-  cairo_t *cr = gdk_cairo_create(get_draw_tb0_widget()->window); //get_draw_widget(p->group->toolbar)->window);
+  cairo_t *cr = get_cairo_for_tb0();
   ctx_set_font( cr, fontsz, 0, font_num );
   cairo_text_extents( cr, text, &ext );
   h= (int) ext.height;
-  cairo_destroy(cr);
+  free_cairo(cr);
   return h;
 }
 
@@ -1350,29 +1401,45 @@ static void ttb_size_ev(GtkWidget *widget, GdkRectangle *prec, void*__)
   ttb_set_toolbarsize( toolbar_from_widget(widget), prec->width, prec->height );
 }
 
-static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
+#if (GTK_MAJOR_VERSION > 2)
+// **** GTK3 use "draw" event ****
+static gboolean draw_callback( GtkWidget *widget, cairo_t *cr, gpointer data )
 {
   int x0, y0, wt, ht, y2;
   struct toolbar_group *g;
   struct area drawarea;
+
+  //GTK3 draw event EXAMPLE
+  //guint width, height;
+  //GdkRGBA color;
+  //GtkStyleContext *context;
+  //context = gtk_widget_get_style_context (widget);
+  //width = gtk_widget_get_allocated_width (widget);
+  //height = gtk_widget_get_allocated_height (widget);
+  //gtk_render_background(context, cr, 0, 0, width, height);
+  //cairo_arc (cr, width/2.0, height/2.0, MIN (width, height) / 2.0, 0, 2 * G_PI);
+  //gtk_style_context_get_color (context, gtk_style_context_get_state (context), &color);
+  //gdk_cairo_set_source_rgba (cr, &color);
+  //gdk_cairo_set_source_rgba (cr, &color);
+  //cairo_fill (cr);
 
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T == NULL ){
     return FALSE;
   }
 
-  //get the area to paint
-  drawarea.x0= event->area.x;
-  drawarea.y0= event->area.y;
-  drawarea.x1= drawarea.x0 + event->area.width;
-  drawarea.y1= drawarea.y0 + event->area.height;
-
   //if size is unknown, get it now
   if( (T->barwidth < 0) || (T->barheight < 0) ){
-    ttb_set_toolbarsize( T, widget->allocation.width, widget->allocation.height );
+    int width= gtk_widget_get_allocated_width (widget);
+    int height= gtk_widget_get_allocated_height (widget);
+    ttb_set_toolbarsize( T, width, height );
   }
 
-  cairo_t *cr = gdk_cairo_create(widget->window);
+  //get the area to paint (REPAINT ALL FOR NOW)
+  drawarea.x0= 0;
+  drawarea.y0= 0;
+  drawarea.x1= T->barwidth;
+  drawarea.y1= T->barheight;
 
   //paint toolbar/group backgrounds
   paint_toolbar_back( T, cr, &drawarea );
@@ -1402,9 +1469,68 @@ static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
       }
     }
   }
-  cairo_destroy(cr);
+
+  return FALSE;
+}
+
+#else
+// **** GTK2 use "expose" event ****
+static gboolean ttb_paint_ev(GtkWidget *widget, GdkEventExpose *event, void*__)
+{
+  int x0, y0, wt, ht, y2;
+  struct toolbar_group *g;
+  struct area drawarea;
+
+  struct toolbar_data *T= toolbar_from_widget(widget);
+  if( T == NULL ){
+    return FALSE;
+  }
+
+  //get the area to paint
+  drawarea.x0= event->area.x;
+  drawarea.y0= event->area.y;
+  drawarea.x1= drawarea.x0 + event->area.width;
+  drawarea.y1= drawarea.y0 + event->area.height;
+
+  //if size is unknown, get it now
+  if( (T->barwidth < 0) || (T->barheight < 0) ){
+    ttb_set_toolbarsize( T, widget->allocation.width, widget->allocation.height );  //GTK 2
+  }
+
+  cairo_t *cr = get_cairo_for_widget( widget );
+
+  //paint toolbar/group backgrounds
+  paint_toolbar_back( T, cr, &drawarea );
+
+  //draw all visible groups
+  for( g= T->group; (g != NULL); g= g->next ){
+    if( (g->flags & TTBF_GRP_HIDDEN) == 0 ){
+      x0= g->barx1;
+      y0= g->bary1;
+      y2= g->bary2;
+      if( y2 > T->barheight - T->borderw ){
+        y2= T->barheight - T->borderw;
+      }
+      if( (y2 > y0) && need_redraw( &drawarea, x0, y0, g->barx2, y2) ){
+        wt= g->barx2 - g->barx1 - g->show_vscroll_w; //don't draw over the scrollbar
+        ht= y2 - y0;
+        cairo_save(cr);
+        cairo_rectangle(cr, x0, y0, wt, ht );
+        cairo_clip(cr);
+        //draw visible group's items
+        paint_group_items(g, cr, &drawarea, x0, y0, wt, ht);
+        //draw_box(cr, x0, y0, wt, ht, 0x800000, 0); //debug: show group borders
+        cairo_restore(cr);
+        if( g->show_vscroll_w > 0 ){ //draw the vertical scrollbar
+          paint_vscrollbar(g, cr, &drawarea, x0+wt, y0, g->show_vscroll_w, ht);
+        }
+      }
+    }
+  }
+  free_cairo(cr);
   return TRUE;
 }
+#endif
 
 static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
 {
@@ -1415,7 +1541,6 @@ static gboolean ttb_mouseleave_ev(GtkWidget *widget, GdkEventCrossing *event)
 static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
 {
   int x, y;
-  GdkModifierType state;
 
   struct toolbar_data *T= toolbar_from_widget(widget);
   if( T == NULL ){
@@ -1423,7 +1548,15 @@ static gboolean ttb_mousemotion_ev( GtkWidget *widget, GdkEventMotion *event )
   }
 
   if(event->is_hint){
-    gdk_window_get_pointer(event->window, &x, &y, &state);
+#if (GTK_MAJOR_VERSION <= 2)
+    GdkModifierType state;
+    gdk_window_get_pointer(event->window, &x, &y, &state);    //GTK 2
+#else
+    GdkDisplay * display= gdk_display_get_default();
+    GdkSeat * seat= gdk_display_get_default_seat(display);
+    GdkDevice * pointer= gdk_seat_get_pointer(seat);
+    gdk_window_get_device_position( gtk_widget_get_window( widget ), pointer, &x, &y, NULL ); //GTK 3
+#endif
   }else{
     x = event->x;
     y = event->y;
@@ -1719,7 +1852,7 @@ static int popup_keypress_ev(GtkWidget * widget, GdkEventKey *event, void*_) {
   if( T != NULL ){
     if( emit(lua, "popup_key", LUA_TNUMBER, T->num, LUA_TNUMBER, event->keyval, LUA_TNUMBER, get_keyflags(event->state), -1) == 0 ){
       //ESC default action= close pop-up
-      if( event->keyval == GDK_Escape ){
+      if( event->keyval == K_ESCAPE ){
         emit(lua, "popup_close", LUA_TNUMBER, T->num, -1);
       }
     }
@@ -1778,7 +1911,6 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         gtk_window_set_default_size(GTK_WINDOW(T->win), T->barwidth, T->barheight );
         gtk_window_move(GTK_WINDOW(T->win), x, y );
         gtk_widget_set_events(T->win, GDK_FOCUS_CHANGE_MASK|GDK_BUTTON_PRESS_MASK|GDK_CONFIGURE);
-
         if( keepopen ){
           T->flags |= TTBF_TB_KEEPOPEN;
           g_signal_connect(T->win, "focus-in-event", G_CALLBACK(popup_focus_in_ev), L );
@@ -1790,7 +1922,13 @@ static void ttb_show_popup(lua_State *L, int ntb, int show, int x, int y, int w,
         g_signal_connect(T->win, "configure-event", G_CALLBACK(popup_configure_ev), L );
         g_signal_connect(T->win, "destroy",         G_CALLBACK(popup_destroy), L);
 
-        GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
+#if (GTK_MAJOR_VERSION <= 2)
+        GtkWidget *vbox = gtk_vbox_new(FALSE, 0);   //GTK 2
+#else
+        GtkWidget *vbox = gtk_box_new( GTK_ORIENTATION_VERTICAL, 0);   //GTK 3
+#endif
+
+
         gtk_container_add(GTK_CONTAINER(T->win), vbox);
         create_tatoolbar(L, vbox, ntb);
         gtk_widget_show_all(T->win);
@@ -1882,7 +2020,7 @@ static int ltoolbar_popup(lua_State *L)
       struct toolbar_group * g;
       x= 0; y= 0;
       g= p->group;
-      gdk_window_get_origin( get_draw_widget( g->toolbar)->window, &x, &y );
+      gdk_window_get_origin( get_widget_win( get_draw_widget(g->toolbar)), &x, &y );
       x += g->barx1;
       y += g->bary1 - g->yvscroll;
       if( (g->flags & TTBF_GRP_TABBAR) != 0 ){ //it's a tabbar, add previous tabs width + separators
@@ -2239,15 +2377,25 @@ static void create_tatoolbar( lua_State *L, GtkWidget *box, int ntoolbar )
       }
     }
     gtk_widget_set_events(draw, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
-      GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK );
+        GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK
+#if (GTK_MAJOR_VERSION > 2)
+        |GDK_SCROLL_MASK    //GTK3
+#endif
+    );
+
     g_signal_connect(draw, "size-allocate",        G_CALLBACK(ttb_size_ev), L );
+#if (GTK_MAJOR_VERSION > 2)
+// **** GTK3 use "draw" event ****
+    g_signal_connect(draw, "draw",                 G_CALLBACK (draw_callback), NULL);
+#else
+// **** GTK2 use "expose" event ****
     g_signal_connect(draw, "expose_event",         G_CALLBACK(ttb_paint_ev), L );
+#endif
     g_signal_connect(draw, "leave-notify-event",   G_CALLBACK(ttb_mouseleave_ev), L );
     g_signal_connect(draw, "motion_notify_event",  G_CALLBACK(ttb_mousemotion_ev), L );
     g_signal_connect(draw, "scroll-event",         G_CALLBACK(ttb_scrollwheel_ev), L );
     g_signal_connect(draw, "button-press-event",   G_CALLBACK(ttb_button_ev), L );
     g_signal_connect(draw, "button-release-event", G_CALLBACK(ttb_button_ev), L );
-
     gtk_box_pack_start(GTK_BOX(box), draw, FALSE, FALSE, 0);
   }
 }

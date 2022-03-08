@@ -401,10 +401,13 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
     fdiff_dirty= 0;
   }
 
+  n= 0;
+  no= 0;
+  n1p= 0; //pending line 0 changes
+
   //push integers in the return table
   if( dlist == 1 ){
     //(line from, line to) lines that are only in file #num (inserted in #num = deleted in the other file)
-    n= 0;
     for( p= linelist[ filenum ]; (p != NULL); p= p->next ){
       if( p->otherline == 0 ){
         if( n == 0 ){   //emit "line from"
@@ -434,9 +437,6 @@ void fdiff_getdiff( int filenum, int dlist, t_pushint pfunc )
   }else if( dlist == 3 ){
     //(line num, count) number of blank lines needed to add under line "num" to align differences
     //NOTE: line 0 (before first line) changes ARE NOT EMITED, they are moved/added to line 1
-    n= 0;
-    no= 0;
-    n1p= 0; //pending line 0 changes
     if( filenum == f1 ){
       //check f2 lines (file1 changes are shown "before" file2 changes)
       for( p= linelist[f2]; (p != NULL); p= p->next ){

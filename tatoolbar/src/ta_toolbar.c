@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.1.18 (Apr 30 2021)"
+#define TA_TOOLBAR_VERSION_STR "1.2.1 (Mar 7 2022)"
 
 static void free_img_list( void );
 
@@ -90,7 +90,6 @@ static void reset_group_vars( struct toolbar_group * g )
 
 static struct toolbar_group *add_groupT(struct toolbar_data *T, int flg)
 { //add a new group to a toolbar (flags version)
-  int i;
   struct toolbar_group * g;
 
   if( T == NULL ){
@@ -342,7 +341,6 @@ static struct toolbar_item *add_tabG(struct toolbar_group *G, int ntab)
 
 static void free_item_node( struct toolbar_item * p )
 {
-  int i;
   struct toolbar_group * g= p->group;
   if( ttb.cpick.ppicker == p ){
     ttb.cpick.ppicker= NULL;
@@ -406,7 +404,6 @@ static void free_item_list( struct toolbar_item * list )
 
 static void free_group_node( struct toolbar_group * g )
 {
-  int i;
   free_item_list( g->list );
   if( g == ttb.gclick ){
     ttb.gclick= NULL;
@@ -1774,7 +1771,7 @@ void mouse_leave_toolbar( struct toolbar_data *T )
 
 void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state, int x_root, int y_root )
 {
-  int nx, xhi, ok, w;
+  int ok, w;
   struct toolbar_item * p, *prev;
   struct toolbar_group *G;
 
@@ -2096,7 +2093,6 @@ void ttb_show_groupG( struct toolbar_group *G, int show )
 void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const char *imgpath, int borderw)
 { //reset toolbar content and start a new one
   struct toolbar_data *T;
-  struct toolbar_group *G;
 
   T= toolbar_from_num(num);
   if( T != NULL ){
@@ -2122,7 +2118,7 @@ void ttb_new_toolbar(int num, int barsize, int buttonsize, int imgsize, const ch
     T->imgsize= imgsize;
     T->back_color= BKCOLOR_NOT_SET;
     //auto-create the first group
-    G= add_groupT(T, TTBF_GRP_AUTO);
+    add_groupT(T, TTBF_GRP_AUTO);
     set_toolbar_size( T );
   }
 }
@@ -2402,7 +2398,7 @@ void ttb_new_tabs_groupT(struct toolbar_data *T, int xmargin, int xsep, int wclo
   int fntsz, int fntyoff, int wdrag, int xcontrol, int height, int fontnum)
 {
   struct toolbar_group *G;
-  int i, rgb, flags;
+  int i;
 
   if( T != NULL ){
     //create a new tab-bar group and set as current
@@ -2666,7 +2662,7 @@ void ttb_set_changed_tabG(struct toolbar_group *G, int ntab, int changed)
 
 void ttb_delete_tabG(struct toolbar_group *G, int ntab)
 {
-  struct toolbar_item *k, *kprev, *p;
+  struct toolbar_item *k, *kprev;
   k= item_from_numG(G, ntab);
   if( k != NULL ){
     redraw_begG(G);
@@ -2771,10 +2767,9 @@ int need_redraw(struct area * pdrawarea, int x, int y, int xf, int yf)
 
 void paint_toolbar_back(struct toolbar_data *T, void * gcontext, struct area * pdrawarea)
 {
-  struct toolbar_item *phi;
   struct toolbar_group *g;
   struct toolbar_img * bimg;
-  int x0, y0, wt, ht, x, y, h, base;
+  int x0, y0, wt, ht;
 
   //paint toolbar back color if set
   draw_fill_color(gcontext, T->back_color, 0, 0, T->barwidth, T->barheight, NULL );
@@ -2850,7 +2845,7 @@ static void draw_tabG(struct toolbar_group *G, void * gcontext, struct toolbar_i
 void paint_group_items(struct toolbar_group *g, void * gcontext, struct area * pdrawarea, int x0, int y0, int wt, int ht)
 {
   struct toolbar_item *p, *phi, *t, *ta;
-  int h, grayed, x, y, xa, nhide, x1, wt2, ht2, yy;
+  int h, grayed, x, y, xa, nhide, wt2, ht2, yy;
   struct color3doubles *color;
 
   phi= NULL;
@@ -3101,7 +3096,6 @@ struct toolbar_data * init_tatoolbar( int ntoolbar, void * draw, int clearall )
 
 struct toolbar_group * current_buttongrp( void )
 {
-  struct toolbar_data *T;
   struct toolbar_group * g= current_group();
   if( (g != NULL) && ((g->flags & (TTBF_GRP_AUTO|TTBF_GRP_TABBAR)) != 0) ){
     g= NULL; //don't use a tabbar for buttons / replace auto generated group
