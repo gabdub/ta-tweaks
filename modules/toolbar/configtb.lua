@@ -103,6 +103,7 @@ local function add_config_start(startgroup)
   toolbar.cfgpnl_savelst={}
   toolbar.config_saveon=true  --save config options by default
 
+  toolbar.sel_config_bar()
   toolbar.new(toolbar.cfgpnl_width, 24, 16, toolbar.RIGHT_TOOLBAR, toolbar.themepath)
   toolbar.current_toolbar= 3
   toolbar.current_tb_group= 0

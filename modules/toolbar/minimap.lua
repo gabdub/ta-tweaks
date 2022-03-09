@@ -146,6 +146,7 @@ end)
 
 function toolbar.minimap_setup()
   --set toolbar #4 as a MINIMAP
+  toolbar.sel_minimap()
   toolbar.new(14, 14, 14, toolbar.MINIMAP_TOOLBAR, toolbar.themepath)
   --width=14 / height=expand
   toolbar.addgroup(toolbar.GRPC.ONLYME, toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, 14, 0)
@@ -163,6 +164,7 @@ function toolbar.minimap_setup()
   tbh_scroll.char_w= view:text_width(view.STYLE_LINENUMBER, '0')
   tbh_scroll.setmaxcol(300*tbh_scroll.char_w)
   --set toolbar #6 as a HORIZONTAL SCROLLBAR
+  toolbar.sel_hscroll()
   toolbar.new(14, 14, 14, toolbar.H_SCROLL_TOOLBAR, toolbar.themepath)
   --width=expand / height=14
   toolbar.addgroup(toolbar.GRPC.ONLYME|toolbar.GRPC.EXPAND, toolbar.GRPC.ONLYME, 0, 14)

@@ -35,8 +35,11 @@ if toolbar then
   function toolbar.sel_config_bar(ngrp, emptygrp)
     toolbar.sel_toolbar_n(toolbar.RIGHT_TOOLBAR, ngrp, emptygrp)
   end
-  function toolbar.sel_minimap(ngrp, emptygrp)
+  function toolbar.sel_minimap(ngrp)
     toolbar.sel_toolbar_n(toolbar.MINIMAP_TOOLBAR)
+  end
+  function toolbar.sel_hscroll(ngrp)
+    toolbar.sel_toolbar_n(toolbar.H_SCROLL_TOOLBAR)
   end
   function toolbar.sel_results_bar(ngrp, emptygrp)
     toolbar.sel_toolbar_n(toolbar.RESULTS_TOOLBAR, ngrp, emptygrp)
@@ -573,6 +576,7 @@ if toolbar then
 
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb0 then   --create the horizontal toolbar
+      toolbar.sel_top_bar()
       toolbar.new(bsz0, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.TOP_TOOLBAR, toolbar.themepath)
       toolbar.current_toolbar= 0
       toolbar.current_tb_group= 0
@@ -609,6 +613,7 @@ if toolbar then
 
     --create toolbar: barsize,buttonsize,imgsize,[numtoolbar/isvertical],[imgpath]
     if toolbar.tb1 then   --create the vertical toolbar
+      toolbar.sel_left_bar()
       toolbar.new(bsz1, toolbar.cfg.butsize, toolbar.cfg.imgsize, toolbar.LEFT_TOOLBAR, toolbar.themepath)
       toolbar.current_toolbar= 1
       toolbar.current_tb_group= 0
@@ -666,6 +671,7 @@ if toolbar then
   end
 
   function toolbar.create_statusbar()
+    toolbar.sel_stat_bar()
     toolbar.new(toolbar.cfg.statsize, toolbar.cfg.statbutsize, toolbar.cfg.statimgsize, toolbar.STAT_TOOLBAR, toolbar.themepath)
     toolbar.current_toolbar= 2
     toolbar.current_tb_group= 0

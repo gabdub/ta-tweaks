@@ -496,6 +496,7 @@ function toolbar.create_dialog(title, width, height, datalist, dataicon, config)
   filter= ""
   local canmove= dlg_can_move and (toolbar.setmovepopup ~= nil)
   dialog_native= canmove and toolbar.get_check_val("tbnativedialogs") --use native window borders or implement the title bar using controls
+  toolbar.sel_dialog_popup()
   toolbar.new(50, 24, 16, toolbar.DIALOG_POPUP, toolbar.themepath, dialog_native and 0 or 1)
   toolbar.setdefaulttextfont()
   toolbar.themed_icon(toolbar.globalicon, "ttb-combo-list", toolbar.TTBI_TB.BACKGROUND)
