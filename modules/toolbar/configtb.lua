@@ -994,8 +994,7 @@ local function add_toolbar_cfg_panel()
   toolbar.cmdtext("@ github", open_tatoolbargit, "Visit "..tatoolbargit, "openttbgit")
   pnly_add(30)
   toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-  local nb= toolbar.getversion(toolbar.GETVER.NBITS)
-  if nb == "" then nb= "32 bits" end
+  local nb= (WIN32 and "Windows" or LINUX and "Linux" or OSX and "OSX" or BSD and "BSD" or "") .. " " .. toolbar.getversion(toolbar.GETVER.NBITS)
   toolbar.addlabel(nb .. " - GTK "..toolbar.getversion(toolbar.GETVER.GTK), "", toolbar.cfgpnl_width,true,false)
   pnly_add(30)
   toolbar.addlabel("Compiled: "..toolbar.getversion(toolbar.GETVER.COMPILED) ..
