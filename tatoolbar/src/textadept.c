@@ -1,7 +1,9 @@
 // Copyright 2007-2022 Mitchell. See LICENSE.
 // USE_TA_TOOLBAR changes: Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+#if !CURSES
 #define USE_TA_TOOLBAR
-#define TA_VERSION 113  //TA code updated for textadept 11.3
+#define TA_VERSION 114  //TA code updated for textadept 11.4 nightly (GTK3 by default)
+#endif
 
 #if __linux__
 #define _XOPEN_SOURCE 500 // for readlink from unistd.h
@@ -332,7 +334,11 @@ static int click_replace(lua_State *L) { return (find_clicked(replace, L), 0); }
 static int click_replace_all(lua_State *L) { return (find_clicked(replace_all, L), 0); }
 
 #ifdef USE_TA_TOOLBAR
+//no need to change Makefile: just include all the C files here 
+#include "ta_toolbar.c"
+#include "ta_filediff.c"
 #include "ta_glue.c"
+//#include "ta_debug.c"
 #endif
 
 #if CURSES
@@ -821,7 +827,19 @@ static int menu(lua_State *L) {
 /** `ui.update()` Lua function. */
 static int update_ui(lua_State *L) {
 #if GTK
+#if !__APPLE__
   while (gtk_events_pending()) gtk_main_iteration();
+#else
+  // The idle event monitor created by os.spawn() on macOS is considered to be a pending event,
+  // so use its provided registry key to help determine when there are no longer any non-idle
+  // events pending.
+  lua_pushboolean(L, false), lua_setfield(L, LUA_REGISTRYINDEX, "spawn_procs_polled");
+  while (gtk_events_pending()) {
+    bool polled = (lua_getfield(L, LUA_REGISTRYINDEX, "spawn_procs_polled"), lua_toboolean(L, -1));
+    if (lua_pop(L, 1), polled) break;
+    gtk_main_iteration();
+  }
+#endif
 #elif (CURSES && !_WIN32)
   struct timeval timeout = {0, 1e5}; // 0.1s
   int nfds = os_spawn_pushfds(L);
@@ -1175,8 +1193,6 @@ static int call_scintilla(
     len = SS(view, msg, wparam, 0);
     if (wtype == SLEN) wparam = len;
     text = malloc(len + 1), text[len] = '\0';
-    if (msg == SCI_GETTEXT || msg == SCI_GETSELTEXT || msg == SCI_GETCURLINE)
-      len--; // Scintilla appends '\0' for these messages; compensate
     lparam = (sptr_t)text;
   }
 
@@ -1825,7 +1841,7 @@ static bool exiting(GtkWidget *_, GdkEventAny *__, void *L) {
   return (gtk_main_quit(), false);
 }
 
-#if (__APPLE__ && !CURSES)
+#if __APPLE__
 /**
  * Signal for opening files from macOS.
  * Generates an 'appleevent_odoc' event for each document sent.
@@ -2026,7 +2042,7 @@ static void split_view(Scintilla *view, bool vertical) {
   gtk_widget_show_all(pane);
   g_object_unref(view);
 
-  while (gtk_events_pending()) gtk_main_iteration(); // ensure view2 is painted
+  update_ui(lua); // ensure view2 is painted
 #elif CURSES
   Scintilla *view2 = new_view(curdoc);
   split_pane(pane, vertical, view, view2);
@@ -2284,7 +2300,7 @@ static void new_window() {
   gtdialog_set_parent(GTK_WINDOW(window));
   accel = gtk_accel_group_new();
 
-#if (__APPLE__ && !CURSES)
+#if __APPLE__
   gtkosx_application_set_use_quartz_accelerators(osxapp, false);
   g_signal_connect(osxapp, "NSApplicationOpenFile", G_CALLBACK(open_file), lua);
   g_signal_connect(osxapp, "NSApplicationBlockTermination", G_CALLBACK(terminating), lua);
@@ -2399,23 +2415,22 @@ static void new_window() {
 }
 
 #if GTK && _WIN32
-/** Reads and processes a remote Textadept's command line arguments. */
-static bool read_pipe(GIOChannel *source, GIOCondition _, HANDLE pipe) {
-  char *buf;
-  size_t len;
-  g_io_channel_read_to_end(source, &buf, &len, NULL);
-  for (char *p = buf; p < buf + len - 2; p++)
-    if (!*p) *p = '\n'; // '\0\0' end
-  process(NULL, NULL, buf);
-  return (g_free(buf), DisconnectNamedPipe(pipe), false);
-}
+/** Processes a remote Textadept's command line arguments. */
+static int pipe_read(void *buf) { return (process(NULL, NULL, (char *)buf), free(buf), false); }
 
-/** Listens for remote Textadept communications. */
+/**
+ * Listens for remote Textadept communications and reads command line arguments.
+ * Processing can only happen in the GTK main thread because GTK is single-threaded.
+ */
 static DWORD WINAPI pipe_listener(HANDLE pipe) {
   while (true)
     if (pipe != INVALID_HANDLE_VALUE && ConnectNamedPipe(pipe, NULL)) {
-      GIOChannel *channel = g_io_channel_win32_new_fd(_open_osfhandle((intptr_t)pipe, _O_RDONLY));
-      g_io_add_watch(channel, G_IO_IN, read_pipe, pipe), g_io_channel_unref(channel);
+      char *buf = malloc(65536 * sizeof(char)), *p = buf; // arbitrary size
+      DWORD len;
+      while (ReadFile(pipe, p, buf + 65536 - 1 - p, &len, NULL) && len > 0) p += len;
+      for (*p = '\0', len = p - buf - 1, p = buf; p < buf + len; p++)
+        if (!*p) *p = '\n'; // but preserve trailing '\0'
+      g_idle_add(pipe_read, buf), DisconnectNamedPipe(pipe);
     }
   return 0;
 }
