@@ -2,7 +2,7 @@
 // USE_TA_TOOLBAR changes: Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
 #if !CURSES
 #define USE_TA_TOOLBAR
-#define TA_VERSION 114  //TA code updated for textadept 11.4 nightly (GTK3 by default)
+#define TA_VERSION 113  //TA code updated for textadept 11.4 nightly (GTK3 by default)
 #endif
 
 #if __linux__
@@ -334,7 +334,7 @@ static int click_replace(lua_State *L) { return (find_clicked(replace, L), 0); }
 static int click_replace_all(lua_State *L) { return (find_clicked(replace_all, L), 0); }
 
 #ifdef USE_TA_TOOLBAR
-//no need to change Makefile: just include all the C files here 
+//no need to change Makefile: just include all the C files here
 #include "ta_toolbar.c"
 #include "ta_filediff.c"
 #include "ta_glue.c"
@@ -1193,6 +1193,10 @@ static int call_scintilla(
     len = SS(view, msg, wparam, 0);
     if (wtype == SLEN) wparam = len;
     text = malloc(len + 1), text[len] = '\0';
+#if TA_VERSION < 114
+    if (msg == SCI_GETTEXT || msg == SCI_GETSELTEXT || msg == SCI_GETCURLINE)
+      len--; // Scintilla appends '\0' for these messages; compensate
+#endif
     lparam = (sptr_t)text;
   }
 
