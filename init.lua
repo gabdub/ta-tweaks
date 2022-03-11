@@ -4,7 +4,7 @@
 -- Note about the "GTK3 hack":
 --   GTK3 doesn't like to set the size of the toolbars twice during setup (GTK2 is fine with that) and displays the toolbars with the
 --   size set in the C code (1 pixel width/height) and doesn't change with the new value set from LUA code.
---   The trick is to set the size twice when the toolbar is created: 1 pixel less and then the appropiate size to force the resize.
+--   The trick is to set the size twice when the toolbar is shown: 1 pixel less and then the appropiate size to force the resize.
 --   I couldn't find a better way for now...
 --   Example:
 --      toolbar.show(true, bsz0-1) --resize (GTK3 hack)
