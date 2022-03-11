@@ -122,7 +122,36 @@ static int ltoolbar_adjust(lua_State *L)
 /** `toolbar.show(show,[newsize])` Lua function. */
 static int ltoolbar_show(lua_State *L)
 {
-  show_toolbar(current_toolbar(), lua_toboolean(L,1), lua_tointeger(L, 2));
+  struct toolbar_data *T= current_toolbar();
+  if( T != NULL ){
+    int show= lua_toboolean(L,1);
+    int newsize= lua_tointeger(L, 2);
+    if( (show != 0) && (T->num < POPUP_FIRST) ){
+/*
+  Note about the "GTK3 hack":
+   GTK3 doesn't like to set the size of the toolbars twice during setup (GTK2 is fine with that) and displays the toolbars with the
+   size set in the C code (1 pixel width/height) and doesn't change with the new value set from LUA code.
+   The trick is to set the size twice when the toolbar is shown: 1 pixel less and then the appropiate size to force the resize.
+   I couldn't find a better way for now...
+   Example:
+      toolbar.show(true, bsz0-1) --resize (GTK3 hack)
+      toolbar.show(true, bsz0)   --restore size
+*/
+      if( newsize < 1 ){
+        //use current size
+        if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
+          newsize= T->barwidth;
+        }else{
+          newsize= T->barheight;
+        }
+      }
+      show_toolbar(T, show, newsize-1);
+      show_toolbar(T, show, newsize);
+    }else{
+      //no hack for hide or popup
+      show_toolbar(T, show, newsize);
+    }
+  }
   return 0;
 }
 
