@@ -103,8 +103,7 @@ if toolbar then
     --start in "recent projects list" or "project list" if the project is open
     toolbar.open_saved_prj= cfg.open_proj
     toolbar.select_list((toolbar.open_saved_prj ~= "") and "projlist" or "recentprojlist", true)
-    toolbar.show(toolbar.list_tb, toolbar.listwidth-1)   --resize (GTK3 hack)
-    toolbar.show(toolbar.list_tb, toolbar.listwidth)     --restore size
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)
   end
 
   local function beforesave_ltb(cfg)
@@ -210,8 +209,7 @@ if toolbar then
     toolbar.sel_left_bar()
     if toolbar.list_tb then reload_list() end --reload the list
 
-    toolbar.show(toolbar.list_tb, toolbar.listwidth-1)   --resize (GTK3 hack)
-    toolbar.show(toolbar.list_tb, toolbar.listwidth)     --restore size
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)
 
     --check menuitem
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
@@ -223,4 +221,4 @@ if toolbar then
     --only show as selected when the list is visible
     toolbar.selected(currlist, false, toolbar.list_tb)
   end
-end
+end

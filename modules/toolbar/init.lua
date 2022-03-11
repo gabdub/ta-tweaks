@@ -605,8 +605,7 @@ if toolbar then
         toolbar.adjust(tbconfig_getadj(1),tbconfig_getadj(2),tbconfig_getadj(3),tbconfig_getadj(4),tbconfig_getadj(5),tbconfig_getadj(6))
       end
       toolbar.setdefaulttextfont()
-      toolbar.show(true, bsz0-1) --resize (GTK3 hack)
-      toolbar.show(true, bsz0)   --restore size
+      toolbar.show(true) --show (GTK3 hack: set toolbar size)
     else
       --hide the horizonatal (top) toolbar
       toolbar.sel_top_bar()
@@ -636,8 +635,7 @@ if toolbar then
         toolbar.themed_icon(toolbar.globalicon, toolbar.get_backimg(4), toolbar.TTBI_TB.BACKGROUND)
       end
       toolbar.setdefaulttextfont()
-      toolbar.show(true, bsz1-1) --resize (GTK3 hack)
-      toolbar.show(true, bsz1)   --restore size
+      toolbar.show(true) --show (GTK3 hack: set toolbar size)
     else
       --hide the vertical (left) toolbar
       toolbar.sel_left_bar()
@@ -719,8 +717,7 @@ if toolbar then
       s= "Tabuladores: 8" --Spanish translation is longer
       toolbar.tabwidth(6,s) --"Spaces: 8"
       toolbar.tabwidth(7,s) --"ISO-8859-1"
-      toolbar.show(true, toolbar.cfg.statsize-1) --resize (GTK3 hack)
-      toolbar.show(true, toolbar.cfg.statsize)   --restore size
+      toolbar.show(true) --show (GTK3 hack: set toolbar size)
     else
       --use the default status bar
       toolbar.show(false)
@@ -837,4 +834,4 @@ if toolbar then
   end
 
   toolbar.set_defaults()
-end
+end

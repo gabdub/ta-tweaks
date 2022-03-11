@@ -193,9 +193,8 @@ if toolbar then
     toolbar.sel_results_bar()
     results_update()
 
-    toolbar.show(toolbar.results_tb, toolbar.resultsheight-1)   --resize (GTK3 hack)
-    toolbar.show(toolbar.results_tb, toolbar.resultsheight)     --restore size
-    
+    toolbar.show(toolbar.results_tb, toolbar.resultsheight)
+
     --check menuitem
     if toolbar.idviewresultstb then actions.setmenustatus(toolbar.idviewresultstb, (toolbar.results_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
@@ -226,4 +225,4 @@ if toolbar then
     toolbar.print_clear()
   end
   -------------------------------------------------------
-end
+end

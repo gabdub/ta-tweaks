@@ -26,9 +26,8 @@ function toolbar.toggle_showconfig()
   --update icon/menu
   actions.updateaction("toggle_viewcfgpanel")
   toolbar.sel_config_bar()
-  toolbar.show(toolbar.config_toolbar_shown, toolbar.cfgpnl_width-1)   --resize (GTK3 hack)
-  toolbar.show(toolbar.config_toolbar_shown, toolbar.cfgpnl_width)     --restore size
-  
+  toolbar.show(toolbar.config_toolbar_shown)
+
   --hide the minimap when the config is open
   toolbar.show_hide_minimap()
 end
@@ -1358,4 +1357,4 @@ end
 actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, Util.KEY_CTRL.."f9", tcv_icon, tcv_status, tcv_text)
 
 --add VIEWCONFIGPANEL at the end of the VIEW menu
-actions.appendtomenu_fromtitle("toggle_viewcfgpanel", Util.VIEWMENU_TEXT)
+actions.appendtomenu_fromtitle("toggle_viewcfgpanel", Util.VIEWMENU_TEXT)
