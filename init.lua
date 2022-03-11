@@ -1,9 +1,14 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 -- code adjusted for TA 11
 
---NOTE: to prevent Kubuntu 20.04.1 from closing at random: comment line 74 in modules/textadept/file_types.lua
---(buffer:colorize(1, buffer:position_from_line(last_line + 1)) -- refresh)
---The issue looks like an implementation bug of GTK on plasma
+-- Note about the "GTK3 hack":
+--   GTK3 doesn't like to set the size of the toolbars twice during setup (GTK2 is fine with that) and displays the toolbars with the
+--   size set in the C code (1 pixel width/height) and doesn't change with the new value set from LUA code.
+--   The trick is to set the size twice when the toolbar is created: 1 pixel less and then the appropiate size to force the resize.
+--   I couldn't find a better way for now...
+--   Example:
+--      toolbar.show(true, bsz0-1) --resize (GTK3 hack)
+--      toolbar.show(true, bsz0)   --restore size
 
 if toolbar then
   USE_LISTS_PANEL= true   --true:show project lists in the left toolbar;   false= use a buffer

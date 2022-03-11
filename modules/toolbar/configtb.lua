@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 local Util = Util
 local toolbar = toolbar
 local events, events_connect = events, events.connect
@@ -26,7 +26,9 @@ function toolbar.toggle_showconfig()
   --update icon/menu
   actions.updateaction("toggle_viewcfgpanel")
   toolbar.sel_config_bar()
-  toolbar.show(toolbar.config_toolbar_shown)
+  toolbar.show(toolbar.config_toolbar_shown, toolbar.cfgpnl_width-1)   --resize (GTK3 hack)
+  toolbar.show(toolbar.config_toolbar_shown, toolbar.cfgpnl_width)     --restore size
+  
   --hide the minimap when the config is open
   toolbar.show_hide_minimap()
 end

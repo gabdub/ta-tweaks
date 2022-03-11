@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 local Util = Util
 local toolbar = toolbar
 local events, events_connect = events, events.connect
@@ -159,7 +159,8 @@ function toolbar.minimap_setup()
   toolbar.setbackcolor("minimap", toolbar.BKCOLOR.MINIMAP_CLICK, false, true)
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
-  toolbar.show(toolbar.tbshowminimap)
+  toolbar.show(toolbar.tbshowminimap, 13)   --resize (GTK3 hack)
+  toolbar.show(toolbar.tbshowminimap, 14)   --restore size
 
   tbh_scroll.char_w= view:text_width(view.STYLE_LINENUMBER, '0')
   tbh_scroll.setmaxcol(300*tbh_scroll.char_w)
@@ -177,5 +178,6 @@ function toolbar.minimap_setup()
   toolbar.setbackcolor("tbh_scroll", toolbar.BKCOLOR.TBH_SCR_CLICK, false, true)
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
-  toolbar.show(toolbar.tbreplhscroll)
+  toolbar.show(toolbar.tbreplhscroll, 13)   --resize (GTK3 hack)
+  toolbar.show(toolbar.tbreplhscroll, 14)   --restore size
 end

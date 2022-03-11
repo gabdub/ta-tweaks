@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 --
 -- This module control the "lists" toolbar
 --
@@ -103,7 +103,8 @@ if toolbar then
     --start in "recent projects list" or "project list" if the project is open
     toolbar.open_saved_prj= cfg.open_proj
     toolbar.select_list((toolbar.open_saved_prj ~= "") and "projlist" or "recentprojlist", true)
-    toolbar.show(toolbar.list_tb, toolbar.listwidth)
+    toolbar.show(toolbar.list_tb, toolbar.listwidth-1)   --resize (GTK3 hack)
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)     --restore size
   end
 
   local function beforesave_ltb(cfg)
@@ -209,7 +210,9 @@ if toolbar then
     toolbar.sel_left_bar()
     if toolbar.list_tb then reload_list() end --reload the list
 
-    toolbar.show(toolbar.list_tb, toolbar.listwidth)
+    toolbar.show(toolbar.list_tb, toolbar.listwidth-1)   --resize (GTK3 hack)
+    toolbar.show(toolbar.list_tb, toolbar.listwidth)     --restore size
+
     --check menuitem
     if toolbar.idviewlisttb then actions.setmenustatus(toolbar.idviewlisttb, (toolbar.list_tb and 1 or 2)) end
     if toolbar then toolbar.setcfg_from_buff_checks() end --update config panel
