@@ -933,7 +933,7 @@ local function add_toolbar_cfg_panel()
 
   add_config_label("TABS",true)
   add_config_label("Tabs position")
-  add_config_radio("tbtabs", "Off", "Use default system tabs", true)
+  add_config_radio("tbtabs", "Off (system tabs)", "Use default system tabs", true)
   cont_config_radio("Same row", "Tabs and buttons in the same row")
   cont_config_radio("Top row", "Tabs over buttons")
   cont_config_radio("Bottom row", "Tabs under buttons")
