@@ -1,4 +1,4 @@
-// Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+// Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 /* ============================================================================= */
 /* GLUE between ta-toolbar and textadept/LUA/GTK                                 */
 /*   when modified, touch textadept.c to compile (because it's "included" there) */
@@ -2366,16 +2366,17 @@ static void create_tatoolbar( lua_State *L, GtkWidget *box, int ntoolbar )
     if( ntoolbar >= POPUP_FIRST ){
       //POP-UP
       T= init_tatoolbar( ntoolbar, draw, 0 );   //already cleared
-      gtk_widget_set_size_request(draw, T->barwidth, T->barheight );
     }else{
       //TOOLBAR
       T= init_tatoolbar( ntoolbar, draw, 1 );   //clear all
       if( (T->flags & TTBF_TB_VERTICAL) != 0 ){
-        gtk_widget_set_size_request(draw, 1, -1);
+        T->barwidth= 1;
       }else{
-        gtk_widget_set_size_request(draw, -1, 1);
+        T->barheight= 1;
       }
     }
+    set_toolbar_size( T );
+
     gtk_widget_set_events(draw, GDK_EXPOSURE_MASK|GDK_LEAVE_NOTIFY_MASK|
         GDK_POINTER_MOTION_MASK|GDK_BUTTON_PRESS_MASK|GDK_BUTTON_RELEASE_MASK
 #if (GTK_MAJOR_VERSION > 2)
