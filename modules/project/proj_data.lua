@@ -226,7 +226,7 @@ end
 function Proj.create_empty_project(filename, projname, rootdir, vc_param)
   local fo, err= io.open(filename, 'wb')
   if not fo then
-    Util.info("ERROR: Can't create the project file", err)
+    Util.info("Can't create the project file", err, "ERROR")
     ui.statusbar_text= "ERROR: Can't create the project file"
     return false
   end
@@ -252,7 +252,7 @@ function Proj.add_files_to_project(flist, groupfiles, all, finprj)
   if not data.is_open then return nil end
   local fo, err= io.open(data.filename, 'a+b')
   if not fo then
-    Util.info("ERROR: Can't add file/s to project", err)
+    Util.info("Can't add file/s to project", err, "ERROR")
     ui.statusbar_text= "ERROR: Can't add file/s to project"
     return nil
   end
@@ -293,14 +293,14 @@ function Proj.parse_project_file()
   Proj.clear_proj_arrays()  --clear data and advance parse version
   if not data.is_open then
     notify_projload_ends()
-    Util.info("ERROR", "Unknown project filename")
+    Util.info("", "Unknown project filename", "ERROR")
     ui.statusbar_text= 'ERROR: Unknown project filename'
     return false
   end
   local fi, err= io.open(data.filename, 'rb')
   if not fi then
     notify_projload_ends()
-    Util.info("ERROR: Can't open the project file", err)
+    Util.info("Can't open the project file", err, "ERROR")
     ui.statusbar_text= "ERROR: Can't open the project file"
     return false
   end

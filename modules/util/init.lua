@@ -2,7 +2,8 @@
 ----- utility functions
 if Util == nil then Util = {} end
 local Util = Util
-Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (.+)%..+$'))
+Util.TA_MAYOR_VER= tonumber(_RELEASE:match('^Textadept (%d+)%..+$'))
+Util.TA_MINOR_VER= tonumber(_RELEASE:match('^Textadept %d+%.(%d+).*$'))
 
 Util.PATH_SEP= (WIN32 and '\\' or '/')
 Util.UNTITLED_TEXT= _L['Untitled']
@@ -18,18 +19,38 @@ Util.KEY_ALT= CURSES and "meta+" or "alt+"
 Util.KEY_CMD= CURSES and "" or "cmd+"
 Util.KEY_SHIFT= "shift+"
 
-function Util.info(msg,info)
+Util.GTKVER= "" --format: "2.24.32"/ "3.24.31"
+if toolbar then Util.GTKVER= toolbar.getversion(3) end --use the compiled GTK version when available
+if Util.GTKVER ~= "" then
+  Util.GTK_MAYOR_VER= tonumber(Util.GTKVER:match('^(%d+)%..+$'))
+else
+  Util.GTK_MAYOR_VER= 2 --up to TA11.3, use GTK2. 11.4 and above, use GTK3
+  if Util.TA_MAYOR_VER > 11 then
+    Util.GTK_MAYOR_VER= 3
+  elseif Util.TA_MAYOR_VER == 11 and Util.TA_MINOR_VER >= 4 then
+    Util.GTK_MAYOR_VER= 3
+  end
+end
+if Util.GTK_MAYOR_VER == 2 then
+  Util.INFO_ICON= "gtk-dialog-info"
+  Util.QUEST_ICON= "gtk-dialog-question"
+else
+  Util.INFO_ICON= "dialog-information"
+  Util.QUEST_ICON= "dialog-question"
+end
+
+function Util.info(msg, info, tit)
   ui.dialogs.msgbox{
-    title = 'Information',
+    title = tit or 'Information',
     text = msg or '',
     informative_text = info or '',
-    icon = 'gtk-dialog-info', button1 = Util.OK_TEXT
+    icon = Util.INFO_ICON, button1 = Util.OK_TEXT
   }
 end
 
 function Util.confirm(tit, txt, info)
   return ui.dialogs.msgbox{ title = tit or 'Confirmation', text = txt or '', informative_text = info or '',
-      icon = 'gtk-dialog-question', button1 = Util.OK_TEXT, button2 = Util.CANCEL_TEXT } == 1
+      icon = Util.QUEST_ICON, button1 = Util.OK_TEXT, button2 = Util.CANCEL_TEXT } == 1
 end
 
 function Util.goto_view(numview)
@@ -385,4 +406,4 @@ end
 --Util.add_config_field(Util.cfg,"myinteger",Util.cfg_int,27)
 --Util.add_config_field(Util.cfg,"mystring",Util.cfg_str,"zzzzzz")
 --Util.add_config_field(Util.cfg,"color",Util.cfg_hex,0xFF)
---Util.add_config_field(Util.cfg,"toolbar_back",Util.cfg_str,"",5) --toolbar_back#1..#5
+--Util.add_config_field(Util.cfg,"toolbar_back",Util.cfg_str,"",5) --toolbar_back#1..#5

@@ -368,7 +368,7 @@ local function b_update(bname, chkflist)
     if numok == (numO+numD) then
       Util.info("Update local folder", conv_num(numok, "file").." copied successfully")
     else
-      Util.info("Update local folder", "Warning:\nOnly "..numok.." of the "..conv_num(numO+numD, "file").." were copied successfully")
+      Util.info("Update local folder", "Only "..numok.." of the "..conv_num(numO+numD, "file").." were copied successfully", "Warning")
     end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog
@@ -414,7 +414,7 @@ local function b_publish(bname, chkflist)
     if numok == (numM+numA) then
       ui.statusbar_text= conv_num(numok, "file").." copied successfully"
     else
-      Util.info("Publish to folder", "Warning:\nOnly "..numok.." of the "..conv_num(numM+numA, "file").." were copied successfully")
+      Util.info("Publish to folder", "Only "..numok.." of the "..conv_num(numM+numA, "file").." were copied successfully", "Warning")
     end
   end
   Proj.reopen_vcs_control_panel() --reopen dialog

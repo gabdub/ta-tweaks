@@ -328,7 +328,7 @@ function plugs.open_project()
       buffer:close()
       Proj.closed_cleardata()
       ui.statusbar_text= 'Invalid project file'
-      Util.info('Open error', 'Invalid project file')
+      Util.info('Open error', 'Invalid project file', "ERROR")
     end
     --restore the file that was current before opening the project or open an empty one
     --TODO: see why this 2 lines activate line numbers in the project view
