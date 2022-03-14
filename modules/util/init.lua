@@ -30,6 +30,7 @@ else
   elseif Util.TA_MAYOR_VER == 11 and Util.TA_MINOR_VER >= 4 then
     Util.GTK_MAYOR_VER= 3
   end
+  Util.GTKVER= ""..Util.GTK_MAYOR_VER..".24.0"
 end
 if Util.GTK_MAYOR_VER == 2 then
   Util.INFO_ICON= "gtk-dialog-info"
@@ -406,4 +407,5 @@ end
 --Util.add_config_field(Util.cfg,"myinteger",Util.cfg_int,27)
 --Util.add_config_field(Util.cfg,"mystring",Util.cfg_str,"zzzzzz")
 --Util.add_config_field(Util.cfg,"color",Util.cfg_hex,0xFF)
---Util.add_config_field(Util.cfg,"toolbar_back",Util.cfg_str,"",5) --toolbar_back#1..#5
+--Util.add_config_field(Util.cfg,"toolbar_back",Util.cfg_str,"",5) --toolbar_back#1..#5
+
