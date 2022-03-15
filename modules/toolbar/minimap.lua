@@ -113,9 +113,9 @@ timeout(1, check_vis_changes)
 local function minimap_clicked()
   local nl= minimap.getclickline()
   if nl > 0 then
-    --"visual line number" (1..) to "logical line number" (0..)
+    --"visual line number" (1..) to "logical line number" (1..)
     nl= buffer:doc_line_from_visible(nl)
-    if nl >= buffer.line_count then nl= buffer.line_count-1 end
+    if nl > buffer.line_count then nl= buffer.line_count end
     textadept.editing.goto_line(nl)
     buffer:vertical_center_caret()
   end
