@@ -159,7 +159,7 @@ function toolbar.minimap_setup()
   toolbar.setbackcolor("minimap", toolbar.BKCOLOR.MINIMAP_CLICK, false, true)
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
-  toolbar.show(true) --show (GTK3 hack: set toolbar size)
+  toolbar.show(toolbar.tbshowminimap) --show (GTK3 hack: set toolbar size)
 
   tbh_scroll.char_w= view:text_width(view.STYLE_LINENUMBER, '0')
   tbh_scroll.setmaxcol(300*tbh_scroll.char_w)
@@ -177,5 +177,5 @@ function toolbar.minimap_setup()
   toolbar.setbackcolor("tbh_scroll", toolbar.BKCOLOR.TBH_SCR_CLICK, false, true)
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HILIGHT, true) --don't highlight
   toolbar.seticon(toolbar.globalicon, "", toolbar.TTBI_TB.IT_HIPRESSED, true)
-  toolbar.show(true) --show (GTK3 hack: set toolbar size)
+  toolbar.show(toolbar.tbreplhscroll) --show (GTK3 hack: set toolbar size)
 end
