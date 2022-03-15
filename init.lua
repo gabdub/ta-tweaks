@@ -140,4 +140,4 @@ if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or abo
     buffer:reload()
     return false
   end,1)
-end
+end
