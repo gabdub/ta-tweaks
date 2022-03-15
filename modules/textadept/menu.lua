@@ -462,7 +462,7 @@ actions.menubar = {
     },
     {
       title = Util.QUICKOPENMENU_TEXT,
-      {"open_userhome","open_textadepthome","open_currentdir","quick_open_projectdir"}
+      {"quick_open_projectdir","open_userhome","open_textadepthome","open_currentdir","quick_browse"}
     },
     {
       title = Util.SNIPPETSMENU_TEXT,

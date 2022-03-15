@@ -753,6 +753,13 @@ local function b_change_dir(cmd)
         end
       end
     end
+  elseif fdialog_opt == "fdlg-recent" then
+    --recent open files (ignore shift/control modifiers)
+    if #io.recent_files > 0 then
+      for r=1,#io.recent_files do
+        dialog_list[ #dialog_list+1 ]= io.recent_files[r]
+      end
+    end
   elseif fdialog_opt == "fdlg-browdir" then
     if fdialog_brow_dir ~= "" then
       for file in lfs.walk(fdialog_brow_dir, lfs.default_filter, nrec, false) do
@@ -788,7 +795,7 @@ local function fdlg_item_selected(fname)
   return (toolbar.keyflags & (toolbar.KEYFLAGS.CONTROL|toolbar.KEYFLAGS.SHIFT) ~= 0)
 end
 
-local n_fdlg_opts= 5  --number of "fdlg-xxx" buttons
+local n_fdlg_opts= 6  --number of "fdlg-xxx" buttons
 local function fdialog_prev_tab(cmd)
   local n= ncd_butt
   repeat
@@ -823,7 +830,7 @@ local function fdialog_brow_sel_folder(cmd)
   if folder then
     toolbar.set_filebrowser_dir(folder)
   end
-  toolbar.file_chooser(5) --reopen the dialog
+  toolbar.file_chooser(6) --reopen the dialog
 end
 
 function toolbar.file_chooser(option, title)
@@ -836,6 +843,7 @@ function toolbar.file_chooser(option, title)
   if fname then fdialog_currdir=fname:match('^(.+)[/\\]') end
   local isprj= (Proj and Proj.data.is_open)
   if toolbar.get_filebrowser_dir then fdialog_brow_dir= toolbar.get_filebrowser_dir() enbr=0 end
+  local enrecent= (#io.recent_files > 0) and 0 or toolbar.DLGBUT.EN_OFF
   local click_info= "\n  Click / Control+R= no sub-folders reload\n  Shift+Click / Control+1= 1 sub-folder reload\n  Control+Click / Control+A= all sub-folders reload"
   local buttons= {
     --1:bname, 2:text/icon, 3:tooltip, 4:x, 5:width, 6:row, 7:callback, 8:button-flags=toolbar.DLGBUT..., 9:key-accel
@@ -843,8 +851,9 @@ function toolbar.file_chooser(option, title)
     {"fdlg-user",    "User home", _USERHOME..click_info, 105, 95, 1, b_change_dir, 0, "Control+U"},
     {"fdlg-ta-home", "TA home", _HOME..click_info, 205, 95, 1, b_change_dir, 0, "Control+T"},
     {"fdlg-currdir", "Current", fdialog_currdir..click_info, 305, 95, 1, b_change_dir, (fdialog_currdir~="") and 0 or toolbar.DLGBUT.EN_OFF, "Control+C"},
-    {"fdlg-browdir", "File browser", fdialog_brow_dir..click_info, 405, 95, 1, b_change_dir, enbr, "Control+F"},
-    {"fdlg-change-browdir", "document-open", "Select folder", 505, 24, 1, fdialog_brow_sel_folder, enbr|toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+O"},
+    {"fdlg-recent",  "Recent",  "open recent ("..#io.recent_files.." files)\n", 405, 95, 1, b_change_dir, enrecent, "Control+Shift+R"},
+    {"fdlg-browdir", "File browser", fdialog_brow_dir..click_info, 505, 95, 1, b_change_dir, enbr, "Control+F"},
+    {"fdlg-change-browdir", "document-open", "Select folder", 605, 24, 1, fdialog_brow_sel_folder, enbr|toolbar.DLGBUT.ICON|toolbar.DLGBUT.CLOSE, "Control+O"},
     {"acc-fdlg-ntab", "", "", 0, 0, 0, fdialog_next_tab, 0, "\t"}, --accelerators
     {"acc-fdlg-ptab", "", "", 0, 0, 0, fdialog_prev_tab, 0, "Shift+\t"},
     {"acc-fdlg-0reload", "", "", 0, 0, 0, fdialog_basic_reload, 0, "Control+R"}, --no recursion reload
@@ -856,7 +865,7 @@ function toolbar.file_chooser(option, title)
   toolbar.dlg_select_it= ""
   toolbar.dlg_select_ev= fdlg_item_selected
   toolbar.dlg_filter_col2= false
-  toolbar.create_dialog(title or "File chooser", 600, 400, flist, "MIME", dconfig)
+  toolbar.create_dialog(title or "File chooser", 640, 500, flist, "MIME", dconfig)
   if not option or option < 1 or option > #buttons then option= (isprj) and 1 or 2 end
   b_change_dir(buttons[option][1])
   toolbar.show_dialog()
@@ -864,7 +873,7 @@ end
 
 --ACTION: quick_browse
 local function quick_browse()
-  toolbar.file_chooser(5)
+  toolbar.file_chooser(6)
 end
 actions.add("quick_browse", 'Quickly Open Browse Directory', quick_browse, Util.KEY_ALT.."O")
 

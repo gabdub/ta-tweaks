@@ -20,6 +20,8 @@ end
 --ACTION: recent
 function Proj.open_recent_file()
   Proj.goto_filesview()
+  --use dialog option when available
+  if USE_FILE_CHOOSER then toolbar.file_chooser(5) return end
   io.open_recent_file()
 end
 
