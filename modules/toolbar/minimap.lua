@@ -141,7 +141,7 @@ function tbh_scroll_scroll()
 end
 
 events_connect("tbh_scroll", function(dir)
-  buffer:line_scroll( dir*12, 0)
+  buffer:line_scroll( dir*6, 0)
 end)
 
 function toolbar.minimap_setup()
