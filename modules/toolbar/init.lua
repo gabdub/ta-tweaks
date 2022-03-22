@@ -216,6 +216,7 @@ if toolbar then
     toolbar.keyflags= keyflags
     --ui.statusbar_text= "tab "..ntab.." clicked"
     if ntoolbar == toolbar.TOP_TOOLBAR then
+      --ui.statusbar_text= "tab click id="..ntab
       --tab bar click
       toolbar.selecttab(ntab)
     elseif ntoolbar == toolbar.STAT_TOOLBAR then
@@ -241,6 +242,34 @@ if toolbar then
     elseif ntoolbar == toolbar.RIGHT_TOOLBAR then
       --config panel
       toolbar.config_tab_click(ntab)
+    end
+  end)
+
+  events_connect("toolbar_tabdragged", function(ntab,ntoolbar,ntabgroup,keyflags)
+    toolbar.keyflags= keyflags
+    if ntoolbar == toolbar.TOP_TOOLBAR then
+      toolbar.sel_top_bar()
+      local nb= toolbar.gettabnbuff(ntab)
+      if nb > 0 then
+        local buf1= _BUFFERS[nb]
+        local npos= toolbar.gettabpos(ntab)
+        local buf2= _BUFFERS[npos]
+        --ui.statusbar_text= "tab #"..ntab.." dragged buffer#" .. nb .. " to " .. npos
+        --when a tab is dragged it reports each position change, so the position change should be +1/-1
+        if (nb == npos+1) or (nb == npos-1) then
+          --swap buffers
+          _BUFFERS[nb]= buf2
+          _BUFFERS[npos]= buf1
+          _BUFFERS[buf2]= nb
+          _BUFFERS[buf1]= npos
+          --also swap toolbar.buffers[]
+          local sw= toolbar.buffers[nb]
+          toolbar.buffers[nb]= toolbar.buffers[npos]
+          toolbar.buffers[npos]= sw
+        else
+          ui.statusbar_text= "ERROR: DRAGGED TAB "..nb.." - "..npos
+        end
+      end
     end
   end)
 

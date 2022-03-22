@@ -6,7 +6,7 @@
 
 #include "ta_toolbar.h"
 
-#define TA_TOOLBAR_VERSION_STR "1.2.1 (Mar 7 2022)"
+#define TA_TOOLBAR_VERSION_STR "1.2.1 (Mar 21 2022)"
 
 static void free_img_list( void );
 
@@ -1830,6 +1830,7 @@ void mouse_move_toolbar( struct toolbar_data *T, int x, int y, int state, int x_
         p= ttb.phipress;
         //redraw the complete toolbar
         redraw_toolbar(T);
+        fire_tab_event(ttb.phipress, TEV_DRAG, 0); //fire "toolbar_tabdragged" EVENT (since 1.2.1)
       }
     }
     //clear previous highlight (in any toolbar)
@@ -2460,6 +2461,21 @@ void ttb_set_tab_colorsG(struct toolbar_group *G, int ncol, int hcol, int acol, 
     //redraw the complete group
     redraw_group(G);
   }
+}
+
+int ttb_get_tab_posG(struct toolbar_group *G, int ntab)
+{ //return tab position (1..) or 0 = not found
+  struct toolbar_item *p;
+  int n= 0;
+  if( G != NULL ){
+    for( p= G->list; (p != NULL); p= p->next ){
+      n++;
+      if( p->num == ntab){
+        return n;
+      }
+    }
+  }
+  return 0; //not found
 }
 
 void ttb_activate_tabG(struct toolbar_group *G, int ntab)

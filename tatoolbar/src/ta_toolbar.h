@@ -477,7 +477,8 @@ void show_toolbar(struct toolbar_data *T, int show, int newsize);
 #define TEV_2CLICK    1
 #define TEV_RCLICK    2
 #define TEV_CLOSE     3
-#define TEV_N_EVS     4
+#define TEV_DRAG      4
+#define TEV_N_EVS     5
 int fire_tab_event( struct toolbar_item * p, int evtype, int state );
 int fire_item_event( struct toolbar_item * p, int evtype, int state );
 int fire_group_event( struct toolbar_group * g, int evtype, int state );
@@ -517,6 +518,7 @@ void ttb_set_tab_colorsG(struct toolbar_group *G, int ncol, int hcol, int acol, 
 void set_tabtextG(struct toolbar_group *G, int ntab, const char * text, const char *tooltip, int redraw);
 int  get_tabtext_widthG(struct toolbar_group *G, const char * text );
 void ttb_delete_tabG(struct toolbar_group *G, int ntab);
+int  ttb_get_tab_posG(struct toolbar_group *G, int ntab);
 void ttb_activate_tabG(struct toolbar_group *G, int ntab);
 void ttb_enable_tabG(struct toolbar_group *G, int ntab, int enable);
 void ttb_set_changed_tabG(struct toolbar_group *G, int ntab, int changed);

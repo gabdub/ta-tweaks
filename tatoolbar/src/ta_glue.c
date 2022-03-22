@@ -541,6 +541,13 @@ static int ltoolbar_getsize(lua_State *L)
   return 1;
 }
 
+/** `toolbar.gettabpos(num)` Lua function. (since 1.2.1) */
+static int ltoolbar_gettabpos(lua_State *L)
+{
+  lua_pushinteger(L,ttb_get_tab_posG( current_tabbar(), lua_tointeger(L, 1) ));
+  return 1;
+}
+
 /* ============================================================================= */
 /*                      FUNCTIONS CALLED FROM TA-TOOLBAR                         */
 /*                             GTK / CAIRO                                       */
@@ -1618,7 +1625,8 @@ static char * tabevtype_name[TEV_N_EVS]={
   "toolbar_tabclicked",    //TEV_CLICK
   "toolbar_tab2clicked",   //TEV_2CLICK
   "toolbar_tabRclicked",   //TEV_RCLICK
-  "toolbar_tabclose"       //TEV_CLOSE
+  "toolbar_tabclose",      //TEV_CLOSE
+  "toolbar_tabdragged"     //TEV_DRAG  (since 1.2.1)
 };
 
 //emit tabevtype[] event + int tab-num + int toolbar-num + int group-num
@@ -1648,7 +1656,8 @@ static char * evtype_name[TEV_N_EVS]={
   "toolbar_clicked",    //TEV_CLICK
   "toolbar_2clicked",   //TEV_2CLICK
   "toolbar_Rclicked",   //TEV_RCLICK
-  "toolbar_close"       //TEV_CLOSE (not used)
+  "toolbar_close",      //TEV_CLOSE (not used)
+  "toolbar_dragged"     //TEV_DRAG  (not used)
 };
 
 //emit evtype[] event + string item-name + int toolbar-num + int group-num
@@ -2271,6 +2280,7 @@ void register_toolbar(lua_State *L)
   DEF_C_FUNC(L, ltoolbar_hidetab,       "hidetab");         //hide/show tab num
   DEF_C_FUNC(L, ltoolbar_tabwidth,      "tabwidth");        //set tab num tabwidth (varible/fixed)
   DEF_C_FUNC(L, ltoolbar_gototab,       "gototab");         //generate a click in tab: -1:prev,1:next,0:first,2:last
+  DEF_C_FUNC(L, ltoolbar_gettabpos,     "gettabpos");       //return tab position: 1.. (0:not found) (since 1.2.1)
   //get
   DEF_C_FUNC(L, ltoolbar_getpickcolor,  "getpickcolor");    //return integer (RGB) current selected color in picker
   DEF_C_FUNC(L, ltoolbar_getversion,    "getversion");      //return string ta-toolbar version
