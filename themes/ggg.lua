@@ -57,7 +57,6 @@ colors.light_blue = 0xFFCC80
 colors.text_fore=0x101000
 colors.text_back=0xFAFAFA
 colors.caret=0x362b00
-colors.curr_line_back=0xF9EAD8
 colors.selection_fore=0xFFFFFF
 colors.selection_back=0xFF9900
 colors.hilight=0xC06B00
@@ -94,16 +93,16 @@ colors.operator=0x101000
 colors.yellow=0x7FFFFF
 colors.red=0x9999FF
 colors.green=0x7AE584
-
 --LOAD CONFIGURED COLORS--
 dofile(_USERHOME..'/themes/colors.lua')
+if not colors.curr_line_back then colors.curr_line_back=0xF9EAD8 end  --hack: doesn't like to change more than once
 
 -- Default font.
 if not font then
   font = colors.myfont or WIN32 and 'DejaVu Sans Mono' or OSX and 'Monaco' or 'Ubuntu Mono'
 end
 if not size then size = WIN32 and 11 or OSX and 12 or 13 end
-size= size + (colors.myextrasize or 0)
+size= size + (tonumber(colors.myextrasize) or 0)
 
 -- Predefined styles.
 styles.default = {font = font, size = size, fore = colors.text_fore, back = colors.text_back}

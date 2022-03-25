@@ -476,25 +476,25 @@ local function save_colors_in_TAtheme()
   if f then
     local savedata = {}
     local n=1
-    savedata[n] = "local color= lexer.colors"
+    savedata[n] = "local colors= lexer.colors"
     for _,optname in ipairs(toolbar.cfgpnl_savelst) do
       local cname= string.match(optname, "color%.(.+)$")
       if cname then --only save color properties: color.name
         n=n+1
-        local extra= (optname == "color.function") and "_" or "" --add "_" so function doesn't generate an error
-        savedata[n] = optname..extra.."="..toolbar.get_colorprop_val(optname)
+        if cname == "function" then cname= "function_" end --add "_" so function doesn't generate an error
+        savedata[n] = "colors."..cname.."="..toolbar.get_colorprop_val(optname)
       end
     end
     --save editor font
     local fname= toolbar.get_font_val("font.editor")
     if fname ~= toolbar.DEFAULT_FONT then
       n=n+1
-      savedata[n] = "color.myfont= '"..fname.."'"
+      savedata[n] = "colors.myfont= '"..fname.."'"
     end
     local extrasz= toolbar.get_cfg_font_extrasize("font.editor")
     if extrasz ~= 0 then
       n=n+1
-      savedata[n] = "color.myextrasize="..extrasz
+      savedata[n] = "colors.myextrasize="..extrasz
     end
     f:write(table.concat(savedata, '\n'))
     f:close()
@@ -1369,4 +1369,4 @@ end
 actions.add("toggle_viewcfgpanel", 'Sh_ow Config panel', toolbar.toggle_showconfig, Util.KEY_CTRL.."f9", tcv_icon, tcv_status, tcv_text)
 
 --add VIEWCONFIGPANEL at the end of the VIEW menu
-actions.appendtomenu_fromtitle("toggle_viewcfgpanel", Util.VIEWMENU_TEXT)
+actions.appendtomenu_fromtitle("toggle_viewcfgpanel", Util.VIEWMENU_TEXT)
