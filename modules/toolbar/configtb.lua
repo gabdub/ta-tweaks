@@ -476,13 +476,25 @@ local function save_colors_in_TAtheme()
   if f then
     local savedata = {}
     local n=1
-    savedata[n] = "local p= buffer.property"
+    savedata[n] = "local color= lexer.colors"
     for _,optname in ipairs(toolbar.cfgpnl_savelst) do
       local cname= string.match(optname, "color%.(.+)$")
       if cname then --only save color properties: color.name
         n=n+1
-        savedata[n] = "p['"..optname.."']="..toolbar.get_colorprop_val(optname)
+        local extra= (optname == "color.function") and "_" or "" --add "_" so function doesn't generate an error
+        savedata[n] = optname..extra.."="..toolbar.get_colorprop_val(optname)
       end
+    end
+    --save editor font
+    local fname= toolbar.get_font_val("font.editor")
+    if fname ~= toolbar.DEFAULT_FONT then
+      n=n+1
+      savedata[n] = "color.myfont= '"..fname.."'"
+    end
+    local extrasz= toolbar.get_cfg_font_extrasize("font.editor")
+    if extrasz ~= 0 then
+      n=n+1
+      savedata[n] = "color.myextrasize="..extrasz
     end
     f:write(table.concat(savedata, '\n'))
     f:close()
@@ -1280,7 +1292,7 @@ local function restore_fonts()
     restore_font("font.toolbars")
     restore_font("font.tabs")
     restore_font("font.status")
-    change_theme()
+    toolbar.save_colors_reset()
   end
 end
 
@@ -1294,7 +1306,7 @@ local function add_font_cfg_panel()
     add_config_font("Status bar", "font.status")
 
     toolbar.gotopos(toolbar.cfgpnl_xtext, toolbar.cfgpnl_y)
-    toolbar.cmdtext("Apply changes", change_theme, "Reset to apply the changes", "reload3")
+    toolbar.cmdtext("Apply changes", toolbar.save_colors_reset, "Reset to apply the changes", "reload3")
     toolbar.gotopos(toolbar.cfgpnl_width/2, toolbar.cfgpnl_y)
     toolbar.cmdtext("Default fonts", restore_fonts, "Restore all fonts to default", "restore")
     pnly_add(21)

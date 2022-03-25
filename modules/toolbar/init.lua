@@ -794,17 +794,6 @@ if toolbar then
     toolbar.set_theme(theme)
 
     if toolbar.font_support() then
-      --change editor font
-      local nfont= toolbar.get_cfg_font_num("font.editor")
-      local extrasz= toolbar.get_cfg_font_extrasize("font.editor")
-      if nfont > 0 then
-        local font= toolbar.get_font_name(nfont)
-        for _, buff in ipairs(_BUFFERS) do buff.property['font']= font end
-      end
-      if extrasz ~= 0 then
-        extrasz= extrasz + buffer.property['fontsize']
-        for _, buff in ipairs(_BUFFERS) do buff.property['fontsize']=extrasz end
-      end
       --load toolbar fonts
       toolbar.font_toolbars= toolbar.get_cfg_font_num("font.toolbars")
       toolbar.font_toolbars_extrasz= toolbar.get_cfg_font_extrasize("font.toolbars")
@@ -863,4 +852,4 @@ if toolbar then
   end
 
   toolbar.set_defaults()
-end
+end

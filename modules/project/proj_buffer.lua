@@ -72,7 +72,7 @@ end
 local function show_sel_w_focus(buff)
   buff.margin_width_n[1]= 0 --hide line numbers
   buff.caret_width= 0 --highlight current line as selected
-  buff.caret_line_back = buff.property['color.prj_sel_bar']
+  buff.caret_line_back = _G.lexer.colors.prj_sel_bar
 end
 
 --------------- LISTS INTERFACE --------------
@@ -110,7 +110,7 @@ function plugs.check_lost_focus(buff)
   if buff == nil then buff= buffer end
   if Proj.update_ui == 0 and buff._project_select then
     -- project in SELECTION mode without focus--
-    buff.caret_line_back = buff.property['color.prj_sel_bar_nof']
+    buff.caret_line_back = _G.lexer.colors.prj_sel_bar_nof
   end
 end
 

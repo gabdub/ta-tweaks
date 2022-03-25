@@ -488,7 +488,7 @@ end
 
 --------hilight project's open files--------
 local indic_open = _SCINTILLA.next_indic_number()
-buffer.indic_fore[indic_open]= (tonumber(buffer.property['color.prj_open_mark']) or 0x404040)
+buffer.indic_fore[indic_open]= (_G.lexer.colors.prj_open_mark or 0x404040)
 buffer.indic_style[indic_open]= buffer.INDIC_DOTS
 
 --remove all open-indicators from project
