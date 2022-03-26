@@ -46,6 +46,14 @@ local function get_list_itemstr(idx)
   return name
 end
 
+local function get_list_return(idx)
+  local name= dialog_list[idx] --string list
+  if type(name) == "table" then
+    if name.ret then name= name.ret else name= name[1] end --return value / multi column list: use first column
+  end
+  return name
+end
+
 local function get_list_col(idx, ncol)
   local item= dialog_list[idx]
   if type(item) == "table" and #item >= ncol then return item[ncol] end
@@ -144,7 +152,7 @@ local function choose_item(cmd)
   if itnum then
     toolbar.dlg_select_it= get_list_itemstr(itnum)
     if toolbar.dlg_select_ev then
-      local keepopen= toolbar.dlg_select_ev(toolbar.dlg_select_it)
+      local keepopen= toolbar.dlg_select_ev( get_list_return(itnum) )
       if keepopen then --return true to keep the dialog open
         toolbar.sel_dialog_popup(itemsgrp,false) --keep the popup toolbar selected
         return

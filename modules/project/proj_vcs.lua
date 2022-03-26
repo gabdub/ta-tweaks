@@ -144,7 +144,7 @@ end
 
 local vcs_item_base= ""
 local function vcs_item_selected(fname)
-  Proj.go_file( vcs_item_base..fname )
+  Proj.go_file( fname )
   return true --keep dialog open
 end
 
@@ -648,14 +648,15 @@ function Proj.vcs_control_panel(idx)
     for row= 1, #data.proj_files do
       --ignore CTAGS files / path / empty rows / files marked as "VC ignored"
       if data.proj_filestype[row] == Proj.PRJF_FILE and (data.proj_vcignore[row] == nil) then
-        local projfile= string.gsub(data.proj_files[row], '%\\', '/')
+        local pfile= data.proj_files[row]
+        local projfile= string.gsub(pfile, '%\\', '/')
         local fname= string.match(projfile, fmt)
         if fname and fname ~= '' then
           if vctype ~= Proj.VCS_FOLDER then
             fname= pref..fname
           end
           local col2= get_vcs_file_status(projfile, fname)
-          flist[ #flist+1 ]= {fname, col2, false}
+          flist[ #flist+1 ]= {fname, col2, false, ret=pfile}  --return project file
           if col2 ~= "" then
             toolbar.dlg_filter_col2= true --only show items with something in col2
             if vctype == Proj.VCS_FOLDER then
