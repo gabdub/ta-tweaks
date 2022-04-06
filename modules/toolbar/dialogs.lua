@@ -459,8 +459,8 @@ end
 
 Proj.add_config_hook(beforeload_dlg, afterload_dlg, beforesave_dlg, projloaded_dlg)
 
-local function end_dlg_drag(cmd)
-  if dlg_can_move then
+local function end_dlg_drag(cmd, tbnum)
+  if dlg_can_move and (tbnum == toolbar.DIALOG_POPUP) then
     local lastpos= toolbar.getversion(toolbar.GETVER.POPUP_POS)
     if lastpos ~= nil and lastpos ~= "" then
       --integer,integer

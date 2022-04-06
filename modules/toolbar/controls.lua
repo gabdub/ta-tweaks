@@ -211,14 +211,7 @@ events_connect("toolbar_clicked", function(buttonname,ntoolbar,ngroup,keyflags)
     buttonname= "GROUP".. ngroup.. "-"..ntoolbar  --button name="GROUP#-T" (#=group num, T=toolbar num)
   end
   if toolbar.cmds[buttonname] ~= nil then
-    toolbar.cmds[buttonname](buttonname) --pass the name of the button
-  elseif toolbar.cmds[buttonname] ~= nil then
-    --is a config checkbox?
-    if toolbar.cfgpnl_chkval ~= nil and toolbar.cfgpnl_chkval[buttonname] ~= nil then
-      toolbar.cmds[buttonname](buttonname) --pass the name of the checkbox
-    else
-      toolbar.cmds[buttonname](buttonname)
-    end
+    toolbar.cmds[buttonname](buttonname, ntoolbar) --pass the name of the button and the toolbar num
   --else ui.statusbar_text= buttonname.." clicked"
   end
 end)
