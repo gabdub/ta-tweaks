@@ -265,7 +265,7 @@ function toolbar.get_check_val(name)
   return false
 end
 
-local function check_clicked(name)
+local function check_clicked_ev(name,ntoolbar)
   --toggle checkbox value
   toolbar.set_check_val(name, not toolbar.get_check_val(name))
   toolbar.config_change=true
@@ -273,7 +273,7 @@ local function check_clicked(name)
 end
 
 function toolbar.cmd_check(name,tooltip,checked)
-  toolbar.cmd(name, check_clicked, tooltip, nil, toolbar.TTBI_TB.CHECK_BASE)
+  toolbar.cmd(name, check_clicked_ev, tooltip, nil, toolbar.TTBI_TB.CHECK_BASE)
   toolbar.selected(name, checked)
   toolbar.cfgpnl_chkval[name]=checked
 end
@@ -301,7 +301,7 @@ local function radio_clicked(name,dontset_toolbar,dont_notify)
   end
 end
 
-local function radio_clicked_ev(name,toolbar)
+local function radio_clicked_ev(name,ntoolbar)
   radio_clicked(name,false,false)
 end
 
