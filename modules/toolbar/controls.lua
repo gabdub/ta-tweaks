@@ -301,8 +301,12 @@ local function radio_clicked(name,dontset_toolbar,dont_notify)
   end
 end
 
+local function radio_clicked_ev(name,toolbar)
+  radio_clicked(name,false,false)
+end
+
 function toolbar.cmd_radio(name,tooltip,checked)
-  toolbar.cmd(name, radio_clicked, tooltip, nil, toolbar.TTBI_TB.RADIO_BASE)
+  toolbar.cmd(name, radio_clicked_ev, tooltip, nil, toolbar.TTBI_TB.RADIO_BASE)
   toolbar.selected(name, checked)
   toolbar.cfgpnl_chkval[name]=checked
 end
