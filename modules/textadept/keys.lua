@@ -312,6 +312,11 @@ if toolbar then
     run_mult_action("new", "open", "recent")
   end
   actions.add("new_open", 'New      [Click]/[Ctrl+N]\nOpen   [Shift+Click]/[Ctrl+O]\nRecent [Ctrl+Click]/[Ctrl+Alt+O]', new_open, nil, "document-new")
+
+  local function togg_clear_bookmark() --toggle_bookmark / goto_bookmark (+SHIFT) / clear_bookmarks (+CONTROL)
+    run_mult_action("toggle_bookmark", "goto_bookmark", "clear_bookmarks")
+  end
+  actions.add("togg_clear_bookmark", 'Toggle Bookmark [Click]/[Ctrl+F2]\nGoto Bookmark... [Shift+Click]/[Alt+F2]\nClear Bookmarks  [Ctrl+Click]/[Ctrl+Shift+F2]', togg_clear_bookmark, nil, "gnome-app-install-star")
 end
 
 --run an action (act: action-name=string, action-id=number, {act}=1 item table)

@@ -121,7 +121,7 @@ if not CURSES and Util.TA_MAYOR_VER >= 11 then  --check: NO CURSES / TA11 or abo
     toolbar.addspace()
     --toolbar.addaction("find_dialog") --not ready
 
-    toolbar.addaction("toggle_bookmark")
+    toolbar.addaction("togg_clear_bookmark") --toggle_bookmark / goto_bookmark / clear_bookmarks
 
     toolbar.addaction("toggle_macrorec")
     toolbar.addaction("play_macrorec")
