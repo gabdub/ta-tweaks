@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 local Util = Util
 
 -- Alt+1 = ($=cursor position) TYPE
@@ -88,7 +88,7 @@ local function get_sel_linerange(all_lines)
     --if something is selected use the selected line range
     n1= buffer:line_from_position(s)
     n2= buffer:line_from_position(e)
-    if n2 > n1 and buffer.column[e] == 0 then n2=n2-1 end
+    if n2 > n1 and buffer.column[e] == 1 then n2=n2-1 end
   end
   return n1, n2
 end
