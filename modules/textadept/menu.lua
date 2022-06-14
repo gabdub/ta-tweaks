@@ -424,7 +424,7 @@ actions.menubar = {
      "join_lines","filterthrough"},
     {
       title = Util.SELECTMENU_TEXT,
-      {"sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_word","sel_line","sel_paragraph"}
+      {"sel_matchbrace","sel_betweenxmltag","sel_xmltag","sel_word","sel_line","sel_paragraph","sel_r_col_down"}
     },
     {
       title = Util.SELECTIONMENU_TEXT,
