@@ -1,5 +1,5 @@
 // Copyright 2007-2022 Mitchell. See LICENSE.
-// USE_TA_TOOLBAR changes: Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+// USE_TA_TOOLBAR changes: Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 #if !CURSES
 #define USE_TA_TOOLBAR
 #define TA_VERSION 114  //TA code updated for textadept 11.4 beta (GTK3 by default)

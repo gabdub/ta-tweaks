@@ -507,7 +507,7 @@ static int ltoolbar_getversion(lua_State *L)
       sprintf( str, "%d,%d", ttb.drag_win_x, ttb.drag_win_y );
       break;
 
-    case 6:   //6: get "32/64 bits" mode
+    case 6:   //6: get "32/64 bits" mode (since 1.2.1)
       #ifdef __x86_64__
       strcpy( str, "64 bits" );
       #else
