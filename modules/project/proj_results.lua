@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 --
 -- This module shows search results in a buffer and
 -- overwrites ui._print() to display its output in the same buffer

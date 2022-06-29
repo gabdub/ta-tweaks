@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 --
 -- This module shows the tags of the current file using the "lists" toolbar
 --

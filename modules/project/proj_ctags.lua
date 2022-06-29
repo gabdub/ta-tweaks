@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 local Proj = Proj
 local Util = Util
 local data = Proj.data

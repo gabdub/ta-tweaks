@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 -- Windows and Linux key bindings.
 --
 -- Unassigned keys (~ denotes keys reserved by the operating system):

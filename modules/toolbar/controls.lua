@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Gabriel Dubatti. See LICENSE.
+-- Copyright 2016-2022 Gabriel Dubatti. See LICENSE.
 --functions to define common controls like buttons, combo-boxes, etc in the toolbars
 local events, events_connect = events, events.connect
 

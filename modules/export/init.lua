@@ -1,4 +1,4 @@
--- Copyright 2016-2021 Mitchell mitchell.att.foicica.com. See LICENSE.
+-- Copyright 2016-2022 Mitchell mitchell.att.foicica.com. See LICENSE.
 
 local M = {}
 local Util = Util
