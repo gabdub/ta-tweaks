@@ -141,6 +141,10 @@ if toolbar then
     return false --don't open context menu
   end
 
+  function ls_click(listname)
+    toolbar.select_list(listname, false)
+  end
+
   function toolbar.createlisttb()
     currlist=""
     currlistidx=0
@@ -175,7 +179,7 @@ if toolbar then
     if #toolbar.listselections > 0 then
       for i=1,#toolbar.listselections do
         local ls= toolbar.listselections[i]
-        toolbar.cmd(ls[LSTSEL_NAME], toolbar.select_list, ls[LSTSEL_TOOLTIP], ls[LSTSEL_ICON])
+        toolbar.cmd(ls[LSTSEL_NAME], ls_click, ls[LSTSEL_TOOLTIP], ls[LSTSEL_ICON])
       end
       toolbar.addspace()
     end
