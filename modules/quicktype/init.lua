@@ -189,8 +189,9 @@ local function sel_rec_col_down()
   local col= buffer.column[e]
   buffer.rectangular_selection_anchor= pos
   local erow= buffer:line_from_position(pos)
-  for r= erow, toln do
-    if buffer:line_length(r) <= col then break end
+  local ind= buffer.line_indentation[erow]
+  for r= erow, toln do --go down until the indentation or line length is shortened
+    if buffer:line_length(r) <= col or buffer.line_indentation[r] < ind then break end
     erow= r
   end
   pos= buffer:find_column(erow, col)
