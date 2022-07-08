@@ -66,7 +66,7 @@ end
 
 --goto line= 1...
 function Util.goto_line(p_buffer,line)
-  local r= line
+  local r= line or 1
   p_buffer:ensure_visible_enforce_policy(r)
   p_buffer:goto_line(r)
 end

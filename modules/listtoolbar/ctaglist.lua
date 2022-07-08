@@ -35,8 +35,19 @@ if toolbar then
   local function gototag(cmd)
     Proj.goto_filesview()
     local linenum= toolbar.getnum_cmd(cmd)
-    Util.goto_line(buffer, linenum)
-    buffer:vertical_center_caret()
+    if linenum then
+      Util.goto_line(buffer, linenum)
+      buffer:vertical_center_caret()
+    else
+      local s= string.match(cmd,".-#(.*)") --find this string
+      for i= 1, buffer.line_count do
+        if buffer:get_line(i):find(s, 1, true) then
+          Util.goto_line(buffer, i)
+          buffer:vertical_center_caret()
+          break
+        end
+      end
+    end
   end
 
   local function list_addtag(tagtext, line, ext_fields)
@@ -119,13 +130,14 @@ if toolbar then
     toolbar.list_addbutton("view-refresh", "Update Ctag List", toolbar.list_toolbar_reload)
     toolbar.list_addaction("filter_ctaglist")
     toolbar.list_addinfo(fname, true)
+    local h= string.gsub(_HOME,"\\","/").."/"
+    local b= string.gsub(bname,"\\","/")  --use "/" as path separator to compare files
     for i = 1, #tag_files do
-      local dir = tag_files[i]:match('^.+[/\\]')
       local f = io.open(tag_files[i])
       for line in f:lines() do
         local tag, file, linenum, ext_fields = line:match('^([_.%w]-) *\t(.-)\t(.-);"\t?(.*)$')
-        if tag and (file == bname) then --only show current file
-          if not file:find('^%a?:?[/\\]') then file = dir..file end
+        if file then file= string.gsub( string.gsub(file,"\\","/"),"^_HOME/",h) end --replace TA home dir
+        if tag and (file == b) then --only show current file
           if linenum:find('^/') then linenum = linenum:match('^/^(.+)$/$') end
           if linenum then list_addtag(tag, linenum, ext_fields) end
         end
