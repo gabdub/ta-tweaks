@@ -171,6 +171,7 @@ function Proj.goto_tag(ask)
         if not tag or tag ~= word2 then file= nil end
       end
       if file then
+        file= string.gsub(file,"^_HOME/",_HOME.."/") --replace TA home dir
         if not file:find('^%a?:?[/\\]') then file = dir..file end
         if ex_cmd:find('^/') then ex_cmd = ex_cmd:match('^/^(.+)$/$') end
         tags[#tags + 1] = {tag, file, ex_cmd, ext_fields}
