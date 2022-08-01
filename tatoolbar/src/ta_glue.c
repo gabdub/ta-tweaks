@@ -50,7 +50,7 @@ static int get_keyflags(int state) {
 }
 
 //from textadept.c
-static void show_context_menu(lua_State *L, GdkEventButton *event, char *k);
+static void show_context_menu(lua_State *L, char *k, GdkEventButton *event);
 //pre-def
 static void create_tatoolbar( lua_State *L, GtkWidget *vbox, int ntoolbar );
 static void setmenuitemstatus( int menu_id, int status);
@@ -1647,7 +1647,7 @@ static void proc_tab_click( struct toolbar_item * p, GdkEventButton *event )
 
   }else if(event->button == 3){ //tab right click
     if( fire_tab_event(p, TEV_RCLICK, event->state) ){
-      show_context_menu(lua, event, "tab_context_menu"); //open context menu
+      show_context_menu(lua, "tab_context_menu", event); //open context menu
     }
   }
 }
@@ -1691,7 +1691,7 @@ int fire_toolbar_event( struct toolbar_data * T, int evtype, int state )
 
 static void open_tb_contextmenu( GdkEventButton *event )
 {
-  show_context_menu(lua, event, "toolbar_context_menu"); //open context menu
+  show_context_menu(lua, "toolbar_context_menu", event); //open context menu
 }
 
 static void proc_item_click( struct toolbar_item * p, GdkEventButton *event )
