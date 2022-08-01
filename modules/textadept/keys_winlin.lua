@@ -255,3 +255,7 @@ if CURSES then
     end)
   end
 end
+
+local function show_context_menu() ui.popup_menu(ui.context_menu) end
+keys.menu = show_context_menu
+--keys['shift+f10'] = show_context_menu
