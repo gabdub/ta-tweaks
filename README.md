@@ -4,6 +4,8 @@ This is a collection of my Textadept tweaks.
 
 Textadept is a fast, minimalist, and remarkably extensible cross-platform text editor: https://orbitalquark.github.io/textadept/
 
+**Important notes: 11.4 is the last supported version. Tatoolbar popups don't work in Wayland.**
+
 ***
 
 # Module list:
